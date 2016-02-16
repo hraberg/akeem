@@ -147,10 +147,8 @@ pair_to_s:                      # pair
         .equ pair, -8
         mov     %rdi, pair(%rbp)
 
-        mov     %rbp, %rdi
-        add     $str, %rdi
-        mov     %rbp, %rsi
-        add     $size, %rsi
+        lea     str(%rbp), %rdi
+        lea     size(%rbp), %rsi
         call_fn open_memstream, %rdi, %rsi
         mov     %rax, stream(%rbp)
 
@@ -158,22 +156,28 @@ pair_to_s:                      # pair
 1:      mov     $NIL, %r11
         cmp     %r11, pair(%rbp)
         je      2f
+
         call_fn car, pair(%rbp)
         call_fn to_s, %rax
         call_fn fprintf, stream(%rbp), %rax
+
         call_fn cdr, pair(%rbp)
         mov     %rax, pair(%rbp)
         mov     $NIL, %r11
         cmp     %r11, pair(%rbp)
         je      2f
+
         call_fn fputc, $' , stream(%rbp)
+
         call_fn is_pair, pair(%rbp)
         test    $C_TRUE, %rax
         jnz     1b
+
         call_fn fputc, $'., stream(%rbp)
         call_fn fputc, $' , stream(%rbp)
         call_fn to_s, pair(%rbp)
         call_fn fprintf, stream(%rbp), %rax
+
 2:      call_fn fputc, $'), stream(%rbp)
         call_fn fclose, stream(%rbp)
         return  str(%rbp)
@@ -184,9 +188,11 @@ pair_length:                    # pair
         mov     $NIL, %r11
 1:      cmp     %r11, %rax
         je      2f
+
         call_fn cdr, %rax
         inc     %rcx
         jmp     1b
+
 2:      call_fn box_long %rcx
         ret
 
@@ -211,8 +217,7 @@ long_to_s:                      # long
         .equ str, -8
         call_fn unbox_long, %rdi
         mov     %rax, long(%rbp)
-        mov     %rbp, %rax
-        add     $str, %rax
+        lea     str(%rbp), %rax
         call_fn asprintf %rax, $long_format, long(%rbp)
         return  str(%rbp)
 
@@ -221,8 +226,7 @@ double_to_s:                    # double
         .equ str, -8
         movq    %rdi, %xmm0
         mov     $1, %rax        # number of vector var arguments http://www.x86-64.org/documentation/abi.pdf p21
-        mov     %rbp, %rdi
-        add     $str, %rdi
+        lea     str(%rbp), %rdi
         mov     $double_format, %rsi
         call    asprintf
         return  str(%rbp)
