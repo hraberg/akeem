@@ -284,17 +284,15 @@ println:                        # value
         return  $NIL
 
 eq:                             # x, y
-        enter_fn
+        xor     %rax, %rax
         cmp     %rdi, %rsi
-        jne     1f
-        return  $TRUE
-1:      return  $FALSE
-
+        sete    %al
+        call_fn box_boolean, %rax
+        ret
 not:                            # x
-        enter_fn
         xor     $C_TRUE, %rdi
-        return %rdi
-
+        mov     %rdi, %rax
+        ret
 tag:                            # tag value
         mov     $NAN_MASK, %rax
         or      %rsi, %rax
@@ -305,6 +303,12 @@ has_tag:                        # tag, value
         mov     $TAG_MASK, %rax
         and     %rax, %rsi
         call_fn eq, %rdi, %rsi
+        ret
+
+box_boolean:                    # value
+        and     $C_TRUE, %rdi
+        mov     %rdi, %rsi
+        call_fn tag, $TAG_BOOLEAN, %rsi
         ret
 
 box_long:                       # value
@@ -348,10 +352,10 @@ is_pair:                        # value
         ret
 
 is_double:                      # value
-        mov     $NAN_MASK, %rax
-        and     %rdi, %rax
-        call_fn eq, %rax, $NAN_MASK
-        call_fn not, %rax
+        movq    %rdi, %xmm0
+        call_fn isnan
+        not     %rax
+        call_fn box_boolean, %rax
         ret
 
 main:
