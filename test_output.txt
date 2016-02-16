@@ -1,0 +1,26 @@
+3
+6
+true
+false
+(1 2 3)
+3
+(4 . 2)
+42
+3
+true
+false
+false
+true
+false
+true
+nil
+true
+true
+false
+42
+-1
+false
+true
+0
+3.141500
+strlen
