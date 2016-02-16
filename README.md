@@ -6,9 +6,16 @@ Name to change.
 
 ## References
 
+### Assembler
+
 * http://ref.x86asm.net/coder64-abc.html
 * http://www.x86-64.org/documentation/abi.pdf
+* http://rayseyfarth.com/asm/
 * http://bob.cs.sonoma.edu/IntroCompOrg/book.html
+* http://www.agner.org/optimize/
+
+### Lisp
+
 * http://piumarta.com/software/maru/
 * http://scheme2006.cs.uchicago.edu/11-ghuloum.pdf
 * http://library.readscheme.org/page1.html
