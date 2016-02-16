@@ -69,7 +69,7 @@ enter_fn_code:
         assert_equals 7, enter_fn_locals_index
 
 to_s_jump_table:
-        .quad   0, long_to_s, unmask_pointer, boolean_to_s, nil_to_s, pair_to_s
+        .quad   0, long_to_s, unbox_pointer, boolean_to_s, nil_to_s, pair_to_s
 
         .struct 0
 pair_car:
@@ -190,10 +190,10 @@ pair_length:                      # pair
         inc     %rcx
         jmp     1b
 2:
-        call_fn to_long %rcx
+        call_fn box_long %rcx
         return  %rax
 
-unmask_long:                    # long
+unbox_long:                     # long
         mov     $PAYLOAD_SIGN, %rax
         test    %rax, %rdi
         jz      1f
@@ -201,13 +201,13 @@ unmask_long:                    # long
         and     %rax, %rdi
         not     %rax
         or      %rdi, %rax
-        jmp     2f
+        ret
 1:      mov     $PAYLOAD_MASK, %rax
         and     %rax, %rdi
         mov     %rdi, %rax
-2:      ret
+        ret
 
-unmask_pointer:                    # ptr
+unbox_pointer:                  # ptr
         mov     $PAYLOAD_MASK, %rax
         and     %rdi, %rax
         ret
@@ -216,7 +216,7 @@ long_to_s:                      # long
         enter_fn 2
         .equ long, -16
         .equ str, -8
-        call_fn unmask_long, %rdi
+        call_fn unbox_long, %rdi
         mov     %rax, long(%rbp)
         mov     %rbp, %rax
         add     $str, %rax
@@ -303,7 +303,7 @@ has_tag:                        # tag, value
         call_fn eq, %rdi, %rsi
         ret
 
-to_long:                        # value
+box_long:                       # value
         enter_fn
         mov     $PAYLOAD_MASK, %rax
         mov     $PAYLOAD_SIGN, %rsi
@@ -312,13 +312,13 @@ to_long:                        # value
         call_fn tag, $TAG_LONG, %rax
         return %rax
 
-to_string:                        # value
+box_pointer:                    # value
         mov     $PAYLOAD_MASK, %rax
         and     %rdi, %rax
         call_fn tag, $TAG_POINTER, %rax
         ret
 
-is_long:                      # value
+is_long:                        # value
         mov     %rdi, %rax
         call_fn has_tag, $TAG_LONG, %rax
         ret
@@ -354,13 +354,13 @@ main:
         enter_fn
         call_fn dlsym, $RTLD_DEFAULT, $strlen_name
         call_fn *%rax, $long_format
-        call_fn to_long, %rax
+        call_fn box_long, %rax
         call_fn println, %rax
 
         call_fn dlsym, $RTLD_DEFAULT, $allocate_code_name
         call_fn *%rax, $example_code, $example_code_size
         call_fn *%rax, $2
-        call_fn to_long, %rax
+        call_fn box_long, %rax
         call_fn println, %rax
 
         call_fn cons, $1, $NIL
@@ -371,13 +371,13 @@ main:
         call_fn is_long, %rax
         call_fn println, %rax
 
-        call_fn to_long, $3
+        call_fn box_long, $3
         call_fn cons, %rax, $NIL
         mov     %rax, %r11
-        call_fn to_long, $2
+        call_fn box_long, $2
         call_fn cons, %rax, %r11
         mov     %rax, %r11
-        call_fn to_long, $1
+        call_fn box_long, $1
         call_fn cons, %rax, %r11
         call_fn println, %rax
 
@@ -387,23 +387,23 @@ main:
         call_fn pair_length, %rax
         call_fn println, %rax
 
-        call_fn to_long, $2
+        call_fn box_long, $2
         mov     %rax, %r11
-        call_fn to_long, $4
+        call_fn box_long, $4
         call_fn cons, %rax, %r11
         call_fn println, %rax
 
-        call_fn to_long, $42
+        call_fn box_long, $42
         call_fn println, %rax
 
-        call_fn to_long, $3
+        call_fn box_long, $3
         call_fn println, %rax
 
-        call_fn to_long, $1
+        call_fn box_long, $1
         call_fn is_long, %rax
         call_fn println, %rax
 
-        call_fn to_long, $1
+        call_fn box_long, $1
         call_fn is_boolean, %rax
         call_fn println, %rax
 
@@ -426,26 +426,26 @@ main:
         call_fn is_double, $TRUE
         call_fn println, %rax
 
-        call_fn to_long, $42
+        call_fn box_long, $42
         call_fn println, %rax
 
-        call_fn to_long, $-1
+        call_fn box_long, $-1
         call_fn println, %rax
 
-        call_fn to_long, $-1
+        call_fn box_long, $-1
         call_fn is_double, %rax
         call_fn println, %rax
 
-        call_fn to_long, $-1
+        call_fn box_long, $-1
         call_fn is_long, %rax
         call_fn println, %rax
 
-        call_fn to_long, $0
+        call_fn box_long, $0
         call_fn println, %rax
 
         call_fn println, PI
 
-        call_fn to_string, $strlen_name
+        call_fn box_pointer, $strlen_name
         call_fn println, %rax
 
         return  $0
