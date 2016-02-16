@@ -198,7 +198,7 @@ pair_length:                    # pair
 
 byte_array:                     # length
         call_fn malloc, %rdi
-        call_fn box_pointer, %rdi
+        call_fn box_pointer, %rax
         ret
 
 object_array:                   # length
