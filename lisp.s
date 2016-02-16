@@ -35,7 +35,9 @@
 
         .data
 PI:
-        .double 3.1415
+        .double 3.14159
+E:
+        .double 2.71828
 
 strlen_name:
         .string "strlen"
@@ -157,7 +159,7 @@ pair_to_s:                      # pair
 
         call_fn car, pair(%rbp)
         call_fn to_s, %rax
-        call_fn fprintf, stream(%rbp), %rax
+        call_fn fputs, %rax, stream(%rbp)
 
         call_fn cdr, pair(%rbp)
         mov     %rax, pair(%rbp)
@@ -174,7 +176,7 @@ pair_to_s:                      # pair
         call_fn fputc, $'., stream(%rbp)
         call_fn fputc, $' , stream(%rbp)
         call_fn to_s, pair(%rbp)
-        call_fn fprintf, stream(%rbp), %rax
+        call_fn fputs, %rax, stream(%rbp)
 
 2:      call_fn fputc, $'), stream(%rbp)
         call_fn fclose, stream(%rbp)
@@ -368,7 +370,8 @@ is_double:                      # value
         ret
 
 main:
-        enter_fn
+        enter_fn 1
+        .equ array, -POINTER_SIZE
         call_fn dlsym, $RTLD_DEFAULT, $strlen_name
         call_fn *%rax, $long_format
         call_fn box_long, %rax
@@ -461,6 +464,7 @@ main:
         call_fn println, %rax
 
         call_fn println, PI
+        call_fn println, PI
 
         call_fn box_pointer, $strlen_name
         call_fn println, %rax
@@ -490,14 +494,15 @@ main:
         call_fn puts, $empty_string
 
         call_fn object_array, $2
-        mov     %rax, %r11
-        call_fn box_long, $16
-        call_fn aset, %r11, $0, %rax
-        call_fn aset, %r11, $1, PI
+        mov     %rax, array(%rbp)
 
-        call_fn aget, %r11, $0
+        call_fn box_long, $16
+        call_fn aset, array(%rbp), $0, E
+        call_fn aset, array(%rbp), $1, PI
+
+        call_fn aget, array(%rbp), $0
         call_fn println, %rax
-        call_fn aget, %r11, $1
+        call_fn aget, array(%rbp), $1
         call_fn println, %rax
 
         return  $0
