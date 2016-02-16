@@ -106,7 +106,7 @@ cons:                           # car, cdr
         mov     %rdi, car(%rbp)
         mov     %rsi, cdr(%rbp)
         call_fn malloc, $pair_size
-        call_fn tag $TAG_PAIR, %rax
+        call_fn tag, $TAG_PAIR, %rax
         mov     %rax, pair(%rbp)
 
         call_fn set_car, pair(%rbp), car(%rbp)
@@ -193,7 +193,7 @@ pair_length:                    # pair
         inc     %rcx
         jmp     1b
 
-2:      call_fn box_long %rcx
+2:      call_fn box_long, %rcx
         ret
 
 unbox_long:                     # long
@@ -218,7 +218,7 @@ long_to_s:                      # long
         call_fn unbox_long, %rdi
         mov     %rax, long(%rbp)
         lea     str(%rbp), %rax
-        call_fn asprintf %rax, $long_format, long(%rbp)
+        call_fn asprintf, %rax, $long_format, long(%rbp)
         return  str(%rbp)
 
 double_to_s:                    # double
@@ -338,8 +338,7 @@ is_boolean:                     # value
         ret
 
 is_nil:                         # value
-        mov     %rdi, %rax
-        call_fn has_tag, $TAG_NIL, %rax
+        call_fn eq, %rdi, $NIL
         ret
 
 is_pair:                        # value
