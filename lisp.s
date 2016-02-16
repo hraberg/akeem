@@ -26,8 +26,9 @@
         .equ TAG_NIL, 4 << TAG_SHIFT
         .equ TAG_PAIR, 5 << TAG_SHIFT
 
-        .equ TRUE, (NAN_MASK | TAG_BOOLEAN | 1)
-        .equ FALSE, (NAN_MASK | TAG_BOOLEAN | 0)
+        .equ C_TRUE, 1
+        .equ TRUE, (NAN_MASK | TAG_BOOLEAN | C_TRUE)
+        .equ FALSE, (NAN_MASK | TAG_BOOLEAN)
         .equ NIL, (NAN_MASK | TAG_NIL)
 
         .data
@@ -70,6 +71,9 @@ enter_fn_code:
 
 to_s_jump_table:
         .quad   0, long_to_s, unbox_pointer, boolean_to_s, nil_to_s, pair_to_s
+
+unbox_jump_table:
+        .quad   0, unbox_long, unbox_pointer, unbox_pointer, unbox_pointer, unbox_pointer
 
         .struct 0
 pair_car:
@@ -165,9 +169,8 @@ pair_to_s:                      # pair
         je      2f
         call_fn fputc, $' , stream(%rbp)
         call_fn is_pair, pair(%rbp)
-        mov     $TRUE, %r11
-        cmp     %r11, %rax
-        je      1b
+        test    $C_TRUE, %rax
+        jnz     1b
         call_fn fputc, $'., stream(%rbp)
         call_fn fputc, $' , stream(%rbp)
         call_fn to_s, pair(%rbp)
@@ -229,9 +232,8 @@ double_to_s:                    # double
         return  str(%rbp)
 
 boolean_to_s:
-        mov     $TRUE, %rax
-        cmp     %rdi, %rax
-        jne     1f
+        test    $C_TRUE, %rdi
+        jz      1f
         mov     $true_string, %rax
         ret
 1:      mov     $false_string, %rax
@@ -255,13 +257,24 @@ to_s:                           # value
         .equ value, -8
         mov     %rdi, value(%rbp)
         call_fn is_double, value(%rbp)
-        mov     $TRUE, %r11
-        cmp     %r11, %rax
-        jne     1f
+        test    $C_TRUE, %rax
+        jz      1f
         call_fn double_to_s, value(%rbp)
         return  %rax
 1:
         call_fn tagged_jump, $to_s_jump_table, value(%rbp)
+        return  %rax
+
+unbox:                          # value
+        enter_fn 1
+        .equ value, -8
+        mov     %rdi, value(%rbp)
+        call_fn is_double, value(%rbp)
+        test    $C_TRUE, %rax
+        jz      1f
+        return  value(%rbp)
+1:
+        call_fn tagged_jump, $unbox_jump_table, value(%rbp)
         return  %rax
 
 println:                        # value
@@ -279,11 +292,8 @@ eq:                             # x, y
 
 not:                            # x
         enter_fn
-        mov     $TRUE, %rax
-        cmp     %rdi, %rax
-        jne     1f
-        return  $FALSE
-1:      return  $TRUE
+        xor     $C_TRUE, %rdi
+        return %rdi
 
 tag:                            # tag value
         mov     $NAN_MASK, %rax
@@ -441,6 +451,30 @@ main:
 
         call_fn box_pointer, $strlen_name
         call_fn println, %rax
+
+        call_fn unbox, $TRUE
+        call_fn printf, $long_format, %rax
+        call_fn puts, $empty_string
+
+        call_fn unbox, $FALSE
+        call_fn printf, $long_format, %rax
+        call_fn puts, $empty_string
+
+        call_fn unbox, $NIL
+        call_fn printf, $long_format, %rax
+        call_fn puts, $empty_string
+
+        call_fn box_long, $-1
+        call_fn unbox, %rax
+        call_fn printf, $long_format, %rax
+        call_fn puts, $empty_string
+
+        call_fn unbox, PI
+        movq    %rax, %xmm0
+        mov     $1, %rax
+        mov     $double_format, %rdi
+        call    printf
+        call_fn puts, $empty_string
 
         return  $0
 
