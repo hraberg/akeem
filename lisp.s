@@ -102,13 +102,12 @@ cons:                           # car, cdr
         mov     %rdi, car(%rbp)
         mov     %rsi, cdr(%rbp)
         call_fn malloc, $pair_size
+        call_fn tag $TAG_PAIR, %rax
         mov     %rax, pair(%rbp)
 
         call_fn set_car, pair(%rbp), car(%rbp)
         call_fn set_cdr, pair(%rbp), cdr(%rbp)
-        mov     pair(%rbp), %rax
-        call_fn tag $TAG_PAIR, %rax
-        return  %rax
+        return  pair(%rbp)
 
 car:                            # pair
         mov     $PAYLOAD_MASK, %rax
@@ -178,8 +177,7 @@ pair_to_s:                      # pair
         call_fn fclose, stream(%rbp)
         return  str(%rbp)
 
-pair_length:                      # pair
-        enter_fn
+pair_length:                    # pair
         mov     %rdi, %rax
         xor     %rcx, %rcx
         mov     $NIL, %r11
@@ -191,21 +189,17 @@ pair_length:                      # pair
         jmp     1b
 2:
         call_fn box_long %rcx
-        return  %rax
+        ret
 
 unbox_long:                     # long
         mov     $PAYLOAD_SIGN, %rax
-        test    %rax, %rdi
-        jz      1f
-        mov     $PAYLOAD_MASK, %rax
-        and     %rax, %rdi
-        not     %rax
-        or      %rdi, %rax
-        ret
-1:      mov     $PAYLOAD_MASK, %rax
-        and     %rax, %rdi
-        mov     %rdi, %rax
-        ret
+        mov     $PAYLOAD_MASK, %r11
+        or      %r11, %rax
+        and     %rdi, %rax
+        jns     1f
+        not     %r11
+        or      %r11, %rax
+1:      ret
 
 unbox_pointer:                  # ptr
         mov     $PAYLOAD_MASK, %rax
@@ -270,7 +264,7 @@ to_s:                           # value
         call_fn tagged_jump, $to_s_jump_table, value(%rbp)
         return  %rax
 
-println:                            # value
+println:                        # value
         enter_fn
         call_fn to_s, %rdi
         call_fn puts, %rax
@@ -283,7 +277,7 @@ eq:                             # x, y
         return  $TRUE
 1:      return  $FALSE
 
-not:                             # x
+not:                            # x
         enter_fn
         mov     $TRUE, %rax
         cmp     %rdi, %rax
