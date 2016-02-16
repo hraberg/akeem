@@ -13,6 +13,8 @@
         .equ MAP_PRIVATE, 0x02
         .equ MAP_ANONYMOUS, 0x20
 
+        .equ POINTER_SIZE, 8
+
         .equ NAN_MASK, 0x7FF8000000000000
         .equ TAG_SHIFT, 47
         .equ TAG_MASK, 0xf << TAG_SHIFT
@@ -77,18 +79,18 @@ unbox_jump_table:
 
         .struct 0
 pair_car:
-        .struct pair_car + 8
+        .struct pair_car + POINTER_SIZE
 pair_cdr:
-        .struct pair_cdr + 8
+        .struct pair_cdr + POINTER_SIZE
 pair_size:
 
         .text
 
 allocate_code:                  # source_code, source_size
         enter_fn 3
-        .equ source_code, -24
-        .equ source_size, -16
-        .equ destination_code, -8
+        .equ source_code, -(POINTER_SIZE * 3)
+        .equ source_size, -(POINTER_SIZE * 2)
+        .equ destination_code, -POINTER_SIZE
         mov     %rdi, source_code(%rbp)
         mov     %rsi, source_size(%rbp)
         call_fn mmap, $NULL, $PAGE_SIZE, $(PROT_READ | PROT_WRITE), $(MAP_PRIVATE | MAP_ANONYMOUS), $-1, $0
@@ -100,9 +102,9 @@ allocate_code:                  # source_code, source_size
 
 cons:                           # car, cdr
         enter_fn 3
-        .equ car, -24
-        .equ cdr, -16
-        .equ pair, -8
+        .equ car, -(POINTER_SIZE * 3)
+        .equ cdr, -(POINTER_SIZE * 2)
+        .equ pair, -POINTER_SIZE
         mov     %rdi, car(%rbp)
         mov     %rsi, cdr(%rbp)
         call_fn malloc, $pair_size
@@ -137,10 +139,10 @@ set_cdr:                        # pair, x
 
 pair_to_s:                      # pair
         enter_fn 4
-        .equ stream, -32
-        .equ size, -24
-        .equ str, -16
-        .equ pair, -8
+        .equ stream, -(POINTER_SIZE * 4)
+        .equ size, -(POINTER_SIZE * 3)
+        .equ str, -(POINTER_SIZE * 2)
+        .equ pair, -POINTER_SIZE
         mov     %rdi, pair(%rbp)
 
         lea     str(%rbp), %rdi
@@ -192,6 +194,27 @@ pair_length:                    # pair
 2:      call_fn box_long, %rcx
         ret
 
+byte_array:                     # length
+        call_fn malloc, %rdi
+        call_fn box_pointer, %rdi
+        ret
+
+object_array:                   # length
+        imul    $POINTER_SIZE, %rdi
+        call_fn byte_array, %rdi
+        ret
+
+aget:                           # array, idx
+        call_fn unbox_pointer, %rdi
+        mov     (%rax,%rsi,POINTER_SIZE), %rax
+        ret
+
+aset:                           # array, idx, value
+        call_fn unbox_pointer, %rdi
+        mov     %rdx, (%rax,%rsi,POINTER_SIZE)
+        mov     %rdx, %rax
+        ret
+
 unbox_long:                     # long
         mov     $(PAYLOAD_SIGN | PAYLOAD_MASK), %rax
         and     %rax, %rdi
@@ -209,16 +232,17 @@ unbox_pointer:                  # ptr
 
 long_to_s:                      # long
         enter_fn 1
-        .equ str, -8
+        .equ str, -POINTER_SIZE
         call_fn unbox_long, %rdi
-        mov     %rax, %rdi
-        lea     str(%rbp), %rax
-        call_fn asprintf, %rax, $long_format, %rdi
+        mov     %rax, %rdx
+        xor     %rax, %rax
+        lea     str(%rbp), %rdi
+        call_fn asprintf, %rdi, $long_format, %rdx
         return  str(%rbp)
 
 double_to_s:                    # double
         enter_fn 1
-        .equ str, -8
+        .equ str, -POINTER_SIZE
         movq    %rdi, %xmm0
         mov     $1, %rax        # number of vector var arguments http://www.x86-64.org/documentation/abi.pdf p21
         lea     str(%rbp), %rdi
@@ -243,13 +267,13 @@ tagged_jump:                    # table, value
         mov     $TAG_MASK, %rax
         and     %rsi, %rax
         shr     $TAG_SHIFT, %rax
-        mov     (%rdi,%rax,8), %rax
+        mov     (%rdi,%rax,POINTER_SIZE), %rax
         call_fn *%rax, %rsi
         return  %rax
 
 to_s:                           # value
         enter_fn 1
-        .equ value, -8
+        .equ value, -POINTER_SIZE
         mov     %rdi, value(%rbp)
         call_fn is_double, value(%rbp)
         test    $C_TRUE, %rax
@@ -261,7 +285,7 @@ to_s:                           # value
 
 unbox:                          # value
         enter_fn 1
-        .equ value, -8
+        .equ value, -POINTER_SIZE
         mov     %rdi, value(%rbp)
         call_fn is_double, value(%rbp)
         test    $C_TRUE, %rax
@@ -464,6 +488,17 @@ main:
         mov     $double_format, %rdi
         call    printf
         call_fn puts, $empty_string
+
+        call_fn object_array, $2
+        mov     %rax, %r11
+        call_fn box_long, $16
+        call_fn aset, %r11, $0, %rax
+        call_fn aset, %r11, $1, PI
+
+        call_fn aget, %r11, $0
+        call_fn println, %rax
+        call_fn aget, %r11, $1
+        call_fn println, %rax
 
         return  $0
 
