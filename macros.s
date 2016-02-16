@@ -5,23 +5,23 @@
         .endm
 
         .macro call_fn fn arg1 arg2 arg3 arg4 arg5 arg6
-        .ifnb \arg1
-        mov    \arg1, %rdi
-        .endif
-        .ifnb \arg2
-        mov    \arg2, %rsi
-        .endif
-        .ifnb \arg3
-        mov    \arg3, %rdx
-        .endif
-        .ifnb \arg4
-        mov    \arg4, %rcx
+        .ifnb \arg6
+        mov   \arg6, %r9
         .endif
         .ifnb \arg5
         mov    \arg5, %r8
         .endif
-        .ifnb \arg6
-        mov   \arg6, %r9
+        .ifnb \arg4
+        mov    \arg4, %rcx
+        .endif
+        .ifnb \arg3
+        mov    \arg3, %rdx
+        .endif
+        .ifnb \arg2
+        mov    \arg2, %rsi
+        .endif
+        .ifnb \arg1
+        mov    \arg1, %rdi
         .endif
         call \fn
         .endm

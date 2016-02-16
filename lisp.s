@@ -114,28 +114,24 @@ cons:                           # car, cdr
         return  pair(%rbp)
 
 car:                            # pair
-        mov     $PAYLOAD_MASK, %rax
-        and     %rax, %rdi
-        mov     pair_car(%rdi), %rax
+        call_fn unbox_pointer, %rdi
+        mov     pair_car(%rax), %rax
         ret
 
 cdr:                            # pair
-        mov     $PAYLOAD_MASK, %rax
-        and     %rax, %rdi
-        mov     pair_cdr(%rdi), %rax
+        call_fn unbox_pointer, %rdi
+        mov     pair_cdr(%rax), %rax
         ret
 
 set_car:                        # pair, x
-        mov     $PAYLOAD_MASK, %rax
-        and     %rax, %rdi
-        mov     %rsi, pair_car(%rdi)
+        call_fn unbox_pointer, %rdi
+        mov     %rsi, pair_car(%rax)
         mov     %rsi, %rax
         ret
 
 set_cdr:                        # pair, x
-        mov     $PAYLOAD_MASK, %rax
-        and     %rax, %rdi
-        mov     %rsi, pair_cdr(%rdi)
+        call_fn unbox_pointer, %rdi
+        mov     %rsi, pair_cdr(%rax)
         mov     %rsi, %rax
         ret
 
@@ -212,13 +208,12 @@ unbox_pointer:                  # ptr
         ret
 
 long_to_s:                      # long
-        enter_fn 2
-        .equ long, -16
+        enter_fn 1
         .equ str, -8
         call_fn unbox_long, %rdi
-        mov     %rax, long(%rbp)
+        mov     %rax, %rdi
         lea     str(%rbp), %rax
-        call_fn asprintf, %rax, $long_format, long(%rbp)
+        call_fn asprintf, %rax, $long_format, %rdi
         return  str(%rbp)
 
 double_to_s:                    # double
@@ -291,7 +286,7 @@ not:                            # x
         xor     $C_TRUE, %rdi
         mov     %rdi, %rax
         ret
-tag:                            # tag value
+tag:                            # tag, value
         mov     $NAN_MASK, %rax
         or      %rsi, %rax
         or      %rdi, %rax
@@ -305,8 +300,7 @@ has_tag:                        # tag, value
 
 box_boolean:                    # value
         and     $C_TRUE, %rdi
-        mov     %rdi, %rsi
-        call_fn tag, $TAG_BOOLEAN, %rsi
+        call_fn tag, $TAG_BOOLEAN, %rdi
         ret
 
 box_long:                       # value
@@ -323,18 +317,15 @@ box_pointer:                    # value
         ret
 
 is_long:                        # value
-        mov     %rdi, %rax
-        call_fn has_tag, $TAG_LONG, %rax
+        call_fn has_tag, $TAG_LONG, %rdi
         ret
 
 is_pointer:                     # value
-        mov     %rdi, %rax
-        call_fn has_tag, $TAG_POINTER, %rax
+        call_fn has_tag, $TAG_POINTER, %rdi
         ret
 
 is_boolean:                     # value
-        mov     %rdi, %rax
-        call_fn has_tag, $TAG_BOOLEAN, %rax
+        call_fn has_tag, $TAG_BOOLEAN, %rdi
         ret
 
 is_nil:                         # value
@@ -342,8 +333,7 @@ is_nil:                         # value
         ret
 
 is_pair:                        # value
-        mov     %rdi, %rax
-        call_fn has_tag, $TAG_PAIR, %rax
+        call_fn has_tag, $TAG_PAIR, %rdi
         ret
 
 is_double:                      # value
