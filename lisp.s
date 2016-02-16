@@ -155,8 +155,7 @@ pair_to_s:                      # pair
         mov     %rax, stream(%rbp)
 
         call_fn fputc, $'(, stream(%rbp)
-1:
-        mov     $NIL, %r11
+1:      mov     $NIL, %r11
         cmp     %r11, pair(%rbp)
         je      2f
         call_fn car, pair(%rbp)
@@ -175,8 +174,7 @@ pair_to_s:                      # pair
         call_fn fputc, $' , stream(%rbp)
         call_fn to_s, pair(%rbp)
         call_fn fprintf, stream(%rbp), %rax
-2:
-        call_fn fputc, $'), stream(%rbp)
+2:      call_fn fputc, $'), stream(%rbp)
         call_fn fclose, stream(%rbp)
         return  str(%rbp)
 
@@ -184,25 +182,23 @@ pair_length:                    # pair
         mov     %rdi, %rax
         xor     %rcx, %rcx
         mov     $NIL, %r11
-1:
-        cmp     %r11, %rax
+1:      cmp     %r11, %rax
         je      2f
         call_fn cdr, %rax
         inc     %rcx
         jmp     1b
-2:
-        call_fn box_long %rcx
+2:      call_fn box_long %rcx
         ret
 
 unbox_long:                     # long
-        mov     $PAYLOAD_SIGN, %rax
-        mov     $PAYLOAD_MASK, %r11
-        or      %r11, %rax
-        and     %rdi, %rax
+        mov     $(PAYLOAD_SIGN | PAYLOAD_MASK), %rax
+        and     %rax, %rdi
         jns     1f
-        not     %r11
-        or      %r11, %rax
-1:      ret
+        not     %rax
+        or      %rdi, %rax
+        ret
+1:      mov     %rdi, %rax
+        ret
 
 unbox_pointer:                  # ptr
         mov     $PAYLOAD_MASK, %rax
@@ -261,8 +257,7 @@ to_s:                           # value
         jz      1f
         call_fn double_to_s, value(%rbp)
         return  %rax
-1:
-        call_fn tagged_jump, $to_s_jump_table, value(%rbp)
+1:      call_fn tagged_jump, $to_s_jump_table, value(%rbp)
         return  %rax
 
 unbox:                          # value
@@ -273,8 +268,7 @@ unbox:                          # value
         test    $C_TRUE, %rax
         jz      1f
         return  value(%rbp)
-1:
-        call_fn tagged_jump, $unbox_jump_table, value(%rbp)
+1:      call_fn tagged_jump, $unbox_jump_table, value(%rbp)
         return  %rax
 
 println:                        # value
@@ -313,9 +307,7 @@ box_boolean:                    # value
 
 box_long:                       # value
         enter_fn
-        mov     $PAYLOAD_MASK, %rax
-        mov     $PAYLOAD_SIGN, %rsi
-        or      %rsi, %rax
+        mov     $(PAYLOAD_SIGN | PAYLOAD_MASK), %rax
         and     %rdi, %rax
         call_fn tag, $TAG_LONG, %rax
         return %rax
