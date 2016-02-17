@@ -1,6 +1,8 @@
 CFLAGS += -rdynamic -ldl
 
-%.o:  %.s
+default: repl
+
+.s.o:
 	as --64 $< -o $@
 
 tests: tests.o lisp.o
