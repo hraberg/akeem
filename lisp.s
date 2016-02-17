@@ -1,77 +1,17 @@
+        .include "constants.s"
         .include "macros.s"
 
-        .equ NULL, 0
-        .equ PAGE_SIZE, 4096
-
-        ## dlfcn.h
-        .equ RTLD_DEFAULT, 0
-
-        ## sys/mman.h
-        .equ PROT_READ, 0x1
-        .equ PROT_WRITE, 0x2
-        .equ PROT_EXEC, 0x4
-        .equ MAP_PRIVATE, 0x02
-        .equ MAP_ANONYMOUS, 0x20
-
-        .equ POINTER_SIZE, 8
-
-        .equ NAN_MASK, 0x7FF8000000000000
-        .equ TAG_SHIFT, 47
-        .equ TAG_MASK, 0xf << TAG_SHIFT
-
-        .equ PAYLOAD_MASK, (1 << TAG_SHIFT) - 1
-        .equ PAYLOAD_SIGN, 1 << 63
-
-        .equ TAG_LONG, 1 << TAG_SHIFT
-        .equ TAG_POINTER, 2 << TAG_SHIFT
-        .equ TAG_BOOLEAN, 3 << TAG_SHIFT
-        .equ TAG_NIL, 4 << TAG_SHIFT
-        .equ TAG_PAIR, 5 << TAG_SHIFT
-
-        .equ C_TRUE, 1
-        .equ TRUE, (NAN_MASK | TAG_BOOLEAN | C_TRUE)
-        .equ FALSE, (NAN_MASK | TAG_BOOLEAN)
-        .equ NIL, (NAN_MASK | TAG_NIL)
-
         .data
-PI:
-        .double 3.14159
-E:
-        .double 2.71828
-
-strlen_name:
-        .string "strlen"
-allocate_code_name:
-        .string "allocate_code"
-
 long_format:
         .string "%ld"
 double_format:
         .string "%lf"
-empty_string:
-        .string ""
 true_string:
         .string "true"
 false_string:
         .string "false"
 nil_string:
         .string "nil"
-
-example_code:
-        mov     %rdi, %rax
-        add     $4, %rax
-        ret
-        .equ example_code_size, (. - example_code)
-        assert_equals 8, example_code_size
-
-enter_fn_code:
-        push    %rbp
-        mov     %rsp, %rbp
-        sub     $0, %rsp
-        .equ enter_fn_code_size, (. - enter_fn_code)
-        .equ enter_fn_locals_index, (enter_fn_code_size - 1)
-        assert_equals 8, enter_fn_code_size
-        assert_equals 7, enter_fn_locals_index
 
 to_s_jump_table:
         .quad   0, long_to_s, unbox_pointer, boolean_to_s, nil_to_s, pair_to_s
@@ -302,6 +242,12 @@ println:                        # value
         call_fn puts, %rax
         return  $NIL
 
+print:                          # value
+        enter_fn
+        call_fn to_s, %rdi
+        call_fn printf, %rax
+        return  $NIL
+
 eq:                             # x, y
         xor     %rax, %rax
         cmp     %rdi, %rsi
@@ -369,142 +315,5 @@ is_double:                      # value
         call_fn box_boolean, %rax
         ret
 
-main:
-        enter_fn 1
-        .equ array, -POINTER_SIZE
-        call_fn dlsym, $RTLD_DEFAULT, $strlen_name
-        call_fn *%rax, $long_format
-        call_fn box_long, %rax
-        call_fn println, %rax
-
-        call_fn dlsym, $RTLD_DEFAULT, $allocate_code_name
-        call_fn *%rax, $example_code, $example_code_size
-        call_fn *%rax, $2
-        call_fn box_long, %rax
-        call_fn println, %rax
-
-        call_fn cons, $1, $NIL
-        call_fn is_pair, %rax
-        call_fn println, %rax
-
-        call_fn cons, $1, $NIL
-        call_fn is_long, %rax
-        call_fn println, %rax
-
-        call_fn box_long, $3
-        call_fn cons, %rax, $NIL
-        mov     %rax, %r11
-        call_fn box_long, $2
-        call_fn cons, %rax, %r11
-        mov     %rax, %r11
-        call_fn box_long, $1
-        call_fn cons, %rax, %r11
-        call_fn println, %rax
-
-        call_fn cons, $3, $NIL
-        call_fn cons, $2, %rax
-        call_fn cons, $1, %rax
-        call_fn pair_length, %rax
-        call_fn println, %rax
-
-        call_fn box_long, $2
-        mov     %rax, %r11
-        call_fn box_long, $4
-        call_fn cons, %rax, %r11
-        call_fn println, %rax
-
-        call_fn box_long, $42
-        call_fn println, %rax
-
-        call_fn box_long, $3
-        call_fn println, %rax
-
-        call_fn box_long, $1
-        call_fn is_long, %rax
-        call_fn println, %rax
-
-        call_fn box_long, $1
-        call_fn is_boolean, %rax
-        call_fn println, %rax
-
-        call_fn tag, $TAG_POINTER, $1
-        call_fn is_long, %rax
-        call_fn println, %rax
-
-        call_fn println, $TRUE
-        call_fn println, $FALSE
-
-        call_fn is_boolean, $FALSE
-        call_fn println, %rax
-
-        call_fn println, $NIL
-        call_fn println, $TRUE
-
-        call_fn is_double, PI
-        call_fn println, %rax
-
-        call_fn is_double, $TRUE
-        call_fn println, %rax
-
-        call_fn box_long, $42
-        call_fn println, %rax
-
-        call_fn box_long, $-1
-        call_fn println, %rax
-
-        call_fn box_long, $-1
-        call_fn is_double, %rax
-        call_fn println, %rax
-
-        call_fn box_long, $-1
-        call_fn is_long, %rax
-        call_fn println, %rax
-
-        call_fn box_long, $0
-        call_fn println, %rax
-
-        call_fn println, PI
-        call_fn println, PI
-
-        call_fn box_pointer, $strlen_name
-        call_fn println, %rax
-
-        call_fn unbox, $TRUE
-        call_fn printf, $long_format, %rax
-        call_fn puts, $empty_string
-
-        call_fn unbox, $FALSE
-        call_fn printf, $long_format, %rax
-        call_fn puts, $empty_string
-
-        call_fn unbox, $NIL
-        call_fn printf, $long_format, %rax
-        call_fn puts, $empty_string
-
-        call_fn box_long, $-1
-        call_fn unbox, %rax
-        call_fn printf, $long_format, %rax
-        call_fn puts, $empty_string
-
-        call_fn unbox, PI
-        movq    %rax, %xmm0
-        mov     $1, %rax
-        mov     $double_format, %rdi
-        call    printf
-        call_fn puts, $empty_string
-
-        call_fn object_array, $2
-        mov     %rax, array(%rbp)
-
-        call_fn box_long, $16
-        call_fn aset, array(%rbp), $0, E
-        call_fn aset, array(%rbp), $1, PI
-
-        call_fn aget, array(%rbp), $0
-        call_fn println, %rax
-        call_fn aget, array(%rbp), $1
-        call_fn println, %rax
-
-        return  $0
-
-        .globl main, allocate_code
+        .globl allocate_code, cons, car, cdr, pair_length, print, println, box_long, box_pointer, is_long, is_boolean,
+        .globl is_double, is_pair, unbox, tag, aget, aset, object_array, long_format, double_format
