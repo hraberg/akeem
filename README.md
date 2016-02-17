@@ -2,7 +2,7 @@
 
 A small JIT-ed Lisp written in x86-64 assembler experiment.
 
-Name to change.
+Name to change. Only tested on Linux. Written in GNU Assembler.
 
 ## References
 
@@ -10,6 +10,7 @@ Name to change.
 
 * http://ref.x86asm.net/coder64-abc.html
 * http://www.x86-64.org/documentation/abi.pdf
+* https://sourceware.org/binutils/docs/as/
 * http://rayseyfarth.com/asm/
 * http://bob.cs.sonoma.edu/IntroCompOrg/book.html
 * http://www.agner.org/optimize/
