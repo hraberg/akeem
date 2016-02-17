@@ -22,3 +22,5 @@ Name to change. Only tested on Linux. Written in GNU Assembler.
 * http://scheme2006.cs.uchicago.edu/11-ghuloum.pdf
 * http://library.readscheme.org/page1.html
 * http://trac.sacrideo.us/wg/raw-attachment/wiki/WikiStart/r7rs.pdf
+* https://github.com/kanaka/mal
+* http://shenlanguage.org/
