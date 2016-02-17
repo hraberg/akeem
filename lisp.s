@@ -192,11 +192,10 @@ double_to_s:                    # double
         return  str(%rbp)
 
 boolean_to_s:
-        test    $C_TRUE, %rdi
-        jz      1f
         mov     $true_string, %rax
-        ret
-1:      mov     $false_string, %rax
+        mov     $false_string, %r11
+        test    $C_TRUE, %rdi
+        cmovz   %r11, %rax
         ret
 
 nil_to_s:
