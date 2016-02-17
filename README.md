@@ -13,6 +13,7 @@ Name to change.
 * http://rayseyfarth.com/asm/
 * http://bob.cs.sonoma.edu/IntroCompOrg/book.html
 * http://www.agner.org/optimize/
+* http://github.com/nineties/amber
 
 ### Lisp
 
