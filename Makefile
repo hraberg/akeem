@@ -17,7 +17,7 @@ run-tests: tests
 	sudo apt-get install -y rlwrap
 
 run-repl: repl /usr/bin/rlwrap
-	@rlwrap -n ./$<
+	@rlwrap -n -pBlue -m ./$<
 
 /usr/bin/entr:
 	sudo apt-get install -y entr
