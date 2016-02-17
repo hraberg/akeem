@@ -199,7 +199,7 @@ boolean_to_s:
         ret
 
 nil_to_s:
-        mov $nil_string, %rax
+        mov     $nil_string, %rax
         ret
 
 tagged_jump:                    # table, value
