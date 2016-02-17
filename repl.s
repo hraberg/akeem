@@ -5,7 +5,7 @@
 welcome_message:
         .string "Welcome to ASM Lisp!"
 prompt:
-        .string " > "
+        .string "> "
 line_format:
         .string "%as"
 
