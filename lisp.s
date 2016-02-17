@@ -159,12 +159,11 @@ aset:                           # array, idx, value
 
 unbox_long:                     # long
         mov     $(PAYLOAD_SIGN | PAYLOAD_MASK), %rax
+        mov     $-1, %r11
         and     %rax, %rdi
-        jns     1f
+        cmovns  %r11, %rax
         not     %rax
         or      %rdi, %rax
-        ret
-1:      mov     %rdi, %rax
         ret
 
 unbox_pointer:                  # ptr
