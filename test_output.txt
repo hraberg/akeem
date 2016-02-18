@@ -22,6 +22,7 @@ false
 false
 true
 0
+0.000000
 3.141590
 3.141590
 strlen

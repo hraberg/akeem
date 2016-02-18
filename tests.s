@@ -8,6 +8,8 @@ PI:
         .double 3.14159
 E:
         .double 2.71828
+ZERO:
+        .double 0.0
 PLUS_ONE:
         .double 1.0
 MINUS_ONE:
@@ -119,6 +121,7 @@ main:
 
         call_fn box_int, $0
         call_fn println, %rax
+        call_fn println, ZERO
 
         call_fn println, PI
         call_fn println, PI
