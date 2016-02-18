@@ -302,7 +302,12 @@ is_pair:                        # value
         ret
 
 is_double:                      # value
-        movq    %rdi, %xmm0
+        mov     $NAN_MASK, %rax
+        cmp     %rax, %rdi
+        jne     1f
+        mov     $TRUE, %rax
+        ret
+1:      movq    %rdi, %xmm0
         call_fn isnan
         not     %rax
         call_fn box_boolean, %rax

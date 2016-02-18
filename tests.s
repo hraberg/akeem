@@ -124,7 +124,7 @@ main:
         call_fn println, ZERO
 
         call_fn println, PI
-        call_fn println, PI
+        call_fn println, $NAN_MASK
 
         call_fn box_pointer, $strlen_name
         call_fn println, %rax

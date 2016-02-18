@@ -25,6 +25,7 @@
         .equ TAG_BOOLEAN, 3 << TAG_SHIFT
         .equ TAG_NIL, 4 << TAG_SHIFT
         .equ TAG_PAIR, 5 << TAG_SHIFT
+        .equ TAG_NAN, 8 << TAG_SHIFT
 
         .equ C_TRUE, 1
         .equ TRUE, (NAN_MASK | TAG_BOOLEAN | C_TRUE)
