@@ -24,9 +24,9 @@ add_jump_table:
 
         .struct 0
 pair_car:
-        .struct pair_car + POINTER_SIZE
+        .struct . + POINTER_SIZE
 pair_cdr:
-        .struct pair_cdr + POINTER_SIZE
+        .struct . + POINTER_SIZE
 pair_size:
 
         .text
