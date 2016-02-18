@@ -326,8 +326,19 @@ add:                            # x, y
         enter_fn 2
         .equ x, -POINTER_SIZE
         .equ y, -(POINTER_SIZE * 2)
-        movq    %rdi, %xmm0
-        movq    %rsi, %xmm1
+        mov     %rdi, x(%rbp)
+        mov     %rsi, y(%rbp)
+        call_fn is_int, x(%rbp)
+        test    $C_TRUE, %rax
+1:      call_fn is_int, y(%rbp)
+        test    $C_TRUE, %rax
+        jz      3f
+2:      mov     x(%rbp), %eax
+        add     y(%rbp), %eax
+        call_fn box_int, %rax
+        return  %rax
+3:      movq    x(%rbp), %xmm0
+        movq    y(%rbp), %xmm1
         addsd   %xmm0, %xmm1
         return  %xmm1
 

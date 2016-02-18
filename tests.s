@@ -179,6 +179,11 @@ main:
         call_fn add, PI, E
         call_fn println, %rax
 
+        call_fn box_int, $16
+        mov     %rax, %r11
+        call_fn add, %rax, %r11
+        call_fn println, %rax
+
         return  $0
 
         .globl main
