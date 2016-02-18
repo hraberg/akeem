@@ -344,8 +344,8 @@ add_double_int:
 add_double_double:
         movq    %rdi, %xmm0
         movq    %rsi, %xmm1
-1:      addsd   %xmm0, %xmm1
-        movq    %xmm1, %rax
+1:      addsd   %xmm1, %xmm0
+        movq    %xmm0, %rax
         ret
 
         .globl allocate_code, cons, car, cdr, pair_length, print, println, box_int, box_pointer, is_int, is_boolean,
