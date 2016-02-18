@@ -70,14 +70,14 @@
 
         .macro tagged_jump table
         enter_fn
-        mov     %rdi, %rbx
+        push    %rdi
         call    is_double
-        mov     %rbx, %rdi
+        pop     %rdi
         xor     %r11, %r11
         test    $C_TRUE, %rax
-        cmovnz  %r11, %rbx
+        cmovz   %rdi, %r11
         mov     $TAG_MASK, %rax
-        and     %rbx, %rax
+        and     %r11, %rax
         shr     $TAG_SHIFT, %rax
         call    *\table(,%rax,POINTER_SIZE)
         return
