@@ -307,9 +307,20 @@ is_double:                      # value
         ret
 
 neg:
-        neg     %edi
-        call_fn box_int, %rdi
-        ret
+        enter_fn 1
+        .equ value, -POINTER_SIZE
+        mov     %rdi, value(%rbp)
+        call_fn is_int, value(%rbp)
+        test    $C_TRUE, %rax
+        jz      1f
+        mov     value(%rbp), %rax
+        neg     %eax
+        call_fn box_int, %rax
+        return  %rax
+1:      mov     value(%rbp), %rax
+        mov     $SIGN_BIT, %r11
+        xor     %r11, %rax
+        return  %rax
 
         .globl allocate_code, cons, car, cdr, pair_length, print, println, box_int, box_pointer, is_int, is_boolean,
         .globl is_double, is_pair, unbox, tag, aget, aset, object_array, int_format, double_format, neg

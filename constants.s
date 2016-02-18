@@ -18,7 +18,7 @@
         .equ TAG_MASK, 0xf << TAG_SHIFT
 
         .equ PAYLOAD_MASK, (1 << TAG_SHIFT) - 1
-        .equ PAYLOAD_SIGN, 1 << 63
+        .equ SIGN_BIT, 1 << 63
 
         .equ TAG_INT, 1 << TAG_SHIFT
         .equ TAG_POINTER, 2 << TAG_SHIFT

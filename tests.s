@@ -8,6 +8,10 @@ PI:
         .double 3.14159
 E:
         .double 2.71828
+PLUS_ONE:
+        .double 1.0
+MINUS_ONE:
+        .double -1
 
 strlen_name:
         .string "strlen"
@@ -164,6 +168,12 @@ main:
 
         call_fn box_int, $-1
         call_fn neg, %rax
+        call_fn println, %rax
+
+        call_fn neg, PLUS_ONE
+        call_fn println, %rax
+
+        call_fn neg, MINUS_ONE
         call_fn println, %rax
 
         return  $0
