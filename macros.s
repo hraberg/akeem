@@ -1,3 +1,5 @@
+        .include "constants.s"
+
         .macro assert_equals expected actual
         .if (\expected != \actual)
         .error "Assertion failed: \expected \actual"
@@ -40,6 +42,21 @@
         .endif
         leave
         ret
+        .endm
+
+        .macro is_int_internal value
+        mov     $TAG_MASK, %r11
+        and     \value, %r11
+        mov     $TAG_INT, %rax
+        cmp     %rax, %r11
+        sete    %al
+        and     $C_TRUE, %rax
+        .endm
+
+        .macro box_int_internal value
+        mov     \value, %eax
+        mov     $(NAN_MASK | TAG_INT), %r11
+        or      %r11, %rax
         .endm
 
         .macro arraycopy from to size

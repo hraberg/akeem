@@ -309,57 +309,44 @@ is_double:                      # value
         ret
 
 neg:                            # value
-        enter_fn 1
-        .equ value, -POINTER_SIZE
-        mov     %rdi, value(%rbp)
-        call_fn is_int, value(%rbp)
-        and     $C_TRUE, %rax
+        is_int_internal %rdi
         jmp     *neg_jump_table(,%rax,POINTER_SIZE)
 neg_int:
-        mov     value(%rbp), %rax
-        neg     %eax
-        call_fn box_int, %rax
-        return  %rax
+        neg     %edi
+        box_int_internal %edi
+        ret
 neg_double:
-        mov     value(%rbp), %rax
+        mov     %rdi, %rax
         mov     $SIGN_BIT, %r11
         xor     %r11, %rax
-        return  %rax
+        ret
 
 add:                            # x, y
-        enter_fn 2
-        .equ x, -(POINTER_SIZE * 2)
-        .equ y, -POINTER_SIZE
-        mov     %rdi, x(%rbp)
-        mov     %rsi, y(%rbp)
-        call_fn is_int, x(%rbp)
-        and     $C_TRUE, %rax
-        mov     %rax, %r11
-        call_fn is_int, y(%rbp)
-        and     $C_TRUE, %rax
+        is_int_internal %rdi
+        mov     %rax, %rbx
+        is_int_internal %rsi
         shl     $1, %rax
-        or      %r11, %rax
+        or      %rbx, %rax
         jmp     *add_jump_table(,%rax,POINTER_SIZE)
 add_int_int:
-        mov     x(%rbp), %eax
-        add     y(%rbp), %eax
-        call_fn box_int, %rax
-        return  %rax
+        mov     %edi, %eax
+        add     %esi, %eax
+        box_int_internal %eax
+        ret
 add_int_double:
-        mov     x(%rbp), %eax
-        cvtsi2sd %rax, %xmm0
-        movq    y(%rbp), %xmm1
+        cvtsi2sd %edi, %xmm0
+        movq     %rsi, %xmm1
         jmp     1f
 add_double_int:
-        movq    x(%rbp), %xmm0
-        mov     y(%rbp), %eax
-        cvtsi2sd %rax, %xmm1
+        movq     %rdi, %xmm0
+        cvtsi2sd %esi, %xmm1
         jmp     1f
 add_double_double:
-        movq    x(%rbp), %xmm0
-        movq    y(%rbp), %xmm1
+        movq    %rdi, %xmm0
+        movq    %rsi, %xmm1
 1:      addsd   %xmm0, %xmm1
-        return  %xmm1
+        movq    %xmm1, %rax
+        ret
 
         .globl allocate_code, cons, car, cdr, pair_length, print, println, box_int, box_pointer, is_int, is_boolean,
         .globl is_double, is_pair, unbox, tag, aget, aset, object_array, int_format, double_format, neg, add
