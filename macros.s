@@ -44,6 +44,15 @@
         ret
         .endm
 
+        .macro unbox_int_internal int
+        movsx   \int, %rax
+        .endm
+
+        .macro unbox_pointer_internal ptr
+        mov     $PAYLOAD_MASK, %rax
+        and     \ptr, %rax
+        .endm
+
         .macro is_int_internal value tmp=%r11
         mov     $TAG_MASK, \tmp
         and     \value, \tmp

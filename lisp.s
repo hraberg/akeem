@@ -16,7 +16,7 @@ nil_string:
 to_s_jump_table:
         .quad   0, int_to_s, unbox_pointer, boolean_to_s, nil_to_s, pair_to_s
 unbox_jump_table:
-        .quad   0, unbox_int, unbox_pointer, unbox_pointer, unbox_pointer, unbox_pointer
+        .quad   0, unbox_int, unbox_pointer, unbox_boolean, unbox_nil, unbox_pointer
 neg_jump_table:
         .quad   neg_double, neg_int
 add_jump_table:
@@ -61,23 +61,23 @@ cons:                           # car, cdr
         return  pair(%rbp)
 
 car:                            # pair
-        call_fn unbox_pointer, %rdi
+        unbox_pointer_internal %rdi
         mov     pair_car(%rax), %rax
         ret
 
 cdr:                            # pair
-        call_fn unbox_pointer, %rdi
+        unbox_pointer_internal %rdi
         mov     pair_cdr(%rax), %rax
         ret
 
 set_car:                        # pair, x
-        call_fn unbox_pointer, %rdi
+        unbox_pointer_internal %rdi
         mov     %rsi, pair_car(%rax)
         mov     %rsi, %rax
         ret
 
 set_cdr:                        # pair, x
-        call_fn unbox_pointer, %rdi
+        unbox_pointer_internal %rdi
         mov     %rsi, pair_cdr(%rax)
         mov     %rsi, %rax
         ret
@@ -150,24 +150,42 @@ object_array:                   # length
         ret
 
 aget:                           # array, idx
-        call_fn unbox_pointer, %rdi
+        unbox_pointer_internal %rdi
         mov     (%rax,%rsi,POINTER_SIZE), %rax
         ret
 
 aset:                           # array, idx, value
-        call_fn unbox_pointer, %rdi
+        unbox_pointer_internal %rdi
         mov     %rdx, (%rax,%rsi,POINTER_SIZE)
         mov     %rdx, %rax
         ret
 
 unbox_int:                      # int
-        movsx   %edi, %rax
+        mov     %edi, %eax
+        ret
+
+unbox_boolean:                  # boolean
+        mov     %edi, %eax
+        ret
+
+unbox_nil:                      # nil
+        mov     $NULL, %rax
         ret
 
 unbox_pointer:                  # ptr
-        mov     $PAYLOAD_MASK, %rax
-        and     %rdi, %rax
+        unbox_pointer_internal %rdi
         ret
+
+unbox:                          # value
+        enter_fn 1
+        .equ value, -POINTER_SIZE
+        mov     %rdi, value(%rbp)
+        call_fn is_double, value(%rbp)
+        test    $C_TRUE, %rax
+        jz      1f
+        return  value(%rbp)
+1:      tagged_jump unbox_jump_table, value(%rbp)
+        return  %rax
 
 int_to_s:                       # int
         enter_fn 1
@@ -196,7 +214,7 @@ boolean_to_s:
         cmovz   %r11, %rax
         ret
 
-nil_to_s:
+nil_to_s:                       # nil
         mov     $nil_string, %rax
         ret
 
@@ -210,17 +228,6 @@ to_s:                           # value
         call_fn double_to_s, value(%rbp)
         return  %rax
 1:      tagged_jump to_s_jump_table, value(%rbp)
-        return  %rax
-
-unbox:                          # value
-        enter_fn 1
-        .equ value, -POINTER_SIZE
-        mov     %rdi, value(%rbp)
-        call_fn is_double, value(%rbp)
-        test    $C_TRUE, %rax
-        jz      1f
-        return  value(%rbp)
-1:      tagged_jump unbox_jump_table, value(%rbp)
         return  %rax
 
 println:                        # value
