@@ -13,7 +13,9 @@ ZERO:
 PLUS_ONE:
         .double 1.0
 MINUS_ONE:
-        .double -1
+        .double -1.0
+NAN:
+        .quad NAN_MASK
 
 strlen_name:
         .string "strlen"
@@ -124,7 +126,7 @@ main:
         call_fn println, ZERO
 
         call_fn println, PI
-        call_fn println, $NAN_MASK
+        call_fn println, NAN
 
         call_fn box_pointer, $strlen_name
         call_fn println, %rax
@@ -177,6 +179,13 @@ main:
         call_fn println, %rax
 
         call_fn neg, MINUS_ONE
+        call_fn println, %rax
+
+        call_fn is_double, PLUS_ONE
+        call_fn println, %rax
+        call_fn is_double, MINUS_ONE
+        call_fn println, %rax
+        call_fn is_double, NAN
         call_fn println, %rax
 
         call_fn box_int, $16
