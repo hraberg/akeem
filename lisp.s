@@ -306,7 +306,7 @@ is_double:                      # value
         call_fn box_boolean, %rax
         ret
 
-neg:
+neg:                            # value
         enter_fn 1
         .equ value, -POINTER_SIZE
         mov     %rdi, value(%rbp)
