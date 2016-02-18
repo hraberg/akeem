@@ -15,9 +15,10 @@ nil_string:
 
 to_s_jump_table:
         .quad   0, int_to_s, unbox_pointer, boolean_to_s, nil_to_s, pair_to_s
-
 unbox_jump_table:
         .quad   0, unbox_int, unbox_pointer, unbox_pointer, unbox_pointer, unbox_pointer
+add_jump_table:
+        .quad   add_double_double, add_int_double, add_double_int, add_int_int
 
         .struct 0
 pair_car:
@@ -324,22 +325,37 @@ neg:                            # value
 
 add:                            # x, y
         enter_fn 2
-        .equ x, -POINTER_SIZE
-        .equ y, -(POINTER_SIZE * 2)
+        .equ x, -(POINTER_SIZE * 2)
+        .equ y, -POINTER_SIZE
         mov     %rdi, x(%rbp)
         mov     %rsi, y(%rbp)
         call_fn is_int, x(%rbp)
-        test    $C_TRUE, %rax
-1:      call_fn is_int, y(%rbp)
-        test    $C_TRUE, %rax
-        jz      3f
-2:      mov     x(%rbp), %eax
+        and     $C_TRUE, %rax
+        mov     %rax, %r11
+        call_fn is_int, y(%rbp)
+        and     $C_TRUE, %rax
+        shl     $1, %rax
+        or      %r11, %rax
+        jmp     *add_jump_table(,%rax,POINTER_SIZE)
+add_int_int:
+        mov     x(%rbp), %eax
         add     y(%rbp), %eax
         call_fn box_int, %rax
         return  %rax
-3:      movq    x(%rbp), %xmm0
+add_int_double:
+        mov     x(%rbp), %eax
+        cvtsi2sd %rax, %xmm0
         movq    y(%rbp), %xmm1
-        addsd   %xmm0, %xmm1
+        jmp     1f
+add_double_int:
+        movq    x(%rbp), %xmm0
+        mov     y(%rbp), %eax
+        cvtsi2sd %rax, %xmm1
+        jmp     1f
+add_double_double:
+        movq    x(%rbp), %xmm0
+        movq    y(%rbp), %xmm1
+1:      addsd   %xmm0, %xmm1
         return  %xmm1
 
         .globl allocate_code, cons, car, cdr, pair_length, print, println, box_int, box_pointer, is_int, is_boolean,

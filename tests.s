@@ -176,12 +176,20 @@ main:
         call_fn neg, MINUS_ONE
         call_fn println, %rax
 
-        call_fn add, PI, E
-        call_fn println, %rax
-
         call_fn box_int, $16
         mov     %rax, %r11
         call_fn add, %rax, %r11
+        call_fn println, %rax
+
+        call_fn add, PI, E
+        call_fn println, %rax
+
+        call_fn box_int, $1
+        call_fn add, %rax, PI
+        call_fn println, %rax
+
+        call_fn box_int, $2
+        call_fn add, PI, %rax
         call_fn println, %rax
 
         return  $0
