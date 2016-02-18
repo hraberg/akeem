@@ -2,8 +2,8 @@
         .include "macros.s"
 
         .data
-long_format:
-        .string "%ld"
+int_format:
+        .string "%d"
 double_format:
         .string "%lf"
 true_string:
@@ -14,10 +14,10 @@ nil_string:
         .string "nil"
 
 to_s_jump_table:
-        .quad   0, long_to_s, unbox_pointer, boolean_to_s, nil_to_s, pair_to_s
+        .quad   0, int_to_s, unbox_pointer, boolean_to_s, nil_to_s, pair_to_s
 
 unbox_jump_table:
-        .quad   0, unbox_long, unbox_pointer, unbox_pointer, unbox_pointer, unbox_pointer
+        .quad   0, unbox_int, unbox_pointer, unbox_pointer, unbox_pointer, unbox_pointer
 
         .struct 0
 pair_car:
@@ -50,7 +50,7 @@ cons:                           # car, cdr
         mov     %rdi, car(%rbp)
         mov     %rsi, cdr(%rbp)
         call_fn malloc, $pair_size
-        call_fn tag, $TAG_PAIR, %rax
+        call_fn tag, $(NAN_MASK | TAG_PAIR), %rax
         mov     %rax, pair(%rbp)
 
         call_fn set_car, pair(%rbp), car(%rbp)
@@ -133,7 +133,7 @@ pair_length:                    # pair
         inc     %rcx
         jmp     1b
 
-2:      call_fn box_long, %rcx
+2:      call_fn box_int, %rcx
         ret
 
 byte_array:                     # length
@@ -157,13 +157,8 @@ aset:                           # array, idx, value
         mov     %rdx, %rax
         ret
 
-unbox_long:                     # long
-        mov     $(PAYLOAD_SIGN | PAYLOAD_MASK), %rax
-        mov     $-1, %r11
-        and     %rax, %rdi
-        cmovns  %r11, %rax
-        not     %rax
-        or      %rdi, %rax
+unbox_int:                      # int
+        movsx   %edi, %rax
         ret
 
 unbox_pointer:                  # ptr
@@ -171,14 +166,14 @@ unbox_pointer:                  # ptr
         and     %rdi, %rax
         ret
 
-long_to_s:                      # long
+int_to_s:                       # int
         enter_fn 1
         .equ str, -POINTER_SIZE
-        call_fn unbox_long, %rdi
+        call_fn unbox_int, %rdi
         mov     %rax, %rdx
         xor     %rax, %rax
         lea     str(%rbp), %rdi
-        call_fn asprintf, %rdi, $long_format, %rdx
+        call_fn asprintf, %rdi, $int_format, %rdx
         return  str(%rbp)
 
 double_to_s:                    # double
@@ -256,10 +251,9 @@ not:                            # x
         xor     $C_TRUE, %rdi
         mov     %rdi, %rax
         ret
-tag:                            # tag, value
-        mov     $NAN_MASK, %rax
-        or      %rsi, %rax
-        or      %rdi, %rax
+tag:                            # masked_tag, value
+        or      %rdi, %rsi
+        mov     %rsi, %rax
         ret
 
 has_tag:                        # tag, value
@@ -270,24 +264,23 @@ has_tag:                        # tag, value
 
 box_boolean:                    # value
         and     $C_TRUE, %rdi
-        call_fn tag, $TAG_BOOLEAN, %rdi
+        call_fn tag, $(NAN_MASK | TAG_BOOLEAN), %rdi
         ret
 
-box_long:                       # value
+box_int:                       # value
         enter_fn
-        mov     $(PAYLOAD_SIGN | PAYLOAD_MASK), %rax
-        and     %rdi, %rax
-        call_fn tag, $TAG_LONG, %rax
+        mov     %edi, %eax
+        call_fn tag, $(NAN_MASK | TAG_INT), %rax
         return %rax
 
 box_pointer:                    # value
         mov     $PAYLOAD_MASK, %rax
         and     %rdi, %rax
-        call_fn tag, $TAG_POINTER, %rax
+        call_fn tag, $(NAN_MASK | TAG_POINTER), %rax
         ret
 
-is_long:                        # value
-        call_fn has_tag, $TAG_LONG, %rdi
+is_int:                        # value
+        call_fn has_tag, $TAG_INT, %rdi
         ret
 
 is_pointer:                     # value
@@ -313,5 +306,5 @@ is_double:                      # value
         call_fn box_boolean, %rax
         ret
 
-        .globl allocate_code, cons, car, cdr, pair_length, print, println, box_long, box_pointer, is_long, is_boolean,
-        .globl is_double, is_pair, unbox, tag, aget, aset, object_array, long_format, double_format
+        .globl allocate_code, cons, car, cdr, pair_length, print, println, box_int, box_pointer, is_int, is_boolean,
+        .globl is_double, is_pair, unbox, tag, aget, aset, object_array, int_format, double_format

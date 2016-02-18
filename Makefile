@@ -2,7 +2,7 @@ CFLAGS += -rdynamic -ldl
 
 default: repl
 
-.s.o:
+%.o: %.s constants.s macros.s
 	as --64 $< -o $@
 
 tests: tests.o lisp.o

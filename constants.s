@@ -20,7 +20,7 @@
         .equ PAYLOAD_MASK, (1 << TAG_SHIFT) - 1
         .equ PAYLOAD_SIGN, 1 << 63
 
-        .equ TAG_LONG, 1 << TAG_SHIFT
+        .equ TAG_INT, 1 << TAG_SHIFT
         .equ TAG_POINTER, 2 << TAG_SHIFT
         .equ TAG_BOOLEAN, 3 << TAG_SHIFT
         .equ TAG_NIL, 4 << TAG_SHIFT
