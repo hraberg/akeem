@@ -68,12 +68,19 @@
         or      \tmp, %rax
         .endm
 
-        .macro tagged_jump table value
+        .macro tagged_jump table
+        enter_fn
+        mov     %rdi, %rbx
+        call    is_double
+        mov     %rbx, %rdi
+        xor     %r11, %r11
+        test    $C_TRUE, %rax
+        cmovnz  %r11, %rbx
         mov     $TAG_MASK, %rax
-        and     \value, %rax
+        and     %rbx, %rax
         shr     $TAG_SHIFT, %rax
-        mov     \table(,%rax,POINTER_SIZE), %rax
-        call_fn *%rax, \value
+        call    *\table(,%rax,POINTER_SIZE)
+        return
         .endm
 
         .macro arraycopy from to size

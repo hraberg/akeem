@@ -14,9 +14,9 @@ nil_string:
         .string "nil"
 
 to_s_jump_table:
-        .quad   0, int_to_s, unbox_pointer, boolean_to_s, nil_to_s, pair_to_s
+        .quad   double_to_s, int_to_s, unbox_pointer, boolean_to_s, nil_to_s, pair_to_s
 unbox_jump_table:
-        .quad   0, unbox_int, unbox_pointer, unbox_boolean, unbox_nil, unbox_pointer
+        .quad   unbox_double, unbox_int, unbox_pointer, unbox_boolean, unbox_nil, unbox_pointer
 neg_jump_table:
         .quad   neg_double, neg_int
 add_jump_table:
@@ -160,10 +160,12 @@ aset:                           # array, idx, value
         mov     %rdx, %rax
         ret
 
-unbox_int:                      # int
-        mov     %edi, %eax
+identity:                       # x
+unbox_double:                   # double
+        mov     %rdi, %rax
         ret
 
+unbox_int:                      # int
 unbox_boolean:                  # boolean
         mov     %edi, %eax
         ret
@@ -177,15 +179,7 @@ unbox_pointer:                  # ptr
         ret
 
 unbox:                          # value
-        enter_fn 1
-        .equ value, -POINTER_SIZE
-        mov     %rdi, value(%rbp)
-        call_fn is_double, value(%rbp)
-        test    $C_TRUE, %rax
-        jz      1f
-        return  value(%rbp)
-1:      tagged_jump unbox_jump_table, value(%rbp)
-        return  %rax
+        tagged_jump unbox_jump_table
 
 int_to_s:                       # int
         enter_fn 1
@@ -219,16 +213,7 @@ nil_to_s:                       # nil
         ret
 
 to_s:                           # value
-        enter_fn 1
-        .equ value, -POINTER_SIZE
-        mov     %rdi, value(%rbp)
-        call_fn is_double, value(%rbp)
-        test    $C_TRUE, %rax
-        jz      1f
-        call_fn double_to_s, value(%rbp)
-        return  %rax
-1:      tagged_jump to_s_jump_table, value(%rbp)
-        return  %rax
+        tagged_jump to_s_jump_table
 
 println:                        # value
         enter_fn
