@@ -44,19 +44,19 @@
         ret
         .endm
 
-        .macro is_int_internal value
-        mov     $TAG_MASK, %r11
-        and     \value, %r11
+        .macro is_int_internal value tmp=%r11
+        mov     $TAG_MASK, \tmp
+        and     \value, \tmp
         mov     $TAG_INT, %rax
-        cmp     %rax, %r11
+        cmp     %rax, \tmp
         sete    %al
         and     $C_TRUE, %rax
         .endm
 
-        .macro box_int_internal value
+        .macro box_int_internal value tmp=%r11
         mov     \value, %eax
-        mov     $(NAN_MASK | TAG_INT), %r11
-        or      %r11, %rax
+        mov     $(NAN_MASK | TAG_INT), \tmp
+        or      \tmp, %rax
         .endm
 
         .macro arraycopy from to size
