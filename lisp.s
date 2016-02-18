@@ -17,6 +17,8 @@ to_s_jump_table:
         .quad   0, int_to_s, unbox_pointer, boolean_to_s, nil_to_s, pair_to_s
 unbox_jump_table:
         .quad   0, unbox_int, unbox_pointer, unbox_pointer, unbox_pointer, unbox_pointer
+neg_jump_table:
+        .quad   neg_double, neg_int
 add_jump_table:
         .quad   add_double_double, add_int_double, add_double_int, add_int_int
 
@@ -268,11 +270,10 @@ box_boolean:                    # value
         call_fn tag, $(NAN_MASK | TAG_BOOLEAN), %rdi
         ret
 
-box_int:                       # value
-        enter_fn
+box_int:                        # value
         mov     %edi, %eax
         call_fn tag, $(NAN_MASK | TAG_INT), %rax
-        return %rax
+        ret
 
 box_pointer:                    # value
         mov     $PAYLOAD_MASK, %rax
@@ -280,7 +281,7 @@ box_pointer:                    # value
         call_fn tag, $(NAN_MASK | TAG_POINTER), %rax
         ret
 
-is_int:                        # value
+is_int:                         # value
         call_fn has_tag, $TAG_INT, %rdi
         ret
 
@@ -312,13 +313,15 @@ neg:                            # value
         .equ value, -POINTER_SIZE
         mov     %rdi, value(%rbp)
         call_fn is_int, value(%rbp)
-        test    $C_TRUE, %rax
-        jz      1f
+        and     $C_TRUE, %rax
+        jmp     *neg_jump_table(,%rax,POINTER_SIZE)
+neg_int:
         mov     value(%rbp), %rax
         neg     %eax
         call_fn box_int, %rax
         return  %rax
-1:      mov     value(%rbp), %rax
+neg_double:
+        mov     value(%rbp), %rax
         mov     $SIGN_BIT, %r11
         xor     %r11, %rax
         return  %rax
