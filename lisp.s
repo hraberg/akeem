@@ -306,5 +306,10 @@ is_double:                      # value
         call_fn box_boolean, %rax
         ret
 
+neg:
+        neg     %edi
+        call_fn box_int, %rdi
+        ret
+
         .globl allocate_code, cons, car, cdr, pair_length, print, println, box_int, box_pointer, is_int, is_boolean,
-        .globl is_double, is_pair, unbox, tag, aget, aset, object_array, int_format, double_format
+        .globl is_double, is_pair, unbox, tag, aget, aset, object_array, int_format, double_format, neg

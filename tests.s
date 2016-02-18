@@ -158,6 +158,14 @@ main:
         call_fn aget, array(%rbp), $1
         call_fn println, %rax
 
+        call_fn box_int, $1
+        call_fn neg, %rax
+        call_fn println, %rax
+
+        call_fn box_int, $-1
+        call_fn neg, %rax
+        call_fn println, %rax
+
         return  $0
 
         .globl main
