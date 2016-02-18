@@ -322,5 +322,14 @@ neg:                            # value
         xor     %r11, %rax
         return  %rax
 
+add:                            # x, y
+        enter_fn 2
+        .equ x, -POINTER_SIZE
+        .equ y, -(POINTER_SIZE * 2)
+        movq    %rdi, %xmm0
+        movq    %rsi, %xmm1
+        addsd   %xmm0, %xmm1
+        return  %xmm1
+
         .globl allocate_code, cons, car, cdr, pair_length, print, println, box_int, box_pointer, is_int, is_boolean,
-        .globl is_double, is_pair, unbox, tag, aget, aset, object_array, int_format, double_format, neg
+        .globl is_double, is_pair, unbox, tag, aget, aset, object_array, int_format, double_format, neg, add

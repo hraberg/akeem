@@ -36,7 +36,7 @@
 
         .macro return value
         .ifnb \value
-        mov     \value, %rax
+        movq    \value, %rax
         .endif
         leave
         ret
