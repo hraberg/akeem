@@ -59,6 +59,14 @@
         or      \tmp, %rax
         .endm
 
+        .macro tagged_jump table value
+        mov     $TAG_MASK, %rax
+        and     \value, %rax
+        shr     $TAG_SHIFT, %rax
+        mov     \table(,%rax,POINTER_SIZE), %rax
+        call_fn *%rax, \value
+        .endm
+
         .macro arraycopy from to size
         mov     \from, %rsi
         mov     \to, %rdi

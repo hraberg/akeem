@@ -200,15 +200,6 @@ nil_to_s:
         mov     $nil_string, %rax
         ret
 
-tagged_jump:                    # table, value
-        enter_fn
-        mov     $TAG_MASK, %rax
-        and     %rsi, %rax
-        shr     $TAG_SHIFT, %rax
-        mov     (%rdi,%rax,POINTER_SIZE), %rax
-        call_fn *%rax, %rsi
-        return  %rax
-
 to_s:                           # value
         enter_fn 1
         .equ value, -POINTER_SIZE
@@ -218,7 +209,7 @@ to_s:                           # value
         jz      1f
         call_fn double_to_s, value(%rbp)
         return  %rax
-1:      call_fn tagged_jump, $to_s_jump_table, value(%rbp)
+1:      tagged_jump to_s_jump_table, value(%rbp)
         return  %rax
 
 unbox:                          # value
@@ -229,7 +220,7 @@ unbox:                          # value
         test    $C_TRUE, %rax
         jz      1f
         return  value(%rbp)
-1:      call_fn tagged_jump, $unbox_jump_table, value(%rbp)
+1:      tagged_jump unbox_jump_table, value(%rbp)
         return  %rax
 
 println:                        # value
