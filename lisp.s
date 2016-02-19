@@ -291,9 +291,9 @@ neg:                            # value
         is_int_internal %rdi
         jnz     neg_int
 neg_double:
-        mov     %rdi, %rax
         mov     $SIGN_BIT, %r11
-        xor     %r11, %rax
+        xor     %r11, %rdi
+        mov     %rdi, %rax
         ret
 neg_int:
         neg     %edi
