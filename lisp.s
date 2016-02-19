@@ -304,33 +304,30 @@ add:                            # x, y
         is_int_internal %rdi
         mov     %rax, %rbx
         is_int_internal %rsi
-        shl     $1, %rax
+        shl     %rax
         or      %rbx, %rax
-        shl     $5, %rax
-        lea     add_double_double(,%rax,1), %rax
+        shl     %rax
+        lea     add_double_double(,%rax,8), %rax
         jmp     *%rax
-        .align 32, 0
+1:      addsd   %xmm1, %xmm0
+        movq    %xmm0, %rax
+        ret
+        .align 16, 0
 add_double_double:
         movq    %rdi, %xmm0
         movq    %rsi, %xmm1
-        addsd   %xmm1, %xmm0
-        movq    %xmm0, %rax
-        ret
-        .align 32, 0
+        jmp     1b
+        .align 16, 0
 add_int_double:
         cvtsi2sd %edi, %xmm0
         movq     %rsi, %xmm1
-        addsd   %xmm1, %xmm0
-        movq    %xmm0, %rax
-        ret
-        .align 32, 0
+        jmp     1b
+        .align 16, 0
 add_double_int:
         movq     %rdi, %xmm0
         cvtsi2sd %esi, %xmm1
-        addsd   %xmm1, %xmm0
-        movq    %xmm0, %rax
-        ret
-        .align 32, 0
+        jmp     1b
+        .align 16, 0
 add_int_int:
         mov     %edi, %eax
         add     %esi, %eax
