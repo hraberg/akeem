@@ -17,10 +17,6 @@ to_s_jump_table:
         .quad   double_to_s, int_to_s, unbox_pointer, boolean_to_s, nil_to_s, pair_to_s
 unbox_jump_table:
         .quad   unbox_double, unbox_int, unbox_pointer, unbox_boolean, unbox_nil, unbox_pointer
-neg_jump_table:
-        .quad   neg_double, neg_int
-add_jump_table:
-        .quad   add_double_double, add_int_double, add_double_int, add_int_int
 
         .struct 0
 pair_car:
@@ -30,7 +26,6 @@ pair_cdr:
 pair_size:
 
         .text
-
 allocate_code:                  # source_code, source_size
         enter_fn 3
         .equ source_code, -(POINTER_SIZE * 3)
@@ -295,15 +290,15 @@ is_double:                      # value
 
 neg:                            # value
         is_int_internal %rdi
-        jmp     *neg_jump_table(,%rax,POINTER_SIZE)
-neg_int:
-        neg     %edi
-        box_int_internal %edi
-        ret
+        jnz     neg_int
 neg_double:
         mov     %rdi, %rax
         mov     $SIGN_BIT, %r11
         xor     %r11, %rax
+        ret
+neg_int:
+        neg     %edi
+        box_int_internal %edi
         ret
 
 add:                            # x, y
@@ -312,25 +307,35 @@ add:                            # x, y
         is_int_internal %rsi
         shl     $1, %rax
         or      %rbx, %rax
-        jmp     *add_jump_table(,%rax,POINTER_SIZE)
+        shl     $5, %rax
+        add     $add_double_double, %rax
+        jmp     *%rax
+        .align 32
+add_double_double:
+        movq    %rdi, %xmm0
+        movq    %rsi, %xmm1
+        addsd   %xmm1, %xmm0
+        movq    %xmm0, %rax
+        ret
+        .align 32
+add_int_double:
+        cvtsi2sd %edi, %xmm0
+        movq     %rsi, %xmm1
+        addsd   %xmm1, %xmm0
+        movq    %xmm0, %rax
+        ret
+        .align 32
+add_double_int:
+        movq     %rdi, %xmm0
+        cvtsi2sd %esi, %xmm1
+        addsd   %xmm1, %xmm0
+        movq    %xmm0, %rax
+        ret
+        .align 32
 add_int_int:
         mov     %edi, %eax
         add     %esi, %eax
         box_int_internal %eax
-        ret
-add_int_double:
-        cvtsi2sd %edi, %xmm0
-        movq     %rsi, %xmm1
-        jmp     1f
-add_double_int:
-        movq     %rdi, %xmm0
-        cvtsi2sd %esi, %xmm1
-        jmp     1f
-add_double_double:
-        movq    %rdi, %xmm0
-        movq    %rsi, %xmm1
-1:      addsd   %xmm1, %xmm0
-        movq    %xmm0, %rax
         ret
 
         .globl allocate_code, cons, car, cdr, pair_length, print, println, box_int, box_pointer, is_int, is_boolean,
