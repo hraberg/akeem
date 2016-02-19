@@ -32,8 +32,9 @@
         .endif
         .endm
 
-        .macro return value
-        mov_reg \value, %rax
+        .macro return value1 value2
+        mov_reg \value1, %rax
+        mov_reg \value1, %rdx
         leave
         ret
         .endm
