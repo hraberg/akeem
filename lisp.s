@@ -309,28 +309,28 @@ add:                            # x, y
         shl     $5, %rax
         lea     add_double_double(,%rax,1), %rax
         jmp     *%rax
-        .align 32
+        .align 32, 0
 add_double_double:
         movq    %rdi, %xmm0
         movq    %rsi, %xmm1
         addsd   %xmm1, %xmm0
         movq    %xmm0, %rax
         ret
-        .align 32
+        .align 32, 0
 add_int_double:
         cvtsi2sd %edi, %xmm0
         movq     %rsi, %xmm1
         addsd   %xmm1, %xmm0
         movq    %xmm0, %rax
         ret
-        .align 32
+        .align 32, 0
 add_double_int:
         movq     %rdi, %xmm0
         cvtsi2sd %esi, %xmm1
         addsd   %xmm1, %xmm0
         movq    %xmm0, %rax
         ret
-        .align 32
+        .align 32, 0
 add_int_int:
         mov     %edi, %eax
         add     %esi, %eax
