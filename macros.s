@@ -6,25 +6,21 @@
         .endif
         .endm
 
+        .macro mov_reg from to
+        .ifnb \from
+        .ifnc \from, \to
+        movq   \from, \to
+        .endif
+        .endif
+        .endm
+
         .macro call_fn fn arg1 arg2 arg3 arg4 arg5 arg6
-        .ifnb \arg6
-        mov   \arg6, %r9
-        .endif
-        .ifnb \arg5
-        mov    \arg5, %r8
-        .endif
-        .ifnb \arg4
-        mov    \arg4, %rcx
-        .endif
-        .ifnb \arg3
-        mov    \arg3, %rdx
-        .endif
-        .ifnb \arg2
-        mov    \arg2, %rsi
-        .endif
-        .ifnb \arg1
-        mov    \arg1, %rdi
-        .endif
+        mov_reg \arg6, %r9
+        mov_reg \arg5, %r8
+        mov_reg \arg4, %rcx
+        mov_reg \arg3, %rdx
+        mov_reg \arg2, %rsi
+        mov_reg \arg1, %rdi
         call \fn
         .endm
 
@@ -37,9 +33,7 @@
         .endm
 
         .macro return value
-        .ifnb \value
-        movq    \value, %rax
-        .endif
+        mov_reg \value, %rax
         leave
         ret
         .endm
