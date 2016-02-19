@@ -307,7 +307,7 @@ add:                            # x, y
         shl     $1, %rax
         or      %rbx, %rax
         shl     $5, %rax
-        add     $add_double_double, %rax
+        lea     add_double_double(,%rax,1), %rax
         jmp     *%rax
         .align 32
 add_double_double:
