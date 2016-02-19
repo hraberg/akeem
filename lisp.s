@@ -179,8 +179,7 @@ unbox:                          # value
 int_to_s:                       # int
         enter_fn 1
         .equ str, -POINTER_SIZE
-        unbox_int_internal %edi
-        mov     %rax, %rdx
+        unbox_int_internal %edi, %rdx
         xor     %rax, %rax
         lea     str(%rbp), %rdi
         call_fn asprintf, %rdi, $int_format, %rdx

@@ -39,13 +39,13 @@
         ret
         .endm
 
-        .macro unbox_int_internal int
-        movsx   \int, %rax
+        .macro unbox_int_internal int to=%rax
+        movsx   \int, \to
         .endm
 
-        .macro unbox_pointer_internal ptr
-        mov     $PAYLOAD_MASK, %rax
-        and     \ptr, %rax
+        .macro unbox_pointer_internal ptr to=%rax
+        mov     $PAYLOAD_MASK, \to
+        and     \ptr, \to
         .endm
 
         .macro is_int_internal value tmp=%r11
@@ -58,7 +58,9 @@
         .endm
 
         .macro box_int_internal value tmp=%r11
+        .ifnc \value, %eax
         mov     \value, %eax
+        .endif
         mov     $(NAN_MASK | TAG_INT), \tmp
         or      \tmp, %rax
         .endm
