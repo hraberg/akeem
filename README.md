@@ -4,6 +4,13 @@ A small JIT-ed Lisp written in x86-64 assembler experiment.
 
 Name to change. Only tested on Linux. Written in GNU Assembler.
 
+
+## Implementation Notes / Ideas
+
+Implement closures by splitting prolog (with closed over vars) from
+the body?
+
+
 ## References
 
 ### Assembler
