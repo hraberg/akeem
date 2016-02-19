@@ -10,6 +10,10 @@ Name to change. Only tested on Linux. Written in GNU Assembler.
 Implement closures by splitting prolog (with closed over vars) from
 the body?
 
+Can you implement TCO with a setjmp/longjmp style technique? A
+recursive function checks if its on stack, at a tail call, and unwinds
+itself instead of creating a new frame.
+
 
 ## References
 
