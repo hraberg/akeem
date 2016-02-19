@@ -162,7 +162,7 @@ unbox_double:                   # double
 
 unbox_int:                      # int
 unbox_boolean:                  # boolean
-        mov     %edi, %eax
+        unbox_int_internal %edi
         ret
 
 unbox_nil:                      # nil
@@ -179,7 +179,7 @@ unbox:                          # value
 int_to_s:                       # int
         enter_fn 1
         .equ str, -POINTER_SIZE
-        call_fn unbox_int, %rdi
+        unbox_int_internal %edi
         mov     %rax, %rdx
         xor     %rax, %rax
         lea     str(%rbp), %rdi
