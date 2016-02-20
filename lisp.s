@@ -210,16 +210,16 @@ to_s:                           # value
         tagged_jump to_s_jump_table
 
 print:                          # value
-        enter_fn
         call_fn to_s, %rdi
         call_fn printf, %rax
-        return  $NIL
+        mov     $NIL, %rax
+        ret
 
 println:                        # value
-        enter_fn
         call_fn print, %rdi
         call_fn putchar, $'\n
-        return  $NIL
+        mov     $NIL, %rax
+        ret
 
 eq:                             # x, y
         xor     %rax, %rax
