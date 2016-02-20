@@ -42,7 +42,7 @@ cons:                           # car, cdr
         mov     %rdi, car(%rsp)
         mov     %rsi, cdr(%rsp)
         call_fn malloc, $pair_size
-        call_fn tag, $(NAN_MASK | TAG_PAIR), %rax
+        tag     TAG_PAIR, %rax
         mov     %rax, pair(%rsp)
 
         call_fn set_car, pair(%rsp), car(%rsp)
@@ -212,47 +212,36 @@ println:                        # value
         return $NIL
 
 eq:                             # x, y
-        prologue
         xor     %rax, %rax
         cmp     %rdi, %rsi
         sete    %al
-        call_fn box_boolean, %rax
-        return
+        box_boolean_internal %rax
+        ret
 
 not:                            # x
         xor     $C_TRUE, %rdi
         mov     %rdi, %rax
         ret
-tag:                            # masked_tag, value
-        or      %rdi, %rsi
-        mov     %rsi, %rax
-        ret
 
 has_tag:                        # tag, value
-        prologue
         mov     $TAG_MASK, %rax
         and     %rax, %rsi
         call_fn eq, %rdi, %rsi
-        return
+        ret
 
 box_boolean:                    # value
-        prologue
-        and     $C_TRUE, %rdi
-        call_fn tag, $(NAN_MASK | TAG_BOOLEAN), %rdi
-        return
+        box_boolean_internal %rdi
+        ret
 
 box_int:                        # value
-        prologue
-        mov     %edi, %eax
-        call_fn tag, $(NAN_MASK | TAG_INT), %rax
-        return
+        box_int_internal %edi
+        ret
 
 box_pointer:                    # value
-        prologue
         mov     $PAYLOAD_MASK, %rax
         and     %rdi, %rax
-        call_fn tag, $(NAN_MASK | TAG_POINTER), %rax
-        return
+        tag     TAG_POINTER, %rax
+        ret
 
 is_int:                         # value
         prologue
@@ -280,14 +269,13 @@ is_pair:                        # value
         return
 
 is_double:                      # value
-        prologue
         mov     $(SIGN_BIT - 1), %rax
         and     %rax, %rdi
         mov     $NAN_MASK, %rax
         cmp     %rax, %rdi
         setle   %al
-        call_fn box_boolean, %rax
-        return
+        box_boolean_internal %rax
+        ret
 
 neg:                            # value
         is_int_internal %rdi
