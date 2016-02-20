@@ -24,23 +24,27 @@
         call \fn
         .endm
 
-        .macro prologue locals=0
-        .equ stack_frame_size, (8 + ((8 + \locals * 8) & -16))
+        .macro local_variables local:req locals:vararg
+        .equ \local, local_offset
+        .equ local_offset, local_offset + POINTER_SIZE
+        .ifnb \locals
+        local_variables \locals
+        .endif
+        .endm
+
+        .macro prologue locals:vararg
+        .equ local_offset, 0
+        .ifnb \locals
+        local_variables \locals
+        .endif
+        .equ stack_frame_size, (8 + ((8 + local_offset) & -16))
         sub     $stack_frame_size, %rsp
         .endm
 
-        .macro epilogue value1=%rax value2=%rdx
+        .macro return value1=%rax value2=%rdx
         mov_reg \value1, %rax
         mov_reg \value2, %rdx
         add     $stack_frame_size, %rsp
-        ret
-        .endm
-
-        .macro return value1 value2
-        mov_reg \value1, %rax
-        mov_reg \value1, %rdx
-        mov     %rbp, %rsp
-        pop     %rbp
         ret
         .endm
 
@@ -82,7 +86,7 @@
         and     %r11, %rax
         shr     $TAG_SHIFT, %rax
         call    *\table(,%rax,POINTER_SIZE)
-        epilogue
+        return
         .endm
 
         .macro arraycopy from to size

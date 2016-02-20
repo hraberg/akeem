@@ -11,12 +11,11 @@ line_format:
 
         .text
 readline:
-        .equ line, 0
-        prologue 1
+        prologue line
         lea     line(%rsp), %rax
         call_fn scanf, $line_format, %rax
         call_fn box_pointer, line(%rsp)
-        epilogue %rax
+        return
 
 main:
         prologue
@@ -31,5 +30,6 @@ main:
 
         jmp     1b
 
-2:      epilogue $0
+2:      return  $0
+
         .globl main

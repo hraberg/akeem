@@ -27,10 +27,7 @@ pair_size:
 
         .text
 allocate_code:                  # source_code, source_size
-        .equ source_code, (POINTER_SIZE * 2)
-        .equ source_size, POINTER_SIZE
-        .equ destination_code, 0
-        prologue 3
+        prologue source_code, source_size, destination_code
         mov     %rdi, source_code(%rsp)
         mov     %rsi, source_size(%rsp)
         call_fn mmap, $NULL, $PAGE_SIZE, $(PROT_READ | PROT_WRITE), $(MAP_PRIVATE | MAP_ANONYMOUS), $-1, $0
@@ -38,13 +35,10 @@ allocate_code:                  # source_code, source_size
 
         call_fn memcpy, destination_code(%rsp), source_code(%rsp), source_size(%rsp)
         call_fn mprotect, destination_code(%rsp), $PAGE_SIZE, $(PROT_READ | PROT_EXEC)
-        epilogue destination_code(%rsp)
+        return destination_code(%rsp)
 
 cons:                           # car, cdr
-        .equ car, (POINTER_SIZE * 2)
-        .equ cdr, POINTER_SIZE
-        .equ pair, 0
-        prologue 3
+        prologue car, cdr, pair
         mov     %rdi, car(%rsp)
         mov     %rsi, cdr(%rsp)
         call_fn malloc, $pair_size
@@ -53,7 +47,7 @@ cons:                           # car, cdr
 
         call_fn set_car, pair(%rsp), car(%rsp)
         call_fn set_cdr, pair(%rsp), cdr(%rsp)
-        epilogue pair(%rsp)
+        return pair(%rsp)
 
 car:                            # pair
         unbox_pointer_internal %rdi
@@ -78,11 +72,7 @@ set_cdr:                        # pair, x
         ret
 
 pair_to_s:                      # pair
-        .equ stream, (POINTER_SIZE * 3)
-        .equ size, (POINTER_SIZE * 2)
-        .equ str, POINTER_SIZE
-        .equ pair, 0
-        prologue 4
+        prologue pair, str, size, stream
         mov     %rdi, pair(%rsp)
 
         lea     str(%rsp), %rdi
@@ -118,7 +108,7 @@ pair_to_s:                      # pair
 
 2:      call_fn fputc, $'), stream(%rsp)
         call_fn fclose, stream(%rsp)
-        epilogue str(%rsp)
+        return str(%rsp)
 
 pair_length:                    # pair
         mov     %rdi, %rax
@@ -177,23 +167,21 @@ unbox:                          # value
         tagged_jump unbox_jump_table
 
 int_to_s:                       # int
-        .equ str, 0
-        prologue 1
+        prologue str
         unbox_int_internal %edi, %rdx
         xor     %rax, %rax
         lea     str(%rsp), %rdi
         call_fn asprintf, %rdi, $int_format, %rdx
-        epilogue str(%rsp)
+        return str(%rsp)
 
 double_to_s:                    # double
-        .equ str, 0
-        prologue 1
+        prologue str
         movq    %rdi, %xmm0
         mov     $1, %rax        # number of vector var arguments http://www.x86-64.org/documentation/abi.pdf p21
         lea     str(%rsp), %rdi
         mov     $double_format, %rsi
         call    asprintf
-        epilogue str(%rsp)
+        return str(%rsp)
 
 boolean_to_s:
         mov     $true_string, %rax
@@ -215,13 +203,13 @@ print:                          # value
         mov     %rax, %rdi
         xor     %rax, %rax
         call_fn printf, %rdi
-        epilogue $NIL
+        return $NIL
 
 println:                        # value
         prologue
         call_fn print, %rdi
         call_fn putchar, $'\n
-        epilogue $NIL
+        return $NIL
 
 eq:                             # x, y
         prologue
@@ -229,7 +217,7 @@ eq:                             # x, y
         cmp     %rdi, %rsi
         sete    %al
         call_fn box_boolean, %rax
-        epilogue
+        return
 
 not:                            # x
         xor     $C_TRUE, %rdi
@@ -245,51 +233,51 @@ has_tag:                        # tag, value
         mov     $TAG_MASK, %rax
         and     %rax, %rsi
         call_fn eq, %rdi, %rsi
-        epilogue
+        return
 
 box_boolean:                    # value
         prologue
         and     $C_TRUE, %rdi
         call_fn tag, $(NAN_MASK | TAG_BOOLEAN), %rdi
-        epilogue
+        return
 
 box_int:                        # value
         prologue
         mov     %edi, %eax
         call_fn tag, $(NAN_MASK | TAG_INT), %rax
-        epilogue
+        return
 
 box_pointer:                    # value
         prologue
         mov     $PAYLOAD_MASK, %rax
         and     %rdi, %rax
         call_fn tag, $(NAN_MASK | TAG_POINTER), %rax
-        epilogue
+        return
 
 is_int:                         # value
         prologue
         call_fn has_tag, $TAG_INT, %rdi
-        epilogue
+        return
 
 is_pointer:                     # value
         prologue
         call_fn has_tag, $TAG_POINTER, %rdi
-        epilogue
+        return
 
 is_boolean:                     # value
         prologue
         call_fn has_tag, $TAG_BOOLEAN, %rdi
-        epilogue
+        return
 
 is_nil:                         # value
         prologue
         call_fn eq, %rdi, $NIL
-        epilogue
+        return
 
 is_pair:                        # value
         prologue
         call_fn has_tag, $TAG_PAIR, %rdi
-        epilogue
+        return
 
 is_double:                      # value
         prologue
@@ -299,7 +287,7 @@ is_double:                      # value
         cmp     %rax, %rdi
         setle   %al
         call_fn box_boolean, %rax
-        epilogue
+        return
 
 neg:                            # value
         is_int_internal %rdi
@@ -334,11 +322,11 @@ add_double_double:
         .align 16, 0
 add_int_double:
         cvtsi2sd %edi, %xmm0
-        movq     %rsi, %xmm1
+        movq    %rsi, %xmm1
         jmp     1b
         .align 16, 0
 add_double_int:
-        movq     %rdi, %xmm0
+        movq    %rdi, %xmm0
         cvtsi2sd %esi, %xmm1
         jmp     1b
         .align 16, 0

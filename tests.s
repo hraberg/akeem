@@ -31,8 +31,7 @@ example_code:
 
         .text
 main:
-        .equ array, 0
-        prologue 1
+        prologue array
         call_fn dlsym, $RTLD_DEFAULT, $strlen_name
         call_fn *%rax, $int_format
         call_fn box_int, %rax
@@ -212,6 +211,6 @@ main:
         call_fn add, PI, %rax
         call_fn println, %rax
 
-        epilogue $0
+        return  $0
 
         .globl main
