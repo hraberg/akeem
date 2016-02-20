@@ -35,7 +35,8 @@
         .macro return value1 value2
         mov_reg \value1, %rax
         mov_reg \value1, %rdx
-        leave
+        mov     %rbp, %rsp
+        pop     %rbp
         ret
         .endm
 
