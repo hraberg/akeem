@@ -306,8 +306,8 @@ add:                            # x, y
         is_int_internal %rsi
         shl     %rax
         or      %rbx, %rax
-        shl     %rax
-        lea     add_double_double(,%rax,8), %rax
+        shl     $4, %rax
+        lea     add_double_double(%rax), %rax
         jmp     *%rax
 1:      addsd   %xmm1, %xmm0
         movq    %xmm0, %rax
