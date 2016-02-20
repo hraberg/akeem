@@ -257,12 +257,12 @@ is_boolean:                     # value
 
 is_nil:                         # value
         eq_internal $NIL, %rdi
-        tag     TAG_BOOLEAN, %rax
+        box_boolean_internal %rax
         ret
 
 is_pair:                        # value
         has_tag $TAG_PAIR, %rdi
-        tag     TAG_BOOLEAN, %rax
+        box_boolean_internal %rax
         ret
 
 is_double:                      # value
