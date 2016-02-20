@@ -31,8 +31,8 @@ example_code:
 
         .text
 main:
-        enter_fn 1
-        .equ array, -POINTER_SIZE
+        .equ array, 0
+        prologue 1
         call_fn dlsym, $RTLD_DEFAULT, $strlen_name
         call_fn *%rax, $int_format
         call_fn box_int, %rax
@@ -132,20 +132,28 @@ main:
         call_fn println, %rax
 
         call_fn unbox, $TRUE
-        call_fn printf, $int_format, %rax
+        mov     %rax, %rdi
+        xor     %rax, %rax
+        call_fn printf, $int_format, %rdi
         call_fn puts, $empty_string
 
         call_fn unbox, $FALSE
-        call_fn printf, $int_format, %rax
+        mov     %rax, %rdi
+        xor     %rax, %rax
+        call_fn printf, $int_format, %rdi
         call_fn puts, $empty_string
 
         call_fn unbox, $NIL
-        call_fn printf, $int_format, %rax
+        mov     %rax, %rdi
+        xor     %rax, %rax
+        call_fn printf, $int_format, %rdi
         call_fn puts, $empty_string
 
         call_fn box_int, $-1
         call_fn unbox, %rax
-        call_fn printf, $int_format, %rax
+        mov     %rax, %rdi
+        xor     %rax, %rax
+        call_fn printf, $int_format, %rdi
         call_fn puts, $empty_string
 
         call_fn unbox, PI
@@ -156,15 +164,15 @@ main:
         call_fn puts, $empty_string
 
         call_fn object_array, $2
-        mov     %rax, array(%rbp)
+        mov     %rax, array(%rsp)
 
         call_fn box_int, $16
-        call_fn aset, array(%rbp), $0, E
-        call_fn aset, array(%rbp), $1, PI
+        call_fn aset, array(%rsp), $0, E
+        call_fn aset, array(%rsp), $1, PI
 
-        call_fn aget, array(%rbp), $0
+        call_fn aget, array(%rsp), $0
         call_fn println, %rax
-        call_fn aget, array(%rbp), $1
+        call_fn aget, array(%rsp), $1
         call_fn println, %rax
 
         call_fn box_int, $1
@@ -204,6 +212,6 @@ main:
         call_fn add, PI, %rax
         call_fn println, %rax
 
-        return  $0
+        epilogue $0
 
         .globl main

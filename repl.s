@@ -11,15 +11,15 @@ line_format:
 
         .text
 readline:
-        enter_fn 1
-        .equ line, -POINTER_SIZE
-        lea     line(%rbp), %rax
+        .equ line, 0
+        prologue 1
+        lea     line(%rsp), %rax
         call_fn scanf, $line_format, %rax
-        call_fn box_pointer, line(%rbp)
-        return %rax
+        call_fn box_pointer, line(%rsp)
+        epilogue %rax
 
 main:
-        enter_fn
+        prologue
         call_fn box_pointer, $welcome_message
         call_fn println, %rax
 
@@ -31,5 +31,5 @@ main:
 
         jmp     1b
 
-2:      return  $0
+2:      epilogue $0
         .globl main

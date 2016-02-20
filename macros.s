@@ -24,12 +24,16 @@
         call \fn
         .endm
 
-        .macro enter_fn locals
-        push    %rbp
-        mov     %rsp, %rbp
-        .ifnb \locals
-        sub     $((8 + \locals * 8) & -16), %rsp
-        .endif
+        .macro prologue locals=0
+        .equ stack_frame_size, (8 + ((8 + \locals * 8) & -16))
+        sub     $stack_frame_size, %rsp
+        .endm
+
+        .macro epilogue value1=%rax value2=%rdx
+        mov_reg \value1, %rax
+        mov_reg \value2, %rdx
+        add     $stack_frame_size, %rsp
+        ret
         .endm
 
         .macro return value1 value2
@@ -67,10 +71,10 @@
         .endm
 
         .macro tagged_jump table
-        enter_fn
-        push    %rdi
+        prologue
+        mov     %rdi, %rbx
         call    is_double
-        pop     %rdi
+        mov     %rbx, %rdi
         xor     %r11, %r11
         test    $C_TRUE, %rax
         cmovz   %rdi, %r11
@@ -78,7 +82,7 @@
         and     %r11, %rax
         shr     $TAG_SHIFT, %rax
         call    *\table(,%rax,POINTER_SIZE)
-        return
+        epilogue
         .endm
 
         .macro arraycopy from to size

@@ -27,33 +27,33 @@ pair_size:
 
         .text
 allocate_code:                  # source_code, source_size
-        enter_fn 3
-        .equ source_code, -(POINTER_SIZE * 3)
-        .equ source_size, -(POINTER_SIZE * 2)
-        .equ destination_code, -POINTER_SIZE
-        mov     %rdi, source_code(%rbp)
-        mov     %rsi, source_size(%rbp)
+        .equ source_code, (POINTER_SIZE * 2)
+        .equ source_size, POINTER_SIZE
+        .equ destination_code, 0
+        prologue 3
+        mov     %rdi, source_code(%rsp)
+        mov     %rsi, source_size(%rsp)
         call_fn mmap, $NULL, $PAGE_SIZE, $(PROT_READ | PROT_WRITE), $(MAP_PRIVATE | MAP_ANONYMOUS), $-1, $0
-	mov     %rax, destination_code(%rbp)
+	mov     %rax, destination_code(%rsp)
 
-        call_fn memcpy, destination_code(%rbp), source_code(%rbp), source_size(%rbp)
-        call_fn mprotect, destination_code(%rbp), $PAGE_SIZE, $(PROT_READ | PROT_EXEC)
-        return  destination_code(%rbp)
+        call_fn memcpy, destination_code(%rsp), source_code(%rsp), source_size(%rsp)
+        call_fn mprotect, destination_code(%rsp), $PAGE_SIZE, $(PROT_READ | PROT_EXEC)
+        epilogue destination_code(%rsp)
 
 cons:                           # car, cdr
-        enter_fn 3
-        .equ car, -(POINTER_SIZE * 3)
-        .equ cdr, -(POINTER_SIZE * 2)
-        .equ pair, -POINTER_SIZE
-        mov     %rdi, car(%rbp)
-        mov     %rsi, cdr(%rbp)
+        .equ car, (POINTER_SIZE * 2)
+        .equ cdr, POINTER_SIZE
+        .equ pair, 0
+        prologue 3
+        mov     %rdi, car(%rsp)
+        mov     %rsi, cdr(%rsp)
         call_fn malloc, $pair_size
         call_fn tag, $(NAN_MASK | TAG_PAIR), %rax
-        mov     %rax, pair(%rbp)
+        mov     %rax, pair(%rsp)
 
-        call_fn set_car, pair(%rbp), car(%rbp)
-        call_fn set_cdr, pair(%rbp), cdr(%rbp)
-        return  pair(%rbp)
+        call_fn set_car, pair(%rsp), car(%rsp)
+        call_fn set_cdr, pair(%rsp), cdr(%rsp)
+        epilogue pair(%rsp)
 
 car:                            # pair
         unbox_pointer_internal %rdi
@@ -78,47 +78,47 @@ set_cdr:                        # pair, x
         ret
 
 pair_to_s:                      # pair
-        enter_fn 4
-        .equ stream, -(POINTER_SIZE * 4)
-        .equ size, -(POINTER_SIZE * 3)
-        .equ str, -(POINTER_SIZE * 2)
-        .equ pair, -POINTER_SIZE
-        mov     %rdi, pair(%rbp)
+        .equ stream, (POINTER_SIZE * 3)
+        .equ size, (POINTER_SIZE * 2)
+        .equ str, POINTER_SIZE
+        .equ pair, 0
+        prologue 4
+        mov     %rdi, pair(%rsp)
 
-        lea     str(%rbp), %rdi
-        lea     size(%rbp), %rsi
+        lea     str(%rsp), %rdi
+        lea     size(%rsp), %rsi
         call_fn open_memstream, %rdi, %rsi
-        mov     %rax, stream(%rbp)
+        mov     %rax, stream(%rsp)
 
-        call_fn fputc, $'(, stream(%rbp)
+        call_fn fputc, $'(, stream(%rsp)
 1:      mov     $NIL, %r11
-        cmp     %r11, pair(%rbp)
+        cmp     %r11, pair(%rsp)
         je      2f
 
-        call_fn car, pair(%rbp)
+        call_fn car, pair(%rsp)
         call_fn to_s, %rax
-        call_fn fputs, %rax, stream(%rbp)
+        call_fn fputs, %rax, stream(%rsp)
 
-        call_fn cdr, pair(%rbp)
-        mov     %rax, pair(%rbp)
+        call_fn cdr, pair(%rsp)
+        mov     %rax, pair(%rsp)
         mov     $NIL, %r11
-        cmp     %r11, pair(%rbp)
+        cmp     %r11, pair(%rsp)
         je      2f
 
-        call_fn fputc, $' , stream(%rbp)
+        call_fn fputc, $' , stream(%rsp)
 
-        call_fn is_pair, pair(%rbp)
+        call_fn is_pair, pair(%rsp)
         test    $C_TRUE, %rax
         jnz     1b
 
-        call_fn fputc, $'., stream(%rbp)
-        call_fn fputc, $' , stream(%rbp)
-        call_fn to_s, pair(%rbp)
-        call_fn fputs, %rax, stream(%rbp)
+        call_fn fputc, $'., stream(%rsp)
+        call_fn fputc, $' , stream(%rsp)
+        call_fn to_s, pair(%rsp)
+        call_fn fputs, %rax, stream(%rsp)
 
-2:      call_fn fputc, $'), stream(%rbp)
-        call_fn fclose, stream(%rbp)
-        return  str(%rbp)
+2:      call_fn fputc, $'), stream(%rsp)
+        call_fn fclose, stream(%rsp)
+        epilogue str(%rsp)
 
 pair_length:                    # pair
         mov     %rdi, %rax
@@ -177,23 +177,23 @@ unbox:                          # value
         tagged_jump unbox_jump_table
 
 int_to_s:                       # int
-        enter_fn 1
-        .equ str, -POINTER_SIZE
+        .equ str, 0
+        prologue 1
         unbox_int_internal %edi, %rdx
         xor     %rax, %rax
-        lea     str(%rbp), %rdi
+        lea     str(%rsp), %rdi
         call_fn asprintf, %rdi, $int_format, %rdx
-        return  str(%rbp)
+        epilogue str(%rsp)
 
 double_to_s:                    # double
-        enter_fn 1
-        .equ str, -POINTER_SIZE
+        .equ str, 0
+        prologue 1
         movq    %rdi, %xmm0
         mov     $1, %rax        # number of vector var arguments http://www.x86-64.org/documentation/abi.pdf p21
-        lea     str(%rbp), %rdi
+        lea     str(%rsp), %rdi
         mov     $double_format, %rsi
         call    asprintf
-        return  str(%rbp)
+        epilogue str(%rsp)
 
 boolean_to_s:
         mov     $true_string, %rax
@@ -210,23 +210,27 @@ to_s:                           # value
         tagged_jump to_s_jump_table
 
 print:                          # value
+        prologue
         call_fn to_s, %rdi
-        call_fn printf, %rax
-        mov     $NIL, %rax
-        ret
+        mov     %rax, %rdi
+        xor     %rax, %rax
+        call_fn printf, %rdi
+        epilogue $NIL
 
 println:                        # value
+        prologue
         call_fn print, %rdi
         call_fn putchar, $'\n
-        mov     $NIL, %rax
-        ret
+        epilogue $NIL
 
 eq:                             # x, y
+        prologue
         xor     %rax, %rax
         cmp     %rdi, %rsi
         sete    %al
         call_fn box_boolean, %rax
-        ret
+        epilogue
+
 not:                            # x
         xor     $C_TRUE, %rdi
         mov     %rdi, %rax
@@ -237,55 +241,65 @@ tag:                            # masked_tag, value
         ret
 
 has_tag:                        # tag, value
+        prologue
         mov     $TAG_MASK, %rax
         and     %rax, %rsi
         call_fn eq, %rdi, %rsi
-        ret
+        epilogue
 
 box_boolean:                    # value
+        prologue
         and     $C_TRUE, %rdi
         call_fn tag, $(NAN_MASK | TAG_BOOLEAN), %rdi
-        ret
+        epilogue
 
 box_int:                        # value
+        prologue
         mov     %edi, %eax
         call_fn tag, $(NAN_MASK | TAG_INT), %rax
-        ret
+        epilogue
 
 box_pointer:                    # value
+        prologue
         mov     $PAYLOAD_MASK, %rax
         and     %rdi, %rax
         call_fn tag, $(NAN_MASK | TAG_POINTER), %rax
-        ret
+        epilogue
 
 is_int:                         # value
+        prologue
         call_fn has_tag, $TAG_INT, %rdi
-        ret
+        epilogue
 
 is_pointer:                     # value
+        prologue
         call_fn has_tag, $TAG_POINTER, %rdi
-        ret
+        epilogue
 
 is_boolean:                     # value
+        prologue
         call_fn has_tag, $TAG_BOOLEAN, %rdi
-        ret
+        epilogue
 
 is_nil:                         # value
+        prologue
         call_fn eq, %rdi, $NIL
-        ret
+        epilogue
 
 is_pair:                        # value
+        prologue
         call_fn has_tag, $TAG_PAIR, %rdi
-        ret
+        epilogue
 
 is_double:                      # value
+        prologue
         mov     $(SIGN_BIT - 1), %rax
         and     %rax, %rdi
         mov     $NAN_MASK, %rax
         cmp     %rax, %rdi
         setle   %al
         call_fn box_boolean, %rax
-        ret
+        epilogue
 
 neg:                            # value
         is_int_internal %rdi
@@ -335,4 +349,4 @@ add_int_int:
         ret
 
         .globl allocate_code, cons, car, cdr, pair_length, print, println, box_int, box_pointer, is_int, is_boolean,
-        .globl is_double, is_pair, unbox, tag, aget, aset, object_array, int_format, double_format, neg, add
+        .globl is_double, is_pair, unbox, to_s, boolean_to_s, tag, aget, aset, object_array, int_format, double_format, neg, add
