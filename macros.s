@@ -92,16 +92,23 @@
         eq_internal \tag, \tmp
         .endm
 
-        .macro tagged_jump table
+        .macro is_double_internal value tmp=%r11
+        mov     $(SIGN_BIT - 1), \tmp
+        and     \tmp, \value
+        mov     $NAN_MASK, \tmp
+        cmp     \tmp, \value
+        setle   %al
+        and     $C_TRUE, %rax
+        .endm
+
+        .macro tagged_jump table tmp=%rbx
         prologue
-        mov     %rdi, %rbx
-        call    is_double
-        mov     %rbx, %rdi
-        xor     %r11, %r11
-        test    $C_TRUE, %rax
-        cmovz   %rdi, %r11
+        mov     %rdi, %rax
+        xor     \tmp, \tmp
+        is_double_internal %rax
+        cmovz   %rdi, \tmp
         mov     $TAG_MASK, %rax
-        and     %r11, %rax
+        and     \tmp, %rax
         shr     $TAG_SHIFT, %rax
         call    *\table(,%rax,POINTER_SIZE)
         return

@@ -266,11 +266,7 @@ is_pair:                        # value
         ret
 
 is_double:                      # value
-        mov     $(SIGN_BIT - 1), %rax
-        and     %rax, %rdi
-        mov     $NAN_MASK, %rax
-        cmp     %rax, %rdi
-        setle   %al
+        is_double_internal %rdi
         box_boolean_internal %rax
         ret
 
