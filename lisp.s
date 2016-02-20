@@ -209,16 +209,16 @@ nil_to_s:                       # nil
 to_s:                           # value
         tagged_jump to_s_jump_table
 
-println:                        # value
-        enter_fn
-        call_fn to_s, %rdi
-        call_fn puts, %rax
-        return  $NIL
-
 print:                          # value
         enter_fn
         call_fn to_s, %rdi
         call_fn printf, %rax
+        return  $NIL
+
+println:                        # value
+        enter_fn
+        call_fn print, %rdi
+        call_fn putchar, $'\n
         return  $NIL
 
 eq:                             # x, y
