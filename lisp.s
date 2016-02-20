@@ -223,12 +223,6 @@ not:                            # x
         mov     %rdi, %rax
         ret
 
-has_tag:                        # tag, value
-        mov     $TAG_MASK, %rax
-        and     %rax, %rsi
-        call_fn eq, %rdi, %rsi
-        ret
-
 box_boolean:                    # value
         box_boolean_internal %rdi
         ret
@@ -244,29 +238,24 @@ box_pointer:                    # value
         ret
 
 is_int:                         # value
-        prologue
-        call_fn has_tag, $TAG_INT, %rdi
-        return
+        has_tag $TAG_INT, %rdi
+        ret
 
 is_pointer:                     # value
-        prologue
-        call_fn has_tag, $TAG_POINTER, %rdi
-        return
+        has_tag $TAG_POINTER, %rdi
+        ret
 
 is_boolean:                     # value
-        prologue
-        call_fn has_tag, $TAG_BOOLEAN, %rdi
-        return
+        has_tag $TAG_BOOLEAN, %rdi
+        ret
 
 is_nil:                         # value
-        prologue
-        call_fn eq, %rdi, $NIL
-        return
+        eq_internal $NIL, %rdi
+        ret
 
 is_pair:                        # value
-        prologue
-        call_fn has_tag, $TAG_PAIR, %rdi
-        return
+        has_tag $TAG_PAIR, %rdi
+        ret
 
 is_double:                      # value
         mov     $(SIGN_BIT - 1), %rax

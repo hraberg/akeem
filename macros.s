@@ -66,6 +66,13 @@
         and     $C_TRUE, %rax
         .endm
 
+        .macro eq_internal x y tmp=%r11
+        mov     \x, \tmp
+        cmp     \tmp, \y
+        sete   %al
+        box_boolean_internal %rax
+        .endm
+
         .macro box_boolean_internal value
         .ifnc \value, %rax
         mov     \value, %rax
@@ -87,6 +94,12 @@
         .endif
         mov     $(NAN_MASK | \tag), \tmp
         or      \tmp, %rax
+        .endm
+
+        .macro has_tag tag, value
+        mov     $TAG_MASK, %rax
+        and     \value, %rax
+        eq_internal \tag, %rax
         .endm
 
         .macro tagged_jump table
