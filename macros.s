@@ -94,9 +94,9 @@
 
         .macro is_double_internal value tmp=%r11
         mov     $(SIGN_BIT - 1), \tmp
-        and     \tmp, \value
-        mov     $NAN_MASK, \tmp
-        cmp     \tmp, \value
+        and     \value, \tmp
+        mov     $NAN_MASK, %rax
+        cmp     %rax, \tmp
         setle   %al
         and     $C_TRUE, %rax
         .endm
