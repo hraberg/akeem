@@ -38,16 +38,16 @@ allocate_code:                  # source_code, source_size
         return destination_code(%rsp)
 
 cons:                           # car, cdr
-        prologue car, cdr, pair
+        prologue car, cdr
         mov     %rdi, car(%rsp)
         mov     %rsi, cdr(%rsp)
         call_fn malloc, $pair_size
+        mov     car(%rsp), %rdi
+        mov     %rdi, pair_car(%rax)
+        mov     cdr(%rsp), %rsi
+        mov     %rsi, pair_cdr(%rax)
         tag     TAG_PAIR, %rax
-        mov     %rax, pair(%rsp)
-
-        call_fn set_car, pair(%rsp), car(%rsp)
-        call_fn set_cdr, pair(%rsp), cdr(%rsp)
-        return pair(%rsp)
+        return
 
 car:                            # pair
         unbox_pointer_internal %rdi
@@ -97,8 +97,7 @@ pair_to_s:                      # pair
 
         call_fn fputc, $' , stream(%rsp)
 
-        call_fn is_pair, pair(%rsp)
-        test    $C_TRUE, %rax
+        has_tag $TAG_PAIR, pair(%rsp)
         jnz     1b
 
         call_fn fputc, $'., stream(%rsp)
@@ -111,6 +110,7 @@ pair_to_s:                      # pair
         return str(%rsp)
 
 pair_length:                    # pair
+        prologue
         mov     %rdi, %rax
         xor     %rcx, %rcx
         mov     $NIL, %r11
@@ -121,18 +121,21 @@ pair_length:                    # pair
         inc     %rcx
         jmp     1b
 
-2:      call_fn box_int, %rcx
-        ret
+2:      box_int_internal %ecx
+        return
 
 byte_array:                     # length
+        prologue
         call_fn malloc, %rdi
-        call_fn box_pointer, %rax
-        ret
+        tag     TAG_POINTER, %rax
+        return
 
 object_array:                   # length
+        prologue
         imul    $POINTER_SIZE, %rdi
-        call_fn byte_array, %rdi
-        ret
+        call_fn malloc, %rdi
+        tag     TAG_POINTER, %rax
+        return
 
 aget:                           # array, idx
         unbox_pointer_internal %rdi
@@ -152,7 +155,7 @@ unbox_double:                   # double
 
 unbox_int:                      # int
 unbox_boolean:                  # boolean
-        unbox_int_internal %edi
+        unbox_int_internal %edi, %rax
         ret
 
 unbox_nil:                      # nil
@@ -212,9 +215,7 @@ println:                        # value
         return $NIL
 
 eq:                             # x, y
-        xor     %rax, %rax
-        cmp     %rdi, %rsi
-        sete    %al
+        eq_internal %rdi, %rsi
         box_boolean_internal %rax
         ret
 
@@ -224,7 +225,9 @@ not:                            # x
         ret
 
 box_boolean:                    # value
-        box_boolean_internal %rdi
+        mov     %rdi, %rax
+        and     $C_TRUE, %rax
+        box_boolean_internal %rax
         ret
 
 box_int:                        # value
@@ -239,22 +242,27 @@ box_pointer:                    # value
 
 is_int:                         # value
         has_tag $TAG_INT, %rdi
+        box_boolean_internal %rax
         ret
 
 is_pointer:                     # value
         has_tag $TAG_POINTER, %rdi
+        box_boolean_internal %rax
         ret
 
 is_boolean:                     # value
         has_tag $TAG_BOOLEAN, %rdi
+        box_boolean_internal %rax
         ret
 
 is_nil:                         # value
         eq_internal $NIL, %rdi
+        tag     TAG_BOOLEAN, %rax
         ret
 
 is_pair:                        # value
         has_tag $TAG_PAIR, %rdi
+        tag     TAG_BOOLEAN, %rax
         ret
 
 is_double:                      # value
@@ -267,7 +275,7 @@ is_double:                      # value
         ret
 
 neg:                            # value
-        is_int_internal %rdi
+        has_tag $TAG_INT, %rdi
         jnz     neg_int
 neg_double:
         mov     $SIGN_BIT, %r11
@@ -280,9 +288,9 @@ neg_int:
         ret
 
 add:                            # x, y
-        is_int_internal %rdi
+        has_tag $TAG_INT, %rdi
         mov     %rax, %rbx
-        is_int_internal %rsi
+        has_tag $TAG_INT, %rsi
         shl     %rax
         or      %rbx, %rax
         shl     $4, %rax
