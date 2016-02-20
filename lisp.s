@@ -167,7 +167,9 @@ unbox_pointer:                  # ptr
         ret
 
 unbox:                          # value
+        prologue
         tagged_jump unbox_jump_table
+        return
 
 int_to_s:                       # int
         prologue str
@@ -198,7 +200,9 @@ nil_to_s:                       # nil
         ret
 
 to_s:                           # value
+        prologue
         tagged_jump to_s_jump_table
+        return
 
 print:                          # value
         prologue
@@ -225,9 +229,8 @@ not:                            # x
         ret
 
 box_boolean:                    # value
-        mov     %rdi, %rax
-        and     $C_TRUE, %rax
-        box_boolean_internal %rax
+        and     $C_TRUE, %rdi
+        box_boolean_internal %rdi
         ret
 
 box_int:                        # value

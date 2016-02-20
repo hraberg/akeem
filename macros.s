@@ -75,7 +75,7 @@
         .endm
 
         .macro box_boolean_internal value
-        tag     TAG_BOOLEAN, %rax
+        tag     TAG_BOOLEAN, \value
         .endm
 
         .macro tag tag value tmp=%r11
@@ -102,7 +102,6 @@
         .endm
 
         .macro tagged_jump table tmp=%rbx
-        prologue
         mov     %rdi, %rax
         xor     \tmp, \tmp
         is_double_internal %rax
@@ -111,7 +110,6 @@
         and     \tmp, %rax
         shr     $TAG_SHIFT, %rax
         call    *\table(,%rax,POINTER_SIZE)
-        return
         .endm
 
         .macro arraycopy from to size
