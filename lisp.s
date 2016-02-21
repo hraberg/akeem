@@ -174,7 +174,7 @@ unbox:                          # value
 int_to_s:                       # int
         prologue str
         unbox_int_internal %edi, %rdx
-        xor     %rax, %rax
+        xor     %al, %al
         lea     str(%rsp), %rdi
         call_fn asprintf, %rdi, $int_format, %rdx
         return str(%rsp)
@@ -182,7 +182,7 @@ int_to_s:                       # int
 double_to_s:                    # double
         prologue str
         movq    %rdi, %xmm0
-        mov     $1, %rax        # number of vector var arguments http://www.x86-64.org/documentation/abi.pdf p21
+        mov     $1, %al         # number of vector var arguments http://www.x86-64.org/documentation/abi.pdf p21
         lea     str(%rsp), %rdi
         mov     $double_format, %rsi
         call    asprintf
@@ -208,7 +208,7 @@ print:                          # value
         prologue
         call_fn to_s, %rdi
         mov     %rax, %rdi
-        xor     %rax, %rax
+        xor     %al, %al
         call_fn printf, %rdi
         return $NIL
 

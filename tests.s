@@ -132,32 +132,32 @@ main:
 
         call_fn unbox, $TRUE
         mov     %rax, %rdi
-        xor     %rax, %rax
+        xor     %al, %al
         call_fn printf, $int_format, %rdi
         call_fn puts, $empty_string
 
         call_fn unbox, $FALSE
         mov     %rax, %rdi
-        xor     %rax, %rax
+        xor     %al, %al
         call_fn printf, $int_format, %rdi
         call_fn puts, $empty_string
 
         call_fn unbox, $NIL
         mov     %rax, %rdi
-        xor     %rax, %rax
+        xor     %al, %al
         call_fn printf, $int_format, %rdi
         call_fn puts, $empty_string
 
         call_fn box_int, $-1
         call_fn unbox, %rax
         mov     %rax, %rdi
-        xor     %rax, %rax
+        xor     %al, %al
         call_fn printf, $int_format, %rdi
         call_fn puts, $empty_string
 
         call_fn unbox, PI
         movq    %rax, %xmm0
-        mov     $1, %rax
+        mov     $1, %al
         mov     $double_format, %rdi
         call    printf
         call_fn puts, $empty_string
