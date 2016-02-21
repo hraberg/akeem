@@ -81,8 +81,8 @@ pair_to_s:                      # pair
         mov     %rax, stream(%rsp)
 
         call_fn fputc, $'(, stream(%rsp)
-1:      mov     $NIL, %r11
-        cmp     %r11, pair(%rsp)
+        mov     $NIL, %rbx
+1:      cmp     %rbx, pair(%rsp)
         je      2f
 
         call_fn car, pair(%rsp)
@@ -91,8 +91,7 @@ pair_to_s:                      # pair
 
         call_fn cdr, pair(%rsp)
         mov     %rax, pair(%rsp)
-        mov     $NIL, %r11
-        cmp     %r11, pair(%rsp)
+        cmp     %rbx, %rax
         je      2f
 
         call_fn fputc, $' , stream(%rsp)
@@ -113,8 +112,8 @@ pair_length:                    # pair
         prologue
         mov     %rdi, %rax
         xor     %rcx, %rcx
-        mov     $NIL, %r11
-1:      cmp     %r11, %rax
+        mov     $NIL, %rbx
+1:      cmp     %rbx, %rax
         je      2f
 
         call_fn cdr, %rax

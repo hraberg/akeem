@@ -101,14 +101,12 @@
         and     $C_TRUE, %rax
         .endm
 
-        .macro tagged_jump table tmp=%rbx
-        mov     %rdi, %rax
-        xor     \tmp, \tmp
-        is_double_internal %rax
-        cmovz   %rdi, \tmp
-        mov     $TAG_MASK, %rax
-        and     \tmp, %rax
+        .macro tagged_jump table
+        is_double_internal %rdi
+        mov     $0, %rax
+        cmovz   %rdi, %rax
         shr     $TAG_SHIFT, %rax
+        and     $(TAG_MASK >> TAG_SHIFT), %rax
         call    *\table(,%rax,POINTER_SIZE)
         .endm
 
