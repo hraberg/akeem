@@ -321,4 +321,4 @@ add_int_int:
         ret
 
         .globl allocate_code, cons, car, cdr, pair_length, print, println, box_int, box_pointer, is_int, is_boolean,
-        .globl is_double, is_pair, unbox, to_s, aget, aset, object_array, int_format, double_format, neg, add
+        .globl is_double, is_pair, unbox, to_s, pair_to_s, aget, aset, object_array, int_format, double_format, neg, add

@@ -67,6 +67,13 @@ main:
         call_fn pair_length, %rax
         call_fn println, %rax
 
+        call_fn pair_length, $NIL
+        call_fn println, %rax
+
+        call_fn pair_to_s, $NIL
+        call_fn box_pointer, %rax
+        call_fn println, %rax
+
         call_fn box_int, $2
         mov     %rax, %rbx
         call_fn box_int, $4
