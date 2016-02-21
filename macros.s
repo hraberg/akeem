@@ -92,11 +92,11 @@
         eq_internal \tag, \tmp
         .endm
 
-        .macro is_double_internal value
-        mov     \value, %rax
-        shr     $32, %rax
-        and     $(SIGN_BIT >> 32 - 1), %rax
-        cmp     $(NAN_MASK >> 32), %rax
+        .macro is_double_internal value tmp=%r11
+        mov     $(SIGN_BIT -1), \tmp
+        and     \value, \tmp
+        mov     $NAN_MASK, %rax
+        cmp     %rax, \tmp
         setle   %al
         and     $C_TRUE, %rax
         .endm
