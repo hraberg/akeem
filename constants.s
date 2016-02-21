@@ -15,18 +15,18 @@
 
         .equ NAN_MASK, 0x7FF8000000000000
         .equ TAG_SHIFT, 47
-        .equ TAG_MASK, 0xf << TAG_SHIFT
+        .equ TAG_MASK, 0x7
 
         .equ PAYLOAD_MASK, (1 << TAG_SHIFT) - 1
         .equ SIGN_BIT, 63
 
-        .equ TAG_INT, 1 << TAG_SHIFT
-        .equ TAG_POINTER, 2 << TAG_SHIFT
-        .equ TAG_BOOLEAN, 3 << TAG_SHIFT
-        .equ TAG_NIL, 4 << TAG_SHIFT
-        .equ TAG_PAIR, 5 << TAG_SHIFT
+        .equ TAG_INT, 1
+        .equ TAG_POINTER, 2
+        .equ TAG_BOOLEAN, 3
+        .equ TAG_NIL, 4
+        .equ TAG_PAIR, 5
 
         .equ C_TRUE, 1
-        .equ TRUE, (NAN_MASK | TAG_BOOLEAN | C_TRUE)
-        .equ FALSE, (NAN_MASK | TAG_BOOLEAN)
-        .equ NIL, (NAN_MASK | TAG_NIL)
+        .equ FALSE, (NAN_MASK | (TAG_BOOLEAN << TAG_SHIFT))
+        .equ TRUE, (FALSE | C_TRUE)
+        .equ NIL, (NAN_MASK | (TAG_NIL << TAG_SHIFT))

@@ -96,7 +96,7 @@ pair_to_s:                      # pair
 
         call_fn fputc, $' , stream(%rsp)
 
-        has_tag $TAG_PAIR, pair(%rsp)
+        has_tag TAG_PAIR, pair(%rsp)
         jnz     1b
 
         call_fn fputc, $'., stream(%rsp)
@@ -243,27 +243,27 @@ box_pointer:                    # value
         ret
 
 is_int:                         # value
-        has_tag $TAG_INT, %rdi
+        has_tag TAG_INT, %rdi
         box_boolean_internal %rax
         ret
 
 is_pointer:                     # value
-        has_tag $TAG_POINTER, %rdi
+        has_tag TAG_POINTER, %rdi
         box_boolean_internal %rax
         ret
 
 is_boolean:                     # value
-        has_tag $TAG_BOOLEAN, %rdi
+        has_tag TAG_BOOLEAN, %rdi
         box_boolean_internal %rax
         ret
 
 is_nil:                         # value
-        eq_internal $NIL, %rdi
+        has_tag TAG_NIL, %rdi
         box_boolean_internal %rax
         ret
 
 is_pair:                        # value
-        has_tag $TAG_PAIR, %rdi
+        has_tag TAG_PAIR, %rdi
         box_boolean_internal %rax
         ret
 
@@ -273,7 +273,7 @@ is_double:                      # value
         ret
 
 neg:                            # value
-        has_tag $TAG_INT, %rdi
+        has_tag TAG_INT, %rdi
         jnz     neg_int
 neg_double:
         mov     %rdi, %rax
@@ -285,9 +285,9 @@ neg_int:
         ret
 
 add:                            # x, y
-        has_tag $TAG_INT, %rdi
+        has_tag TAG_INT, %rdi
         mov     %rax, %rbx
-        has_tag $TAG_INT, %rsi
+        has_tag TAG_INT, %rsi
         shl     %rax
         or      %rbx, %rax
         shl     $4, %rax

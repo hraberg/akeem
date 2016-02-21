@@ -57,11 +57,8 @@
         and     \ptr, \to
         .endm
 
-        .macro eq_internal x y tmp=%rax
-        .ifnc \x, \tmp
-        mov     \x, \tmp
-        .endif
-        cmp     \tmp, \y
+        .macro eq_internal x y
+        cmp     \x, \y
         sete    %al
         and     $C_TRUE, %rax
         .endm
@@ -70,8 +67,7 @@
         .ifnc \value, %eax
         mov     \value, %eax
         .endif
-        mov     $(NAN_MASK | TAG_INT), \tmp
-        or      \tmp, %rax
+        tag     TAG_INT, %rax
         .endm
 
         .macro box_boolean_internal value
@@ -82,14 +78,15 @@
         .ifnc \value, %rax
         mov     \value, %rax
         .endif
-        mov     $(NAN_MASK | \tag), \tmp
+        mov     $(NAN_MASK | \tag << TAG_SHIFT), \tmp
         or      \tmp, %rax
         .endm
 
-        .macro has_tag tag value tmp=%r11
-        mov     $TAG_MASK, \tmp
-        and     \value, \tmp
-        eq_internal \tag, \tmp
+        .macro has_tag tag value
+        mov     \value, %rax
+        shr     $TAG_SHIFT, %rax
+        and     $TAG_MASK, %rax
+        eq_internal $\tag, %rax
         .endm
 
         .macro is_double_internal value tmp=%r11
@@ -106,7 +103,7 @@
         mov     $0, %rax
         cmovz   %rdi, %rax
         shr     $TAG_SHIFT, %rax
-        and     $(TAG_MASK >> TAG_SHIFT), %rax
+        and     $TAG_MASK, %rax
         call    *\table(,%rax,POINTER_SIZE)
         .endm
 
