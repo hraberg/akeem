@@ -93,8 +93,8 @@
         .endm
 
         .macro is_double_internal value tmp=%r11
-        mov     $(SIGN_BIT -1), \tmp
-        and     \value, \tmp
+        mov     \value, \tmp
+        btr     $64, \tmp
         mov     $NAN_MASK, %rax
         cmp     %rax, \tmp
         setle   %al
