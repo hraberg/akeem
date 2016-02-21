@@ -85,8 +85,7 @@
         .macro has_tag tag value
         mov     \value, %rax
         shr     $TAG_SHIFT, %rax
-        and     $TAG_MASK, %rax
-        eq_internal $\tag, %rax
+        eq_internal $(\tag | NAN_MASK >> TAG_SHIFT), %ax
         .endm
 
         .macro is_double_internal value tmp=%r11
