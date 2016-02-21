@@ -41,7 +41,7 @@ release: clean
 	$(MAKE) DEBUG= repl
 
 clean:
-	rm -f tests *.o
+	rm -f tests repl *.o
 
 check: run-tests
 

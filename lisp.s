@@ -298,22 +298,22 @@ add:                            # x, y
 1:      addsd   %xmm1, %xmm0
         movq    %xmm0, %rax
         ret
-        .align 16, 0
+        .align 16
 add_double_double:
         movq    %rdi, %xmm0
         movq    %rsi, %xmm1
         jmp     1b
-        .align 16, 0
+        .align 16
 add_int_double:
         cvtsi2sd %edi, %xmm0
         movq    %rsi, %xmm1
         jmp     1b
-        .align 16, 0
+        .align 16
 add_double_int:
         movq    %rdi, %xmm0
         cvtsi2sd %esi, %xmm1
         jmp     1b
-        .align 16, 0
+        .align 16
 add_int_int:
         mov     %edi, %eax
         add     %esi, %eax
