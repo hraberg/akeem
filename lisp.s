@@ -276,9 +276,8 @@ neg:                            # value
         has_tag $TAG_INT, %rdi
         jnz     neg_int
 neg_double:
-        mov     $SIGN_BIT, %r11
-        xor     %r11, %rdi
         mov     %rdi, %rax
+        btc     $SIGN_BIT, %rax
         ret
 neg_int:
         neg     %edi
