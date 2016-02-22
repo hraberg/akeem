@@ -337,10 +337,10 @@ neg_int:
 
 plus:                           # z1, z2
         has_tag TAG_INT, %rdi
-        mov     %rax, %rbx
+        mov     %rax, %rdx
         has_tag TAG_INT, %rsi
         shl     %rax
-        or      %rbx, %rax
+        or      %rdx, %rax
         shl     $4, %rax
         lea     plus_double_double(%rax), %rax
         jmp     *%rax

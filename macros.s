@@ -34,16 +34,19 @@
 
         .macro prologue locals:vararg
         .equ local_offset, 0
+        .equ callee_saved_size, POINTER_SIZE * 1
         .ifnb \locals
         local_variables \locals
         .endif
-        .equ stack_frame_size, (8 + ((8 + local_offset) & -16))
+        .equ stack_frame_size, (8 + (callee_saved_size + 8 + local_offset) & -16)
         sub     $stack_frame_size, %rsp
+        mov     %rbx, local_offset(%rsp)
         .endm
 
         .macro return value1=%rax value2=%rdx
         mov_reg \value1, %rax
         mov_reg \value2, %rdx
+        mov     local_offset(%rsp), %rbx
         add     $stack_frame_size, %rsp
         ret
         .endm
