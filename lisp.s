@@ -223,8 +223,8 @@ eq:                             # x, y
         ret
 
 not:                            # x
-        xor     $C_TRUE, %rdi
-        mov     %rdi, %rax
+        mov     $FALSE, %rax
+        eq_internal %rdi, %rax
         ret
 
 box_boolean:                    # value
