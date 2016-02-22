@@ -5,7 +5,7 @@
 int_format:
         .string "%d"
 double_format:
-        .string "%lf"
+        .string "%f"
 true_string:
         .string "#t"
 false_string:
