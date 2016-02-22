@@ -21,10 +21,11 @@
         .equ SIGN_BIT, 63
 
         .equ TAG_INT, 1
-        .equ TAG_POINTER, 2
+        .equ TAG_STRING, 2
         .equ TAG_BOOLEAN, 3
         .equ TAG_NIL, 4
         .equ TAG_PAIR, 5
+        .equ TAG_VECTOR, 6
 
         .equ C_TRUE, 1
         .equ FALSE, (NAN_MASK | (TAG_BOOLEAN << TAG_SHIFT))

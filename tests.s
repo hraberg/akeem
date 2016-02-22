@@ -96,8 +96,11 @@ main:
         call_fn is_boolean, %rax
         call_fn println, %rax
 
-        call_fn box_pointer, $1
-        call_fn is_exact, %rax
+        call_fn box_string, $strlen_name
+        call_fn is_string, %rax
+        call_fn println, %rax
+
+        call_fn is_string, PI
         call_fn println, %rax
 
         call_fn println, $TRUE
@@ -148,7 +151,7 @@ main:
         call_fn println, PI
         call_fn println, NAN
 
-        call_fn box_pointer, $strlen_name
+        call_fn box_string, $strlen_name
         call_fn println, %rax
 
         call_fn unbox, $TRUE
@@ -187,6 +190,12 @@ main:
         mov     %rax, array(%rsp)
 
         call_fn vector_length, %rax
+        call_fn println, %rax
+
+        call_fn is_vector, array(%rsp)
+        call_fn println, %rax
+
+        call_fn is_vector, $NIL
         call_fn println, %rax
 
         call_fn box_int, $16

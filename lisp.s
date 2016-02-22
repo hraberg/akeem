@@ -108,7 +108,7 @@ pair_to_s:                      # pair
         call_fn fclose, stream(%rsp)
         return str(%rsp)
 
-length:                    # list
+length:                         # list
         prologue
         mov     %rdi, %rax
         xor     %rcx, %rcx
@@ -125,14 +125,12 @@ length:                    # list
 
 make_vector:                    # k
         prologue
-        mov     %rdi, %rbx
+        tag     TAG_INT, %rdi, %rbx
         inc     %rdi
         imul    $POINTER_SIZE, %rdi
         call_fn malloc, %rdi
-        mov     %rax, %rdi
-        box_int_internal %ebx
-        mov     %rax, (%rdi)
-        tag     TAG_POINTER, %rdi
+        mov     %rbx, (%rax)
+        tag     TAG_VECTOR, %rax
         return
 
 vector_length:                  # vector
@@ -141,14 +139,14 @@ vector_length:                  # vector
         ret
 
 vector_ref:                     # vector, k
-        unbox_pointer_internal %rdi
         inc     %rsi
+        unbox_pointer_internal %rdi
         mov     (%rax,%rsi,POINTER_SIZE), %rax
         ret
 
 vector_set:                     # vector, k, obj
-        unbox_pointer_internal %rdi
         inc     %rsi
+        unbox_pointer_internal %rdi
         mov     %rdx, (%rax,%rsi,POINTER_SIZE)
         mov     %rdx, %rax
         ret
@@ -193,7 +191,7 @@ double_to_s:                    # double
         call    asprintf
         return str(%rsp)
 
-boolean_to_s:
+boolean_to_s:                   # boolean
         mov     $true_string, %rax
         mov     $false_string, %r11
         test    $C_TRUE, %rdi
@@ -233,19 +231,19 @@ not:                            # obj
         eq_internal %rdi, %rax
         ret
 
-box_boolean:                    # obj
+box_boolean:                    # c-boolean
         and     $C_TRUE, %rdi
         box_boolean_internal %rdi
         ret
 
-box_int:                        # obj
+box_int:                        # c-int
         box_int_internal %edi
         ret
 
-box_pointer:                    # obj
+box_string:                     # c-string
         mov     $PAYLOAD_MASK, %rax
         and     %rdi, %rax
-        tag     TAG_POINTER, %rax
+        tag     TAG_STRING, %rax
         ret
 
 is_integer:                     # obj
@@ -264,7 +262,7 @@ is_boolean:                     # obj
         box_boolean_internal %rax
         ret
 
-is_number:                     # obj
+is_number:                      # obj
         is_double_internal %rdi
         mov     %rax, %r11
         has_tag TAG_INT, %rdi
@@ -279,6 +277,16 @@ is_null:                        # obj
 
 is_pair:                        # obj
         has_tag TAG_PAIR, %rdi
+        box_boolean_internal %rax
+        ret
+
+is_vector:                      # obj
+        has_tag TAG_VECTOR, %rdi
+        box_boolean_internal %rax
+        ret
+
+is_string:                      # obj
+        has_tag TAG_STRING, %rdi
         box_boolean_internal %rax
         ret
 
@@ -328,6 +336,6 @@ plus_int_int:
         box_int_internal %eax
         ret
 
-        .globl allocate_code, cons, car, cdr, length, display, newline, box_int, box_pointer, unbox, number_to_s
-        .globl is_eq, is_int, is_boolean, is_null, is_exact, is_inexact, is_integer, is_number, is_pair
+        .globl allocate_code, cons, car, cdr, length, display, newline, box_int, box_string, unbox, number_to_s
+        .globl is_eq, is_string, is_boolean, is_null, is_exact, is_inexact, is_integer, is_number, is_pair, is_vector
         .globl make_vector, vector_length, vector_ref, vector_set, int_format, double_format, neg, plus

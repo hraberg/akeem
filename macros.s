@@ -74,12 +74,12 @@
         tag     TAG_BOOLEAN, \value
         .endm
 
-        .macro tag tag value tmp=%r11
-        .ifnc \value, %rax
-        mov     \value, %rax
+        .macro tag tag value target=%rax tmp=%r11
+        .ifnc \value, \target
+        mov     \value, \target
         .endif
         mov     $(NAN_MASK | \tag << TAG_SHIFT), \tmp
-        or      \tmp, %rax
+        or      \tmp, \target
         .endm
 
         .macro has_tag tag value
