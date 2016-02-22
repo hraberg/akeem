@@ -49,6 +49,61 @@ objdump -b binary -D -mi386:x86-64 code.bin
 
 ```
 
+## Road Map:
+
+We aim to implement a subset of R5RS.
+
+### Milestone 1
+
+* Parser
+** No complex or big numbers.
+** No define-syntax
+* JIT Compiler
+** Based on piecing together snippets.
+** Mainly stack based.
+** Single arity.
+** Lambdas.
+** Self-call TCO.
+** No call/cc.
+* Runtime
+** Subset of R5RS library procedures.
+** See R4RS essential procedures without varargs.
+** NaN boxing.
+
+### Milestone 2
+
+* GC
+** Simple Mark & Sweep.
+* JIT Compiler
+** Multiple arities, varargs
+** Register allocation.
+** Closures.
+* Runtime
+** Larger subset of R5RS.
+
+### Milestone 3
+
+* Parser
+** define-syntax
+* GC
+** Generational.
+* JIT Compiler
+** Macros
+** call/cc
+** Sibling call optimization.
+* Runtime
+** Full R5RS
+** [SRFI 1](http://srfi.schemers.org/srfi-1/srfi-1.html)
+** [SRFI 4](http://srfi.schemers.org/srfi-4/srfi-4.html)
+** [SRFI 9](http://srfi.schemers.org/srfi-9/srfi-9.html)
+** [SRFI 23](http://srfi.schemers.org/srfi-23/srfi-23.html)
+** [SRFI 69](http://srfi.schemers.org/srfi-69/srfi-69.html)
+
+### Milestone 4
+
+R7RS "small" language.
+
+
 ## References
 
 ### Assembler
@@ -68,6 +123,8 @@ objdump -b binary -D -mi386:x86-64 code.bin
 * http://piumarta.com/papers/S3-2010.pdf
 * http://scheme2006.cs.uchicago.edu/11-ghuloum.pdf
 * http://library.readscheme.org/page1.html
+* https://dspace.mit.edu/handle/1721.1/5600
+* http://www.schemers.org/Documents/Standards/R5RS/r5rs.pdf
 * http://trac.sacrideo.us/wg/raw-attachment/wiki/WikiStart/r7rs.pdf
 * https://github.com/kanaka/mal
 * http://shenlanguage.org/
