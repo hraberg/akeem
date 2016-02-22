@@ -14,6 +14,31 @@ Can you implement TCO with a setjmp/longjmp style technique? A
 recursive function checks if its on stack, at a tail call, and unwinds
 itself instead of creating a new frame.
 
+Generated functions need to use the stack. Either by calculating the
+max size, or by using pushq %rbp, movq %rsp, %rbp so we have a stable
+reference to the frame.
+
+Potentially use %rax for number of arguments, similar to the x86-64
+ABI. Have different functions with different arities with common
+wrapper. Varargs potentially marked as negative?
+
+Symbol table where each symbol gets an unique id (and offset)
+symbol_table_entry has pointer to both the value and the symbol, and
+potentially also unboxed version of the value pointer.
+
+Use callee saved registers %rbx (potentially %rbp) and %r12-%r15 for
+local variables. Save used registers in prologue for functions. Save
+used registers at start of let block if they are used afterwards.
+
+Number spilled local symbols negatively, so access is -(local_id *
+8)%rbp.
+
+For calls, push each argument, skipping constants and local variables,
+then load the argument registers in order, either from the stack or by
+local variable reference.
+
+Closures modifying a local variable requires the variable to be moved
+to the heap.
 
 ## References
 
