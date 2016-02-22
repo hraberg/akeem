@@ -1,8 +1,12 @@
-# ASM-LISP
+# Akeem
 
-A small JIT-ed Lisp written in x86-64 assembler experiment.
+*When you think of garbage, think of Akeem.*
+-- [Prince Akeem of Zamunda](http://www.imdb.com/title/tt0094898/)
 
-Name to change. Only tested on Linux. Written in GNU Assembler.
+Akeem is a small JIT-ed subset of R5RS Scheme written in x86-64
+assembler as an experiment.
+
+Only tested on Linux. Written in GNU Assembler using AT&T syntax.
 
 
 ## Implementation Notes / Ideas
@@ -138,3 +142,9 @@ R7RS "small" language.
 * http://trac.sacrideo.us/wg/raw-attachment/wiki/WikiStart/r7rs.pdf
 * https://github.com/kanaka/mal
 * http://shenlanguage.org/
+
+## License
+
+Copyright © 2016 Håkan Råberg
+
+Distributed under the MIT License.
