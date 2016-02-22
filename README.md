@@ -31,7 +31,9 @@ local variables. Save used registers in prologue for functions. Save
 used registers at start of let block if they are used afterwards.
 
 Number spilled local symbols negatively, so access is -(local_id *
-8)%rbp.
+8)%rbp. Potentially implement a variant of Linear Scan Register
+Allocation:
+http://web.cs.ucla.edu/~palsberg/course/cs132/linearscan.pdf
 
 For calls, push each argument, skipping constants and local variables,
 then load the argument registers in order, either from the stack or by
