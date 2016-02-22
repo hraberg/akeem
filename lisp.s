@@ -125,7 +125,8 @@ length:                         # list
 
 make_vector:                    # k
         prologue
-        tag     TAG_INT, %rdi, %rbx
+        mov     %rdi, %rbx
+        unbox_int_internal %edi, %rdi
         inc     %rdi
         imul    $POINTER_SIZE, %rdi
         call_fn malloc, %rdi
@@ -139,15 +140,47 @@ vector_length:                  # vector
         ret
 
 vector_ref:                     # vector, k
+        unbox_int_internal %esi, %rsi
         inc     %rsi
         unbox_pointer_internal %rdi
         mov     (%rax,%rsi,POINTER_SIZE), %rax
         ret
 
 vector_set:                     # vector, k, obj
+        unbox_int_internal %esi, %rsi
         inc     %rsi
         unbox_pointer_internal %rdi
         mov     %rdx, (%rax,%rsi,POINTER_SIZE)
+        mov     %rdx, %rax
+        ret
+
+make_string:                    # k
+        prologue
+        inc     %rdi
+        mov     %rdi, %rbx
+        call_fn malloc, %rdi
+        movb    $0, (%rax,%rbx,1)
+        tag     TAG_STRING, %rax
+        return
+
+string_length:                  # vector
+        unbox_pointer_internal %rdi
+        call_fn strlen, %rax
+        box_int_internal %eax
+        ret
+
+string_ref:                     # string, k
+        unbox_int_internal %esi, %rsi
+        unbox_pointer_internal %rdi
+        mov     (%rax,%rsi,1), %al
+        box_int_internal %eax
+        ret
+
+string_set:                     # string, k, char
+        unbox_int_internal %esi, %rsi
+        unbox_int_internal %edx, %rdx
+        unbox_pointer_internal %rdi
+        mov     %dl, (%rax,%rsi,1)
         mov     %rdx, %rax
         ret
 

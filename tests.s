@@ -186,7 +186,8 @@ main:
         call    printf
         call_fn puts, $empty_string
 
-        call_fn make_vector, $2
+        call_fn box_int, $2
+        call_fn make_vector, %rax
         mov     %rax, array(%rsp)
 
         call_fn vector_length, %rax
@@ -199,12 +200,16 @@ main:
         call_fn println, %rax
 
         call_fn box_int, $16
-        call_fn vector_set, array(%rsp), $0, E
-        call_fn vector_set, array(%rsp), $1, PI
+        call_fn box_int, $0
+        call_fn vector_set, array(%rsp), %rax, E
+        call_fn box_int, $1
+        call_fn vector_set, array(%rsp), %rax, PI
 
-        call_fn vector_ref, array(%rsp), $0
+        call_fn box_int, $0
+        call_fn vector_ref, array(%rsp), %rax
         call_fn println, %rax
-        call_fn vector_ref, array(%rsp), $1
+        call_fn box_int, $1
+        call_fn vector_ref, array(%rsp), %rax
         call_fn println, %rax
 
         call_fn box_int, $1
