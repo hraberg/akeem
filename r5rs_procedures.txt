@@ -1,3 +1,16 @@
+syntax: <variable>
+syntax: quote <datum>
+syntax: '<datum>
+syntax: <constant>
+syntax: (<operator> <operand1> ...)
+syntax: lambda <formals> <body>
+syntax: if <test> <consequent> <alternate>
+syntax: if <test> <consequent>
+syntax: set! <variable> <expression>
+syntax: quasiquote <qq template>
+syntax: `<qq template>
+syntax: let-syntax <bindings> <body>
+syntax: letrec-syntax <bindings> <body>
 procedure: eqv? obj1 obj2
 procedure: eq? obj1 obj2
 procedure: number? obj
