@@ -69,6 +69,7 @@ We aim to implement a subset of R5RS.
 ** Subset of R5RS non-library procedures.
 ** See also R4RS essential procedures without varargs.
 ** NaN boxing.
+** [SRFI-6](http://srfi.schemers.org/srfi-6/srfi-6.html)
 
 ### Milestone 2
 
@@ -80,6 +81,7 @@ We aim to implement a subset of R5RS.
 ** Closures.
 * Runtime
 ** Larger subset of R5RS.
+** [SRFI 1](http://srfi.schemers.org/srfi-1/srfi-1.html)
 
 ### Milestone 3
 
@@ -93,10 +95,10 @@ We aim to implement a subset of R5RS.
 ** Sibling call optimization.
 * Runtime
 ** Full R5RS
-** [SRFI 1](http://srfi.schemers.org/srfi-1/srfi-1.html)
 ** [SRFI 4](http://srfi.schemers.org/srfi-4/srfi-4.html)
 ** [SRFI 9](http://srfi.schemers.org/srfi-9/srfi-9.html)
 ** [SRFI 23](http://srfi.schemers.org/srfi-23/srfi-23.html)
+** [SRFI 55](http://srfi.schemers.org/srfi-55/srfi-55.html)
 ** [SRFI 69](http://srfi.schemers.org/srfi-69/srfi-69.html)
 
 ### Milestone 4
