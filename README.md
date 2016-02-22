@@ -40,6 +40,13 @@ local variable reference.
 Closures modifying a local variable requires the variable to be moved
 to the heap.
 
+For disassembling generated raw code:
+
+```bash
+objdump -b binary -D -mi386:x86-64 code.bin
+
+```
+
 ## References
 
 ### Assembler
@@ -50,11 +57,13 @@ to the heap.
 * http://rayseyfarth.com/asm/
 * http://bob.cs.sonoma.edu/IntroCompOrg/book.html
 * http://www.agner.org/optimize/
+* http://www.avabodh.com/cin/cin.html
 * http://github.com/nineties/amber
 
 ### Lisp
 
 * http://piumarta.com/software/maru/
+* http://piumarta.com/papers/S3-2010.pdf
 * http://scheme2006.cs.uchicago.edu/11-ghuloum.pdf
 * http://library.readscheme.org/page1.html
 * http://trac.sacrideo.us/wg/raw-attachment/wiki/WikiStart/r7rs.pdf
