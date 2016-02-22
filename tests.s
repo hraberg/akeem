@@ -100,6 +100,16 @@ main:
         call_fn is_string, %rax
         call_fn println, %rax
 
+        call_fn box_string, $strlen_name
+        call_fn string_length, %rax
+        call_fn println, %rax
+
+        call_fn box_string, $strlen_name
+        mov     %rax, %rbx
+        call_fn box_int $0
+        call_fn string_ref, %rbx, %rax
+        call_fn println, %rax
+
         call_fn is_string, PI
         call_fn println, %rax
 

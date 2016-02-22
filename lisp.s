@@ -172,7 +172,7 @@ string_length:                  # vector
 string_ref:                     # string, k
         unbox_int_internal %esi, %rsi
         unbox_pointer_internal %rdi
-        mov     (%rax,%rsi,1), %al
+        movsxb  (%rax,%rsi,1), %eax
         box_int_internal %eax
         ret
 
@@ -181,7 +181,7 @@ string_set:                     # string, k, char
         unbox_int_internal %edx, %rdx
         unbox_pointer_internal %rdi
         mov     %dl, (%rax,%rsi,1)
-        mov     %rdx, %rax
+        box_int_internal %edx
         ret
 
 identity:                       # x
@@ -371,4 +371,5 @@ plus_int_int:
 
         .globl allocate_code, cons, car, cdr, length, display, newline, box_int, box_string, unbox, number_to_s
         .globl is_eq, is_string, is_boolean, is_null, is_exact, is_inexact, is_integer, is_number, is_pair, is_vector
-        .globl make_vector, vector_length, vector_ref, vector_set, int_format, double_format, neg, plus
+        .globl make_vector, vector_length, vector_ref, vector_set, make_string, string_length, string_ref, string_set
+        .globl int_format, double_format, neg, plus
