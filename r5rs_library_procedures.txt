@@ -1,0 +1,78 @@
+library procedure: equal? obj1 obj2
+library procedure: zero? z
+library procedure: positive? x
+library procedure: negative? x
+library procedure: odd? n
+library procedure: even? n
+library procedure: max x1 x2 ...
+library procedure: min x1 x2 ...
+library procedure: abs x
+library procedure: gcd n1 ...
+library procedure: lcm n1 ...
+library procedure: rationalize x y
+library procedure: not obj
+library procedure: boolean? obj
+library procedure: caar pair
+library procedure: cadr pair
+library procedure: cdddar pair
+library procedure: cddddr pair
+library procedure: null? obj
+library procedure: list? obj
+library procedure: list obj ...
+library procedure: length list
+library procedure: append list ...
+library procedure: reverse list
+library procedure: list-tail list k
+library procedure: list-ref list k
+library procedure: memq obj list
+library procedure: memv obj list
+library procedure: member obj list
+library procedure: assq obj alist
+library procedure: assv obj alist
+library procedure: assoc obj alist
+library procedure: char-ci=? char1 char2
+library procedure: char-ci<? char1 char2
+library procedure: char-ci>? char1 char2
+library procedure: char-ci<=? char1 char2
+library procedure: char-ci>=? char1 char2
+library procedure: char-alphabetic? char
+library procedure: char-numeric? char
+library procedure: char-whitespace? char
+library procedure: char-upper-case? letter
+library procedure: char-lower-case? letter
+library procedure: char-upcase char
+library procedure: char-downcase char
+library procedure: string char ...
+library procedure: string=? string1 string2
+library procedure: string-ci=? string1 string2
+library procedure: string<? string1 string2
+library procedure: string>? string1 string2
+library procedure: string<=? string1 string2
+library procedure: string>=? string1 string2
+library procedure: string-ci<? string1 string2
+library procedure: string-ci>? string1 string2
+library procedure: string-ci<=? string1 string2
+library procedure: string-ci>=? string1 string2
+library procedure: substring string start end
+library procedure: string-append string ...
+library procedure: string->list string
+library procedure: list->string list
+library procedure: string-copy string
+library procedure: string-fill! string char
+library procedure: vector obj ...
+library procedure: vector->list vector
+library procedure: list->vector list
+library procedure: vector-fill! vector fill
+library procedure: map proc list1 list2 ...
+library procedure: for-each proc list1 list2 ...
+library procedure: force promise
+library procedure: call-with-input-file string proc
+library procedure: call-with-output-file string proc
+library procedure: read
+library procedure: read port
+library procedure: write obj
+library procedure: write obj port
+library procedure: display obj
+library procedure: display obj port
+library procedure: newline
+library procedure: newline port
