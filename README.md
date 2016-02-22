@@ -56,15 +56,13 @@ We aim to implement a subset of R5RS.
 ### Milestone 1
 
 * Parser
-** No complex or big numbers.
+** integers and doubles.
 ** No define-syntax
 * JIT Compiler
 ** Based on piecing together snippets.
 ** Mainly stack based.
 ** Single arity.
 ** Lambdas.
-** Self-call TCO.
-** No call/cc.
 * Runtime
 ** Subset of R5RS non-library procedures.
 ** See also R4RS essential procedures without varargs.
@@ -78,6 +76,7 @@ We aim to implement a subset of R5RS.
 * JIT Compiler
 ** Multiple arities, varargs
 ** Register allocation.
+** Self-call TCO.
 ** Closures.
 * Runtime
 ** Larger subset of R5RS.
