@@ -55,6 +55,8 @@ We aim to implement a subset of R5RS.
 
 ### Milestone 1
 
+[milestone1.txt]
+
 * Parser
 ** integers and doubles.
 ** No define-syntax
@@ -69,78 +71,6 @@ We aim to implement a subset of R5RS.
 * R5RS syntax / procedures
 ** 4.1, 5.1, 6.1, 6.2.5, 6.2.6,
    6.3.2, 6.3.3, 6.3.5, 6.3.6, 6.6.2, 6.6.3
-
-syntax: <variable>
-syntax: <constant>
-syntax: (<operator> <operand1> ...)
-syntax: lambda <formals> <body>
-syntax: if <test> <consequent> <alternate>
-syntax: set! <variable> <expression>
-
-procedure: eqv? obj1 obj2
-procedure: eq? obj1 obj2
-
-procedure: number? obj
-procedure: integer? obj
-
-procedure: = z1 z2
-procedure: < x1 x2
-procedure: > x1 x2
-procedure: <= x1 x2
-procedure: >= x1 x2
-procedure: + z1 z2
-procedure: * z1 z2
-procedure: - z1 z2
-procedure: / z1 z2
-
-procedure: number->string z
-procedure: string->number string
-
-procedure: pair? obj
-procedure: cons obj1 obj2
-procedure: car pair
-procedure: cdr pair
-procedure: set-car! pair obj
-procedure: set-cdr! pair obj
-
-procedure: symbol? obj
-procedure: symbol->string symbol
-procedure: string->symbol string
-
-procedure: string? obj
-procedure: make-string k char
-procedure: string-length string
-procedure: string-ref string k
-procedure: string-set! string k char
-
-procedure: vector? obj
-procedure: make-vector k fill
-procedure: vector-length vector
-procedure: vector-ref vector k
-procedure: vector-set! vector k obj
-
-procedure: read-char
-procedure: peek-char
-procedure: eof-object? obj
-procedure: char-ready?
-procedure: write-char char
-
-library procedure: equal? obj1 obj2
-
-library procedure: not obj
-library procedure: boolean? obj
-
-library procedure: null? obj
-library procedure: list? obj
-
-library procedure: length list
-
-library procedure: string=? string1 string2
-
-library procedure: read
-library procedure: display obj
-library procedure: newline
-
 
 ### Milestone 2
 
