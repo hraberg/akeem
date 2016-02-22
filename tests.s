@@ -22,6 +22,12 @@ strlen_name:
 allocate_code_name:
         .string "allocate_code"
 
+println:                        # obj
+        prologue
+        call_fn display, %rdi
+        call_fn newline
+        return
+
 example_code:
         mov     %rdi, %rax
         add     $4, %rax
@@ -48,7 +54,7 @@ main:
         call_fn println, %rax
 
         call_fn cons, $1, $NIL
-        call_fn is_int, %rax
+        call_fn is_exact, %rax
         call_fn println, %rax
 
         call_fn box_int, $3
@@ -64,14 +70,10 @@ main:
         call_fn cons, $3, $NIL
         call_fn cons, $2, %rax
         call_fn cons, $1, %rax
-        call_fn pair_length, %rax
+        call_fn length, %rax
         call_fn println, %rax
 
-        call_fn pair_length, $NIL
-        call_fn println, %rax
-
-        call_fn pair_to_s, $NIL
-        call_fn box_pointer, %rax
+        call_fn length, $NIL
         call_fn println, %rax
 
         call_fn box_int, $2
@@ -87,7 +89,7 @@ main:
         call_fn println, %rax
 
         call_fn box_int, $1
-        call_fn is_int, %rax
+        call_fn is_exact, %rax
         call_fn println, %rax
 
         call_fn box_int, $1
@@ -95,7 +97,7 @@ main:
         call_fn println, %rax
 
         call_fn box_pointer, $1
-        call_fn is_int, %rax
+        call_fn is_exact, %rax
         call_fn println, %rax
 
         call_fn println, $TRUE
@@ -107,10 +109,22 @@ main:
         call_fn println, $NIL
         call_fn println, $TRUE
 
-        call_fn is_double, PI
+        call_fn is_null, $NIL
         call_fn println, %rax
 
-        call_fn is_double, $TRUE
+        call_fn is_null, PI
+        call_fn println, %rax
+
+        call_fn is_inexact, PI
+        call_fn println, %rax
+
+        call_fn is_inexact, $TRUE
+        call_fn println, %rax
+
+        call_fn is_eq, $TRUE, $TRUE
+        call_fn println, %rax
+
+        call_fn is_eq, E, PI
         call_fn println, %rax
 
         call_fn box_int, $42
@@ -120,11 +134,11 @@ main:
         call_fn println, %rax
 
         call_fn box_int, $-1
-        call_fn is_double, %rax
+        call_fn is_inexact, %rax
         call_fn println, %rax
 
         call_fn box_int, $-1
-        call_fn is_int, %rax
+        call_fn is_exact, %rax
         call_fn println, %rax
 
         call_fn box_int, $0
@@ -169,16 +183,16 @@ main:
         call    printf
         call_fn puts, $empty_string
 
-        call_fn object_array, $2
+        call_fn make_vector, $2
         mov     %rax, array(%rsp)
 
         call_fn box_int, $16
-        call_fn aset, array(%rsp), $0, E
-        call_fn aset, array(%rsp), $1, PI
+        call_fn vector_set, array(%rsp), $0, E
+        call_fn vector_set, array(%rsp), $1, PI
 
-        call_fn aget, array(%rsp), $0
+        call_fn vector_ref, array(%rsp), $0
         call_fn println, %rax
-        call_fn aget, array(%rsp), $1
+        call_fn vector_ref, array(%rsp), $1
         call_fn println, %rax
 
         call_fn box_int, $1
@@ -195,27 +209,36 @@ main:
         call_fn neg, MINUS_ONE
         call_fn println, %rax
 
-        call_fn is_double, PLUS_ONE
+        call_fn is_inexact, PLUS_ONE
         call_fn println, %rax
-        call_fn is_double, MINUS_ONE
+        call_fn is_inexact, MINUS_ONE
         call_fn println, %rax
-        call_fn is_double, NAN
+        call_fn is_inexact, NAN
+        call_fn println, %rax
+
+        call_fn is_number, PLUS_ONE
+        call_fn println, %rax
+
+        call_fn is_number, $1
+        call_fn println, %rax
+
+        call_fn is_number, $TRUE
         call_fn println, %rax
 
         call_fn box_int, $16
         mov     %rax, %r11
-        call_fn add, %rax, %r11
+        call_fn plus, %rax, %r11
         call_fn println, %rax
 
-        call_fn add, PI, E
+        call_fn plus, PI, E
         call_fn println, %rax
 
         call_fn box_int, $1
-        call_fn add, %rax, PI
+        call_fn plus, %rax, PI
         call_fn println, %rax
 
         call_fn box_int, $2
-        call_fn add, PI, %rax
+        call_fn plus, PI, %rax
         call_fn println, %rax
 
         return  $0

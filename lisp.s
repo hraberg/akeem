@@ -7,11 +7,11 @@ int_format:
 double_format:
         .string "%lf"
 true_string:
-        .string "true"
+        .string "#t"
 false_string:
-        .string "false"
+        .string "#f"
 nil_string:
-        .string "nil"
+        .string "()"
 
 to_s_jump_table:
         .quad   double_to_s, int_to_s, unbox_pointer, boolean_to_s, nil_to_s, pair_to_s
@@ -37,14 +37,14 @@ allocate_code:                  # source_code, source_size
         call_fn mprotect, destination_code(%rsp), $PAGE_SIZE, $(PROT_READ | PROT_EXEC)
         return destination_code(%rsp)
 
-cons:                           # car, cdr
-        prologue car, cdr
-        mov     %rdi, car(%rsp)
-        mov     %rsi, cdr(%rsp)
+cons:                           # obj1, obj2
+        prologue obj1, obj2
+        mov     %rdi, obj1(%rsp)
+        mov     %rsi, obj2(%rsp)
         call_fn malloc, $pair_size
-        mov     car(%rsp), %rdi
+        mov     obj1(%rsp), %rdi
         mov     %rdi, pair_car(%rax)
-        mov     cdr(%rsp), %rsi
+        mov     obj2(%rsp), %rsi
         mov     %rsi, pair_cdr(%rax)
         tag     TAG_PAIR, %rax
         return
@@ -59,13 +59,13 @@ cdr:                            # pair
         mov     pair_cdr(%rax), %rax
         ret
 
-set_car:                        # pair, x
+set_car:                        # pair, obj
         unbox_pointer_internal %rdi
         mov     %rsi, pair_car(%rax)
         mov     %rsi, %rax
         ret
 
-set_cdr:                        # pair, x
+set_cdr:                        # pair, obj
         unbox_pointer_internal %rdi
         mov     %rsi, pair_cdr(%rax)
         mov     %rsi, %rax
@@ -108,7 +108,7 @@ pair_to_s:                      # pair
         call_fn fclose, stream(%rsp)
         return str(%rsp)
 
-pair_length:                    # pair
+length:                    # list
         prologue
         mov     %rdi, %rax
         xor     %rcx, %rcx
@@ -123,25 +123,19 @@ pair_length:                    # pair
 2:      box_int_internal %ecx
         return
 
-byte_array:                     # length
-        prologue
-        call_fn malloc, %rdi
-        tag     TAG_POINTER, %rax
-        return
-
-object_array:                   # length
+make_vector:                    # k
         prologue
         imul    $POINTER_SIZE, %rdi
         call_fn malloc, %rdi
         tag     TAG_POINTER, %rax
         return
 
-aget:                           # array, idx
+vector_ref:                     # vector, k
         unbox_pointer_internal %rdi
         mov     (%rax,%rsi,POINTER_SIZE), %rax
         ret
 
-aset:                           # array, idx, value
+vector_set:                     # vector, k, obj
         unbox_pointer_internal %rdi
         mov     %rdx, (%rax,%rsi,POINTER_SIZE)
         mov     %rdx, %rax
@@ -198,12 +192,13 @@ nil_to_s:                       # nil
         mov     $nil_string, %rax
         ret
 
+number_to_s:                    # z
 to_s:                           # value
         prologue
         tagged_jump to_s_jump_table
         return
 
-print:                          # value
+display:                        # obj
         prologue
         call_fn to_s, %rdi
         mov     %rax, %rdi
@@ -211,68 +206,71 @@ print:                          # value
         call_fn printf, %rdi
         return $NIL
 
-println:                        # value
-        prologue
-        call_fn print, %rdi
+newline:
         call_fn putchar, $'\n
-        return $NIL
+        mov     $NIL, %rax
+        ret
 
-eq:                             # x, y
+is_eq:                          # obj1, obj2
         eq_internal %rdi, %rsi
         box_boolean_internal %rax
         ret
 
-not:                            # x
+not:                            # obj
         mov     $FALSE, %rax
         eq_internal %rdi, %rax
         ret
 
-box_boolean:                    # value
+box_boolean:                    # obj
         and     $C_TRUE, %rdi
         box_boolean_internal %rdi
         ret
 
-box_int:                        # value
+box_int:                        # obj
         box_int_internal %edi
         ret
 
-box_pointer:                    # value
+box_pointer:                    # obj
         mov     $PAYLOAD_MASK, %rax
         and     %rdi, %rax
         tag     TAG_POINTER, %rax
         ret
 
-is_int:                         # value
+is_integer:                     # obj
+is_exact:                       # z
         has_tag TAG_INT, %rdi
         box_boolean_internal %rax
         ret
 
-is_pointer:                     # value
-        has_tag TAG_POINTER, %rdi
-        box_boolean_internal %rax
-        ret
-
-is_boolean:                     # value
-        has_tag TAG_BOOLEAN, %rdi
-        box_boolean_internal %rax
-        ret
-
-is_nil:                         # value
-        has_tag TAG_NIL, %rdi
-        box_boolean_internal %rax
-        ret
-
-is_pair:                        # value
-        has_tag TAG_PAIR, %rdi
-        box_boolean_internal %rax
-        ret
-
-is_double:                      # value
+is_inexact:                     # z
         is_double_internal %rdi
         box_boolean_internal %rax
         ret
 
-neg:                            # value
+is_boolean:                     # obj
+        has_tag TAG_BOOLEAN, %rdi
+        box_boolean_internal %rax
+        ret
+
+is_number:                     # obj
+        is_double_internal %rdi
+        mov     %rax, %r11
+        has_tag TAG_INT, %rdi
+        or      %r11, %rax
+        box_boolean_internal %rax
+        ret
+
+is_null:                        # obj
+        has_tag TAG_NIL, %rdi
+        box_boolean_internal %rax
+        ret
+
+is_pair:                        # obj
+        has_tag TAG_PAIR, %rdi
+        box_boolean_internal %rax
+        ret
+
+neg:                            # z1
         has_tag TAG_INT, %rdi
         jnz     neg_int
 neg_double:
@@ -284,39 +282,40 @@ neg_int:
         box_int_internal %edi
         ret
 
-add:                            # x, y
+plus:                           # z1, z2
         has_tag TAG_INT, %rdi
         mov     %rax, %rbx
         has_tag TAG_INT, %rsi
         shl     %rax
         or      %rbx, %rax
         shl     $4, %rax
-        lea     add_double_double(%rax), %rax
+        lea     plus_double_double(%rax), %rax
         jmp     *%rax
 1:      addsd   %xmm1, %xmm0
         movq    %xmm0, %rax
         ret
         .align 16
-add_double_double:
+plus_double_double:
         movq    %rdi, %xmm0
         movq    %rsi, %xmm1
         jmp     1b
         .align 16
-add_int_double:
+plus_int_double:
         cvtsi2sd %edi, %xmm0
         movq    %rsi, %xmm1
         jmp     1b
         .align 16
-add_double_int:
+plus_double_int:
         movq    %rdi, %xmm0
         cvtsi2sd %esi, %xmm1
         jmp     1b
         .align 16
-add_int_int:
+plus_int_int:
         mov     %edi, %eax
         add     %esi, %eax
         box_int_internal %eax
         ret
 
-        .globl allocate_code, cons, car, cdr, pair_length, print, println, box_int, box_pointer, is_int, is_boolean,
-        .globl is_double, is_pair, unbox, to_s, pair_to_s, aget, aset, object_array, int_format, double_format, neg, add
+        .globl allocate_code, cons, car, cdr, length, display, newline, box_int, box_pointer, unbox, number_to_s
+        .globl is_eq, is_int, is_boolean, is_null, is_exact, is_inexact, is_integer, is_number, is_pair
+        .globl make_vector, vector_ref, vector_set, int_format, double_format, neg, plus
