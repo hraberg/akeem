@@ -43,4 +43,3 @@ library procedure: null? obj
 library procedure: length list
 library procedure: read
 library procedure: display obj
-library procedure: newline
