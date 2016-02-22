@@ -66,8 +66,8 @@ We aim to implement a subset of R5RS.
 ** Self-call TCO.
 ** No call/cc.
 * Runtime
-** Subset of R5RS library procedures.
-** See R4RS essential procedures without varargs.
+** Subset of R5RS non-library procedures.
+** See also R4RS essential procedures without varargs.
 ** NaN boxing.
 
 ### Milestone 2
