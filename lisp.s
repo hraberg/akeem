@@ -10,13 +10,11 @@ true_string:
         .string "#t"
 false_string:
         .string "#f"
-nil_string:
-        .string "()"
 
 to_s_jump_table:
-        .quad   double_to_s, int_to_s, unbox_pointer, boolean_to_s, nil_to_s, pair_to_s
+        .quad   double_to_s, int_to_s, unbox_pointer, boolean_to_s, pair_to_s, unbox_pointer
 unbox_jump_table:
-        .quad   unbox_double, unbox_int, unbox_pointer, unbox_boolean, unbox_nil, unbox_pointer
+        .quad   unbox_double, unbox_int, unbox_pointer, unbox_boolean, unbox_pointer, unbox_pointer
 
         .struct 0
 pair_car:
@@ -194,10 +192,6 @@ unbox_boolean:                  # boolean
         unbox_int_internal %edi, %rax
         ret
 
-unbox_nil:                      # nil
-        mov     $NULL, %rax
-        ret
-
 unbox_pointer:                  # ptr
         unbox_pointer_internal %rdi
         ret
@@ -229,10 +223,6 @@ boolean_to_s:                   # boolean
         mov     $false_string, %r11
         test    $C_TRUE, %rdi
         cmovz   %r11, %rax
-        ret
-
-nil_to_s:                       # nil
-        mov     $nil_string, %rax
         ret
 
 number_to_s:                    # z
@@ -304,12 +294,18 @@ is_number:                      # obj
         ret
 
 is_null:                        # obj
-        has_tag TAG_NIL, %rdi
+        mov     $NIL, %rax
+        eq_internal %rax, %rdi
         box_boolean_internal %rax
         ret
 
 is_pair:                        # obj
         has_tag TAG_PAIR, %rdi
+        mov     %rax, %r11
+        mov     $NIL, %rax
+        eq_internal %rax, %rdi
+        btc     $0, %rax
+        and     %r11, %rax
         box_boolean_internal %rax
         ret
 

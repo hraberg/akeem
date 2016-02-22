@@ -53,6 +53,16 @@ main:
         call_fn is_pair, %rax
         call_fn println, %rax
 
+        call_fn cons, $1, $2
+        call_fn is_pair, %rax
+        call_fn println, %rax
+
+        call_fn is_pair, $NIL
+        call_fn println, %rax
+
+        call_fn is_pair, PI
+        call_fn println, %rax
+
         call_fn cons, $1, $NIL
         call_fn is_exact, %rax
         call_fn println, %rax

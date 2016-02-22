@@ -23,11 +23,10 @@
         .equ TAG_INT, 1
         .equ TAG_STRING, 2
         .equ TAG_BOOLEAN, 3
-        .equ TAG_NIL, 4
-        .equ TAG_PAIR, 5
-        .equ TAG_VECTOR, 6
+        .equ TAG_PAIR, 4
+        .equ TAG_VECTOR, 5
 
         .equ C_TRUE, 1
         .equ FALSE, (NAN_MASK | (TAG_BOOLEAN << TAG_SHIFT))
         .equ TRUE, (FALSE | C_TRUE)
-        .equ NIL, (NAN_MASK | (TAG_NIL << TAG_SHIFT))
+        .equ NIL, (NAN_MASK | (TAG_PAIR << TAG_SHIFT) | NULL)
