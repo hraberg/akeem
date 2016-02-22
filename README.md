@@ -71,6 +71,7 @@ We aim to implement a subset of R5RS.
 * R5RS syntax / procedures
 ** 4.1, 5.1, 6.1, 6.2.5, 6.2.6,
    6.3.2, 6.3.3, 6.3.5, 6.3.6, 6.6.2, 6.6.3
+** library procedures initially in Assembler to bootstrap.
 
 ### Milestone 2
 
@@ -85,8 +86,9 @@ We aim to implement a subset of R5RS.
 * R5RS syntax / procedures
 ** 5.2, 6.3.1, 6.3.4, 6.5, 6.6.1, 6.6.4
 * R5RS library syntax / procedures
-** 4.2, 6.2.5, 6.2.6, 6.3.5, 6.3.6
+** 4.2, 6.2.5, 6.2.6, 6.3.5, 6.3.6, 6.6.2, 6.6.3
 ** [SRFI 1](http://srfi.schemers.org/srfi-1/srfi-1.html)
+** rewrite most library procedures in Scheme.
 
 ### Milestone 3
 
