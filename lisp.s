@@ -125,18 +125,30 @@ length:                    # list
 
 make_vector:                    # k
         prologue
+        mov     %rdi, %rbx
+        inc     %rdi
         imul    $POINTER_SIZE, %rdi
         call_fn malloc, %rdi
-        tag     TAG_POINTER, %rax
+        mov     %rax, %rdi
+        box_int_internal %ebx
+        mov     %rax, (%rdi)
+        tag     TAG_POINTER, %rdi
         return
+
+vector_length:                  # vector
+        unbox_pointer_internal %rdi
+        mov     (%rax), %rax
+        ret
 
 vector_ref:                     # vector, k
         unbox_pointer_internal %rdi
+        inc     %rsi
         mov     (%rax,%rsi,POINTER_SIZE), %rax
         ret
 
 vector_set:                     # vector, k, obj
         unbox_pointer_internal %rdi
+        inc     %rsi
         mov     %rdx, (%rax,%rsi,POINTER_SIZE)
         mov     %rdx, %rax
         ret
@@ -318,4 +330,4 @@ plus_int_int:
 
         .globl allocate_code, cons, car, cdr, length, display, newline, box_int, box_pointer, unbox, number_to_s
         .globl is_eq, is_int, is_boolean, is_null, is_exact, is_inexact, is_integer, is_number, is_pair
-        .globl make_vector, vector_ref, vector_set, int_format, double_format, neg, plus
+        .globl make_vector, vector_length, vector_ref, vector_set, int_format, double_format, neg, plus

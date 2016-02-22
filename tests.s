@@ -186,6 +186,9 @@ main:
         call_fn make_vector, $2
         mov     %rax, array(%rsp)
 
+        call_fn vector_length, %rax
+        call_fn println, %rax
+
         call_fn box_int, $16
         call_fn vector_set, array(%rsp), $0, E
         call_fn vector_set, array(%rsp), $1, PI
