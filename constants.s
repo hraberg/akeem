@@ -48,4 +48,4 @@ symbol_table_entry_symbol:
         .struct . + POINTER_SIZE
 symbol_table_entry_size:
 
-        .equ SYMBOL_TABLE_ENTRY_SHIFT, POINTER_SIZE / 2
+        .equ SYMBOL_TABLE_ENTRY_SHIFT, 4
