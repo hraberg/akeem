@@ -25,6 +25,8 @@
         .equ TAG_SYMBOL, 3
         .equ TAG_PAIR, 4
         .equ TAG_VECTOR, 5
+        .equ TAG_PROCEDURE, 6
+        .equ TAG_PORT, 7        # or TAG_CHAR
 
         .equ C_TRUE, 1
         .equ FALSE, (NAN_MASK | (TAG_SYMBOL << TAG_SHIFT))
