@@ -1,4 +1,3 @@
-        .include "constants.s"
         .include "macros.s"
 
         .data

@@ -1,4 +1,3 @@
-        .include "constants.s"
         .include "macros.s"
 
         .data
@@ -17,33 +16,10 @@ unbox_jump_table:
         .quad   unbox_double, unbox_int, unbox_pointer, unbox_pointer, unbox_pointer, unbox_pointer
 
 symbol_table:
-        .rept 1024
-        .quad   0
-        .endr
+        .zero   MAX_NUMBER_OF_SYMBOLS * symbol_table_entry_size
 
 symbol_next_id:
         .quad   0
-
-        .struct 0
-pair_car:
-        .struct . + POINTER_SIZE
-pair_cdr:
-        .struct . + POINTER_SIZE
-pair_size:
-
-        .struct 0
-symbol_id:
-        .struct . + POINTER_SIZE
-symbol_name:
-        .struct . + POINTER_SIZE
-symbol_size:
-
-        .struct 0
-symbol_table_entry_value:
-        .struct . + POINTER_SIZE
-symbol_table_entry_symbol:
-        .struct . + POINTER_SIZE
-symbol_table_entry_size:
 
         .text
 allocate_code:                  # source_code, source_size

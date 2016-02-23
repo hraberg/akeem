@@ -31,3 +31,26 @@
         .equ TRUE, (FALSE | C_TRUE)
 
         .equ NIL, (NAN_MASK | (TAG_PAIR << TAG_SHIFT) | NULL)
+
+        .equ MAX_NUMBER_OF_SYMBOLS, 1024
+
+        .struct 0
+pair_car:
+        .struct . + POINTER_SIZE
+pair_cdr:
+        .struct . + POINTER_SIZE
+pair_size:
+
+        .struct 0
+symbol_id:
+        .struct . + POINTER_SIZE
+symbol_name:
+        .struct . + POINTER_SIZE
+symbol_size:
+
+        .struct 0
+symbol_table_entry_value:
+        .struct . + POINTER_SIZE
+symbol_table_entry_symbol:
+        .struct . + POINTER_SIZE
+symbol_table_entry_size:
