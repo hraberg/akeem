@@ -108,18 +108,3 @@
         and     $TAG_MASK, %rax
         call    *\table(,%rax,POINTER_SIZE)
         .endm
-
-        .macro arraycopy from to size
-        mov     \from, %rsi
-        mov     \to, %rdi
-        mov     \size, %rcx
-
-        lea     (%rsi, %rcx), %rsi
-        lea     (%rdi, %rcx), %rdi
-        neg     %rcx
-1:
-        mov     (%rsi, %rcx), %rax
-        mov     %rax, (%rdi, %rcx)
-        inc     %rcx
-        jnz 1b
-        .endm

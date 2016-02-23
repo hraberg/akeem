@@ -15,9 +15,10 @@ to_string_jump_table:
 unbox_jump_table:
         .quad   unbox_double, unbox_int, unbox_pointer, unbox_pointer, unbox_pointer, unbox_pointer
 
-symbol_table:
-        .zero   MAX_NUMBER_OF_SYMBOLS * symbol_table_entry_size
-
+symbol_table_values:
+        .zero   MAX_NUMBER_OF_SYMBOLS * POINTER_SIZE
+symbol_table_names:
+        .zero   MAX_NUMBER_OF_SYMBOLS * POINTER_SIZE
 symbol_next_id:
         .quad   0
 
@@ -266,8 +267,7 @@ double_to_string:               # double
 
 symbol_to_string:               # symbol
         unbox_pointer_internal %rdi
-        shl     $SYMBOL_TABLE_ENTRY_SHIFT, %rax
-        mov     (symbol_table + symbol_table_entry_symbol)(%rax), %rax
+        mov     symbol_table_names(,%rax,POINTER_SIZE), %rax
         tag     TAG_STRING, %rax
         ret
 
@@ -281,9 +281,7 @@ string_to_symbol:               # string
         je      2f
 
         dec     %rbx
-        mov     %rbx, %rcx
-        shl     $SYMBOL_TABLE_ENTRY_SHIFT, %rcx
-        mov     (symbol_table + symbol_table_entry_symbol)(%rcx), %rax
+        mov     symbol_table_names(,%rbx,POINTER_SIZE), %rax
 
         call_fn strcmp, string(%rsp), %rax
         jnz     1b
@@ -293,10 +291,7 @@ string_to_symbol:               # string
         incq    (symbol_next_id)
 
         call_fn strdup, string(%rsp)
-
-        mov     %rbx, %rcx
-        shl     $SYMBOL_TABLE_ENTRY_SHIFT, %rcx
-        mov     %rax, (symbol_table + symbol_table_entry_symbol)(%rcx)
+        mov     %rax, symbol_table_names(,%rbx,POINTER_SIZE)
 
 3:      tag     TAG_SYMBOL, %rbx
         return

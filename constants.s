@@ -40,12 +40,3 @@ pair_car:
 pair_cdr:
         .struct . + POINTER_SIZE
 pair_size:
-
-        .struct 0
-symbol_table_entry_value:
-        .struct . + POINTER_SIZE
-symbol_table_entry_symbol:
-        .struct . + POINTER_SIZE
-symbol_table_entry_size:
-
-        .equ SYMBOL_TABLE_ENTRY_SHIFT, 4
