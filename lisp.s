@@ -292,9 +292,10 @@ string_to_symbol:               # string
 2:      movq    (symbol_next_id), %rbx
         incq    (symbol_next_id)
 
+        call_fn strdup, string(%rsp)
+
         mov     %rbx, %rcx
         shl     $SYMBOL_TABLE_ENTRY_SHIFT, %rcx
-        mov     string(%rsp), %rax
         mov     %rax, (symbol_table + symbol_table_entry_symbol)(%rcx)
 
 3:      tag     TAG_SYMBOL, %rbx
