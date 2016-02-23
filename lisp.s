@@ -252,34 +252,27 @@ symbol_to_string:               # symbol
         ret
 
 string_to_symbol:               # string
-        prologue string, idx, id
+        prologue string, offset
         mov     %rdi, string(%rsp)
+        mov     (symbol_next_id), %rcx
+        imul    $symbol_table_entry_size, %rcx
+        mov     %rcx, offset(%rsp)
 
-        xor     %rcx, %rcx
-1:      cmp     (symbol_next_id), %rcx
+1:      mov     offset(%rsp), %rcx
+        test    %rcx, %rcx
         je      2f
 
-        imul    $symbol_table_entry_size, %rcx, %rsi
-        mov     (symbol_table + symbol_table_entry_symbol)(%rsi), %rsi
+        sub     $symbol_table_entry_size, %rcx
+        mov     %rcx, offset(%rsp)
+        mov     (symbol_table + symbol_table_entry_symbol)(%rcx), %rbx
 
-        mov     symbol_id(%rsi), %rax
-        mov     %rax, id(%rsp)
-        mov     symbol_name(%rsi), %rax
-        mov     %rcx, idx(%rsp)
-
-        call_fn strcmp, %rax, string(%rsp)
-        cmp     $0, %rax
-
-        mov     id(%rsp), %rax
-        mov     idx(%rsp), %rcx
-
-        je      3f
-
-        inc     %rcx
-        jmp     1b
+        call_fn strcmp, string(%rsp), symbol_name(%rbx)
+        jnz     1b
+        mov     symbol_id(%rbx), %rax
+        jmp     3f
 
 2:      call_fn malloc, $symbol_size
-        mov     obj1(%rsp), %rdi
+        mov     string(%rsp), %rdi
         mov     %rdi, symbol_name(%rax)
 
         movq    (symbol_next_id), %rdi
