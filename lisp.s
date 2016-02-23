@@ -266,42 +266,38 @@ double_to_string:               # double
 
 symbol_to_string:               # symbol
         unbox_pointer_internal %rdi
-        imul    $symbol_table_entry_size, %rax
+        shl     $SYMBOL_TABLE_ENTRY_SHIFT, %rax
         mov     (symbol_table + symbol_table_entry_symbol)(%rax), %rax
         tag     TAG_STRING, %rax
         ret
 
 string_to_symbol:               # string
-        prologue string, idx
+        prologue string
         unbox_pointer_internal %rdi
         mov     %rax, string(%rsp)
-        mov     (symbol_next_id), %rcx
-        mov     %rcx, idx(%rsp)
+        mov     (symbol_next_id), %rbx
 
-1:      mov     idx(%rsp), %rcx
-        test    %rcx, %rcx
+1:      test    %rbx, %rbx
         je      2f
 
-        dec     %rcx
-        mov     %rcx, idx(%rsp)
-        shl     $4, %rcx
-        mov     (symbol_table + symbol_table_entry_symbol)(%rcx), %r11
+        dec     %rbx
+        mov     %rbx, %rcx
+        shl     $SYMBOL_TABLE_ENTRY_SHIFT, %rcx
+        mov     (symbol_table + symbol_table_entry_symbol)(%rcx), %rax
 
-        call_fn strcmp, string(%rsp), %r11
+        call_fn strcmp, string(%rsp), %rax
         jnz     1b
-
-        mov     idx(%rsp), %rax
         jmp     3f
 
-2:      movq    (symbol_next_id), %rcx
+2:      movq    (symbol_next_id), %rbx
         incq    (symbol_next_id)
 
-        mov     %rcx, %rax
-        shl     $4, %rcx
-        mov     string(%rsp), %r11
-        mov     %r11, (symbol_table + symbol_table_entry_symbol)(%rcx)
+        mov     %rbx, %rcx
+        shl     $SYMBOL_TABLE_ENTRY_SHIFT, %rcx
+        mov     string(%rsp), %rax
+        mov     %rax, (symbol_table + symbol_table_entry_symbol)(%rcx)
 
-3:      tag     TAG_SYMBOL, %rax
+3:      tag     TAG_SYMBOL, %rbx
         return
 
 number_to_string:               # z
