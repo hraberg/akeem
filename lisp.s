@@ -348,6 +348,7 @@ newline:
         ret
 
 is_eq:                          # obj1, obj2
+is_eqv:                         # obj1, obj2
         eq_internal %rdi, %rsi
         box_boolean_internal %rax
         ret
@@ -482,8 +483,8 @@ plus_int_int:
         box_int_internal %eax
         ret
 
-        .globl allocate_code, cons, car, cdr, length, display, newline, box_int, box_string, unbox, number_to_s
-        .globl is_eq, is_string, is_boolean, is_symbol, is_null, is_exact, is_inexact, is_integer, is_number, is_pair, is_vector
+        .globl allocate_code, cons, car, cdr, length, display, newline, box_int, box_string, unbox
+        .globl is_eq, is_eq_v, is_string, is_boolean, is_symbol, is_null, is_exact, is_inexact, is_integer, is_number, is_pair, is_vector
         .globl make_vector, vector_length, vector_ref, vector_set
-        .globl make_string, string_length, string_ref, string_set, string_to_symbol, string_to_number
+        .globl make_string, string_length, string_ref, string_set, string_to_number, string_to_symbol, symbol_to_string
         .globl int_format, double_format, neg, plus, init_runtime, true_string, false_string, set, lookup_global_symbol
