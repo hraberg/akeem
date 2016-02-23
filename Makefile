@@ -27,7 +27,7 @@ run-tests-catchsegv: tests
 	sudo apt-get install -y rlwrap
 
 run-repl: repl /usr/bin/rlwrap
-	@rlwrap -n -pBlue -m ./$<
+	@rlwrap -nm ./$<
 
 /usr/bin/entr:
 	sudo apt-get install -y entr
