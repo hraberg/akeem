@@ -275,12 +275,12 @@ string_to_symbol:               # string
         mov     string(%rsp), %rdi
         mov     %rdi, symbol_name(%rax)
 
-        movq    (symbol_next_id), %rdi
-        mov     %rdi, symbol_id(%rax)
+        movq    (symbol_next_id), %rcx
+        mov     %rcx, symbol_id(%rax)
         incq    (symbol_next_id)
 
-        imul    $symbol_table_entry_size, %rdi
-        mov     %rax, (symbol_table + symbol_table_entry_symbol)(%rdi)
+        imul    $symbol_table_entry_size, %rcx
+        mov     %rax, (symbol_table + symbol_table_entry_symbol)(%rcx)
 
 3:      tag     TAG_SYMBOL, %rax
         return
