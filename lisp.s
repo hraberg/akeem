@@ -13,7 +13,7 @@ true_string:
 to_string_jump_table:
         .quad   double_to_string, int_to_string, unbox_pointer, symbol_to_string, pair_to_string, vector_to_string
 unbox_jump_table:
-        .quad   unbox_double, unbox_int, unbox_pointer, unbox_pointer, unbox_pointer, unbox_pointer
+        .quad   unbox_double, unbox_int, unbox_pointer, unbox_pointer, unbox_pointer, unbox_vector
 
 symbol_table_values:
         .zero   MAX_NUMBER_OF_SYMBOLS * POINTER_SIZE
@@ -257,6 +257,11 @@ unbox_int:                      # int
 
 unbox_pointer:                  # ptr
         unbox_pointer_internal %rdi
+        ret
+
+unbox_vector:                   # vector
+        unbox_pointer_internal %rdi
+        add     $POINTER_SIZE, %rax
         ret
 
 unbox:                          # value
