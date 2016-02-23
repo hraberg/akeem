@@ -30,7 +30,4 @@
         .equ FALSE, (NAN_MASK | (TAG_SYMBOL << TAG_SHIFT))
         .equ TRUE, (FALSE | C_TRUE)
 
-        .equ FALSE_SYMBOL_ID, 0
-        .equ TRUE_SYMBOL_ID, 0
-
         .equ NIL, (NAN_MASK | (TAG_PAIR << TAG_SHIFT) | NULL)

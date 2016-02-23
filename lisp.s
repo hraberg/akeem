@@ -16,19 +16,13 @@ to_s_jump_table:
 unbox_jump_table:
         .quad   unbox_double, unbox_int, unbox_pointer, unbox_pointer, unbox_pointer, unbox_pointer
 
-false_symbol:
-        .quad   FALSE_SYMBOL_ID, false_string
-true_symbol:
-        .quad   TRUE_SYMBOL_ID, true_string
-
 symbol_table:
-        .quad   FALSE, false_symbol, TRUE, true_symbol
-        .rept 1024 - 4
+        .rept 1024
         .quad   0
         .endr
 
 symbol_next_id:
-        .quad   TRUE_SYMBOL_ID + 1
+        .quad   0
 
         .struct 0
 pair_car:
@@ -62,6 +56,12 @@ allocate_code:                  # source_code, source_size
         call_fn memcpy, destination_code(%rsp), source_code(%rsp), source_size(%rsp)
         call_fn mprotect, destination_code(%rsp), $PAGE_SIZE, $(PROT_READ | PROT_EXEC)
         return destination_code(%rsp)
+
+init_runtime:
+        prologue
+        call_fn string_to_symbol, $false_string
+        call_fn string_to_symbol, $true_string
+        return
 
 cons:                           # obj1, obj2
         prologue obj1, obj2
@@ -247,9 +247,26 @@ double_to_s:                    # double
 
 symbol_to_string:               # symbol
         imul    $symbol_table_entry_size, %edi
-        mov     (symbol_table + symbol_table_entry_symbol)(%edi), %rax
+        mov     (symbol_table + symbol_table_entry_symbol)(%rdi), %rax
         mov     symbol_name(%rax), %rax
         ret
+
+string_to_symbol:               # string
+        prologue string
+        mov     %rdi, string(%rsp)
+        call_fn malloc, $symbol_size
+        mov     obj1(%rsp), %rdi
+        mov     %rdi, symbol_name(%rax)
+
+        movq    (symbol_next_id), %rdi
+        mov     %rdi, symbol_id(%rax)
+        incq    (symbol_next_id)
+
+        imul    $symbol_table_entry_size, %rdi
+        mov     %rax, (symbol_table + symbol_table_entry_symbol)(%rdi)
+
+        tag     TAG_SYMBOL, %rax
+        return
 
 number_to_string:               # z
 to_s:                           # value
@@ -353,8 +370,8 @@ is_string:                      # obj
 is_symbol:                      # obj
         has_tag TAG_SYMBOL, %rdi
         xor     %r11, %r11
-        cmp     $TRUE_SYMBOL_ID, %edi
-        setl    %r11b
+        cmp     $C_TRUE, %edi
+        setg    %r11b
         and     %r11, %rax
         box_boolean_internal %rax
         ret
@@ -408,4 +425,4 @@ plus_int_int:
         .globl allocate_code, cons, car, cdr, length, display, newline, box_int, box_string, unbox, number_to_s
         .globl is_eq, is_string, is_boolean, is_symbol, is_null, is_exact, is_inexact, is_integer, is_number, is_pair, is_vector
         .globl make_vector, vector_length, vector_ref, vector_set, make_string, string_length, string_ref, string_set
-        .globl int_format, double_format, neg, plus
+        .globl int_format, double_format, neg, plus, init_runtime, symbol_next_id

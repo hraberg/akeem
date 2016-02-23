@@ -38,6 +38,8 @@ example_code:
         .text
 main:
         prologue array
+        call_fn init_runtime
+
         call_fn dlsym, $RTLD_DEFAULT, $strlen_name
         call_fn *%rax, $int_format
         call_fn box_int, %rax
