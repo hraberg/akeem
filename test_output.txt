@@ -1,5 +1,7 @@
 #t
 #t
+#f
+strlen
 2
 6
 #t

@@ -22,7 +22,7 @@ strlen_name:
 allocate_code_name:
         .string "allocate_code"
 
-println:                        # obj
+println:
         prologue
         call_fn display, %rdi
         call_fn newline
@@ -40,12 +40,22 @@ main:
         prologue array
         call_fn init_runtime
 
-        call_fn string_to_symbol, $false_string
+        call_fn box_string, $false_string
+        call_fn string_to_symbol, %rax
         call_fn is_eq %rax, $FALSE
         call_fn println, %rax
 
-        call_fn string_to_symbol, $true_string
+        call_fn box_string, $true_string
+        call_fn string_to_symbol, %rax
         call_fn is_eq %rax, $TRUE
+        call_fn println, %rax
+
+        call_fn box_string, $false_string
+        call_fn string_to_symbol, %rax
+        call_fn println, %rax
+
+        call_fn box_string, $strlen_name
+        call_fn string_to_symbol, %rax
         call_fn println, %rax
 
         call_fn dlsym, $RTLD_DEFAULT, $strlen_name

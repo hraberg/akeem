@@ -11,8 +11,8 @@ false_string:
 true_string:
         .string "#t"
 
-to_s_jump_table:
-        .quad   double_to_s, int_to_s, unbox_pointer, symbol_to_string, pair_to_s, unbox_pointer
+to_string_jump_table:
+        .quad   double_to_string, int_to_string, unbox_pointer, symbol_to_string, pair_to_string, unbox_pointer
 unbox_jump_table:
         .quad   unbox_double, unbox_int, unbox_pointer, unbox_pointer, unbox_pointer, unbox_pointer
 
@@ -59,8 +59,10 @@ allocate_code:                  # source_code, source_size
 
 init_runtime:
         prologue
-        call_fn string_to_symbol, $false_string
-        call_fn string_to_symbol, $true_string
+        tag     TAG_STRING, $false_string
+        call_fn string_to_symbol, %rax
+        tag     TAG_STRING, $true_string
+        call_fn string_to_symbol, %rax
         return
 
 cons:                           # obj1, obj2
@@ -97,7 +99,7 @@ set_cdr:                        # pair, obj
         mov     %rsi, %rax
         ret
 
-pair_to_s:                      # pair
+pair_to_string:                 # pair
         prologue pair, str, size, stream
         mov     %rdi, pair(%rsp)
 
@@ -112,8 +114,9 @@ pair_to_s:                      # pair
         je      2f
 
         call_fn car, pair(%rsp)
-        call_fn to_s, %rax
-        call_fn fputs, %rax, stream(%rsp)
+        call_fn to_string, %rax
+        unbox_pointer_internal %rax, %rdi
+        call_fn fputs, %rdi, stream(%rsp)
 
         call_fn cdr, pair(%rsp)
         mov     %rax, pair(%rsp)
@@ -127,8 +130,9 @@ pair_to_s:                      # pair
 
         call_fn fputc, $'., stream(%rsp)
         call_fn fputc, $' , stream(%rsp)
-        call_fn to_s, pair(%rsp)
-        call_fn fputs, %rax, stream(%rsp)
+        call_fn to_string, pair(%rsp)
+        unbox_pointer_internal %rax, %rdi
+        call_fn fputs, %rdi, stream(%rsp)
 
 2:      call_fn fputc, $'), stream(%rsp)
         call_fn fclose, stream(%rsp)
@@ -228,32 +232,37 @@ unbox:                          # value
         tagged_jump unbox_jump_table
         return
 
-int_to_s:                       # int
+int_to_string:                  # int
         prologue str
         unbox_int_internal %edi, %rdx
         xor     %al, %al
         lea     str(%rsp), %rdi
         call_fn asprintf, %rdi, $int_format, %rdx
-        return str(%rsp)
+        tag     TAG_STRING, str(%rsp)
+        return
 
-double_to_s:                    # double
+double_to_string:               # double
         prologue str
         movq    %rdi, %xmm0
         mov     $1, %al         # number of vector var arguments http://www.x86-64.org/documentation/abi.pdf p21
         lea     str(%rsp), %rdi
         mov     $double_format, %rsi
         call    asprintf
-        return str(%rsp)
+        tag     TAG_STRING, str(%rsp)
+        return
 
 symbol_to_string:               # symbol
-        imul    $symbol_table_entry_size, %edi
-        mov     (symbol_table + symbol_table_entry_symbol)(%rdi), %rax
+        unbox_pointer_internal %rdi
+        imul    $symbol_table_entry_size, %rax
+        mov     (symbol_table + symbol_table_entry_symbol)(%rax), %rax
         mov     symbol_name(%rax), %rax
+        tag     TAG_STRING, %rax
         ret
 
 string_to_symbol:               # string
         prologue string, offset
-        mov     %rdi, string(%rsp)
+        unbox_pointer_internal %rdi
+        mov     %rax, string(%rsp)
         mov     (symbol_next_id), %rcx
         imul    $symbol_table_entry_size, %rcx
         mov     %rcx, offset(%rsp)
@@ -281,20 +290,21 @@ string_to_symbol:               # string
 
         imul    $symbol_table_entry_size, %rcx
         mov     %rax, (symbol_table + symbol_table_entry_symbol)(%rcx)
+        mov     symbol_id(%rax), %rax
 
 3:      tag     TAG_SYMBOL, %rax
         return
 
 number_to_string:               # z
-to_s:                           # value
+to_string:                      # value
         prologue
-        tagged_jump to_s_jump_table
+        tagged_jump to_string_jump_table
         return
 
 display:                        # obj
         prologue
-        call_fn to_s, %rdi
-        mov     %rax, %rdi
+        call_fn to_string, %rdi
+        unbox_pointer_internal %rax, %rdi
         xor     %al, %al
         call_fn printf, %rdi
         return $NIL
