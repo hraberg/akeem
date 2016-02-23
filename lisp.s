@@ -227,6 +227,7 @@ string_set:                     # string, k, char
 string_to_number:               # string
         prologue tail
         unbox_pointer_internal %rdi, %rbx
+
         lea     tail(%rsp), %r11
         call_fn strtol, %rbx, %r11
         mov     tail(%rsp), %r11
@@ -234,6 +235,7 @@ string_to_number:               # string
         jne     1f
         box_int_internal %eax
         return
+
 1:      lea     tail(%rsp), %r11
         call_fn strtod, %rbx, %r11
         mov     tail(%rsp), %r11
@@ -241,6 +243,7 @@ string_to_number:               # string
         jne     2f
         movq    %xmm0, %rax
         return
+
 2:      return $FALSE
 
 identity:                       # x
