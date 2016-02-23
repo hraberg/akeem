@@ -268,42 +268,38 @@ symbol_to_string:               # symbol
         unbox_pointer_internal %rdi
         imul    $symbol_table_entry_size, %rax
         mov     (symbol_table + symbol_table_entry_symbol)(%rax), %rax
-        mov     symbol_name(%rax), %rax
         tag     TAG_STRING, %rax
         ret
 
 string_to_symbol:               # string
-        prologue string, offset
+        prologue string, idx
         unbox_pointer_internal %rdi
         mov     %rax, string(%rsp)
         mov     (symbol_next_id), %rcx
-        imul    $symbol_table_entry_size, %rcx
-        mov     %rcx, offset(%rsp)
+        mov     %rcx, idx(%rsp)
 
-1:      mov     offset(%rsp), %rcx
+1:      mov     idx(%rsp), %rcx
         test    %rcx, %rcx
         je      2f
 
-        sub     $symbol_table_entry_size, %rcx
-        mov     %rcx, offset(%rsp)
-        mov     (symbol_table + symbol_table_entry_symbol)(%rcx), %rbx
+        dec     %rcx
+        mov     %rcx, idx(%rsp)
+        shl     $4, %rcx
+        mov     (symbol_table + symbol_table_entry_symbol)(%rcx), %r11
 
-        call_fn strcmp, string(%rsp), symbol_name(%rbx)
+        call_fn strcmp, string(%rsp), %r11
         jnz     1b
-        mov     symbol_id(%rbx), %rax
+
+        mov     idx(%rsp), %rax
         jmp     3f
 
-2:      call_fn malloc, $symbol_size
-        mov     string(%rsp), %rdi
-        mov     %rdi, symbol_name(%rax)
-
-        movq    (symbol_next_id), %rcx
-        mov     %rcx, symbol_id(%rax)
+2:      movq    (symbol_next_id), %rcx
         incq    (symbol_next_id)
 
-        imul    $symbol_table_entry_size, %rcx
-        mov     %rax, (symbol_table + symbol_table_entry_symbol)(%rcx)
-        mov     symbol_id(%rax), %rax
+        mov     %rcx, %rax
+        shl     $4, %rcx
+        mov     string(%rsp), %r11
+        mov     %r11, (symbol_table + symbol_table_entry_symbol)(%rcx)
 
 3:      tag     TAG_SYMBOL, %rax
         return

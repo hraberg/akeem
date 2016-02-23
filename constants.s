@@ -42,13 +42,6 @@ pair_cdr:
 pair_size:
 
         .struct 0
-symbol_id:
-        .struct . + POINTER_SIZE
-symbol_name:
-        .struct . + POINTER_SIZE
-symbol_size:
-
-        .struct 0
 symbol_table_entry_value:
         .struct . + POINTER_SIZE
 symbol_table_entry_symbol:
