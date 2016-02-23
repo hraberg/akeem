@@ -200,8 +200,8 @@ vector_to_string:                 # vector
 
         movq    $0, idx(%rsp)
 1:      mov     idx(%rsp), %rcx
-        cmp     $0, %rcx
-        je      2f
+        test    %rcx, %rcx
+        jz      2f
         cmp     (%rbx), %rcx
         je      3f
 
