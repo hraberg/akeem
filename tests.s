@@ -37,7 +37,7 @@ example_code:
 
         .text
 main:
-        prologue array
+        prologue vec
         call_fn init_runtime
 
         call_fn box_string, $false_string
@@ -240,12 +240,12 @@ main:
 
         call_fn box_int, $2
         call_fn make_vector, %rax
-        mov     %rax, array(%rsp)
+        mov     %rax, vec(%rsp)
 
         call_fn vector_length, %rax
         call_fn println, %rax
 
-        call_fn is_vector, array(%rsp)
+        call_fn is_vector, vec(%rsp)
         call_fn println, %rax
 
         call_fn is_vector, $NIL
@@ -253,16 +253,18 @@ main:
 
         call_fn box_int, $16
         call_fn box_int, $0
-        call_fn vector_set, array(%rsp), %rax, E
+        call_fn vector_set, vec(%rsp), %rax, E
         call_fn box_int, $1
-        call_fn vector_set, array(%rsp), %rax, PI
+        call_fn vector_set, vec(%rsp), %rax, PI
 
         call_fn box_int, $0
-        call_fn vector_ref, array(%rsp), %rax
+        call_fn vector_ref, vec(%rsp), %rax
         call_fn println, %rax
         call_fn box_int, $1
-        call_fn vector_ref, array(%rsp), %rax
+        call_fn vector_ref, vec(%rsp), %rax
         call_fn println, %rax
+
+        call_fn println, vec(%rsp)
 
         call_fn box_int, $1
         call_fn neg, %rax

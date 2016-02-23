@@ -12,7 +12,7 @@ true_string:
         .string "#t"
 
 to_string_jump_table:
-        .quad   double_to_string, int_to_string, unbox_pointer, symbol_to_string, pair_to_string, unbox_pointer
+        .quad   double_to_string, int_to_string, unbox_pointer, symbol_to_string, pair_to_string, vector_to_string
 unbox_jump_table:
         .quad   unbox_double, unbox_int, unbox_pointer, unbox_pointer, unbox_pointer, unbox_pointer
 
@@ -136,7 +136,8 @@ pair_to_string:                 # pair
 
 2:      call_fn fputc, $'), stream(%rsp)
         call_fn fclose, stream(%rsp)
-        return str(%rsp)
+        tag     TAG_STRING, str(%rsp)
+        return
 
 length:                         # list
         prologue
@@ -155,8 +156,8 @@ length:                         # list
 
 make_vector:                    # k
         prologue
-        mov     %rdi, %rbx
         unbox_int_internal %edi, %rdi
+        mov     %rdi, %rbx
         inc     %rdi
         imul    $POINTER_SIZE, %rdi
         call_fn malloc, %rdi
@@ -167,6 +168,7 @@ make_vector:                    # k
 vector_length:                  # vector
         unbox_pointer_internal %rdi
         mov     (%rax), %rax
+        box_int_internal %eax
         ret
 
 vector_ref:                     # vector, k
@@ -183,6 +185,46 @@ vector_set:                     # vector, k, obj
         mov     %rdx, (%rax,%rsi,POINTER_SIZE)
         mov     %rdx, %rax
         ret
+
+vector_to_string:                 # vector
+        prologue vector, str, size, stream, idx
+        unbox_pointer_internal %rdi
+        mov     %rax, vector(%rsp)
+
+        lea     str(%rsp), %rdi
+        lea     size(%rsp), %rsi
+        call_fn open_memstream, %rdi, %rsi
+        mov     %rax, stream(%rsp)
+
+        call_fn fputc, $'#, stream(%rsp)
+        call_fn fputc, $'(, stream(%rsp)
+
+        movq    $0, idx(%rsp)
+1:      mov     idx(%rsp), %rcx
+        mov     vector(%rsp), %rax
+        cmp     (%rax), %rcx
+        je      2f
+
+        inc     %rcx
+        mov     %rcx, idx(%rsp)
+
+        mov     (%rax,%rcx,POINTER_SIZE), %rax
+        call_fn to_string, %rax
+        unbox_pointer_internal %rax, %rdi
+        call_fn fputs, %rdi, stream(%rsp)
+
+        mov     idx(%rsp), %rcx
+        mov     vector(%rsp), %rax
+        cmp     (%rax), %rcx
+        je      2f
+
+        call_fn fputc, $' , stream(%rsp)
+        jmp     1b
+
+2:      call_fn fputc, $'), stream(%rsp)
+        call_fn fclose, stream(%rsp)
+        tag     TAG_STRING, str(%rsp)
+        return
 
 make_string:                    # k
         prologue
