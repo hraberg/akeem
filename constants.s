@@ -22,11 +22,15 @@
 
         .equ TAG_INT, 1
         .equ TAG_STRING, 2
-        .equ TAG_BOOLEAN, 3
+        .equ TAG_SYMBOL, 3
         .equ TAG_PAIR, 4
         .equ TAG_VECTOR, 5
 
         .equ C_TRUE, 1
-        .equ FALSE, (NAN_MASK | (TAG_BOOLEAN << TAG_SHIFT))
+        .equ FALSE, (NAN_MASK | (TAG_SYMBOL << TAG_SHIFT))
         .equ TRUE, (FALSE | C_TRUE)
+
+        .equ FALSE_SYMBOL_ID, 0
+        .equ TRUE_SYMBOL_ID, 0
+
         .equ NIL, (NAN_MASK | (TAG_PAIR << TAG_SHIFT) | NULL)

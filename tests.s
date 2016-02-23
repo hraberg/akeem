@@ -126,7 +126,19 @@ main:
         call_fn println, $TRUE
         call_fn println, $FALSE
 
+        call_fn is_boolean, $TRUE
+        call_fn println, %rax
+
         call_fn is_boolean, $FALSE
+        call_fn println, %rax
+
+        call_fn is_symbol, $TRUE
+        call_fn println, %rax
+
+        call_fn is_symbol, $FALSE
+        call_fn println, %rax
+
+        call_fn is_symbol, $NIL
         call_fn println, %rax
 
         call_fn println, $NIL

@@ -6,15 +6,29 @@ int_format:
         .string "%d"
 double_format:
         .string "%f"
-true_string:
-        .string "#t"
 false_string:
         .string "#f"
+true_string:
+        .string "#t"
 
 to_s_jump_table:
-        .quad   double_to_s, int_to_s, unbox_pointer, boolean_to_s, pair_to_s, unbox_pointer
+        .quad   double_to_s, int_to_s, unbox_pointer, symbol_to_string, pair_to_s, unbox_pointer
 unbox_jump_table:
-        .quad   unbox_double, unbox_int, unbox_pointer, unbox_boolean, unbox_pointer, unbox_pointer
+        .quad   unbox_double, unbox_int, unbox_pointer, unbox_pointer, unbox_pointer, unbox_pointer
+
+false_symbol:
+        .quad FALSE_SYMBOL_ID, false_string
+true_symbol:
+        .quad TRUE_SYMBOL_ID, true_string
+
+symbol_table:
+        .quad   FALSE_SYMBOL_ID, false_symbol, TRUE_SYMBOL_ID, true_symbol
+        .rept 1024 - 4
+        .quad   0
+        .endr
+
+symbol_max_id:
+        .quad   TRUE_SYMBOL_ID + 1
 
         .struct 0
 pair_car:
@@ -22,6 +36,20 @@ pair_car:
 pair_cdr:
         .struct . + POINTER_SIZE
 pair_size:
+
+        .struct 0
+symbol_id:
+        .struct . + POINTER_SIZE
+symbol_name:
+        .struct . + POINTER_SIZE
+symbol_size:
+
+        .struct 0
+symbol_table_entry_value:
+        .struct . + POINTER_SIZE
+symbol_table_entry_symbol:
+        .struct . + POINTER_SIZE
+symbol_table_entry_size:
 
         .text
 allocate_code:                  # source_code, source_size
@@ -188,7 +216,6 @@ unbox_double:                   # double
         ret
 
 unbox_int:                      # int
-unbox_boolean:                  # boolean
         unbox_int_internal %edi, %rax
         ret
 
@@ -218,14 +245,15 @@ double_to_s:                    # double
         call    asprintf
         return str(%rsp)
 
-boolean_to_s:                   # boolean
-        mov     $true_string, %rax
-        mov     $false_string, %r11
-        test    $C_TRUE, %rdi
-        cmovz   %r11, %rax
+symbol_to_string:               # symbol
+        mov     %edi, %edi
+        shl     $4, %rdi
+        add     $symbol_table_entry_symbol, %rdi
+        mov     symbol_table(%rdi), %rax
+        mov     symbol_name(%rax), %rax
         ret
 
-number_to_s:                    # z
+number_to_string:               # z
 to_s:                           # value
         prologue
         tagged_jump to_s_jump_table
@@ -281,7 +309,12 @@ is_inexact:                     # z
         ret
 
 is_boolean:                     # obj
-        has_tag TAG_BOOLEAN, %rdi
+        mov     $TRUE, %rax
+        eq_internal %rax, %rdi
+        mov     %rax, %r11
+        mov     $FALSE, %rax
+        eq_internal %rax, %rdi
+        or      %r11, %rax
         box_boolean_internal %rax
         ret
 
@@ -316,6 +349,15 @@ is_vector:                      # obj
 
 is_string:                      # obj
         has_tag TAG_STRING, %rdi
+        box_boolean_internal %rax
+        ret
+
+is_symbol:                      # obj
+        has_tag TAG_SYMBOL, %rdi
+        xor     %r11, %r11
+        cmp     $TRUE_SYMBOL_ID, %edi
+        setl    %r11b
+        and     %r11, %rax
         box_boolean_internal %rax
         ret
 
@@ -366,6 +408,6 @@ plus_int_int:
         ret
 
         .globl allocate_code, cons, car, cdr, length, display, newline, box_int, box_string, unbox, number_to_s
-        .globl is_eq, is_string, is_boolean, is_null, is_exact, is_inexact, is_integer, is_number, is_pair, is_vector
+        .globl is_eq, is_string, is_boolean, is_symbol, is_null, is_exact, is_inexact, is_integer, is_number, is_pair, is_vector
         .globl make_vector, vector_length, vector_ref, vector_set, make_string, string_length, string_ref, string_set
         .globl int_format, double_format, neg, plus

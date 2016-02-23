@@ -14,19 +14,21 @@ readline:
         prologue line
         lea     line(%rsp), %rax
         call_fn scanf, $line_format, %rax
-        call_fn box_pointer, line(%rsp)
+        call_fn box_string, line(%rsp)
         return
 
 main:
         prologue
-        call_fn box_pointer, $welcome_message
-        call_fn println, %rax
+        call_fn box_string, $welcome_message
+        call_fn display, %rax
+        call_fn newline
 
-1:      call_fn box_pointer, $prompt
-        call_fn print, %rax
+1:      call_fn box_string, $prompt
+        call_fn display, %rax
 
         call_fn readline
-        call_fn println, %rax
+        call_fn display, %rax
+        call_fn newline
 
         jmp     1b
 

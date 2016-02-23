@@ -30,6 +30,9 @@ Symbol table where each symbol gets an unique id (and offset)
 symbol_table_entry has pointer to both the value and the symbol, and
 potentially also unboxed version of the value pointer.
 
+If symbol 0 is #f and 1 #t booleans can be symbols while still handle
+logical operations.
+
 Use callee saved registers %rbx (potentially %rbp) and %r12-%r15 for
 local variables. Save used registers in prologue for functions. Save
 used registers at start of let block if they are used afterwards.
