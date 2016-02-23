@@ -195,7 +195,7 @@ vector_to_string:                 # vector
         call_fn open_memstream, %rdi, %rsi
         mov     %rax, stream(%rsp)
 
-        call_fn fputc, $'#, stream(%rsp)
+        call_fn fputc, $'\#, stream(%rsp)
         call_fn fputc, $'(, stream(%rsp)
 
         movq    $0, idx(%rsp)
