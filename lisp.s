@@ -252,9 +252,33 @@ symbol_to_string:               # symbol
         ret
 
 string_to_symbol:               # string
-        prologue string
+        prologue string, idx, id
         mov     %rdi, string(%rsp)
-        call_fn malloc, $symbol_size
+
+        xor     %rcx, %rcx
+1:      cmp     (symbol_next_id), %rcx
+        je      2f
+
+        imul    $symbol_table_entry_size, %rcx, %rsi
+        mov     (symbol_table + symbol_table_entry_symbol)(%rsi), %rsi
+
+        mov     symbol_id(%rsi), %rax
+        mov     %rax, id(%rsp)
+        mov     symbol_name(%rsi), %rax
+        mov     %rcx, idx(%rsp)
+
+        call_fn strcmp, %rax, string(%rsp)
+        cmp     $0, %rax
+
+        mov     id(%rsp), %rax
+        mov     idx(%rsp), %rcx
+
+        je      3f
+
+        inc     %rcx
+        jmp     1b
+
+2:      call_fn malloc, $symbol_size
         mov     obj1(%rsp), %rdi
         mov     %rdi, symbol_name(%rax)
 
@@ -265,7 +289,7 @@ string_to_symbol:               # string
         imul    $symbol_table_entry_size, %rdi
         mov     %rax, (symbol_table + symbol_table_entry_symbol)(%rdi)
 
-        tag     TAG_SYMBOL, %rax
+3:      tag     TAG_SYMBOL, %rax
         return
 
 number_to_string:               # z
@@ -424,5 +448,5 @@ plus_int_int:
 
         .globl allocate_code, cons, car, cdr, length, display, newline, box_int, box_string, unbox, number_to_s
         .globl is_eq, is_string, is_boolean, is_symbol, is_null, is_exact, is_inexact, is_integer, is_number, is_pair, is_vector
-        .globl make_vector, vector_length, vector_ref, vector_set, make_string, string_length, string_ref, string_set
-        .globl int_format, double_format, neg, plus, init_runtime, symbol_next_id
+        .globl make_vector, vector_length, vector_ref, vector_set, make_string, string_length, string_ref, string_set, string_to_symbol
+        .globl int_format, double_format, neg, plus, init_runtime, true_string, false_string

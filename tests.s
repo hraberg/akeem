@@ -40,6 +40,14 @@ main:
         prologue array
         call_fn init_runtime
 
+        call_fn string_to_symbol, $false_string
+        call_fn is_eq %rax, $FALSE
+        call_fn println, %rax
+
+        call_fn string_to_symbol, $true_string
+        call_fn is_eq %rax, $TRUE
+        call_fn println, %rax
+
         call_fn dlsym, $RTLD_DEFAULT, $strlen_name
         call_fn *%rax, $int_format
         call_fn box_int, %rax
