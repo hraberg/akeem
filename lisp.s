@@ -187,7 +187,7 @@ vector_set:                     # vector, k, obj
         ret
 
 vector_to_string:                 # vector
-        prologue str, size, stream, idx
+        prologue idx, str, size, stream
         unbox_pointer_internal %rdi, %rbx
 
         lea     str(%rsp), %rdi
