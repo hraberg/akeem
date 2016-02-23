@@ -27,7 +27,7 @@ symbol_table:
         .quad   0
         .endr
 
-symbol_max_id:
+symbol_next_id:
         .quad   TRUE_SYMBOL_ID + 1
 
         .struct 0
@@ -246,10 +246,8 @@ double_to_s:                    # double
         return str(%rsp)
 
 symbol_to_string:               # symbol
-        mov     %edi, %edi
-        shl     $4, %rdi
-        add     $symbol_table_entry_symbol, %rdi
-        mov     symbol_table(%rdi), %rax
+        imul    $symbol_table_entry_size, %edi
+        mov     (symbol_table + symbol_table_entry_symbol)(%edi), %rax
         mov     symbol_name(%rax), %rax
         ret
 
