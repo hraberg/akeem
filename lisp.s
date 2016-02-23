@@ -17,12 +17,12 @@ unbox_jump_table:
         .quad   unbox_double, unbox_int, unbox_pointer, unbox_pointer, unbox_pointer, unbox_pointer
 
 false_symbol:
-        .quad FALSE_SYMBOL_ID, false_string
+        .quad   FALSE_SYMBOL_ID, false_string
 true_symbol:
-        .quad TRUE_SYMBOL_ID, true_string
+        .quad   TRUE_SYMBOL_ID, true_string
 
 symbol_table:
-        .quad   FALSE_SYMBOL_ID, false_symbol, TRUE_SYMBOL_ID, true_symbol
+        .quad   FALSE, false_symbol, TRUE, true_symbol
         .rept 1024 - 4
         .quad   0
         .endr
