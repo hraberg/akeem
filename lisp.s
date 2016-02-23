@@ -187,9 +187,8 @@ vector_set:                     # vector, k, obj
         ret
 
 vector_to_string:                 # vector
-        prologue vector, str, size, stream, idx
-        unbox_pointer_internal %rdi
-        mov     %rax, vector(%rsp)
+        prologue str, size, stream, idx
+        unbox_pointer_internal %rdi, %rbx
 
         lea     str(%rsp), %rdi
         lea     size(%rsp), %rsi
@@ -201,27 +200,23 @@ vector_to_string:                 # vector
 
         movq    $0, idx(%rsp)
 1:      mov     idx(%rsp), %rcx
-        mov     vector(%rsp), %rax
-        cmp     (%rax), %rcx
+        cmp     $0, %rcx
         je      2f
+        cmp     (%rbx), %rcx
+        je      3f
 
-        inc     %rcx
-        mov     %rcx, idx(%rsp)
+        call_fn fputc, $' , stream(%rsp)
 
-        mov     (%rax,%rcx,POINTER_SIZE), %rax
+2:      incq    idx(%rsp)
+        mov     idx(%rsp), %rcx
+
+        mov     (%rbx,%rcx,POINTER_SIZE), %rax
         call_fn to_string, %rax
         unbox_pointer_internal %rax, %rdi
         call_fn fputs, %rdi, stream(%rsp)
-
-        mov     idx(%rsp), %rcx
-        mov     vector(%rsp), %rax
-        cmp     (%rax), %rcx
-        je      2f
-
-        call_fn fputc, $' , stream(%rsp)
         jmp     1b
 
-2:      call_fn fputc, $'), stream(%rsp)
+3:      call_fn fputc, $'), stream(%rsp)
         call_fn fclose, stream(%rsp)
         tag     TAG_STRING, str(%rsp)
         return
