@@ -2,7 +2,7 @@
 
         .data
 welcome_message:
-        .string "Welcome to ASM Lisp!"
+        .string "Welcome to Akeem Scheme!"
 prompt:
         .string "> "
 line_format:
