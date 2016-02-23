@@ -2,7 +2,7 @@
 
         .data
 welcome_message:
-        .string "Welcome to Akeem Scheme!"
+        .string "Welcome to Akeem Scheme."
 prompt:
         .string "> "
 line_format:
