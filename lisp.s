@@ -224,6 +224,25 @@ string_set:                     # string, k, char
         box_int_internal %edx
         ret
 
+string_to_number:               # string
+        prologue tail
+        unbox_pointer_internal %rdi, %rbx
+        lea     tail(%rsp), %r11
+        call_fn strtol, %rbx, %r11
+        mov     tail(%rsp), %r11
+        cmpb    $0, (%r11)
+        jne     1f
+        box_int_internal %eax
+        return
+1:      lea     tail(%rsp), %r11
+        call_fn strtod, %rbx, %r11
+        mov     tail(%rsp), %r11
+        cmpb    $0, (%r11)
+        jne     2f
+        movq    %xmm0, %rax
+        return
+2:      return $FALSE
+
 identity:                       # x
 unbox_double:                   # double
         mov     %rdi, %rax
@@ -457,5 +476,6 @@ plus_int_int:
 
         .globl allocate_code, cons, car, cdr, length, display, newline, box_int, box_string, unbox, number_to_s
         .globl is_eq, is_string, is_boolean, is_symbol, is_null, is_exact, is_inexact, is_integer, is_number, is_pair, is_vector
-        .globl make_vector, vector_length, vector_ref, vector_set, make_string, string_length, string_ref, string_set, string_to_symbol
+        .globl make_vector, vector_length, vector_ref, vector_set
+        .globl make_string, string_length, string_ref, string_set, string_to_symbol, string_to_number
         .globl int_format, double_format, neg, plus, init_runtime, true_string, false_string, set, lookup_global_symbol

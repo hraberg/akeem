@@ -16,6 +16,10 @@ MINUS_ONE:
 NAN:
         .quad NAN_MASK
 
+forty_two_string:
+        .string "42"
+pi_string:
+        .string "3.14159"
 foo_name:
         .string "foo"
 strlen_name:
@@ -322,6 +326,24 @@ main:
 
         call_fn set, %rbx, $TRUE
         call_fn lookup_global_symbol, %rbx
+        call_fn println, %rax
+
+        call_fn box_string, $forty_two_string
+        call_fn string_to_number, %rax
+        mov     %rax, %rbx
+        call_fn is_exact, %rax
+        call_fn println, %rax
+        call_fn println, %rbx
+
+        call_fn box_string, $pi_string
+        call_fn string_to_number, %rax
+        mov     %rax, %rbx
+        call_fn is_inexact, %rax
+        call_fn println, %rax
+        call_fn println, %rbx
+
+        call_fn box_string, $foo_name
+        call_fn string_to_number, %rax
         call_fn println, %rax
 
         return  $0
