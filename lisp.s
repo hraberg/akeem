@@ -119,7 +119,7 @@ pair_to_string:                 # pair
 length:                         # list
         prologue
         mov     %rdi, %rax
-        xor     %rcx, %rcx
+        xor     %ecx, %ecx
         mov     $NIL, %rbx
 1:      cmp     %rbx, %rax
         je      2f
@@ -402,7 +402,7 @@ is_string:                      # obj
 
 is_symbol:                      # obj
         has_tag TAG_SYMBOL, %rdi
-        xor     %r11, %r11
+        xor     %r11d, %r11d
         cmp     $C_TRUE, %edi
         setg    %r11b
         and     %r11, %rax
