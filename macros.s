@@ -108,3 +108,7 @@
         and     $TAG_MASK, %rax
         call    *\table(,%rax,POINTER_SIZE)
         .endm
+
+        .macro lookup_global_symbol_internal symbol_id
+        mov     symbol_table_values(,\symbol_id,POINTER_SIZE), %rax
+        .endm

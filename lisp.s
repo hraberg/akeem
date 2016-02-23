@@ -265,9 +265,14 @@ double_to_string:               # double
         tag     TAG_STRING, str(%rsp)
         return
 
-symbol_to_string:               # symbol
+set:                            # variable, expression
         unbox_pointer_internal %rdi
-        mov     symbol_table_names(,%rax,POINTER_SIZE), %rax
+        mov     %rsi, symbol_table_values(,%rax,POINTER_SIZE)
+        mov     $NIL, %rax
+        ret
+
+symbol_to_string:               # symbol
+        mov     symbol_table_names(,%edi,POINTER_SIZE), %rax
         tag     TAG_STRING, %rax
         ret
 
@@ -295,6 +300,10 @@ string_to_symbol:               # string
 
 3:      tag     TAG_SYMBOL, %rbx
         return
+
+lookup_global_symbol:           # symbol
+        lookup_global_symbol_internal %edi
+        ret
 
 number_to_string:               # z
 to_string:                      # value
@@ -453,4 +462,4 @@ plus_int_int:
         .globl allocate_code, cons, car, cdr, length, display, newline, box_int, box_string, unbox, number_to_s
         .globl is_eq, is_string, is_boolean, is_symbol, is_null, is_exact, is_inexact, is_integer, is_number, is_pair, is_vector
         .globl make_vector, vector_length, vector_ref, vector_set, make_string, string_length, string_ref, string_set, string_to_symbol
-        .globl int_format, double_format, neg, plus, init_runtime, true_string, false_string
+        .globl int_format, double_format, neg, plus, init_runtime, true_string, false_string, set, lookup_global_symbol

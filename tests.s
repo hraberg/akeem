@@ -16,6 +16,8 @@ MINUS_ONE:
 NAN:
         .quad NAN_MASK
 
+foo_name:
+        .string "foo"
 strlen_name:
         .string "strlen"
 allocate_code_name:
@@ -309,6 +311,17 @@ main:
 
         call_fn box_int, $2
         call_fn plus, PI, %rax
+        call_fn println, %rax
+
+        call_fn string_to_symbol, $foo_name
+        mov     %rax, %rbx
+        call_fn set, %rbx, PI
+
+        call_fn lookup_global_symbol, %rbx
+        call_fn println, %rax
+
+        call_fn set, %rbx, $TRUE
+        call_fn lookup_global_symbol, %rbx
         call_fn println, %rax
 
         return  $0
