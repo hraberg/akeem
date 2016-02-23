@@ -189,7 +189,7 @@ make_string:                    # k
         inc     %rdi
         mov     %rdi, %rbx
         call_fn malloc, %rdi
-        movb    $0, (%rax,%rbx,1)
+        movb    $0, (%rax,%rbx)
         tag     TAG_STRING, %rax
         return
 
@@ -202,7 +202,7 @@ string_length:                  # vector
 string_ref:                     # string, k
         unbox_int_internal %esi, %rsi
         unbox_pointer_internal %rdi
-        movsxb  (%rax,%rsi,1), %eax
+        movsxb  (%rax,%rsi), %eax
         box_int_internal %eax
         ret
 
@@ -210,7 +210,7 @@ string_set:                     # string, k, char
         unbox_int_internal %esi, %rsi
         unbox_int_internal %edx, %rdx
         unbox_pointer_internal %rdi
-        mov     %dl, (%rax,%rsi,1)
+        mov     %dl, (%rax,%rsi)
         box_int_internal %edx
         ret
 
