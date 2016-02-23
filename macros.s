@@ -51,10 +51,6 @@
         ret
         .endm
 
-        .macro unbox_int_internal int to=%rax
-        movsx   \int, \to
-        .endm
-
         .macro unbox_pointer_internal ptr to=%rax
         mov     $PAYLOAD_MASK, \to
         and     \ptr, \to

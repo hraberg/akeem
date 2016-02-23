@@ -133,9 +133,8 @@ length:                         # list
 
 make_vector:                    # k
         prologue
-        unbox_int_internal %edi, %rdi
-        mov     %rdi, %rbx
-        inc     %rdi
+        mov     %edi, %ebx
+        inc     %edi
         imul    $POINTER_SIZE, %rdi
         call_fn malloc, %rdi
         mov     %rbx, (%rax)
@@ -149,15 +148,13 @@ vector_length:                  # vector
         ret
 
 vector_ref:                     # vector, k
-        unbox_int_internal %esi, %rsi
-        inc     %rsi
+        inc     %esi
         unbox_pointer_internal %rdi
         mov     (%rax,%rsi,POINTER_SIZE), %rax
         ret
 
 vector_set:                     # vector, k, obj
-        unbox_int_internal %esi, %rsi
-        inc     %rsi
+        inc     %esi
         unbox_pointer_internal %rdi
         mov     %rdx, (%rax,%rsi,POINTER_SIZE)
         mov     %rdx, %rax
@@ -200,7 +197,7 @@ vector_to_string:                 # vector
 
 make_string:                    # k
         prologue
-        inc     %rdi
+        inc     %esi
         mov     %rdi, %rbx
         call_fn malloc, %rdi
         movb    $0, (%rax,%rbx)
@@ -214,15 +211,14 @@ string_length:                  # vector
         ret
 
 string_ref:                     # string, k
-        unbox_int_internal %esi, %rsi
+        mov     %esi, %esi
         unbox_pointer_internal %rdi
         movsxb  (%rax,%rsi), %eax
         box_int_internal %eax
         ret
 
 string_set:                     # string, k, char
-        unbox_int_internal %esi, %rsi
-        unbox_int_internal %edx, %rdx
+        mov     %esi, %esi
         unbox_pointer_internal %rdi
         mov     %dl, (%rax,%rsi)
         box_int_internal %edx
@@ -234,7 +230,7 @@ unbox_double:                   # double
         ret
 
 unbox_int:                      # int
-        unbox_int_internal %edi, %rax
+        movsx   %edi, %rax
         ret
 
 unbox_pointer:                  # ptr
@@ -248,7 +244,7 @@ unbox:                          # value
 
 int_to_string:                  # int
         prologue str
-        unbox_int_internal %edi, %rdx
+        movsx   %edi, %rdx
         xor     %al, %al
         lea     str(%rsp), %rdi
         call_fn asprintf, %rdi, $int_format, %rdx
