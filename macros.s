@@ -118,26 +118,28 @@
         movq    %xmm0, %rax
         ret
         .align 16
-\name\()_double_double :
+\name\()_double_double:
         movq    %rdi, %xmm0
         movq    %rsi, %xmm1
         jmp     1b
         .align 16
-\name\()_int_double :
+\name\()_int_double:
         cvtsi2sd %edi, %xmm0
         movq    %rsi, %xmm1
         jmp     1b
         .align 16
-\name\()_double_int :
+\name\()_double_int:
         movq    %rdi, %xmm0
         cvtsi2sd %esi, %xmm1
         jmp     1b
         .align 16
-\name\()_int_int :
+        .ifnb \integer_op
+\name\()_int_int:
         mov     %edi, %eax
         \integer_op %esi, %eax
         box_int_internal %eax
         ret
+        .endif
 
         .endm
 

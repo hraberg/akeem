@@ -486,12 +486,21 @@ minus:                          # z1, z2
 multiply:                       # z1, z2
         binary_op multiply mulsd imul
 
+divide:                         # z1, z2
+        binary_op divide divsd
+divide_int_int:
+        cvtsi2sd %edi, %xmm0
+        cvtsi2sd %esi, %xmm1
+        divsd   %xmm1, %xmm0
+        movq    %xmm0, %rax
+        ret
+
         .globl cons, car, cdr, length
         .globl display, newline
         .globl is_eq, is_eq_v, is_string, is_boolean, is_symbol, is_null, is_exact, is_inexact, is_integer, is_number, is_pair, is_vector
         .globl make_vector, vector_length, vector_ref, vector_set
         .globl make_string, string_length, string_ref, string_set, string_to_number, string_to_symbol
-        .globl neg, plus, minus, multiply
+        .globl neg, plus, minus, multiply, divide
         .globl symbol_to_string, set, lookup_global_symbol
         .globl init_runtime, allocate_code
         .globl int_format, double_format, true_string, false_string, box_int, box_string, unbox
