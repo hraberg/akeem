@@ -150,18 +150,18 @@
         .endif
         .endm
 
-        .macro binary_comparsion name setter
+        .macro binary_comparsion name double_setter integer_setter
         binary_op_jump \name
 1:      xor     %eax, %eax
         comisd  %xmm1, %xmm0
-        \setter %al
+        \double_setter %al
         box_boolean_internal %rax
         ret
         binary_op_moves \name
 \name\()_int_int:
         xor     %eax, %eax
         cmp     %esi, %edi
-        \setter %al
+        \integer_setter %al
         box_boolean_internal %rax
         ret
         .endm

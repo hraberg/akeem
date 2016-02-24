@@ -408,6 +408,22 @@ main:
         call_fn less_than %rax, PI
         call_fn println %rax
 
+        call_fn box_int $-1
+        mov     %rax, %rbx
+        call_fn box_int $1
+        call_fn less_than_or_equal %rbx, %rax
+        call_fn println %rax
+
+        call_fn box_int $-1
+        call_fn less_than %rax, PI
+        call_fn println %rax
+
+        call_fn greater_than PI, MINUS_ONE
+        call_fn println %rax
+
+        call_fn less_than_or_equal MINUS_ONE, PLUS_ONE
+        call_fn println %rax
+
         call_fn box_int $2
         call_fn greater_than E, %rax
         call_fn println %rax

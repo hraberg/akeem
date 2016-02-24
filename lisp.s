@@ -502,19 +502,19 @@ divide_int_int:
         ret
 
 equal:                          # z1, z2
-        binary_comparsion equals sete
+        binary_comparsion equals sete sete
 
 less_than:                      # z1, z2
-        binary_comparsion less_than setb
+        binary_comparsion less_than setb setl
 
 greater_than:                   # z1, z2
-        binary_comparsion greater_than seta
+        binary_comparsion greater_than seta setg
 
 less_than_or_equal:             # z1, z2
-        binary_comparsion less_than_or_equals setbe
+        binary_comparsion less_than_or_equals setbe setle
 
 greater_than_or_equal:          # z1, z2
-        binary_comparsion greater_than_or_equals setae
+        binary_comparsion greater_than_or_equals setae setge
 
         .globl cons, car, cdr, length
         .globl display, newline
