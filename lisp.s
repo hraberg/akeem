@@ -545,13 +545,46 @@ minus_int_int:
         box_int_internal %eax
         ret
 
+multiply:                       # z1, z2
+        has_tag TAG_INT, %rdi
+        mov     %rax, %rdx
+        has_tag TAG_INT, %rsi
+        shl     %rax
+        or      %rdx, %rax
+        shl     $4, %rax
+        lea     multiply_double_double(%rax), %rax
+        jmp     *%rax
+1:      mulsd   %xmm1, %xmm0
+        movq    %xmm0, %rax
+        ret
+        .align 16
+multiply_double_double:
+        movq    %rdi, %xmm0
+        movq    %rsi, %xmm1
+        jmp     1b
+        .align 16
+multiply_int_double:
+        cvtsi2sd %edi, %xmm0
+        movq    %rsi, %xmm1
+        jmp     1b
+        .align 16
+multiply_double_int:
+        movq    %rdi, %xmm0
+        cvtsi2sd %esi, %xmm1
+        jmp     1b
+        .align 16
+multiply_int_int:
+        mov     %edi, %eax
+        imul    %esi, %eax
+        box_int_internal %eax
+        ret
 
         .globl cons, car, cdr, length
         .globl display, newline
         .globl is_eq, is_eq_v, is_string, is_boolean, is_symbol, is_null, is_exact, is_inexact, is_integer, is_number, is_pair, is_vector
         .globl make_vector, vector_length, vector_ref, vector_set
         .globl make_string, string_length, string_ref, string_set, string_to_number, string_to_symbol
-        .globl neg, plus, minus
+        .globl neg, plus, minus, multiply
         .globl symbol_to_string, set, lookup_global_symbol
         .globl init_runtime, allocate_code
         .globl int_format, double_format, true_string, false_string, box_int, box_string, unbox
