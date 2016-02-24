@@ -352,6 +352,66 @@ main:
         call_fn divide, %rax, PI
         call_fn println, %rax
 
+        call_fn box_int, $42
+        call_fn equal, %rax, %rax
+        call_fn println, %rax
+
+        call_fn box_int, $42
+        mov     %rax, %rbx
+        call_fn box_int, $16
+        call_fn equal, %rax, %rbx
+        call_fn println, %rax
+
+        call_fn box_int, $42
+        call_fn equal, %rax, PI
+        call_fn println, %rax
+
+        call_fn box_int, $42
+        call_fn equal, PI, %rax
+        call_fn println, %rax
+
+        call_fn equal, PI, PI
+        call_fn println, %rax
+
+        call_fn equal, PI, E
+        call_fn println, %rax
+
+        call_fn box_int $1
+        call_fn equal, %rax, PLUS_ONE
+        call_fn println, %rax
+
+        call_fn box_int, $42
+        mov     %rax, %rbx
+        call_fn box_int, $16
+        call_fn less_than, %rax, %rbx
+        call_fn println, %rax
+
+        call_fn box_int, $42
+        mov     %rax, %rbx
+        call_fn box_int, $16
+        call_fn greater_than, %rax, %rbx
+        call_fn println, %rax
+
+        call_fn greater_than PI, E
+        call_fn println %rax
+
+        call_fn less_than E, PI
+        call_fn println %rax
+
+        call_fn less_than_or_equal PI, PI
+        call_fn println %rax
+
+        call_fn greater_than_or_equal E, PI
+        call_fn println %rax
+
+        call_fn box_int $1
+        call_fn less_than %rax, PI
+        call_fn println %rax
+
+        call_fn box_int $2
+        call_fn greater_than E, %rax
+        call_fn println %rax
+
         call_fn string_to_symbol, $foo_name
         mov     %rax, %rbx
         call_fn set, %rbx, PI

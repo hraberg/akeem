@@ -105,34 +105,42 @@
         call    *\table(,%rax,POINTER_SIZE)
         .endm
 
-        .macro binary_op name double_op integer_op
+        .macro binary_op_jump name
         has_tag TAG_INT, %rdi
         mov     %rax, %rdx
         has_tag TAG_INT, %rsi
         shl     %rax
         or      %rdx, %rax
-        shl     $4, %rax
+        shl     $BINARY_OP_SHIFT, %rax
         lea     \name\()_double_double(%rax), %rax
         jmp     *%rax
-1:      \double_op %xmm1, %xmm0
-        movq    %xmm0, %rax
-        ret
-        .align 16
+        .endm
+
+        .macro binary_op_moves name
+        .align (1 << BINARY_OP_SHIFT)
 \name\()_double_double:
         movq    %rdi, %xmm0
         movq    %rsi, %xmm1
         jmp     1b
-        .align 16
+        .align (1 << BINARY_OP_SHIFT)
 \name\()_int_double:
         cvtsi2sd %edi, %xmm0
         movq    %rsi, %xmm1
         jmp     1b
-        .align 16
+        .align (1 << BINARY_OP_SHIFT)
 \name\()_double_int:
         movq    %rdi, %xmm0
         cvtsi2sd %esi, %xmm1
         jmp     1b
-        .align 16
+        .align (1 << BINARY_OP_SHIFT)
+        .endm
+
+        .macro binary_op name double_op integer_op
+        binary_op_jump \name
+1:      \double_op %xmm1, %xmm0
+        movq    %xmm0, %rax
+        ret
+        binary_op_moves \name
         .ifnb \integer_op
 \name\()_int_int:
         mov     %edi, %eax
@@ -140,7 +148,22 @@
         box_int_internal %eax
         ret
         .endif
+        .endm
 
+        .macro binary_comparsion name setter
+        binary_op_jump \name
+1:      xor     %eax, %eax
+        comisd  %xmm1, %xmm0
+        \setter %al
+        box_boolean_internal %rax
+        ret
+        binary_op_moves \name
+\name\()_int_int:
+        xor     %eax, %eax
+        cmp     %esi, %edi
+        \setter %al
+        box_boolean_internal %rax
+        ret
         .endm
 
         .macro lookup_global_symbol_internal symbol_id

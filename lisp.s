@@ -494,19 +494,34 @@ divide_int_int:
         divsd   %xmm1, %xmm0
         roundsd $ROUNDING_MODE_TRUNCATE, %xmm0, %xmm1
         ucomisd %xmm0, %xmm1
-        je      1f
+        je      2f
         movq    %xmm0, %rax
         ret
-1:      cvtsd2si %xmm1, %rax
+2:      cvtsd2si %xmm1, %rax
         box_int_internal %eax
         ret
+
+equal:                          # z1, z2
+        binary_comparsion equals sete
+
+less_than:                      # z1, z2
+        binary_comparsion less_than setb
+
+greater_than:                   # z1, z2
+        binary_comparsion greater_than seta
+
+less_than_or_equal:             # z1, z2
+        binary_comparsion less_than_or_equals setbe
+
+greater_than_or_equal:          # z1, z2
+        binary_comparsion greater_than_or_equals setae
 
         .globl cons, car, cdr, length
         .globl display, newline
         .globl is_eq, is_eq_v, is_string, is_boolean, is_symbol, is_null, is_exact, is_inexact, is_integer, is_number, is_pair, is_vector
         .globl make_vector, vector_length, vector_ref, vector_set
         .globl make_string, string_length, string_ref, string_set, string_to_number, string_to_symbol
-        .globl neg, plus, minus, multiply, divide
+        .globl neg, plus, minus, multiply, divide, equal, less_than, greater_than, less_than_or_equal, greater_than_or_equal
         .globl symbol_to_string, set, lookup_global_symbol
         .globl init_runtime, allocate_code
         .globl int_format, double_format, true_string, false_string, box_int, box_string, unbox

@@ -45,6 +45,8 @@
 
         .equ MAX_NUMBER_OF_SYMBOLS, 1024
 
+        .equ BINARY_OP_SHIFT, 4
+
         .struct 0
 pair_car:
         .struct . + POINTER_SIZE
