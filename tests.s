@@ -476,25 +476,15 @@ main:
         call_fn floor_, %rax
         call_fn println %rax
 
-        call_fn ceiling, PI
+        call_fn sqrt_, PI
         call_fn println %rax
 
-        call_fn box_int $1
-        call_fn ceiling, %rax
+        call_fn box_int $2
+        call_fn sqrt_, %rax
         call_fn println %rax
 
-        call_fn truncate, PI
-        call_fn println %rax
-
-        call_fn box_int $1
-        call_fn truncate, %rax
-        call_fn println %rax
-
-        call_fn round_, PI
-        call_fn println %rax
-
-        call_fn box_int $1
-        call_fn round_, %rax
+        call_fn box_int $2
+        call_fn expt, %rax, PI
         call_fn println %rax
 
         call_fn string_to_symbol, $foo_name

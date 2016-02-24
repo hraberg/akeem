@@ -585,16 +585,36 @@ greater_than_or_equal:          # z1, z2
         binary_comparsion greater_than_or_equals setae setge
 
 floor_:                         # z
-        math_library_unary_call_returning_integer floor
+        math_library_unary_call_integer floor
 
 ceiling:                        # z
-        math_library_unary_call_returning_integer ceil
+        math_library_unary_call_integer ceil
 
 truncate:                       # z
-        math_library_unary_call_returning_integer trunc
+        math_library_unary_call_integer trunc
 
 round_:                         # z
-        math_library_unary_call_returning_integer round
+        math_library_unary_call_integer round
+
+        .irp name, exp, log, sin, cos, tan, asin, acos, atan, sqrt
+\name\()_:            # z
+        prologue
+        math_library_unary_call \name
+        return %xmm0
+        .endr
+
+expt:                           # z1, z2
+        prologue
+        movq    %rdi, %xmm0
+        has_tag TAG_INT, %rdi
+        jz 1f
+        cvtsi2sd %edi, %xmm0
+1:      movq    %rsi, %xmm1
+        has_tag TAG_INT, %rsi
+        jz 2f
+        cvtsi2sd %esi, %xmm1
+2:      call_fn pow
+        return %xmm0
 
         .globl cons, car, cdr, length
         .globl display, newline
@@ -604,7 +624,7 @@ round_:                         # z
         .globl make_string, string_length, string_ref, string_set, string_to_number, string_to_symbol
         .globl char_to_integer, integer_to_char
         .globl neg, plus, minus, multiply, divide, equal, less_than, greater_than, less_than_or_equal, greater_than_or_equal
-        .globl floor_, ceiling, truncate, round_
+        .globl floor_, ceiling, truncate, round_, exp_, log_, sin_, cos_, tan_, asin_, acos_, atan_, sqrt_, expt
         .globl exact_to_inexact, inexact_to_exact
         .globl symbol_to_string, set, lookup_global_symbol
         .globl init_runtime, allocate_code
