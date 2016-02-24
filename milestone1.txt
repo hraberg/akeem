@@ -37,6 +37,7 @@ procedure: make-vector k fill
 procedure: vector-length vector
 procedure: vector-ref vector k
 procedure: vector-set! vector k obj
+procedure: procedure? obj
 library procedure: not obj
 library procedure: boolean? obj
 library procedure: null? obj

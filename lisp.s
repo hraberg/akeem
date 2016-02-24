@@ -460,6 +460,11 @@ is_symbol:                      # obj
         box_boolean_internal %rax
         ret
 
+is_procedure:                   # obj
+        has_tag TAG_PROCEDURE, %rdi
+        box_boolean_internal %rax
+        ret
+
 neg:                            # z1
         has_tag TAG_INT, %rdi
         jnz     neg_int
