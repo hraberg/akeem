@@ -492,7 +492,13 @@ divide_int_int:
         cvtsi2sd %edi, %xmm0
         cvtsi2sd %esi, %xmm1
         divsd   %xmm1, %xmm0
+        roundsd $ROUNDING_MODE_TRUNCATE, %xmm0, %xmm1
+        ucomisd %xmm0, %xmm1
+        je      1f
         movq    %xmm0, %rax
+        ret
+1:      cvtsd2si %xmm1, %rax
+        box_int_internal %eax
         ret
 
         .globl cons, car, cdr, length

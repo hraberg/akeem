@@ -11,6 +11,8 @@
         .equ MAP_PRIVATE, 0x02
         .equ MAP_ANONYMOUS, 0x20
 
+        .equ ROUNDING_MODE_TRUNCATE, 0b11
+
         .equ POINTER_SIZE, 8
 
         .equ NAN_MASK, 0x7FF8000000000000

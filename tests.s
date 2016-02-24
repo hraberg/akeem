@@ -335,6 +335,12 @@ main:
         call_fn divide, %rbx, %rax
         call_fn println, %rax
 
+        call_fn box_int, $2
+        mov     %rax, %rbx
+        call_fn box_int, $4
+        call_fn divide, %rbx, %rax
+        call_fn println, %rax
+
         call_fn divide, E, PI
         call_fn println, %rax
 
