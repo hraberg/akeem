@@ -7,6 +7,10 @@ int_format:
         .string "%d"
 double_format:
         .string "%f"
+newline_char:
+        .string "#\\newline"
+space_char:
+        .string "#\\space"
 false_string:
         .string "#f"
 true_string:
@@ -276,7 +280,15 @@ string_to_number:               # string
 char_to_string:
         prologue str
         movsx   %di, %rdx
-        xor     %al, %al
+        cmp     $NEWLINE_CHAR, %dx
+        jne     1f
+        tag     TAG_STRING, $newline_char
+        return
+1:      cmp     $SPACE_CHAR, %dx
+        jne     2f
+        tag     TAG_STRING, $space_char
+        return
+2:      xor     %al, %al
         lea     str(%rsp), %rdi
         call_fn asprintf, %rdi, $char_format, %rdx
         tag     TAG_STRING, str(%rsp)
@@ -448,6 +460,7 @@ boolean_to_string:              # boolean
         mov     $false_string, %r11
         test    $C_TRUE, %rdi
         cmovz   %r11, %rax
+        tag     TAG_STRING, %rax
         ret
 
 is_number:                      # obj

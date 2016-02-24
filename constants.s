@@ -43,6 +43,9 @@
 
         .equ NIL, (NAN_MASK | (TAG_PAIR << TAG_SHIFT) | NULL)
 
+        .equ NEWLINE_CHAR, 10
+        .equ SPACE_CHAR, 32
+
         .equ MAX_NUMBER_OF_SYMBOLS, 1024
 
         .equ BINARY_OP_SHIFT, 4

@@ -145,6 +145,14 @@ main:
         call_fn integer_to_char, %rax
         call_fn println, %rax
 
+        call_fn box_int, $32
+        call_fn integer_to_char, %rax
+        call_fn println, %rax
+
+        call_fn box_int, $10
+        call_fn integer_to_char, %rax
+        call_fn println, %rax
+
         call_fn is_string, PI
         call_fn println, %rax
 

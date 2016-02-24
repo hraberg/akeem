@@ -21,6 +21,8 @@ strlen
 #t
 #f
 #\A
+#\space
+#\newline
 #f
 #t
 #f
