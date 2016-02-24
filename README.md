@@ -56,6 +56,49 @@ objdump -b binary -D -mi386:x86-64 code.bin
 
 ```
 
+New tagging scheme:
+
+Tag 56 is for types. A type is stored under the symbol of its name, and
+shares its id. Dispatch on types is done by either getting the
+primitive type tag, or reading the tag from the object. An object has
+a 64 bit header, consisting of 32-bits for its type (and symbol) id,
+and 32-bits for its instance size. Vectors and byte-vectors are
+objects, as are ports. Hence, the new type / symbol / tag ids are:
+
+0  double (no tag)
+
+The ints are stored at 46 bits:
+
+4  boolean
+5  byte
+6  char (16-bits, like Java)
+7  int
+
+These are stored at 48 bits (low 2 bits must be zero for pointers):
+
+8  string
+16 symbol
+24 pair
+32 vector
+40 procedure
+48 port
+56 object
+
+Types are pointers to a header like this:
+
+0-31  instance size in N bytes
+32-63 symbol-id
+
+Followed by N bytes of the instance. In this scheme vectors and ports
+could be objects.
+
+Type based dispatch is done by looking up the type, stored under its
+symbol id. If the type is object (56 above) the type is read from the
+object's header. The type itself contains a dispatch table of all
+valid symbols, where a function can be found under the symbol id of
+its name.
+
+
 ## Road Map:
 
 We aim to implement a subset of R5RS.

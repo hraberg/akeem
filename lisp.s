@@ -11,9 +11,34 @@ true_string:
         .string "#t"
 
 to_string_jump_table:
-        .quad   double_to_string, int_to_string, unbox_pointer, symbol_to_string, pair_to_string, vector_to_string
+        .quad   double_to_string
+        .zero   POINTER_SIZE * 3
+        .quad   int_to_string
+        .zero   POINTER_SIZE * 3
+        .quad   unbox_pointer
+        .zero   POINTER_SIZE * 7
+        .quad   symbol_to_string
+        .zero   POINTER_SIZE * 7
+        .quad   pair_to_string
+        .zero   POINTER_SIZE * 7
+        .quad   vector_to_string
+        .zero   POINTER_SIZE * 7
+        .quad   0
+
 unbox_jump_table:
-        .quad   unbox_double, unbox_int, unbox_pointer, unbox_pointer, unbox_pointer, unbox_vector
+        .quad   unbox_double
+        .zero   POINTER_SIZE * 3
+        .quad   unbox_int
+        .zero   POINTER_SIZE * 3
+        .quad   unbox_pointer
+        .zero   POINTER_SIZE * 7
+        .quad   unbox_pointer
+        .zero   POINTER_SIZE * 7
+        .quad   unbox_pointer
+        .zero   POINTER_SIZE * 7
+        .quad   unbox_vector
+        .zero   POINTER_SIZE * 7
+        .quad   0
 
 symbol_table_values:
         .zero   MAX_NUMBER_OF_SYMBOLS * POINTER_SIZE

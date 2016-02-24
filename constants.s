@@ -14,19 +14,26 @@
         .equ POINTER_SIZE, 8
 
         .equ NAN_MASK, 0x7FF8000000000000
-        .equ TAG_SHIFT, 47
-        .equ TAG_MASK, 0x7
+        .equ TAG_SHIFT, 45
+        .equ TAG_MASK, 0x3f
 
-        .equ PAYLOAD_MASK, (1 << TAG_SHIFT) - 1
+        .equ PAYLOAD_MASK, (1 << 47) - 1
         .equ SIGN_BIT, 63
 
-        .equ TAG_INT, 1
-        .equ TAG_STRING, 2
-        .equ TAG_SYMBOL, 3
-        .equ TAG_PAIR, 4
-        .equ TAG_VECTOR, 5
-        .equ TAG_PROCEDURE, 6
-        .equ TAG_PORT, 7        # or TAG_CHAR
+        .equ TAG_DOUBLE, 0
+
+        .equ TAG_BOOLEAN, 1
+        .equ TAG_BYTE, 2
+        .equ TAG_CHAR, 3
+        .equ TAG_INT, 4
+
+        .equ TAG_STRING, 8
+        .equ TAG_SYMBOL, 16
+        .equ TAG_PAIR, 24
+        .equ TAG_VECTOR, 32
+        .equ TAG_PROCEDURE, 40
+        .equ TAG_PORT, 48
+        .equ TAG_OBJECT, 56
 
         .equ C_TRUE, 1
         .equ FALSE, (NAN_MASK | (TAG_SYMBOL << TAG_SHIFT))
