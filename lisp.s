@@ -478,106 +478,13 @@ neg_int:
         ret
 
 plus:                           # z1, z2
-        has_tag TAG_INT, %rdi
-        mov     %rax, %rdx
-        has_tag TAG_INT, %rsi
-        shl     %rax
-        or      %rdx, %rax
-        shl     $4, %rax
-        lea     plus_double_double(%rax), %rax
-        jmp     *%rax
-1:      addsd   %xmm1, %xmm0
-        movq    %xmm0, %rax
-        ret
-        .align 16
-plus_double_double:
-        movq    %rdi, %xmm0
-        movq    %rsi, %xmm1
-        jmp     1b
-        .align 16
-plus_int_double:
-        cvtsi2sd %edi, %xmm0
-        movq    %rsi, %xmm1
-        jmp     1b
-        .align 16
-plus_double_int:
-        movq    %rdi, %xmm0
-        cvtsi2sd %esi, %xmm1
-        jmp     1b
-        .align 16
-plus_int_int:
-        mov     %edi, %eax
-        add     %esi, %eax
-        box_int_internal %eax
-        ret
+        binary_op plus addsd add
 
-minus:                           # z1, z2
-        has_tag TAG_INT, %rdi
-        mov     %rax, %rdx
-        has_tag TAG_INT, %rsi
-        shl     %rax
-        or      %rdx, %rax
-        shl     $4, %rax
-        lea     minus_double_double(%rax), %rax
-        jmp     *%rax
-1:      subsd   %xmm1, %xmm0
-        movq    %xmm0, %rax
-        ret
-        .align 16
-minus_double_double:
-        movq    %rdi, %xmm0
-        movq    %rsi, %xmm1
-        jmp     1b
-        .align 16
-minus_int_double:
-        cvtsi2sd %edi, %xmm0
-        movq    %rsi, %xmm1
-        jmp     1b
-        .align 16
-minus_double_int:
-        movq    %rdi, %xmm0
-        cvtsi2sd %esi, %xmm1
-        jmp     1b
-        .align 16
-minus_int_int:
-        mov     %edi, %eax
-        sub     %esi, %eax
-        box_int_internal %eax
-        ret
+minus:                          # z1, z2
+        binary_op minus subsd sub
 
 multiply:                       # z1, z2
-        has_tag TAG_INT, %rdi
-        mov     %rax, %rdx
-        has_tag TAG_INT, %rsi
-        shl     %rax
-        or      %rdx, %rax
-        shl     $4, %rax
-        lea     multiply_double_double(%rax), %rax
-        jmp     *%rax
-1:      mulsd   %xmm1, %xmm0
-        movq    %xmm0, %rax
-        ret
-        .align 16
-multiply_double_double:
-        movq    %rdi, %xmm0
-        movq    %rsi, %xmm1
-        jmp     1b
-        .align 16
-multiply_int_double:
-        cvtsi2sd %edi, %xmm0
-        movq    %rsi, %xmm1
-        jmp     1b
-        .align 16
-multiply_double_int:
-        movq    %rdi, %xmm0
-        cvtsi2sd %esi, %xmm1
-        jmp     1b
-        .align 16
-multiply_int_int:
-        mov     %edi, %eax
-        imul    %esi, %eax
-        box_int_internal %eax
-        ret
+        binary_op multiply mulsd imul
 
         .globl cons, car, cdr, length
         .globl display, newline

@@ -105,6 +105,42 @@
         call    *\table(,%rax,POINTER_SIZE)
         .endm
 
+        .macro binary_op name double_op integer_op
+        has_tag TAG_INT, %rdi
+        mov     %rax, %rdx
+        has_tag TAG_INT, %rsi
+        shl     %rax
+        or      %rdx, %rax
+        shl     $4, %rax
+        lea     \name\()_double_double(%rax), %rax
+        jmp     *%rax
+1:      \double_op %xmm1, %xmm0
+        movq    %xmm0, %rax
+        ret
+        .align 16
+\name\()_double_double :
+        movq    %rdi, %xmm0
+        movq    %rsi, %xmm1
+        jmp     1b
+        .align 16
+\name\()_int_double :
+        cvtsi2sd %edi, %xmm0
+        movq    %rsi, %xmm1
+        jmp     1b
+        .align 16
+\name\()_double_int :
+        movq    %rdi, %xmm0
+        cvtsi2sd %esi, %xmm1
+        jmp     1b
+        .align 16
+\name\()_int_int :
+        mov     %edi, %eax
+        \integer_op %esi, %eax
+        box_int_internal %eax
+        ret
+
+        .endm
+
         .macro lookup_global_symbol_internal symbol_id
         mov     symbol_table_values(,\symbol_id,POINTER_SIZE), %rax
         .endm
