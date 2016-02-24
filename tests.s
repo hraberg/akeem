@@ -297,6 +297,22 @@ main:
         call_fn plus, PI, %rax
         call_fn println, %rax
 
+        call_fn box_int, $16
+        mov     %rax, %r11
+        call_fn minus, %rax, %r11
+        call_fn println, %rax
+
+        call_fn minus, E, PI
+        call_fn println, %rax
+
+        call_fn box_int, $1
+        call_fn minus, PI, %rax
+        call_fn println, %rax
+
+        call_fn box_int, $-1
+        call_fn minus, %rax, MINUS_ONE
+        call_fn println, %rax
+
         call_fn string_to_symbol, $foo_name
         mov     %rax, %rbx
         call_fn set, %rbx, PI
