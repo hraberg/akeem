@@ -70,7 +70,7 @@
         .endm
 
         .macro box_boolean_internal value
-        tag     TAG_SYMBOL, \value
+        tag     TAG_BOOLEAN, \value
         .endm
 
         .macro tag tag value target=%rax tmp=%r11

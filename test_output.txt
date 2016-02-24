@@ -1,6 +1,3 @@
-#t
-#t
-#f
 strlen
 2
 6
@@ -25,8 +22,6 @@ strlen
 #f
 #t
 #t
-#f
-#f
 #f
 ()
 #t

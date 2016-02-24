@@ -12,7 +12,8 @@ true_string:
 
 to_string_jump_table:
         .quad   double_to_string
-        .zero   POINTER_SIZE * 3
+        .quad   boolean_to_string
+        .zero   POINTER_SIZE * 2
         .quad   int_to_string
         .zero   POINTER_SIZE * 3
         .quad   unbox_pointer
@@ -27,7 +28,8 @@ to_string_jump_table:
 
 unbox_jump_table:
         .quad   unbox_double
-        .zero   POINTER_SIZE * 3
+        .quad   unbox_int
+        .zero   POINTER_SIZE * 2
         .quad   unbox_int
         .zero   POINTER_SIZE * 3
         .quad   unbox_pointer
@@ -45,7 +47,7 @@ symbol_table_values:
 symbol_table_names:
         .zero   MAX_NUMBER_OF_SYMBOLS * POINTER_SIZE
 symbol_next_id:
-        .quad   0
+        .quad   TAG_MASK + 1
 
         .text
 allocate_code:                  # source_code, source_size
@@ -61,10 +63,6 @@ allocate_code:                  # source_code, source_size
 
 init_runtime:
         prologue
-        tag     TAG_STRING, $false_string
-        call_fn string_to_symbol, %rax
-        tag     TAG_STRING, $true_string
-        call_fn string_to_symbol, %rax
         return
 
 cons:                           # obj1, obj2
@@ -336,6 +334,8 @@ string_to_symbol:               # string
         dec     %rbx
         mov     symbol_table_names(,%rbx,POINTER_SIZE), %rax
 
+        test    %eax, %eax
+        jz      1b
         call_fn strcmp, string(%rsp), %rax
         jnz     1b
         jmp     3f
@@ -410,13 +410,15 @@ is_inexact:                     # z
         ret
 
 is_boolean:                     # obj
-        mov     $TRUE, %rax
-        eq_internal %rax, %rdi
-        mov     %rax, %r11
-        mov     $FALSE, %rax
-        eq_internal %rax, %rdi
-        or      %r11, %rax
+        has_tag TAG_BOOLEAN, %rdi
         box_boolean_internal %rax
+        ret
+
+boolean_to_string:              # boolean
+        mov     $true_string, %rax
+        mov     $false_string, %r11
+        test    $C_TRUE, %rdi
+        cmovz   %r11, %rax
         ret
 
 is_number:                      # obj
@@ -455,10 +457,6 @@ is_string:                      # obj
 
 is_symbol:                      # obj
         has_tag TAG_SYMBOL, %rdi
-        xor     %r11d, %r11d
-        cmp     $C_TRUE, %edi
-        setg    %r11b
-        and     %r11, %rax
         box_boolean_internal %rax
         ret
 

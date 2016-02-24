@@ -45,20 +45,6 @@ main:
         prologue vec
         call_fn init_runtime
 
-        call_fn box_string, $false_string
-        call_fn string_to_symbol, %rax
-        call_fn is_eq %rax, $FALSE
-        call_fn println, %rax
-
-        call_fn box_string, $true_string
-        call_fn string_to_symbol, %rax
-        call_fn is_eq %rax, $TRUE
-        call_fn println, %rax
-
-        call_fn box_string, $false_string
-        call_fn string_to_symbol, %rax
-        call_fn println, %rax
-
         call_fn box_string, $strlen_name
         call_fn string_to_symbol, %rax
         call_fn println, %rax
@@ -155,12 +141,6 @@ main:
         call_fn println, %rax
 
         call_fn is_boolean, $FALSE
-        call_fn println, %rax
-
-        call_fn is_symbol, $TRUE
-        call_fn println, %rax
-
-        call_fn is_symbol, $FALSE
         call_fn println, %rax
 
         call_fn is_symbol, $NIL
