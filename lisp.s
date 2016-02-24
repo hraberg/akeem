@@ -584,6 +584,18 @@ less_than_or_equal:             # z1, z2
 greater_than_or_equal:          # z1, z2
         binary_comparsion greater_than_or_equals setae setge
 
+floor_:                         # z
+        math_library_unary_call_returning_integer floor
+
+ceiling:                        # z
+        math_library_unary_call_returning_integer ceil
+
+truncate:                       # z
+        math_library_unary_call_returning_integer trunc
+
+round_:                         # z
+        math_library_unary_call_returning_integer round
+
         .globl cons, car, cdr, length
         .globl display, newline
         .globl is_eq, is_eq_v, is_string, is_boolean, is_char, is_procedure, is_symbol, is_null,
@@ -592,6 +604,7 @@ greater_than_or_equal:          # z1, z2
         .globl make_string, string_length, string_ref, string_set, string_to_number, string_to_symbol
         .globl char_to_integer, integer_to_char
         .globl neg, plus, minus, multiply, divide, equal, less_than, greater_than, less_than_or_equal, greater_than_or_equal
+        .globl floor_, ceiling, truncate, round_
         .globl exact_to_inexact, inexact_to_exact
         .globl symbol_to_string, set, lookup_global_symbol
         .globl init_runtime, allocate_code

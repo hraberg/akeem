@@ -166,6 +166,24 @@
         ret
         .endm
 
+        .macro math_library_unary_call name
+        movq    %rdi, %xmm0
+        has_tag TAG_INT, %rdi
+        jz      \name\()_double
+\name\()_int:
+        cvtsi2sd %edi, %xmm0
+\name\()_double:
+        call_fn \name
+        .endm
+
+        .macro math_library_unary_call_returning_integer name
+        prologue
+        math_library_unary_call \name
+        cvtsd2si %xmm0, %rax
+        box_int_internal %eax
+        return
+        .endm
+
         .macro lookup_global_symbol_internal symbol_id
         mov     symbol_table_values(,\symbol_id,POINTER_SIZE), %rax
         .endm

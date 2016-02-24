@@ -469,6 +469,34 @@ main:
         call_fn greater_than E, %rax
         call_fn println %rax
 
+        call_fn floor_, PI
+        call_fn println %rax
+
+        call_fn box_int $1
+        call_fn floor_, %rax
+        call_fn println %rax
+
+        call_fn ceiling, PI
+        call_fn println %rax
+
+        call_fn box_int $1
+        call_fn ceiling, %rax
+        call_fn println %rax
+
+        call_fn truncate, PI
+        call_fn println %rax
+
+        call_fn box_int $1
+        call_fn truncate, %rax
+        call_fn println %rax
+
+        call_fn round_, PI
+        call_fn println %rax
+
+        call_fn box_int $1
+        call_fn round_, %rax
+        call_fn println %rax
+
         call_fn string_to_symbol, $foo_name
         mov     %rax, %rbx
         call_fn set, %rbx, PI

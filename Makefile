@@ -3,7 +3,7 @@ DEBUG = true
 ifdef DEBUG
 DEBUGFLAGS = -g
 endif
-CFLAGS += -rdynamic -ldl $(DEBUGFLAGS)
+CFLAGS += -rdynamic -ldl -lm $(DEBUGFLAGS)
 
 default: repl
 
