@@ -522,6 +522,17 @@ is_procedure:                   # obj
         box_boolean_internal %rax
         ret
 
+exact_to_inexact:               # z
+        cvtsi2sd %edi, %xmm0
+        movq    %xmm0, %rax
+        ret
+
+inexact_to_exact:               # z
+        movq     %rdi, %xmm0
+        cvtsd2si %xmm0, %rax
+        box_int_internal %eax
+        ret
+
 neg:                            # z1
         has_tag TAG_INT, %rdi
         jnz     neg_int
@@ -581,6 +592,7 @@ greater_than_or_equal:          # z1, z2
         .globl make_string, string_length, string_ref, string_set, string_to_number, string_to_symbol
         .globl char_to_integer, integer_to_char
         .globl neg, plus, minus, multiply, divide, equal, less_than, greater_than, less_than_or_equal, greater_than_or_equal
+        .globl exact_to_inexact, inexact_to_exact
         .globl symbol_to_string, set, lookup_global_symbol
         .globl init_runtime, allocate_code
         .globl int_format, double_format, true_string, false_string, box_int, box_string, unbox

@@ -306,6 +306,13 @@ main:
         call_fn is_inexact, NAN
         call_fn println, %rax
 
+        call_fn box_int, $1
+        call_fn exact_to_inexact, %rax
+        call_fn println %rax
+
+        call_fn inexact_to_exact, PI
+        call_fn println %rax
+
         call_fn is_number, PLUS_ONE
         call_fn println, %rax
 
