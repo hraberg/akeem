@@ -13,6 +13,10 @@ PLUS_ONE:
         .double 1.0
 MINUS_ONE:
         .double -1.0
+MINUS_TWO:
+        .double -2.0
+FIVE:
+        .double 5.0
 NAN:
         .quad NAN_MASK
 
@@ -376,6 +380,12 @@ main:
         call_fn divide, %rbx, %rax
         call_fn println, %rax
 
+        call_fn box_int, $16
+        mov     %rax, %rbx
+        call_fn box_int, $-2
+        call_fn divide, %rbx, %rax
+        call_fn println, %rax
+
         call_fn box_int, $2
         mov     %rax, %rbx
         call_fn box_int, $4
@@ -485,6 +495,43 @@ main:
 
         call_fn box_int $2
         call_fn expt, %rax, PI
+        call_fn println %rax
+
+        call_fn box_int $5
+        mov     %rax, %rbx
+        call_fn box_int $2
+        call_fn quotient, %rbx, %rax
+        call_fn println %rax
+
+        call_fn box_int $5
+        call_fn quotient, %rax, E
+        call_fn println %rax
+
+        call_fn box_int $4
+        mov     %rax, %rbx
+        call_fn box_int $13
+        call_fn modulo, %rax, %rbx
+        call_fn println %rax
+
+        call_fn box_int $4
+        mov     %rax, %rbx
+        call_fn box_int $13
+        call_fn remainder, %rax, %rbx
+        call_fn println %rax
+
+        call_fn box_int $4
+        mov     %rax, %rbx
+        call_fn box_int $-13
+        call_fn modulo, %rax, %rbx
+        call_fn println %rax
+
+        call_fn box_int $-4
+        mov     %rax, %rbx
+        call_fn box_int $13
+        call_fn remainder, %rax, %rbx
+        call_fn println %rax
+
+        call_fn remainder, FIVE, MINUS_TWO
         call_fn println %rax
 
         call_fn string_to_symbol, $foo_name

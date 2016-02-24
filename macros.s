@@ -63,10 +63,8 @@
         .endm
 
         .macro box_int_internal value tmp=%r11
-        .ifnc \value, %eax
         mov     \value, %eax
-        .endif
-        tag     TAG_INT, %rax
+        tag     TAG_INT, %rax, %rax, \tmp
         .endm
 
         .macro box_boolean_internal value
@@ -166,6 +164,20 @@
         ret
         .endm
 
+        .macro integer_division
+        has_tag TAG_INT, %rdi
+        jnz 1f
+        movd    %rdi, %xmm0
+        cvtsd2si %xmm0, %rdi
+1:      has_tag TAG_INT, %rsi
+        jnz 2f
+        movq    %rsi, %xmm0
+        cvtsd2si %xmm0, %rsi
+2:      xor     %rdx, %rdx
+        mov     %edi, %eax
+        idiv    %esi
+        .endm
+
         .macro math_library_unary_call name
         movq    %rdi, %xmm0
         has_tag TAG_INT, %rdi
@@ -182,6 +194,18 @@
         cvtsd2si %xmm0, %rax
         box_int_internal %eax
         return
+        .endm
+
+        .macro math_library_binary_call name
+        movq    %rdi, %xmm0
+        has_tag TAG_INT, %rdi
+        jz 1f
+        cvtsi2sd %edi, %xmm0
+1:      movq    %rsi, %xmm1
+        has_tag TAG_INT, %rsi
+        jz 2f
+        cvtsi2sd %esi, %xmm1
+2:      call_fn \name
         .endm
 
         .macro lookup_global_symbol_internal symbol_id
