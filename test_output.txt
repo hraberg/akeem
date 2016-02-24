@@ -21,8 +21,11 @@ strlen
 #t
 #f
 #\A
-#\space
+#\backspace
+#\tab
 #\newline
+#\return
+#\space
 #f
 #t
 #f

@@ -7,14 +7,30 @@ int_format:
         .string "%d"
 double_format:
         .string "%f"
+backspace_char:
+        .string "#\\backspace"
+tab_char:
+        .string "#\\tab"
 newline_char:
         .string "#\\newline"
+return_char:
+        .string "#\\return"
 space_char:
         .string "#\\space"
 false_string:
         .string "#f"
 true_string:
         .string "#t"
+
+char_table:
+        .zero   POINTER_SIZE * 8
+        .quad   backspace_char
+        .quad   tab_char
+        .quad   newline_char
+        .zero   POINTER_SIZE * 2
+        .quad   return_char
+        .zero   POINTER_SIZE * 18
+        .quad   space_char
 
 to_string_jump_table:
         .quad   double_to_string
@@ -279,16 +295,15 @@ string_to_number:               # string
 
 char_to_string:
         prologue str
-        movsx   %di, %rdx
-        cmp     $NEWLINE_CHAR, %dx
-        jne     1f
-        tag     TAG_STRING, $newline_char
+        mov     %edi, %edx
+        cmp     $SPACE_CHAR, %dx
+        jg      1f
+        mov     char_table(,%edx,POINTER_SIZE), %rax
+        test    %rax, %rax
+        jz      1f
+        tag     TAG_STRING, %rax
         return
-1:      cmp     $SPACE_CHAR, %dx
-        jne     2f
-        tag     TAG_STRING, $space_char
-        return
-2:      xor     %al, %al
+1:      xor     %al, %al
         lea     str(%rsp), %rdi
         call_fn asprintf, %rdi, $char_format, %rdx
         tag     TAG_STRING, str(%rsp)
