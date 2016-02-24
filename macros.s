@@ -179,6 +179,7 @@
         .endm
 
         .macro math_library_unary_call name
+        prologue
         movq    %rdi, %xmm0
         has_tag TAG_INT, %rdi
         jz      \name\()_double
@@ -186,14 +187,7 @@
         cvtsi2sd %edi, %xmm0
 \name\()_double:
         call_fn \name
-        .endm
-
-        .macro math_library_unary_call_integer name
-        prologue
-        math_library_unary_call \name
-        cvtsd2si %xmm0, %rax
-        box_int_internal %eax
-        return
+        return %xmm0
         .endm
 
         .macro math_library_binary_call name

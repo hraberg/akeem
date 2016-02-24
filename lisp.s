@@ -602,22 +602,20 @@ modulo:                         # n1, n2
         return
 
 floor_:                         # z
-        math_library_unary_call_integer floor
+        math_library_unary_call floor
 
 ceiling:                        # z
-        math_library_unary_call_integer ceil
+        math_library_unary_call ceil
 
 truncate:                       # z
-        math_library_unary_call_integer trunc
+        math_library_unary_call trunc
 
 round_:                         # z
-        math_library_unary_call_integer round
+        math_library_unary_call round
 
         .irp name, exp, log, sin, cos, tan, asin, acos, atan, sqrt
 \name\()_:                      # z
-        prologue
         math_library_unary_call \name
-        return %xmm0
         .endr
 
 expt:                           # z1, z2
