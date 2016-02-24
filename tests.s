@@ -129,6 +129,20 @@ main:
         mov     %rax, %rbx
         call_fn box_int $0
         call_fn string_ref, %rbx, %rax
+        mov     %rax, %rbx
+        call_fn println, %rax
+
+        call_fn char_to_integer, %rbx
+        call_fn println, %rax
+
+        call_fn is_char, %rbx
+        call_fn println, %rax
+
+        call_fn is_char, $NIL
+        call_fn println, %rax
+
+        call_fn box_int, $65
+        call_fn integer_to_char, %rax
         call_fn println, %rax
 
         call_fn is_string, PI

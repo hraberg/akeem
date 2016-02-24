@@ -1,6 +1,8 @@
         .include "macros.s"
 
         .data
+char_format:
+        .string "#\\%c"
 int_format:
         .string "%d"
 double_format:
@@ -13,7 +15,8 @@ true_string:
 to_string_jump_table:
         .quad   double_to_string
         .quad   boolean_to_string
-        .zero   POINTER_SIZE * 2
+        .zero   POINTER_SIZE
+        .quad   char_to_string
         .quad   int_to_string
         .zero   POINTER_SIZE * 3
         .quad   unbox_pointer
@@ -29,7 +32,8 @@ to_string_jump_table:
 unbox_jump_table:
         .quad   unbox_double
         .quad   unbox_int
-        .zero   POINTER_SIZE * 2
+        .zero   POINTER_SIZE
+        .quad   unbox_int
         .quad   unbox_int
         .zero   POINTER_SIZE * 3
         .quad   unbox_pointer
@@ -237,7 +241,7 @@ string_ref:                     # string, k
         mov     %esi, %esi
         unbox_pointer_internal %rdi
         movsxb  (%rax,%rsi), %eax
-        box_int_internal %eax
+        tag     TAG_CHAR, %rax
         ret
 
 string_set:                     # string, k, char
@@ -268,6 +272,26 @@ string_to_number:               # string
         return
 
 2:      return $FALSE
+
+char_to_string:
+        prologue str
+        movsx   %di, %rdx
+        xor     %al, %al
+        lea     str(%rsp), %rdi
+        call_fn asprintf, %rdi, $char_format, %rdx
+        tag     TAG_STRING, str(%rsp)
+        return
+
+char_to_integer:
+        movsx   %di, %eax
+        box_int_internal %eax
+        ret
+
+integer_to_char:
+        xor     %eax, %eax
+        mov     %di, %ax
+        tag     TAG_CHAR, %rax
+        ret
 
 identity:                       # x
 unbox_double:                   # double
@@ -398,6 +422,11 @@ box_string:                     # c-string
         tag     TAG_STRING, %rax
         ret
 
+is_char:                        # obj
+        has_tag TAG_CHAR, %rdi
+        box_boolean_internal %rax
+        ret
+
 is_integer:                     # obj
 is_exact:                       # z
         has_tag TAG_INT, %rdi
@@ -518,9 +547,11 @@ greater_than_or_equal:          # z1, z2
 
         .globl cons, car, cdr, length
         .globl display, newline
-        .globl is_eq, is_eq_v, is_string, is_boolean, is_symbol, is_null, is_exact, is_inexact, is_integer, is_number, is_pair, is_vector
+        .globl is_eq, is_eq_v, is_string, is_boolean, is_char, is_procedure, is_symbol, is_null,
+        .globl is_exact, is_inexact, is_integer, is_number, is_pair, is_vector
         .globl make_vector, vector_length, vector_ref, vector_set
         .globl make_string, string_length, string_ref, string_set, string_to_number, string_to_symbol
+        .globl char_to_integer, integer_to_char
         .globl neg, plus, minus, multiply, divide, equal, less_than, greater_than, less_than_or_equal, greater_than_or_equal
         .globl symbol_to_string, set, lookup_global_symbol
         .globl init_runtime, allocate_code
