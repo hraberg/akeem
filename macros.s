@@ -74,25 +74,23 @@
         .endif
         .endm
 
-        .macro box_int_internal value tmp=%r11
+        .macro box_int_internal value=%eax tmp=%r11
         mov     \value, %eax
         tag     TAG_INT, %rax, %rax, \tmp
         .endm
 
-        .macro box_boolean_internal value
+        .macro box_boolean_internal value=%rax
         tag     TAG_BOOLEAN, \value
         .endm
 
-        .macro tag tag value target=%rax tmp=%r11
-        .ifnc \value, \target
-        mov     \value, \target
-        .endif
+        .macro tag tag value=%rax target=%rax tmp=%r11
+        mov_reg \value, \target
         mov     $(NAN_MASK | \tag << TAG_SHIFT), \tmp
         or      \tmp, \target
         .endm
 
-        .macro has_tag tag value store=true
-        mov     \value, %rax
+        .macro has_tag tag value=%rax store=true
+        mov_reg \value, %rax
         shr     $TAG_SHIFT, %rax
         eq_internal $(\tag | NAN_MASK >> TAG_SHIFT), %eax, \store
         .endm
@@ -156,7 +154,7 @@
 \name\()_int_int:
         mov     %edi, %eax
         \integer_op %esi, %eax
-        box_int_internal %eax
+        box_int_internal
         ret
         .endif
         .endm
@@ -174,7 +172,7 @@
         xor     %eax, %eax
         cmp     %esi, %edi
         \integer_setter %al
-        box_boolean_internal %rax
+        box_boolean_internal
         ret
         .endm
 
@@ -192,14 +190,14 @@
         idiv    %esi
         .endm
 
-        .macro maybe_round_to_int from=%xmm0
-        roundsd $ROUNDING_MODE_TRUNCATE, \from, %xmm1
-        ucomisd \from, %xmm1
+        .macro maybe_round_to_int from=%xmm0 tmp=%xmm1
+        roundsd $ROUNDING_MODE_TRUNCATE, \from, \tmp
+        ucomisd \from, \tmp
         je      1f
         movq    \from, %rax
         jmp     2f
-1:      cvtsd2si %xmm1, %rax
-        box_int_internal %eax
+1:      cvtsd2si \tmp, %rax
+        box_int_internal
 2:      nop
         .endm
 

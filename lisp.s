@@ -191,7 +191,7 @@ make_vector:                    # k
 vector_length:                  # vector
         unbox_pointer_internal %rdi
         mov     (%rax), %rax
-        box_int_internal %eax
+        box_int_internal
         ret
 
 vector_ref:                     # vector, k
@@ -280,7 +280,7 @@ string_to_number:               # string
         mov     tail(%rsp), %r11
         cmpb    $0, (%r11)
         jne     1f
-        box_int_internal %eax
+        box_int_internal
         return
 
 1:      lea     tail(%rsp), %r11
@@ -311,7 +311,7 @@ char_to_string:
 
 char_to_integer:
         movsx   %di, %eax
-        box_int_internal %eax
+        box_int_internal
         ret
 
 integer_to_char:
@@ -426,7 +426,7 @@ newline:
 is_eq:                          # obj1, obj2
 is_eqv:                         # obj1, obj2
         eq_internal %rdi, %rsi
-        box_boolean_internal %rax
+        box_boolean_internal
         ret
 
 not:                            # obj
@@ -451,23 +451,23 @@ box_string:                     # c-string
 
 is_char:                        # obj
         has_tag TAG_CHAR, %rdi
-        box_boolean_internal %rax
+        box_boolean_internal
         ret
 
 is_integer:                     # obj
 is_exact:                       # z
         has_tag TAG_INT, %rdi
-        box_boolean_internal %rax
+        box_boolean_internal
         ret
 
 is_inexact:                     # z
         is_double_internal %rdi
-        box_boolean_internal %rax
+        box_boolean_internal
         ret
 
 is_boolean:                     # obj
         has_tag TAG_BOOLEAN, %rdi
-        box_boolean_internal %rax
+        box_boolean_internal
         ret
 
 boolean_to_string:              # boolean
@@ -483,13 +483,13 @@ is_number:                      # obj
         mov     %rax, %r11
         has_tag TAG_INT, %rdi
         or      %r11, %rax
-        box_boolean_internal %rax
+        box_boolean_internal
         ret
 
 is_null:                        # obj
         mov     $NIL, %rax
         eq_internal %rax, %rdi
-        box_boolean_internal %rax
+        box_boolean_internal
         ret
 
 is_pair:                        # obj
@@ -499,7 +499,7 @@ is_pair:                        # obj
         eq_internal %rax, %rdi
         btc     $0, %rax
         and     %r11, %rax
-        box_boolean_internal %rax
+        box_boolean_internal
         ret
 
 is_vector:                      # obj
@@ -509,17 +509,17 @@ is_vector:                      # obj
 
 is_string:                      # obj
         has_tag TAG_STRING, %rdi
-        box_boolean_internal %rax
+        box_boolean_internal
         ret
 
 is_symbol:                      # obj
         has_tag TAG_SYMBOL, %rdi
-        box_boolean_internal %rax
+        box_boolean_internal
         ret
 
 is_procedure:                   # obj
         has_tag TAG_PROCEDURE, %rdi
-        box_boolean_internal %rax
+        box_boolean_internal
         ret
 
 exact_to_inexact:               # z
@@ -530,7 +530,7 @@ exact_to_inexact:               # z
 inexact_to_exact:               # z
         movq     %rdi, %xmm0
         cvtsd2si %xmm0, %rax
-        box_int_internal %eax
+        box_int_internal
         ret
 
 neg:                            # z1
@@ -560,7 +560,7 @@ divide_int_int:
         cvtsi2sd %edi, %xmm0
         cvtsi2sd %esi, %xmm1
         divsd   %xmm1, %xmm0
-        maybe_round_to_int %xmm0
+        maybe_round_to_int
         ret
 
 equal:                          # z1, z2
@@ -580,7 +580,7 @@ greater_than_or_equal:          # z1, z2
 
 quotient:                       # n1, n2
         integer_division
-        box_int_internal %eax
+        box_int_internal
         ret
 
 remainder:                      # n1, n2
