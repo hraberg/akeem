@@ -243,3 +243,12 @@
         .macro lookup_global_symbol_internal symbol_id
         mov     symbol_table_values(,\symbol_id,POINTER_SIZE), %rax
         .endm
+
+        .macro warn str
+        .data
+tmp_string_\@:
+        .string "\str"
+        .text
+        call_fn fprintf, stderr, $tmp_string_\@
+        call_fn fputc, $10, stderr
+        .endm

@@ -47,6 +47,9 @@ example_code:
         .text
 main:
         prologue vec
+
+        warn    "test suite start"
+
         call_fn init_runtime
 
         call_fn box_string, $strlen_name
@@ -602,6 +605,8 @@ main:
         call_fn box_string, $foo_name
         call_fn string_to_number, %rax
         call_fn println, %rax
+
+        warn    "test suite end"
 
         return  $0
 
