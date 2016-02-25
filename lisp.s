@@ -651,4 +651,4 @@ expt:                           # z1, z2
         .globl exact_to_inexact, inexact_to_exact
         .globl symbol_to_string, set, lookup_global_symbol
         .globl init_runtime, allocate_code
-        .globl int_format, double_format, true_string, false_string, box_int, box_string, unbox
+        .globl int_format, double_format, true_string, false_string, box_int, box_string, unbox, to_string

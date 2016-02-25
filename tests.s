@@ -30,6 +30,8 @@ strlen_name:
         .string "strlen"
 allocate_code_name:
         .string "allocate_code"
+assertion_failed_format:
+        .string "expected: '%s' but was: '%s'\n"
 test_case_prefix:
         .string ";;; "
 
@@ -55,6 +57,22 @@ tmp_string_\@:
         call_fn display, \value
         call_fn newline
         .endm
+
+        .macro is expected, actual=%rax
+        .data
+test_string_\@:
+        .string "\expected"
+        .text
+        call_fn to_string, \actual
+        call_fn unbox %rax
+        mov     %rax, %rbx
+        call_fn strcmp %rax, $test_string_\@
+        jz      1f
+        call_fn printf, $assertion_failed_format, $test_string_\@, %rbx
+        call_fn exit, $1
+1:      nop
+        .endm
+
 
 example_code:
         mov     %rdi, %rax
