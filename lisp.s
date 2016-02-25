@@ -61,52 +61,31 @@ init_runtime:
         prologue
 
         lea     char_table, %rbx
-        mov     $'\b, %ecx
-        movq    $backspace_char, (%rbx,%rcx,POINTER_SIZE)
-        mov     $'\t, %ecx
-        movq    $tab_char, (%rbx,%rcx,POINTER_SIZE)
-        mov     $'\n, %ecx
-        movq    $newline_char, (%rbx,%rcx,POINTER_SIZE)
-        mov     $'\r, %ecx
-        movq    $return_char, (%rbx,%rcx,POINTER_SIZE)
-        mov     $'\ , %ecx
-        movq    $space_char, (%rbx,%rcx,POINTER_SIZE)
+        store_pointer $'\b, $backspace_char
+        store_pointer $'\t, $tab_char
+        store_pointer $'\n, $newline_char
+        store_pointer $'\r, $return_char
+        store_pointer $'\ , $space_char
 
         lea     to_string_jump_table, %rbx
-        mov     $TAG_DOUBLE, %rcx
-        movq    $double_to_string, (%rbx,%rcx,POINTER_SIZE)
-        mov     $TAG_BOOLEAN, %rcx
-        movq    $boolean_to_string, (%rbx,%rcx,POINTER_SIZE)
-        mov     $TAG_CHAR, %rcx
-        movq    $char_to_string, (%rbx,%rcx,POINTER_SIZE)
-        mov     $TAG_INT, %rcx
-        movq    $integer_to_string, (%rbx,%rcx,POINTER_SIZE)
-        mov     $TAG_SYMBOL, %rcx
-        movq    $symbol_to_string, (%rbx,%rcx,POINTER_SIZE)
-        mov     $TAG_STRING, %rcx
-        movq    $unbox_pointer, (%rbx,%rcx,POINTER_SIZE)
-        mov     $TAG_PAIR, %rcx
-        movq    $pair_to_string, (%rbx,%rcx,POINTER_SIZE)
-        mov     $TAG_VECTOR, %rcx
-        movq    $vector_to_string, (%rbx,%rcx,POINTER_SIZE)
+        store_pointer $TAG_DOUBLE, $double_to_string
+        store_pointer $TAG_BOOLEAN, $boolean_to_string
+        store_pointer $TAG_CHAR, $char_to_string
+        store_pointer $TAG_INT, $integer_to_string
+        store_pointer $TAG_SYMBOL, $symbol_to_string
+        store_pointer $TAG_STRING, $unbox_pointer
+        store_pointer $TAG_PAIR, $pair_to_string
+        store_pointer $TAG_VECTOR, $vector_to_string
 
         lea     unbox_jump_table, %rbx
-        mov     $TAG_DOUBLE, %rcx
-        movq    $unbox_double, (%rbx,%rcx,POINTER_SIZE)
-        mov     $TAG_BOOLEAN, %rcx
-        movq    $unbox_boolean, (%rbx,%rcx,POINTER_SIZE)
-        mov     $TAG_CHAR, %rcx
-        movq    $unbox_char, (%rbx,%rcx,POINTER_SIZE)
-        mov     $TAG_INT, %rcx
-        movq    $unbox_integer, (%rbx,%rcx,POINTER_SIZE)
-        mov     $TAG_SYMBOL, %rcx
-        movq    $unbox_integer, (%rbx,%rcx,POINTER_SIZE)
-        mov     $TAG_STRING, %rcx
-        movq    $unbox_pointer, (%rbx,%rcx,POINTER_SIZE)
-        mov     $TAG_PAIR, %rcx
-        movq    $unbox_pointer, (%rbx,%rcx,POINTER_SIZE)
-        mov     $TAG_VECTOR, %rcx
-        movq    $unbox_vector, (%rbx,%rcx,POINTER_SIZE)
+        store_pointer $TAG_DOUBLE, $unbox_double
+        store_pointer $TAG_BOOLEAN, $unbox_boolean
+        store_pointer $TAG_CHAR, $unbox_char
+        store_pointer $TAG_INT, $unbox_integer
+        store_pointer $TAG_SYMBOL, $unbox_symbol
+        store_pointer $TAG_STRING, $unbox_pointer
+        store_pointer $TAG_PAIR, $unbox_pointer
+        store_pointer $TAG_VECTOR, $unbox_vector
 
         return
 
@@ -348,6 +327,7 @@ unbox_double:                   # double
 
 unbox_boolean:                  # boolean
 unbox_char:                     # char
+unbox_symbol:                   # symbol
 unbox_integer:                  # int
         movsx   %edi, %rax
         ret

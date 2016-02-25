@@ -104,6 +104,11 @@
         and     $C_TRUE, %rax
         .endm
 
+        .macro store_pointer idx ptr at=%rbx
+        mov     \idx, %ecx
+        movq    \ptr, (\at,%rcx,POINTER_SIZE)
+        .endm
+
         .macro tagged_jump table
         is_double_internal %rdi
         mov     $0, %rax
