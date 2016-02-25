@@ -51,10 +51,13 @@ allocate_code:                  # source_code, source_size
         mov     %rdi, source_code(%rsp)
         mov     %rsi, source_size(%rsp)
         call_fn mmap, $NULL, $PAGE_SIZE, $(PROT_READ | PROT_WRITE), $(MAP_PRIVATE | MAP_ANONYMOUS), $-1, $0
+        perror
 	mov     %rax, destination_code(%rsp)
 
         call_fn memcpy, destination_code(%rsp), source_code(%rsp), source_size(%rsp)
+        perror
         call_fn mprotect, destination_code(%rsp), $PAGE_SIZE, $(PROT_READ | PROT_EXEC)
+        perror je
         return destination_code(%rsp)
 
 init_runtime:
@@ -94,6 +97,7 @@ cons:                           # obj1, obj2
         mov     %rdi, obj1(%rsp)
         mov     %rsi, obj2(%rsp)
         call_fn malloc, $pair_size
+        perror
         mov     obj1(%rsp), %rdi
         mov     %rdi, pair_car(%rax)
         mov     obj2(%rsp), %rsi
@@ -130,6 +134,7 @@ pair_to_string:                 # pair
         lea     str(%rsp), %rdi
         lea     size(%rsp), %rsi
         call_fn open_memstream, %rdi, %rsi
+        perror
         mov     %rax, stream(%rsp)
 
         call_fn fputc, $'(, stream(%rsp)
@@ -160,6 +165,7 @@ pair_to_string:                 # pair
 
 2:      call_fn fputc, $'), stream(%rsp)
         call_fn fclose, stream(%rsp)
+        perror  je
         tag     TAG_STRING, str(%rsp)
         return
 
@@ -184,6 +190,7 @@ make_vector:                    # k
         inc     %edi
         imul    $POINTER_SIZE, %rdi
         call_fn malloc, %rdi
+        perror
         mov     %rbx, (%rax)
         tag     TAG_VECTOR, %rax
         return
@@ -214,6 +221,7 @@ vector_to_string:                 # vector
         lea     str(%rsp), %rdi
         lea     size(%rsp), %rsi
         call_fn open_memstream, %rdi, %rsi
+        perror
         mov     %rax, stream(%rsp)
 
         call_fn fputc, $'\#, stream(%rsp)
@@ -239,6 +247,7 @@ vector_to_string:                 # vector
 
 3:      call_fn fputc, $'), stream(%rsp)
         call_fn fclose, stream(%rsp)
+        perror  je
         tag     TAG_STRING, str(%rsp)
         return
 
@@ -247,6 +256,7 @@ make_string:                    # k
         inc     %esi
         mov     %rdi, %rbx
         call_fn malloc, %rdi
+        perror
         movb    $0, (%rax,%rbx)
         tag     TAG_STRING, %rax
         return
@@ -306,6 +316,7 @@ char_to_string:
 1:      xor     %al, %al
         lea     str(%rsp), %rdi
         call_fn asprintf, %rdi, $char_format, %rdx
+        perror  jge
         tag     TAG_STRING, str(%rsp)
         return
 
@@ -352,6 +363,7 @@ integer_to_string:              # int
         xor     %al, %al
         lea     str(%rsp), %rdi
         call_fn asprintf, %rdi, $int_format, %rdx
+        perror  jge
         tag     TAG_STRING, str(%rsp)
         return
 
@@ -362,6 +374,7 @@ double_to_string:               # double
         lea     str(%rsp), %rdi
         mov     $double_format, %rsi
         call    asprintf
+        perror  jge
         tag     TAG_STRING, str(%rsp)
         return
 
@@ -398,6 +411,7 @@ string_to_symbol:               # string
         incq    (symbol_next_id)
 
         call_fn strdup, string(%rsp)
+        perror
         mov     %rax, symbol_table_names(,%rbx,POINTER_SIZE)
 
 3:      tag     TAG_SYMBOL, %rbx

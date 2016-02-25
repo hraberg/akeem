@@ -244,6 +244,13 @@
         mov     symbol_table_values(,\symbol_id,POINTER_SIZE), %rax
         .endm
 
+        .macro perror success=jg
+        cmp    $NULL, %rax
+        \success 1f
+        call_fn perror, $NULL
+1:      nop
+        .endm
+
         .macro warn str
         .data
 tmp_string_\@:
