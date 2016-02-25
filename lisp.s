@@ -24,50 +24,24 @@ true_string:
 
         .align  16
 char_table:
-        .zero   POINTER_SIZE * (SPACE_CHAR + 1)
+        .zero   (SPACE_CHAR + 1) * POINTER_SIZE
 
         .align  16
 to_string_jump_table:
-        .quad   double_to_string
-        .quad   boolean_to_string
-        .zero   POINTER_SIZE
-        .quad   char_to_string
-        .quad   int_to_string
-        .zero   POINTER_SIZE * 3
-        .quad   symbol_to_string
-        .zero   POINTER_SIZE * 7
-        .quad   unbox_pointer
-        .zero   POINTER_SIZE * 7
-        .quad   pair_to_string
-        .zero   POINTER_SIZE * 7
-        .quad   vector_to_string
-        .zero   POINTER_SIZE * 7
-        .quad   0
+        .zero   TAG_MASK * POINTER_SIZE
 
         .align  16
 unbox_jump_table:
-        .quad   unbox_double
-        .quad   unbox_int
-        .zero   POINTER_SIZE
-        .quad   unbox_int
-        .quad   unbox_int
-        .zero   POINTER_SIZE * 3
-        .quad   unbox_pointer
-        .zero   POINTER_SIZE * 7
-        .quad   unbox_pointer
-        .zero   POINTER_SIZE * 7
-        .quad   unbox_pointer
-        .zero   POINTER_SIZE * 7
-        .quad   unbox_vector
-        .zero   POINTER_SIZE * 7
-        .quad   0
+        .zero   TAG_MASK * POINTER_SIZE
 
         .align  16
 symbol_table_values:
         .zero   MAX_NUMBER_OF_SYMBOLS * POINTER_SIZE
+
         .align  16
 symbol_table_names:
         .zero   MAX_NUMBER_OF_SYMBOLS * POINTER_SIZE
+
 symbol_next_id:
         .quad   TAG_MASK + 1
 
@@ -85,6 +59,7 @@ allocate_code:                  # source_code, source_size
 
 init_runtime:
         prologue
+
         lea     char_table, %rbx
         mov     $'\b, %ecx
         movq    $backspace_char, (%rbx,%rcx,POINTER_SIZE)
@@ -96,6 +71,43 @@ init_runtime:
         movq    $return_char, (%rbx,%rcx,POINTER_SIZE)
         mov     $'\ , %ecx
         movq    $space_char, (%rbx,%rcx,POINTER_SIZE)
+
+        lea     to_string_jump_table, %rbx
+        mov     $TAG_DOUBLE, %rcx
+        movq    $double_to_string, (%rbx,%rcx,POINTER_SIZE)
+        mov     $TAG_BOOLEAN, %rcx
+        movq    $boolean_to_string, (%rbx,%rcx,POINTER_SIZE)
+        mov     $TAG_CHAR, %rcx
+        movq    $char_to_string, (%rbx,%rcx,POINTER_SIZE)
+        mov     $TAG_INT, %rcx
+        movq    $integer_to_string, (%rbx,%rcx,POINTER_SIZE)
+        mov     $TAG_SYMBOL, %rcx
+        movq    $symbol_to_string, (%rbx,%rcx,POINTER_SIZE)
+        mov     $TAG_STRING, %rcx
+        movq    $unbox_pointer, (%rbx,%rcx,POINTER_SIZE)
+        mov     $TAG_PAIR, %rcx
+        movq    $pair_to_string, (%rbx,%rcx,POINTER_SIZE)
+        mov     $TAG_VECTOR, %rcx
+        movq    $vector_to_string, (%rbx,%rcx,POINTER_SIZE)
+
+        lea     unbox_jump_table, %rbx
+        mov     $TAG_DOUBLE, %rcx
+        movq    $unbox_double, (%rbx,%rcx,POINTER_SIZE)
+        mov     $TAG_BOOLEAN, %rcx
+        movq    $unbox_boolean, (%rbx,%rcx,POINTER_SIZE)
+        mov     $TAG_CHAR, %rcx
+        movq    $unbox_char, (%rbx,%rcx,POINTER_SIZE)
+        mov     $TAG_INT, %rcx
+        movq    $unbox_integer, (%rbx,%rcx,POINTER_SIZE)
+        mov     $TAG_SYMBOL, %rcx
+        movq    $unbox_integer, (%rbx,%rcx,POINTER_SIZE)
+        mov     $TAG_STRING, %rcx
+        movq    $unbox_pointer, (%rbx,%rcx,POINTER_SIZE)
+        mov     $TAG_PAIR, %rcx
+        movq    $unbox_pointer, (%rbx,%rcx,POINTER_SIZE)
+        mov     $TAG_VECTOR, %rcx
+        movq    $unbox_vector, (%rbx,%rcx,POINTER_SIZE)
+
         return
 
 cons:                           # obj1, obj2
@@ -334,7 +346,9 @@ unbox_double:                   # double
         mov     %rdi, %rax
         ret
 
-unbox_int:                      # int
+unbox_boolean:                  # boolean
+unbox_char:                     # char
+unbox_integer:                  # int
         movsx   %edi, %rax
         ret
 
@@ -352,7 +366,7 @@ unbox:                          # value
         tagged_jump unbox_jump_table
         return
 
-int_to_string:                  # int
+integer_to_string:              # int
         prologue str
         movsx   %edi, %rdx
         xor     %al, %al
