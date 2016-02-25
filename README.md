@@ -56,6 +56,9 @@ objdump -b binary -D -mi386:x86-64 code.bin
 
 ```
 
+Can potentially use __freadable and __fwriteable to implement
+input-port? and output-port?
+
 New tagging scheme:
 
 Tag 56 is for types. A type is stored under the symbol of its name, and
