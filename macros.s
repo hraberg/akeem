@@ -173,8 +173,8 @@
         jnz 2f
         movq    %rsi, %xmm0
         cvtsd2si %xmm0, %rsi
-2:      xor     %rdx, %rdx
-        mov     %edi, %eax
+2:      mov     %edi, %eax
+        cdq
         idiv    %esi
         .endm
 

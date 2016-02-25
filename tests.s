@@ -331,6 +331,12 @@ main:
         call_fn plus, %rax, %r11
         call_fn println, %rax
 
+        call_fn box_int, $4
+        mov     %rax, %rbx
+        call_fn box_int, $-8
+        call_fn plus, %rax, %rbx
+        call_fn println, %rax
+
         call_fn plus, PI, E
         call_fn println, %rax
 
@@ -455,17 +461,17 @@ main:
         call_fn greater_than_or_equal E, PI
         call_fn println %rax
 
-        call_fn box_int $1
+        call_fn box_int, $1
         call_fn less_than %rax, PI
         call_fn println %rax
 
-        call_fn box_int $-1
+        call_fn box_int, $-1
         mov     %rax, %rbx
         call_fn box_int $1
         call_fn less_than_or_equal %rbx, %rax
         call_fn println %rax
 
-        call_fn box_int $-1
+        call_fn box_int, $-1
         call_fn less_than %rax, PI
         call_fn println %rax
 
@@ -475,59 +481,83 @@ main:
         call_fn less_than_or_equal MINUS_ONE, PLUS_ONE
         call_fn println %rax
 
-        call_fn box_int $2
+        call_fn box_int, $2
         call_fn greater_than E, %rax
         call_fn println %rax
 
         call_fn floor_, PI
         call_fn println %rax
 
-        call_fn box_int $1
+        call_fn box_int, $1
         call_fn floor_, %rax
         call_fn println %rax
 
         call_fn sqrt_, PI
         call_fn println %rax
 
-        call_fn box_int $2
+        call_fn box_int, $2
         call_fn sqrt_, %rax
         call_fn println %rax
 
-        call_fn box_int $2
+        call_fn box_int, $2
         call_fn expt, %rax, PI
         call_fn println %rax
 
-        call_fn box_int $5
+        call_fn box_int, $5
         mov     %rax, %rbx
         call_fn box_int $2
         call_fn quotient, %rbx, %rax
         call_fn println %rax
 
-        call_fn box_int $5
+        call_fn box_int, $5
         call_fn quotient, %rax, E
         call_fn println %rax
 
-        call_fn box_int $4
+        call_fn box_int, $3
         mov     %rax, %rbx
-        call_fn box_int $13
+        call_fn box_int $4
         call_fn modulo, %rax, %rbx
         call_fn println %rax
 
-        call_fn box_int $4
+        call_fn box_int, $3
         mov     %rax, %rbx
-        call_fn box_int $13
+        call_fn box_int $4
         call_fn remainder, %rax, %rbx
         call_fn println %rax
 
-        call_fn box_int $4
+        call_fn box_int, $-3
         mov     %rax, %rbx
-        call_fn box_int $-13
+        call_fn box_int $4
         call_fn modulo, %rax, %rbx
         call_fn println %rax
 
-        call_fn box_int $-4
+        call_fn box_int, $-3
         mov     %rax, %rbx
-        call_fn box_int $13
+        call_fn box_int, $4
+        call_fn remainder, %rax, %rbx
+        call_fn println %rax
+
+        call_fn box_int, $3
+        mov     %rax, %rbx
+        call_fn box_int $-4
+        call_fn modulo, %rax, %rbx
+        call_fn println %rax
+
+        call_fn box_int, $3
+        mov     %rax, %rbx
+        call_fn box_int, $-4
+        call_fn remainder, %rax, %rbx
+        call_fn println %rax
+
+        call_fn box_int, $-3
+        mov     %rax, %rbx
+        call_fn box_int $-4
+        call_fn modulo, %rax, %rbx
+        call_fn println %rax
+
+        call_fn box_int, $-3
+        mov     %rax, %rbx
+        call_fn box_int $-4
         call_fn remainder, %rax, %rbx
         call_fn println %rax
 

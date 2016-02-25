@@ -595,11 +595,14 @@ remainder:                      # n1, n2
         ret
 
 modulo:                         # n1, n2
-        prologue
-        math_library_binary_call fmod
-        cvtsd2si %xmm0, %rax
-        box_int_internal %eax
-        return
+        integer_division
+        test    %edx, %edx
+        jz      1f
+        xor     %esi, %edi
+        jns     1f
+        add     %esi, %edx
+1:      box_int_internal %edx
+        ret
 
 floor_:                         # z
         math_library_unary_call floor
