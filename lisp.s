@@ -39,9 +39,9 @@ to_string_jump_table:
         .quad   char_to_string
         .quad   int_to_string
         .zero   POINTER_SIZE * 3
-        .quad   unbox_pointer
-        .zero   POINTER_SIZE * 7
         .quad   symbol_to_string
+        .zero   POINTER_SIZE * 7
+        .quad   unbox_pointer
         .zero   POINTER_SIZE * 7
         .quad   pair_to_string
         .zero   POINTER_SIZE * 7

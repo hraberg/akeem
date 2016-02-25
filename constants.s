@@ -29,8 +29,8 @@
         .equ TAG_CHAR, 3
         .equ TAG_INT, 4
 
-        .equ TAG_STRING, 8
-        .equ TAG_SYMBOL, 16
+        .equ TAG_SYMBOL, 8
+        .equ TAG_STRING, 16
         .equ TAG_PAIR, 24
         .equ TAG_VECTOR, 32
         .equ TAG_PROCEDURE, 40
