@@ -131,23 +131,24 @@
 \name\()_double_double:
         movq    %rdi, %xmm0
         movq    %rsi, %xmm1
-        jmp     1b
+        jmp     \name\()_op
         .align (1 << BINARY_OP_SHIFT)
 \name\()_int_double:
         cvtsi2sd %edi, %xmm0
         movq    %rsi, %xmm1
-        jmp     1b
+        jmp     \name\()_op
         .align (1 << BINARY_OP_SHIFT)
 \name\()_double_int:
         movq    %rdi, %xmm0
         cvtsi2sd %esi, %xmm1
-        jmp     1b
+        jmp     \name\()_op
         .align (1 << BINARY_OP_SHIFT)
         .endm
 
         .macro binary_op name double_op integer_op
         binary_op_jump \name
-1:      \double_op %xmm1, %xmm0
+\name\()_op:
+        \double_op %xmm1, %xmm0
         movq    %xmm0, %rax
         ret
         binary_op_moves \name
@@ -162,7 +163,8 @@
 
         .macro binary_comparsion name double_setter integer_setter
         binary_op_jump \name
-1:      xor     %eax, %eax
+\name\()_op:
+        xor     %eax, %eax
         comisd  %xmm1, %xmm0
         \double_setter %al
         box_boolean_internal %rax
@@ -190,30 +192,49 @@
         idiv    %esi
         .endm
 
-        .macro math_library_unary_call name
-        minimal_prologue
+        .macro maybe_round_to_int from=%xmm0
+        roundsd $ROUNDING_MODE_TRUNCATE, \from, %xmm1
+        ucomisd \from, %xmm1
+        je      1f
+        movq    \from, %rax
+        jmp     2f
+1:      cvtsd2si %xmm1, %rax
+        box_int_internal %eax
+2:      nop
+        .endm
+
+        .macro math_library_unary_call name round=false
         movq    %rdi, %xmm0
         has_tag TAG_INT, %rdi, store=false
         jne     \name\()_double
 \name\()_int:
         cvtsi2sd %edi, %xmm0
 \name\()_double:
+        minimal_prologue
         call_fn \name
-        return %xmm0
+        movq    %xmm0, %rax
+        .ifc \round, true
+        maybe_round_to_int
+        .endif
+        return
         .endm
 
-        .macro math_library_binary_call name
+        .macro math_library_binary_call name round=false
+        binary_op_jump \name
+\name\()_op:
         minimal_prologue
-        movq    %rdi, %xmm0
-        has_tag TAG_INT, %rdi, store=false
-        jne     1f
+        call_fn \name
+        .ifc \round, true
+        maybe_round_to_int
+        .else
+        movq    %xmm0, %rax
+        .endif
+        return
+        binary_op_moves \name
+\name\()_int_int:
         cvtsi2sd %edi, %xmm0
-1:      movq    %rsi, %xmm1
-        has_tag TAG_INT, %rsi, store=false
-        jne     2f
         cvtsi2sd %esi, %xmm1
-2:      call_fn \name
-        return %xmm0
+        jmp     \name\()_op
         .endm
 
         .macro lookup_global_symbol_internal symbol_id

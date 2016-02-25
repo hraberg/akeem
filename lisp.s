@@ -546,43 +546,37 @@ neg_int:
         ret
 
 plus:                           # z1, z2
-        binary_op plus addsd add
+        binary_op plus, addsd, add
 
 minus:                          # z1, z2
-        binary_op minus subsd sub
+        binary_op minus, subsd, sub
 
 multiply:                       # z1, z2
-        binary_op multiply mulsd imul
+        binary_op multiply, mulsd, imul
 
 divide:                         # z1, z2
-        binary_op divide divsd
+        binary_op divide, divsd
 divide_int_int:
         cvtsi2sd %edi, %xmm0
         cvtsi2sd %esi, %xmm1
         divsd   %xmm1, %xmm0
-        roundsd $ROUNDING_MODE_TRUNCATE, %xmm0, %xmm1
-        ucomisd %xmm0, %xmm1
-        je      2f
-        movq    %xmm0, %rax
-        ret
-2:      cvtsd2si %xmm1, %rax
-        box_int_internal %eax
+        maybe_round_to_int %xmm0
         ret
 
 equal:                          # z1, z2
-        binary_comparsion equals sete sete
+        binary_comparsion equals, sete, sete
 
 less_than:                      # z1, z2
-        binary_comparsion less_than setb setl
+        binary_comparsion less_than, setb, setl
 
 greater_than:                   # z1, z2
-        binary_comparsion greater_than seta setg
+        binary_comparsion greater_than, seta, setg
 
 less_than_or_equal:             # z1, z2
-        binary_comparsion less_than_or_equals setbe setle
+        binary_comparsion less_than_or_equals, setbe, setle
 
 greater_than_or_equal:          # z1, z2
-        binary_comparsion greater_than_or_equals setae setge
+        binary_comparsion greater_than_or_equals, setae, setge
 
 quotient:                       # n1, n2
         integer_division
@@ -616,13 +610,16 @@ truncate:                       # z
 round_:                         # z
         math_library_unary_call round
 
-        .irp name, exp, log, sin, cos, tan, asin, acos, atan, sqrt
+        .irp name, exp, log, sin, cos, tan, asin, acos, atan
 \name\()_:                      # z
         math_library_unary_call \name
         .endr
 
+sqrt_:                          # z
+        math_library_unary_call sqrt, round=true
+
 expt:                           # z1, z2
-        math_library_binary_call pow
+        math_library_binary_call pow, round=true
 
         .globl cons, car, cdr, length
         .globl display, newline

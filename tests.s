@@ -499,8 +499,18 @@ main:
         call_fn sqrt_, %rax
         call_fn println %rax
 
+        call_fn box_int, $4
+        call_fn sqrt_, %rax
+        call_fn println %rax
+
         call_fn box_int, $2
         call_fn expt, %rax, PI
+        call_fn println %rax
+
+        call_fn box_int, $5
+        mov     %rax, %rbx
+        call_fn box_int, $2
+        call_fn expt, %rax, %rbx
         call_fn println %rax
 
         call_fn box_int, $5
