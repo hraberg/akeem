@@ -248,6 +248,7 @@
         cmp    $NULL, %rax
         \success 1f
         call_fn perror, $NULL
+        call_fn exit, $1
 1:      nop
         .endm
 
@@ -257,5 +258,11 @@ tmp_string_\@:
         .string "\str"
         .text
         call_fn fprintf, stderr, $tmp_string_\@
-        call_fn fputc, $10, stderr
+        call_fn fputc, $'\n, stderr
+
+        call_fn putchar, $';
+        call_fn putchar, $';
+        call_fn putchar, $';
+        call_fn putchar, $SPACE_CHAR
+        call_fn puts, $tmp_string_\@
         .endm

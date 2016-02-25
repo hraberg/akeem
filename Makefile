@@ -18,7 +18,8 @@ repl: repl.o lisp.o
 
 run-tests: tests
 	./$< | diff -y -W250 test_output.txt - | expand | grep --color=always -nEC1 '^.{123} [|<>]( |$$)' \
-		&& echo Tests FAILED || echo `wc -l < test_output.txt` Tests PASSED
+		&& echo Tests FAILED \
+		|| echo `cat test_output.txt | grep -v ';;;' | wc -l` Tests PASSED
 
 run-tests-catchsegv: tests
 	catchsegv ./$<
