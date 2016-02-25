@@ -38,15 +38,25 @@
         .ifnb \locals
         local_variables \locals
         .endif
-        .equ stack_frame_size, (8 + (callee_saved_size + 8 + local_offset) & -16)
+        .equ stack_frame_size, (POINTER_SIZE + (callee_saved_size + POINTER_SIZE + local_offset) & -(2 * POINTER_SIZE))
+        .if stack_frame_size > POINTER_SIZE
         sub     $stack_frame_size, %rsp
+        .endif
         mov     %rbx, local_offset(%rsp)
         .endm
 
+        .macro minimal_prologue
+        .equ stack_frame_size, POINTER_SIZE
+        sub     $stack_frame_size, %rsp
+        .endm
+
         .macro return value1=%rax value2=%rdx
+        .equ callee_saved_size, POINTER_SIZE * 1
         mov_reg \value1, %rax
         mov_reg \value2, %rdx
+        .if stack_frame_size > POINTER_SIZE
         mov     local_offset(%rsp), %rbx
+        .endif
         add     $stack_frame_size, %rsp
         ret
         .endm
@@ -179,7 +189,7 @@
         .endm
 
         .macro math_library_unary_call name
-        prologue
+        minimal_prologue
         movq    %rdi, %xmm0
         has_tag TAG_INT, %rdi
         jz      \name\()_double

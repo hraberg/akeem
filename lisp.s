@@ -339,7 +339,7 @@ unbox_vector:                   # vector
         ret
 
 unbox:                          # value
-        prologue
+        minimal_prologue
         tagged_jump unbox_jump_table
         return
 
@@ -406,12 +406,12 @@ lookup_global_symbol:           # symbol
 
 number_to_string:               # z
 to_string:                      # value
-        prologue
+        minimal_prologue
         tagged_jump to_string_jump_table
         return
 
 display:                        # obj
-        prologue
+        minimal_prologue
         call_fn to_string, %rdi
         unbox_pointer_internal %rax, %rdi
         xor     %al, %al
@@ -622,7 +622,7 @@ round_:                         # z
         .endr
 
 expt:                           # z1, z2
-        prologue
+        minimal_prologue
         math_library_binary_call pow
         return %xmm0
 
