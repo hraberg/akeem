@@ -149,8 +149,8 @@ pair_to_string:                 # pair
 
         call_fn fputc, $' , stream(%rsp)
 
-        has_tag TAG_PAIR, pair(%rsp)
-        jnz     1b
+        has_tag TAG_PAIR, pair(%rsp), store=false
+        je      1b
 
         call_fn fputc, $'., stream(%rsp)
         call_fn fputc, $' , stream(%rsp)
@@ -534,8 +534,8 @@ inexact_to_exact:               # z
         ret
 
 neg:                            # z1
-        has_tag TAG_INT, %rdi
-        jnz     neg_int
+        has_tag TAG_INT, %rdi, store=false
+        je      neg_int
 neg_double:
         mov     %rdi, %rax
         btc     $SIGN_BIT, %rax
@@ -622,9 +622,7 @@ round_:                         # z
         .endr
 
 expt:                           # z1, z2
-        minimal_prologue
         math_library_binary_call pow
-        return %xmm0
 
         .globl cons, car, cdr, length
         .globl display, newline

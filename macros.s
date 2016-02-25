@@ -66,10 +66,12 @@
         and     \ptr, \to
         .endm
 
-        .macro eq_internal x y
+        .macro eq_internal x y store=true
         cmp     \x, \y
+        .ifc \store, true
         sete    %al
         and     $C_TRUE, %rax
+        .endif
         .endm
 
         .macro box_int_internal value tmp=%r11
@@ -89,10 +91,10 @@
         or      \tmp, \target
         .endm
 
-        .macro has_tag tag value
+        .macro has_tag tag value store=true
         mov     \value, %rax
         shr     $TAG_SHIFT, %rax
-        eq_internal $(\tag | NAN_MASK >> TAG_SHIFT), %eax
+        eq_internal $(\tag | NAN_MASK >> TAG_SHIFT), %eax, \store
         .endm
 
         .macro is_double_internal value tmp=%r11
@@ -115,12 +117,12 @@
 
         .macro binary_op_jump name
         has_tag TAG_INT, %rdi
-        mov     %rax, %rdx
+        mov     %al, %dl
         has_tag TAG_INT, %rsi
-        shl     %rax
-        or      %rdx, %rax
-        shl     $BINARY_OP_SHIFT, %rax
-        lea     \name\()_double_double(%rax), %rax
+        shl     %al
+        or      %edx, %eax
+        shl     $BINARY_OP_SHIFT, %al
+        lea     \name\()_double_double(%eax), %rax
         jmp     *%rax
         .endm
 
@@ -175,12 +177,12 @@
         .endm
 
         .macro integer_division
-        has_tag TAG_INT, %rdi
-        jnz 1f
+        has_tag TAG_INT, %rdi, store=false
+        je      1f
         movd    %rdi, %xmm0
         cvtsd2si %xmm0, %rdi
-1:      has_tag TAG_INT, %rsi
-        jnz 2f
+1:      has_tag TAG_INT, %rsi, store=false
+        je      2f
         movq    %rsi, %xmm0
         cvtsd2si %xmm0, %rsi
 2:      mov     %edi, %eax
@@ -191,8 +193,8 @@
         .macro math_library_unary_call name
         minimal_prologue
         movq    %rdi, %xmm0
-        has_tag TAG_INT, %rdi
-        jz      \name\()_double
+        has_tag TAG_INT, %rdi, store=false
+        jne     \name\()_double
 \name\()_int:
         cvtsi2sd %edi, %xmm0
 \name\()_double:
@@ -201,15 +203,17 @@
         .endm
 
         .macro math_library_binary_call name
+        minimal_prologue
         movq    %rdi, %xmm0
-        has_tag TAG_INT, %rdi
-        jz 1f
+        has_tag TAG_INT, %rdi, store=false
+        jne     1f
         cvtsi2sd %edi, %xmm0
 1:      movq    %rsi, %xmm1
-        has_tag TAG_INT, %rsi
-        jz 2f
+        has_tag TAG_INT, %rsi, store=false
+        jne     2f
         cvtsi2sd %esi, %xmm1
 2:      call_fn \name
+        return %xmm0
         .endm
 
         .macro lookup_global_symbol_internal symbol_id
