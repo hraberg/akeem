@@ -22,16 +22,11 @@ false_string:
 true_string:
         .string "#t"
 
+        .align  16
 char_table:
-        .zero   POINTER_SIZE * 8
-        .quad   backspace_char
-        .quad   tab_char
-        .quad   newline_char
-        .zero   POINTER_SIZE * 2
-        .quad   return_char
-        .zero   POINTER_SIZE * 18
-        .quad   space_char
+        .zero   POINTER_SIZE * (SPACE_CHAR + 1)
 
+        .align  16
 to_string_jump_table:
         .quad   double_to_string
         .quad   boolean_to_string
@@ -49,6 +44,7 @@ to_string_jump_table:
         .zero   POINTER_SIZE * 7
         .quad   0
 
+        .align  16
 unbox_jump_table:
         .quad   unbox_double
         .quad   unbox_int
@@ -66,8 +62,10 @@ unbox_jump_table:
         .zero   POINTER_SIZE * 7
         .quad   0
 
+        .align  16
 symbol_table_values:
         .zero   MAX_NUMBER_OF_SYMBOLS * POINTER_SIZE
+        .align  16
 symbol_table_names:
         .zero   MAX_NUMBER_OF_SYMBOLS * POINTER_SIZE
 symbol_next_id:
@@ -87,6 +85,17 @@ allocate_code:                  # source_code, source_size
 
 init_runtime:
         prologue
+        lea     char_table, %rbx
+        mov     $'\b, %ecx
+        movq    $backspace_char, (%rbx,%rcx,POINTER_SIZE)
+        mov     $'\t, %ecx
+        movq    $tab_char, (%rbx,%rcx,POINTER_SIZE)
+        mov     $'\n, %ecx
+        movq    $newline_char, (%rbx,%rcx,POINTER_SIZE)
+        mov     $'\r, %ecx
+        movq    $return_char, (%rbx,%rcx,POINTER_SIZE)
+        mov     $'\ , %ecx
+        movq    $space_char, (%rbx,%rcx,POINTER_SIZE)
         return
 
 cons:                           # obj1, obj2

@@ -125,22 +125,22 @@
         .endm
 
         .macro binary_op_moves name
-        .align (1 << BINARY_OP_SHIFT)
+        .align  (1 << BINARY_OP_SHIFT)
 \name\()_double_double:
         movq    %rdi, %xmm0
         movq    %rsi, %xmm1
         jmp     \name\()_op
-        .align (1 << BINARY_OP_SHIFT)
+        .align  (1 << BINARY_OP_SHIFT)
 \name\()_int_double:
         cvtsi2sd %edi, %xmm0
         movq    %rsi, %xmm1
         jmp     \name\()_op
-        .align (1 << BINARY_OP_SHIFT)
+        .align  (1 << BINARY_OP_SHIFT)
 \name\()_double_int:
         movq    %rdi, %xmm0
         cvtsi2sd %esi, %xmm1
         jmp     \name\()_op
-        .align (1 << BINARY_OP_SHIFT)
+        .align  (1 << BINARY_OP_SHIFT)
         .endm
 
         .macro binary_op name double_op integer_op
