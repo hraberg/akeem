@@ -1,11 +1,5 @@
         .include "constants.s"
 
-        .macro assert_equals expected actual
-        .if (\expected != \actual)
-        .error "Assertion failed: \expected \actual"
-        .endif
-        .endm
-
         .macro mov_reg from to
         .ifnb \from
         .ifnc \from, \to
@@ -250,19 +244,4 @@
         call_fn perror, $NULL
         call_fn exit, $1
 1:      nop
-        .endm
-
-        .macro warn str
-        .data
-tmp_string_\@:
-        .string "\str"
-        .text
-        call_fn fprintf, stderr, $tmp_string_\@
-        call_fn fputc, $'\n, stderr
-
-        call_fn putchar, $';
-        call_fn putchar, $';
-        call_fn putchar, $';
-        call_fn putchar, $SPACE_CHAR
-        call_fn puts, $tmp_string_\@
         .endm
