@@ -1,8 +1,6 @@
         .include "macros.s"
 
         .data
-empty_string:
-        .string ""
 PI:
         .double 3.14159
 E:
@@ -20,6 +18,8 @@ FIVE:
 NAN:
         .quad NAN_MASK
 
+empty_string:
+        .string ""
 forty_two_string:
         .string "42"
 pi_string:
@@ -239,6 +239,9 @@ main:
         assert write=true
 
         call_fn box_string, $escape_codes
+        assert write=true
+
+        call_fn box_string, $empty_string
         assert write=true
 
         call_fn is_string, PI
