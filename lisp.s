@@ -21,10 +21,6 @@ false_string:
         .string "#f"
 true_string:
         .string "#t"
-current_output_port_symbol:
-        .quad   0
-current_input_port_symbol:
-        .quad   0
 
         .align  16
 char_table:
@@ -48,6 +44,11 @@ symbol_table_names:
 
 symbol_next_id:
         .quad   TAG_MASK + 1
+
+output_port:
+        .quad   0
+input_port:
+        .quad   0
 
         .text
 allocate_code:                  # source_code, source_size
@@ -95,12 +96,9 @@ init_runtime:
         store_pointer $TAG_VECTOR, $unbox_vector
 
         tag     TAG_PORT, stdout
-        define "current-output-port", %rax
-        mov     %rax, (current_output_port_symbol)
-
+        mov     %rax, (output_port)
         tag     TAG_PORT, stdin
-        define "current-input-port", %rax
-        mov     %rax, (current_input_port_symbol)
+        mov     %rax, (input_port)
 
         return
 
@@ -441,9 +439,8 @@ to_string:                      # value
 
 display:                        # obj
         prologue
-        mov    (current_output_port_symbol), %rsi
-        lookup_global_symbol_internal %rsi
-        unbox_pointer_internal %rax, %rbx
+        unbox_pointer_internal (output_port), %rsi
+        mov     %rsi, %rbx
         call_fn to_string, %rdi
         unbox_pointer_internal %rax, %rdi
         xor     %al, %al
@@ -459,20 +456,33 @@ newline:
 write_char:
         minimal_prologue
         mov     %edi, %edi
-        mov     (current_output_port_symbol), %rsi
-        lookup_global_symbol_internal %rsi
-        unbox_pointer_internal %rax, %rsi
+        unbox_pointer_internal (output_port), %rsi
         call_fn fputc, %rdi, %rsi
         return $NIL
 
 read_char:
         minimal_prologue
-        mov     (current_input_port_symbol), %rdi
-        lookup_global_symbol_internal %rdi
-        unbox_pointer_internal %rax, %rdi
+        unbox_pointer_internal (input_port), %rdi
         call_fn fgetc, %rdi
         tag     TAG_CHAR, %rax
         return
+
+peek_char:
+        minimal_prologue
+        unbox_pointer_internal (input_port), %rsi
+        mov     %rsi, %rbx
+        call_fn fgetc, %rbx
+        call_fn ungetc, %rax, %rbx
+        tag     TAG_CHAR, %rax
+        return
+
+current_output_port:
+        mov     (output_port), %rax
+        ret
+
+current_input_port:
+        mov     (input_port), %rax
+        ret
 
 is_eq:                          # obj1, obj2
 is_eqv:                         # obj1, obj2
@@ -673,7 +683,7 @@ expt:                           # z1, z2
         math_library_binary_call pow, round=true
 
         .globl cons, car, cdr, length
-        .globl display, newline, write_char, read_char
+        .globl display, newline, write_char, read_char, peek_char, current_input_port, current_output_port
         .globl is_eq, is_eq_v, is_string, is_boolean, is_char, is_procedure, is_symbol, is_null,
         .globl is_exact, is_inexact, is_integer, is_number, is_pair, is_vector
         .globl make_vector, vector_length, vector_ref, vector_set
