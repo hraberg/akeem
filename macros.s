@@ -93,7 +93,7 @@
         mov_reg \value, %rax
         shr     $TAG_SHIFT, %rax
         .if (\tag >= TAG_SYMBOL)
-        and     $(~(TAG_SYMBOL - 1)), %al
+        and     $POINTER_TAG_MASK, %al
         .endif
         eq_internal $(\tag | NAN_MASK >> TAG_SHIFT), %eax, \store
         .endm
@@ -118,10 +118,10 @@
         cmovz   %rdi, %rax
         shr     $TAG_SHIFT, %rax
         and     $TAG_MASK, %rax
-        mov     $(~(TAG_SYMBOL - 1)), %r11b
-        mov     $0xff, %cl
+        mov     $POINTER_TAG_MASK, %r11b
+        mov     $TAG_MASK, %cl
         test    %r11b, %al
-        cmovnz  %r11, %rcx
+        cmovnz  %r11w, %cx
         and     %cl, %al
         call    *\table(,%rax,POINTER_SIZE)
         .endm

@@ -19,6 +19,7 @@
         .equ NAN_MASK, 0x7FF8000000000000
         .equ TAG_SHIFT, 45
         .equ TAG_MASK, 0x3f
+        .equ POINTER_TAG_MASK, ~(TAG_SYMBOL - 1)
 
         .equ PAYLOAD_MASK, (1 << 47) - 1
         .equ INT_MASK, (1 << 32) - 1
