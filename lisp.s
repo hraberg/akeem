@@ -741,17 +741,38 @@ boolean_to_string:              # boolean
         tag     TAG_STRING, %rax
         ret
 
+
 string_to_string:               # string
-        prologue str
+        prologue idx, str, size, stream
         testq   $C_TRUE, machine_readable_output
         jnz     1f
         return  %rdi
 1:      xor     %al, %al
-        unbox_pointer_internal %rdi, %rdx
+        unbox_pointer_internal %rdi, %rbx
         lea     str(%rsp), %rdi
+        lea     size(%rsp), %rsi
+        call_fn open_memstream, %rdi, %rsi
+        perror
+        mov     %rax, stream(%rsp)
+
         ## need to quote chars here, this is simplistic.
-        call_fn asprintf, %rdi, $machine_readable_string_format, %rdx
-        perror  jge
+        call_fn fputc, $'\", stream(%rsp)
+
+        movq    $0, idx(%rsp)
+2:      mov     idx(%rsp), %rcx
+        xor     %eax, %eax
+        movb    (%rbx,%rcx,1), %al
+        test    %al, %al
+        jz      3f
+        call_fn fputc, %rax, stream(%rsp)
+        incq    idx(%rsp)
+        jmp     2b
+
+3:      call_fn fputc, $'\", stream(%rsp)
+
+        call_fn fclose, stream(%rsp)
+        perror  je
+
         tag     TAG_STRING, str(%rsp)
         register_for_gc
         return
@@ -833,8 +854,6 @@ char_format:
         .string "%c"
 machine_readable_char_format:
         .string "#\\%c"
-machine_readable_string_format:
-        .string "\"%s\""
 oct_format:
         .string "%o"
 int_format:
