@@ -106,7 +106,7 @@ cons:                           # obj1, obj2
         prologue obj1, obj2
         mov     %rdi, obj1(%rsp)
         mov     %rsi, obj2(%rsp)
-        call_fn malloc, $pair_size
+        call_fn aligned_alloc, $POINTER_SIZE, $pair_size
         perror
         mov     obj1(%rsp), %rdi
         mov     %rdi, pair_car(%rax)
@@ -200,7 +200,7 @@ make_vector:                    # k
         mov     %edi, %ebx
         inc     %edi
         imul    $POINTER_SIZE, %rdi
-        call_fn malloc, %rdi
+        call_fn aligned_alloc, $POINTER_SIZE, %rdi
         perror
         mov     %rbx, (%rax)
         tag     TAG_VECTOR, %rax
