@@ -325,13 +325,22 @@ is_string:                      # obj
         box_boolean_internal
         ret
 
-make_string:                    # k
-        prologue
-        inc     %esi
-        mov     %rdi, %rbx
+make_string:                    # k, fill
+        prologue fill
+        mov     %edi, %edi
+        mov     %edi, %ebx
+        inc     %edi
+        mov     %rsi, fill(%rsp)
         call_fn malloc, %rdi
         perror
         movb    $0, (%rax,%rbx)
+        mov     fill(%rsp), %ecx
+
+1:      dec     %ebx
+        movb    %cl, (%rax,%rbx,1)
+        test    %ebx, %ebx
+        jnz     1b
+
         tag     TAG_STRING, %rax
         register_for_gc
         return
@@ -364,15 +373,23 @@ is_vector:                      # obj
         box_boolean_internal %rax
         ret
 
-make_vector:                    # k
-        prologue
+make_vector:                    # k, fill
+        prologue fill
         mov     %edi, %ebx
         inc     %edi
+        mov     %rsi, fill(%rsp)
         imul    $POINTER_SIZE, %rdi
         call_fn aligned_alloc, $POINTER_SIZE, %rdi
         perror
         mov     %rbx, (%rax)
-        tag     TAG_VECTOR, %rax
+        mov     fill(%rsp), %rsi
+1:      test    %ebx, %ebx
+        jz      2f
+        mov     %rsi, (%rax,%rbx,POINTER_SIZE)
+        dec     %ebx
+        jmp     1b
+
+2:      tag     TAG_VECTOR, %rax
         register_for_gc
         return
 

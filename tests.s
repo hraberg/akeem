@@ -321,6 +321,36 @@ main:
 
         assert vec(%rsp)
 
+        call_fn box_int, $4
+        call_fn make_vector, %rax, PI
+        mov     %rax, vec(%rsp)
+
+        call_fn vector_length, %rax
+        assert
+
+        call_fn box_int, $0
+        call_fn vector_ref, vec(%rsp), %rax
+        assert
+
+        call_fn box_int, $3
+        call_fn vector_ref, vec(%rsp), %rax
+        assert
+
+        call_fn box_int, $4
+        call_fn make_string, %rax, $'A
+        mov     %rax, %rbx
+
+        call_fn string_length, %rax
+        assert
+
+        call_fn box_int, $0
+        call_fn string_ref, %rbx, %rax
+        assert
+
+        call_fn box_int, $3
+        call_fn string_ref, %rbx, %rax
+        assert
+
         call_fn box_int, $1
         call_fn neg, %rax
         assert
