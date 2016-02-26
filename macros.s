@@ -251,18 +251,18 @@
         return  %rbx
         .endm
 
-        .macro with_file_io_template name
+        .macro with_file_io_template name stream
         prologue previous_port
         unbox_pointer_internal %rsi, %rbx
-        mov     \name\()_port, %rax
+        mov     \stream, %rax
         mov     %rax, previous_port(%rsp)
         call_fn open_\name\()_file, %rdi
-        mov     %rax, \name\()_port
+        mov     %rax, \stream
         call_fn *%rbx
         mov     %rax, %rbx
-        call_fn close_\name\()_port, \name\()_port
+        call_fn close_\name\()_port, \stream
         mov     previous_port(%rsp), %rax
-        mov     %rax, \name\()_port
+        mov     %rax, \stream
         return  %rbx
         .endm
 

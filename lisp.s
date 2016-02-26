@@ -493,17 +493,17 @@ call_with_output_file:          # filename, proc
         call_with_file_template output
 
 with_input_from_file:           # filename, thunk
-        with_file_io_template input
+        with_file_io_template input, stdin
 
 with_output_to_file:            # filename, thunk
-        with_file_io_template output
+        with_file_io_template output, stdout
 
 current_output_port:
-        mov     (output_port), %rax
+        tag     TAG_PORT, stdout
         ret
 
 current_input_port:
-        mov     (input_port), %rax
+        tag     TAG_PORT, stdin
         ret
 
 is_input_port:                  # obj
@@ -527,7 +527,7 @@ is_output_port:                 # obj
 
 read_char:                      # port
         minimal_prologue
-        mov     input_port, %r11
+        mov     stdin, %r11
         has_tag TAG_PORT, %rdi
         cmovz   %r11, %rdi
 
@@ -538,7 +538,7 @@ read_char:                      # port
 
 peek_char:                      # port
         minimal_prologue
-        mov     input_port, %r11
+        mov     stdin, %r11
         has_tag TAG_PORT, %rdi
         cmovz   %r11, %rdi
 
@@ -558,7 +558,7 @@ is_eof_object:                  # obj
 write:                          # obj, port
 display:                        # obj, port
         prologue
-        mov     output_port, %r11
+        mov     stdout, %r11
         has_tag TAG_PORT, %rsi
         cmovz   %r11, %rsi
 
@@ -578,7 +578,7 @@ newline:                        # port
 write_char:                     # char, port
         prologue
         mov     %edi, %edi
-        mov     output_port, %r11
+        mov     stdout, %r11
         has_tag TAG_PORT, %rsi
         cmovz   %r11, %rsi
 
@@ -626,11 +626,6 @@ init_runtime:
         store_pointer $8, $oct_format
         store_pointer $10, $int_format
         store_pointer $16, $hex_format
-
-        tag     TAG_PORT, stdout
-        mov     %rax, (output_port)
-        tag     TAG_PORT, stdin
-        mov     %rax, (input_port)
 
         return
 
@@ -856,8 +851,3 @@ symbol_table_names:
 
 symbol_next_id:
         .quad   TAG_MASK + 1
-
-output_port:
-        .quad   0
-input_port:
-        .quad   0
