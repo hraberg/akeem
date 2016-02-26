@@ -745,19 +745,53 @@ sqrt_:                          # z
 expt:                           # z1, z2
         math_library_binary_call pow, round=true
 
-        .globl cons, car, cdr, length
-        .globl display, newline, write, write_char, read_char, peek_char, current_input_port, current_output_port
-        .globl open_input_file, open_output_file, close_input_port, close_output_port
-        .globl call_with_input_file, call_with_output_file, with_input_from_file, with_output_to_file
-        .globl is_eq, is_eq_v, is_string, is_boolean, is_char, is_procedure, is_symbol, is_null, is_eof_object
-        .globl is_exact, is_inexact, is_integer, is_number, is_pair, is_vector, is_input_port, is_output_port
-        .globl make_vector, vector_length, vector_ref, vector_set
-        .globl make_string, string_length, string_ref, string_set, string_to_number, string_to_symbol
-        .globl char_to_integer, integer_to_char
-        .globl neg, plus, minus, multiply, divide, equal, less_than, greater_than, less_than_or_equal, greater_than_or_equal
-        .globl floor_, ceiling, truncate, round_, exp_, log_, sin_, cos_, tan_, asin_, acos_, atan_, sqrt_, expt
+        ## 6.1. Equivalence predicates
+        .globl is_eq, is_eq_v
+
+        ## 6.2.5. Numerical operations
+        .globl is_number, is_integer, is_exact, is_inexact
+        .globl equal, less_than, greater_than, less_than_or_equal, greater_than_or_equal
+        .globl neg, plus, minus, multiply, divide
         .globl quotient, remainder, modulo
+        .globl floor_, ceiling, truncate, round_, exp_, log_, sin_, cos_, tan_, asin_, acos_, atan_, sqrt_, expt
         .globl exact_to_inexact, inexact_to_exact
-        .globl symbol_to_string, set, lookup_global_symbol
-        .globl init_runtime, allocate_code
-        .globl int_format, double_format, true_string, false_string, box_int, box_string, unbox, to_string
+
+        ## 6.2.6. Numerical input and output
+        .globl number_to_string, string_to_number
+
+        ## 6.3.1. Booleans
+        .globl is_boolean, not
+
+        ## 6.3.2. Pairs and lists
+        .globl is_pair, cons, car, cdr, is_null, length
+
+        ## 6.3.3. Symbols
+        .globl is_symbol, symbol_to_string, string_to_symbol
+
+
+        ## 6.3.4. Characters
+        .globl is_char, char_to_integer, integer_to_char
+
+        ## 6.3.5. Strings
+        .globl is_string, make_string, string_length, string_ref, string_set
+
+        ## 6.3.6. Vectors
+        .globl is_vector, make_vector, vector_length, vector_ref, vector_set
+
+        ## 6.4. Control features
+        .globl is_procedure
+
+        ## 6.6.1. Ports
+        .globl call_with_input_file, call_with_output_file
+        .globl is_input_port, is_output_port, current_input_port, current_output_port
+        .globl with_input_from_file, with_output_to_file
+        .globl open_input_file, open_output_file, close_input_port, close_output_port
+
+        ## 6.6.2. Input
+        .globl read_char, peek_char, is_eof_object
+
+        ## 6.6.3. Output
+        .globl write, display, newline, write_char
+
+        .globl init_runtime, allocate_code, set, lookup_global_symbol
+        .globl int_format, double_format, box_int, box_string, unbox, to_string
