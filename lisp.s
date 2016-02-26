@@ -525,17 +525,24 @@ is_output_port:                 # obj
         ## 6.6.2. Input
         .globl read_char, peek_char, is_eof_object
 
-read_char:
+read_char:                      # port
         minimal_prologue
-        unbox_pointer_internal (input_port), %rdi
-        call_fn fgetc, %rdi
+        mov     input_port, %r11
+        has_tag TAG_PORT, %rdi
+        cmovz   %r11, %rdi
+
+        unbox_pointer_internal %rdi
+        call_fn fgetc, %rax
         tag     TAG_CHAR, %rax
         return
 
-peek_char:
+peek_char:                      # port
         minimal_prologue
-        unbox_pointer_internal (input_port), %rsi
-        mov     %rsi, %rbx
+        mov     input_port, %r11
+        has_tag TAG_PORT, %rdi
+        cmovz   %r11, %rdi
+
+        unbox_pointer_internal %rdi, %rbx
         call_fn fgetc, %rbx
         call_fn ungetc, %rax, %rbx
         tag     TAG_CHAR, %rax
@@ -548,11 +555,14 @@ is_eof_object:                  # obj
 
         ## 6.6.3. Output
         .globl write, display, newline, write_char
-write:                          # obj
-display:                        # obj
+write:                          # obj, port
+display:                        # obj, port
         prologue
-        unbox_pointer_internal (output_port), %rsi
-        mov     %rsi, %rbx
+        mov     output_port, %r11
+        has_tag TAG_PORT, %rsi
+        cmovz   %r11, %rsi
+
+        unbox_pointer_internal %rsi, %rbx
         call_fn to_string, %rdi
         unbox_pointer_internal %rax, %rdi
         xor     %al, %al
@@ -560,16 +570,20 @@ display:                        # obj
         call_fn fflush, %rbx
         return $NIL
 
-newline:
+newline:                        # port
         minimal_prologue
-        call_fn write_char, $NEWLINE_CHAR
+        call_fn write_char, $NEWLINE_CHAR, %rdi
         return
 
-write_char:
-        minimal_prologue
+write_char:                     # char, port
+        prologue
         mov     %edi, %edi
-        unbox_pointer_internal (output_port), %rsi
-        call_fn fputc, %rdi, %rsi
+        mov     output_port, %r11
+        has_tag TAG_PORT, %rsi
+        cmovz   %r11, %rsi
+
+        unbox_pointer_internal %rsi, %rbx
+        call_fn fputc, %rdi, %rbx
         tag     TAG_CHAR, %rax
         return
 
