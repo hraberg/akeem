@@ -242,7 +242,7 @@
 
         .macro call_with_file_template name
         prologue port
-        mov     %rsi, %rbx
+        unbox_pointer_internal %rsi, %rbx
         call_fn open_\name\()_file, %rdi
         mov     %rax, port(%rsp)
         call_fn *%rbx, %rax
@@ -253,7 +253,7 @@
 
         .macro with_file_io_template name
         prologue previous_port
-        mov     %rsi, %rbx
+        unbox_pointer_internal %rsi, %rbx
         mov     \name\()_port, %rax
         mov     %rax, previous_port(%rsp)
         call_fn open_\name\()_file, %rdi
