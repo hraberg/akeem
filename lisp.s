@@ -1,56 +1,7 @@
         .include "macros.s"
 
-        .data
-char_format:
-        .string "#\\%c"
-int_format:
-        .string "%d"
-double_format:
-        .string "%f"
-backspace_char:
-        .string "#\\backspace"
-tab_char:
-        .string "#\\tab"
-newline_char:
-        .string "#\\newline"
-return_char:
-        .string "#\\return"
-space_char:
-        .string "#\\space"
-false_string:
-        .string "#f"
-true_string:
-        .string "#t"
-
-        .align  16
-char_table:
-        .zero   ((SPACE_CHAR & INT_MASK) + 1) * POINTER_SIZE
-
-        .align  16
-to_string_jump_table:
-        .zero   TAG_MASK * POINTER_SIZE
-
-        .align  16
-unbox_jump_table:
-        .zero   TAG_MASK * POINTER_SIZE
-
-        .align  16
-symbol_table_values:
-        .zero   MAX_NUMBER_OF_SYMBOLS * POINTER_SIZE
-
-        .align  16
-symbol_table_names:
-        .zero   MAX_NUMBER_OF_SYMBOLS * POINTER_SIZE
-
-symbol_next_id:
-        .quad   TAG_MASK + 1
-
-output_port:
-        .quad   0
-input_port:
-        .quad   0
-
         .text
+        ## 6. Standard procedures
         ## 6.1. Equivalence predicates
         .globl is_eq, is_eq_v
 
@@ -60,6 +11,7 @@ is_eqv:                         # obj1, obj2
         box_boolean_internal
         ret
 
+        ## 6.2. Numbers
         ## 6.2.5. Numerical operations
         .globl is_number, is_integer, is_exact, is_inexact
         .globl equal, less_than, greater_than, less_than_or_equal, greater_than_or_equal
@@ -216,6 +168,7 @@ string_to_number:               # string
 
 2:      return $FALSE
 
+        ## 6.3. Other data types
         ## 6.3.1. Booleans
         .globl is_boolean, not
 
@@ -482,6 +435,7 @@ is_procedure:                   # obj
         box_boolean_internal
         ret
 
+        ## 6.6. Input and output
         ## 6.6.1. Ports
         .globl call_with_input_file, call_with_output_file
         .globl is_input_port, is_output_port, current_input_port, current_output_port
@@ -597,22 +551,10 @@ write_char:
         tag     TAG_CHAR, %rax
         return
 
+        ## Runtime
+
         .globl init_runtime, allocate_code, set, lookup_global_symbol
         .globl int_format, double_format, box_int, box_string, unbox, to_string
-
-allocate_code:                  # source_code, source_size
-        prologue source_code, source_size, destination_code
-        mov     %rdi, source_code(%rsp)
-        mov     %rsi, source_size(%rsp)
-        call_fn mmap, $NULL, $PAGE_SIZE, $(PROT_READ | PROT_WRITE), $(MAP_PRIVATE | MAP_ANONYMOUS), $-1, $0
-        perror
-	mov     %rax, destination_code(%rsp)
-
-        call_fn memcpy, destination_code(%rsp), source_code(%rsp), source_size(%rsp)
-        perror
-        call_fn mprotect, destination_code(%rsp), $PAGE_SIZE, $(PROT_READ | PROT_EXEC)
-        perror je
-        return destination_code(%rsp)
 
 init_runtime:
         prologue
@@ -796,3 +738,67 @@ set:                            # variable, expression
 lookup_global_symbol:           # symbol
         lookup_global_symbol_internal %edi
         ret
+
+allocate_code:                  # source_code, source_size
+        prologue source_code, source_size, destination_code
+        mov     %rdi, source_code(%rsp)
+        mov     %rsi, source_size(%rsp)
+        call_fn mmap, $NULL, $PAGE_SIZE, $(PROT_READ | PROT_WRITE), $(MAP_PRIVATE | MAP_ANONYMOUS), $-1, $0
+        perror
+	mov     %rax, destination_code(%rsp)
+
+        call_fn memcpy, destination_code(%rsp), source_code(%rsp), source_size(%rsp)
+        perror
+        call_fn mprotect, destination_code(%rsp), $PAGE_SIZE, $(PROT_READ | PROT_EXEC)
+        perror je
+        return destination_code(%rsp)
+
+                .data
+char_format:
+        .string "#\\%c"
+int_format:
+        .string "%d"
+double_format:
+        .string "%f"
+backspace_char:
+        .string "#\\backspace"
+tab_char:
+        .string "#\\tab"
+newline_char:
+        .string "#\\newline"
+return_char:
+        .string "#\\return"
+space_char:
+        .string "#\\space"
+false_string:
+        .string "#f"
+true_string:
+        .string "#t"
+
+        .align  16
+char_table:
+        .zero   ((SPACE_CHAR & INT_MASK) + 1) * POINTER_SIZE
+
+        .align  16
+to_string_jump_table:
+        .zero   TAG_MASK * POINTER_SIZE
+
+        .align  16
+unbox_jump_table:
+        .zero   TAG_MASK * POINTER_SIZE
+
+        .align  16
+symbol_table_values:
+        .zero   MAX_NUMBER_OF_SYMBOLS * POINTER_SIZE
+
+        .align  16
+symbol_table_names:
+        .zero   MAX_NUMBER_OF_SYMBOLS * POINTER_SIZE
+
+symbol_next_id:
+        .quad   TAG_MASK + 1
+
+output_port:
+        .quad   0
+input_port:
+        .quad   0
