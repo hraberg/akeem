@@ -741,11 +741,26 @@ main:
         call_fn is_input_port, %rbx
         assert
 
-        call_fn read_char, %rbx
+        call_fn peek_char, %rbx
         assert
         call_fn read_char, %rbx
         assert
+        call_fn peek_char, %rbx
+        assert
         call_fn read_char, %rbx
+        assert
+        call_fn peek_char, %rbx
+        assert
+        call_fn read_char, %rbx
+        assert
+        call_fn peek_char, %rbx
+        call_fn is_eof_object, %rax
+        assert
+        call_fn read_char, %rbx
+        call_fn is_eof_object, %rax
+        assert
+        call_fn peek_char, %rbx
+        call_fn is_eof_object, %rax
         assert
         call_fn read_char, %rbx
         call_fn is_eof_object, %rax

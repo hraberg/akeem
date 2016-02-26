@@ -159,7 +159,13 @@ a
 #f
 #t
 #\f
+#\f
 #\o
 #\o
+#\o
+#\o
+#t
+#t
+#t
 #t
 ;;; test suite end

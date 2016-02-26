@@ -537,7 +537,7 @@ read_char:                      # port
         return
 
 peek_char:                      # port
-        minimal_prologue
+        prologue
         mov     stdin, %r11
         has_tag TAG_PORT, %rdi
         cmovz   %r11, %rdi
