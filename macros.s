@@ -92,6 +92,9 @@
         .macro has_tag tag value=%rax store=true
         mov_reg \value, %rax
         shr     $TAG_SHIFT, %rax
+        .if (\tag >= TAG_SYMBOL)
+        and     $(~(TAG_SYMBOL - 1)), %al
+        .endif
         eq_internal $(\tag | NAN_MASK >> TAG_SHIFT), %eax, \store
         .endm
 
@@ -115,6 +118,11 @@
         cmovz   %rdi, %rax
         shr     $TAG_SHIFT, %rax
         and     $TAG_MASK, %rax
+        mov     $(~(TAG_SYMBOL - 1)), %r11b
+        mov     $0xff, %cl
+        test    %r11b, %al
+        cmovnz  %r11, %rcx
+        and     %cl, %al
         call    *\table(,%rax,POINTER_SIZE)
         .endm
 

@@ -150,10 +150,12 @@ a
 #t
 #t
 #f
+#<port>
 #t
 #f
 #f
 #t
+#<port>
 #t
 #f
 #f
@@ -168,4 +170,6 @@ a
 #t
 #t
 #t
+print_foo
+#\f
 ;;; test suite end

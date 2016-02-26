@@ -611,6 +611,7 @@ init_runtime:
         store_pointer $TAG_STRING, $unbox_pointer
         store_pointer $TAG_PAIR, $pair_to_string
         store_pointer $TAG_VECTOR, $vector_to_string
+        store_pointer $TAG_PORT, $port_to_string
 
         lea     unbox_jump_table, %rbx
         store_pointer $TAG_DOUBLE, $unbox_double
@@ -621,6 +622,7 @@ init_runtime:
         store_pointer $TAG_STRING, $unbox_pointer
         store_pointer $TAG_PAIR, $unbox_pointer
         store_pointer $TAG_VECTOR, $unbox_vector
+        store_pointer $TAG_PORT, $unbox_pointer
 
         lea     integer_to_string_format_table, %rbx
         store_pointer $8, $oct_format
@@ -727,6 +729,10 @@ boolean_to_string:              # boolean
         tag     TAG_STRING, %rax
         ret
 
+port_to_string:                 # port
+        tag     TAG_STRING, $port_string
+        ret
+
 to_string:                      # value
         minimal_prologue
         tagged_jump to_string_jump_table
@@ -820,6 +826,8 @@ return_char:
         .string "#\\return"
 space_char:
         .string "#\\space"
+port_string:
+        .string "#<port>"
 false_string:
         .string "#f"
 true_string:

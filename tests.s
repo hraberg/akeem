@@ -32,6 +32,8 @@ allocate_code_name:
         .string "allocate_code"
 test_file:
         .string "test.txt"
+print_foo_string:
+        .string "print_foo"
 assertion_failed_format:
         .string "expected: '%s' but was: '%s'\n"
 test_case_prefix:
@@ -75,6 +77,18 @@ test_string_\@:
 1:      nop
         .endm
 
+print_foo:
+        prologue
+        mov     %rdi, %rbx
+        call_fn box_string, $foo_name
+        call_fn display, %rax, %rbx
+        call_fn box_string $print_foo_string
+        return
+
+read_foo:
+        minimal_prologue
+        call_fn read_char, %rdi
+        return
 
 example_code:
         mov     %rdi, %rax
@@ -707,6 +721,9 @@ main:
         call_fn is_eof_object, %rax
         assert
 
+        call_fn current_output_port
+        assert
+
         call_fn current_input_port
         call_fn is_input_port, %rax
         assert
@@ -723,8 +740,10 @@ main:
         call_fn is_output_port, %rax
         assert
 
-        call_fn open_output_file, $test_file
+        call_fn box_string $test_file
+        call_fn open_output_file, %rax
         mov     %rax, %rbx
+        assert
         call_fn is_output_port, %rbx
         assert
         call_fn is_input_port, %rbx
@@ -734,7 +753,8 @@ main:
         call_fn display, %rax, %rbx
         call_fn close_output_port, %rbx
 
-        call_fn open_input_file, $test_file
+        call_fn box_string $test_file
+        call_fn open_input_file, %rax
         mov     %rax, %rbx
         call_fn is_output_port, %rbx
         assert
@@ -766,6 +786,15 @@ main:
         call_fn is_eof_object, %rax
         assert
         call_fn close_input_port, %rbx
+        call_fn unlink, $test_file
+
+        call_fn box_string $test_file
+        call_fn call_with_output_file, %rax, $print_foo
+        assert
+
+        call_fn box_string $test_file
+        call_fn call_with_input_file, %rax, $read_foo
+        assert
         call_fn unlink, $test_file
 
         test_case "test suite end"
