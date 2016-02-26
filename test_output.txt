@@ -29,6 +29,7 @@ A
 #\return
 #\space
 "foo"
+"H\be\"l\rlo\nW\\o\'rld\t!"
 #f
 #t
 #f

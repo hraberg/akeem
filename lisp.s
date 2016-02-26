@@ -277,7 +277,7 @@ string_to_symbol:               # string
         mov     symbol_next_id, %rbx
 
 1:      test    %rbx, %rbx
-        je      2f
+        jnz     2f
 
         dec     %rbx
         mov     symbol_table_names(,%rbx,POINTER_SIZE), %rax
@@ -608,6 +608,15 @@ init_runtime:
         store_pointer $'\r, $return_char
         store_pointer $'\ , $space_char
 
+        lea     escape_char_table, %rbx
+        movb    $'b, 8(%rbx)
+        movb    $'t, 9(%rbx)
+        movb    $'n, 10(%rbx)
+        movb    $'r, 13(%rbx)
+        movb    $'\", 34(%rbx)
+        movb    $'', 39(%rbx)
+        movb    $'\\, 92(%rbx)
+
         lea     to_string_jump_table, %rbx
         store_pointer $TAG_DOUBLE, $double_to_string
         store_pointer $TAG_BOOLEAN, $boolean_to_string
@@ -743,33 +752,42 @@ boolean_to_string:              # boolean
 
 
 string_to_string:               # string
-        prologue idx, str, size, stream
+        prologue idx, str, size, stream, escape_char
         testq   $C_TRUE, machine_readable_output
         jnz     1f
         return  %rdi
 
-1:      xor     %al, %al
-        unbox_pointer_internal %rdi, %rbx
+1:      unbox_pointer_internal %rdi, %rbx
         lea     str(%rsp), %rdi
         lea     size(%rsp), %rsi
         call_fn open_memstream, %rdi, %rsi
         perror
         mov     %rax, stream(%rsp)
 
-        ## need to quote chars here, this is simplistic.
         call_fn fputc, $'\", stream(%rsp)
 
         movq    $0, idx(%rsp)
 2:      mov     idx(%rsp), %rcx
         xor     %eax, %eax
-        movb    (%rbx,%rcx,1), %al
+        mov     (%rbx,%rcx), %al
         test    %al, %al
+        jz      5f
+
+        xor     %r11d, %r11d
+        mov     escape_char_table(%eax), %r11b
+        test    %r11b, %r11b
         jz      3f
-        call_fn fputc, %rax, stream(%rsp)
-        incq    idx(%rsp)
+
+        mov     %r11, escape_char(%rsp)
+        call_fn fputc, $'\\, stream(%rsp)
+        call_fn fputc, escape_char(%rsp), stream(%rsp)
+        jmp     4f
+
+3:      call_fn fputc, %rax, stream(%rsp)
+4:      incq    idx(%rsp)
         jmp     2b
 
-3:      call_fn fputc, $'\", stream(%rsp)
+5:      call_fn fputc, $'\", stream(%rsp)
 
         call_fn fclose, stream(%rsp)
         perror  je
@@ -891,6 +909,10 @@ integer_to_string_format_table:
         .align  16
 char_table:
         .zero   ((SPACE_CHAR & INT_MASK) + 1) * POINTER_SIZE
+
+        .align  16
+escape_char_table:
+        .zero   128
 
         .align  16
 to_string_jump_table:

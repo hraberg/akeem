@@ -24,6 +24,8 @@ forty_two_string:
         .string "42"
 pi_string:
         .string "3.14159"
+escape_codes:
+        .string "H\be\"l\rlo\nW\\o\'rld\t!"
 foo_name:
         .string "foo"
 strlen_name:
@@ -234,6 +236,9 @@ main:
         assert write=true
 
         call_fn box_string, $foo_name
+        assert write=true
+
+        call_fn box_string, $escape_codes
         assert write=true
 
         call_fn is_string, PI
