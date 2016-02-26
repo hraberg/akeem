@@ -624,6 +624,12 @@ main:
         assert
         assert %rbx
 
+        call_fn box_string, $forty_two_string
+        mov     %rax, %rbx
+        call_fn box_int, $16
+        call_fn string_to_number, %rbx, %rax
+        assert
+
         call_fn box_string, $pi_string
         call_fn string_to_number, %rax
         mov     %rax, %rbx
@@ -633,6 +639,28 @@ main:
 
         call_fn box_string, $foo_name
         call_fn string_to_number, %rax
+        assert
+
+        call_fn box_int, $10
+        call_fn number_to_string, %rax
+        assert
+
+        call_fn box_int, $10
+        mov     %rax, %rbx
+        call_fn box_int, $8
+        call_fn number_to_string, %rbx, %rax
+        assert
+
+        call_fn box_int, $10
+        mov     %rax, %rbx
+        call_fn box_int, $10
+        call_fn number_to_string, %rbx, %rax
+        assert
+
+        call_fn box_int, $10
+        mov     %rax, %rbx
+        call_fn box_int, $16
+        call_fn number_to_string, %rbx, %rax
         assert
 
         call_fn box_int, $-1

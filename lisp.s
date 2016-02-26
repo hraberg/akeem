@@ -141,17 +141,22 @@ inexact_to_exact:               # z
         ## 6.2.6. Numerical input and output
         .globl number_to_string, string_to_number
 
-number_to_string:               # z
+number_to_string:               # z, radix
         minimal_prologue
         tagged_jump to_string_jump_table
         return
 
-string_to_number:               # string
+string_to_number:               # string, radix
         prologue tail
         unbox_pointer_internal %rdi, %rbx
 
+        mov     $10, %r11
+        has_tag TAG_INT, %rsi
+        cmovz   %r11, %rsi
+        cmovnz  %esi, %esi
+
         lea     tail(%rsp), %r11
-        call_fn strtol, %rbx, %r11
+        call_fn strtol, %rbx, %r11, %rsi
         mov     tail(%rsp), %r11
         cmpb    $0, (%r11)
         jne     1f
@@ -586,6 +591,11 @@ init_runtime:
         store_pointer $TAG_PAIR, $unbox_pointer
         store_pointer $TAG_VECTOR, $unbox_vector
 
+        lea     integer_to_string_format_table, %rbx
+        store_pointer $8, $oct_format
+        store_pointer $10, $int_format
+        store_pointer $16, $hex_format
+
         tag     TAG_PORT, stdout
         mov     %rax, (output_port)
         tag     TAG_PORT, stdin
@@ -653,12 +663,19 @@ char_to_string:
         register_for_gc
         return
 
-integer_to_string:              # int
+integer_to_string:              # int, radix
         prologue str
+
+        mov     $10, %r11
+        has_tag TAG_INT, %rsi
+        cmovz   %r11, %rsi
+        cmovnz  %esi, %esi
+        mov     integer_to_string_format_table(,%rsi,8), %rsi
+
         movsx   %edi, %rdx
         xor     %al, %al
         lea     str(%rsp), %rdi
-        call_fn asprintf, %rdi, $int_format, %rdx
+        call_fn asprintf, %rdi, %rsi, %rdx
         perror  jge
         tag     TAG_STRING, str(%rsp)
         register_for_gc
@@ -755,8 +772,12 @@ allocate_code:                  # code, size
         .data
 char_format:
         .string "#\\%c"
+oct_format:
+        .string "%o"
 int_format:
         .string "%d"
+hex_format:
+        .string "%x"
 double_format:
         .string "%f"
 backspace_char:
@@ -773,6 +794,10 @@ false_string:
         .string "#f"
 true_string:
         .string "#t"
+
+        .align  16
+integer_to_string_format_table:
+        .zero   16 * POINTER_SIZE
 
         .align  16
 char_table:
