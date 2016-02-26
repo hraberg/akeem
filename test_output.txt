@@ -172,4 +172,6 @@ a
 #t
 print_foo
 #\f
+print_foo
+#\f
 ;;; test suite end

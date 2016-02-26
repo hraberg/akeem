@@ -797,6 +797,15 @@ main:
         assert
         call_fn unlink, $test_file
 
+        call_fn box_string $test_file
+        call_fn with_output_to_file, %rax, $print_foo
+        assert
+
+        call_fn box_string $test_file
+        call_fn with_input_from_file, %rax, $read_foo
+        assert
+        call_fn unlink, $test_file
+
         test_case "test suite end"
 
         return  $0
