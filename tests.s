@@ -30,6 +30,8 @@ strlen_name:
         .string "strlen"
 allocate_code_name:
         .string "allocate_code"
+test_file:
+        .string "test.txt"
 assertion_failed_format:
         .string "expected: '%s' but was: '%s'\n"
 test_case_prefix:
@@ -720,6 +722,36 @@ main:
         call_fn current_output_port
         call_fn is_output_port, %rax
         assert
+
+        call_fn open_output_file, $test_file
+        mov     %rax, %rbx
+        call_fn is_output_port, %rbx
+        assert
+        call_fn is_input_port, %rbx
+        assert
+
+        call_fn box_string, $foo_name
+        call_fn display, %rax, %rbx
+        call_fn close_output_port, %rbx
+
+        call_fn open_input_file, $test_file
+        mov     %rax, %rbx
+        call_fn is_output_port, %rbx
+        assert
+        call_fn is_input_port, %rbx
+        assert
+
+        call_fn read_char, %rbx
+        assert
+        call_fn read_char, %rbx
+        assert
+        call_fn read_char, %rbx
+        assert
+        call_fn read_char, %rbx
+        call_fn is_eof_object, %rax
+        assert
+        call_fn close_input_port, %rbx
+        call_fn unlink, $test_file
 
         test_case "test suite end"
 

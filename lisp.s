@@ -467,14 +467,14 @@ is_procedure:                   # obj
 open_input_file:                # filename
         minimal_prologue
         unbox_pointer_internal %rdi
-        call_fn fopen, %rax, $'r
+        call_fn fopen, %rax, $read_mode
         tag     TAG_PORT, %rax
         return
 
 open_output_file:               # filename
         minimal_prologue
         unbox_pointer_internal %rdi
-        call_fn fopen, %rax, $'w
+        call_fn fopen, %rax, $write_mode
         tag     TAG_PORT, %rax
         return
 
@@ -811,6 +811,10 @@ hex_format:
         .string "%x"
 double_format:
         .string "%f"
+read_mode:
+        .string "r"
+write_mode:
+        .string "w"
 backspace_char:
         .string "#\\backspace"
 tab_char:

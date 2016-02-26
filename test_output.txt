@@ -154,4 +154,12 @@ a
 #f
 #f
 #t
+#t
+#f
+#f
+#t
+#\f
+#\o
+#\o
+#t
 ;;; test suite end
