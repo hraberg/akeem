@@ -28,7 +28,7 @@ main:
         call_fn display, %rax
 
         call_fn readline
-        call_fn display, %rax
+        call_fn write, %rax
         call_fn newline
 
         jmp     1b
