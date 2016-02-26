@@ -57,8 +57,12 @@ tmp_string_\@:
         call_fn puts, $tmp_string_\@
         .endm
 
-        .macro assert value=%rax
+        .macro assert value=%rax write=false
+        .ifc \write, true
+        call_fn write, \value
+        .else
         call_fn display, \value
+        .endif
         call_fn newline
         .endm
 
@@ -205,25 +209,32 @@ main:
         call_fn integer_to_char, %rax
         assert
 
+        call_fn box_int, $65
+        call_fn integer_to_char, %rax
+        assert write=true
+
         call_fn box_int, $8
         call_fn integer_to_char, %rax
-        assert
+        assert write=true
 
         call_fn box_int, $9
         call_fn integer_to_char, %rax
-        assert
+        assert write=true
 
         call_fn box_int, $10
         call_fn integer_to_char, %rax
-        assert
+        assert write=true
 
         call_fn box_int, $13
         call_fn integer_to_char, %rax
-        assert
+        assert write=true
 
         call_fn box_int, $32
         call_fn integer_to_char, %rax
-        assert
+        assert write=true
+
+        call_fn box_string, $foo_name
+        assert write=true
 
         call_fn is_string, PI
         assert

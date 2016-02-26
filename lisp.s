@@ -158,7 +158,7 @@ string_to_number:               # string, radix
         lea     tail(%rsp), %r11
         call_fn strtol, %rbx, %r11, %rsi
         mov     tail(%rsp), %r11
-        cmpb    $0, (%r11)
+        cmpb    $NULL, (%r11)
         jne     1f
         box_int_internal
         return
@@ -166,7 +166,7 @@ string_to_number:               # string, radix
 1:      lea     tail(%rsp), %r11
         call_fn strtod, %rbx, %r11
         mov     tail(%rsp), %r11
-        cmpb    $0, (%r11)
+        cmpb    $NULL, (%r11)
         jne     2f
         movq    %xmm0, %rax
         return
@@ -274,7 +274,7 @@ string_to_symbol:               # string
         prologue string
         unbox_pointer_internal %rdi
         mov     %rax, string(%rsp)
-        mov     (symbol_next_id), %rbx
+        mov     symbol_next_id, %rbx
 
 1:      test    %rbx, %rbx
         je      2f
@@ -288,8 +288,8 @@ string_to_symbol:               # string
         jnz     1b
         jmp     3f
 
-2:      movq    (symbol_next_id), %rbx
-        incq    (symbol_next_id)
+2:      movq    symbol_next_id, %rbx
+        incq    symbol_next_id
 
         call_fn strdup, string(%rsp)
         perror
@@ -333,7 +333,7 @@ make_string:                    # k, fill
         mov     %rsi, fill(%rsp)
         call_fn malloc, %rdi
         perror
-        movb    $0, (%rax,%rbx)
+        movb    $NULL, (%rax,%rbx)
         mov     fill(%rsp), %ecx
 
 1:      dec     %ebx
@@ -556,6 +556,12 @@ is_eof_object:                  # obj
         ## 6.6.3. Output
         .globl write, display, newline, write_char
 write:                          # obj, port
+        minimal_prologue
+        movq    $C_TRUE, machine_readable_output
+        call_fn display, %rdi, %rsi
+        movq    $C_FALSE, machine_readable_output
+        return
+
 display:                        # obj, port
         prologue
         mov     stdout, %r11
@@ -608,7 +614,7 @@ init_runtime:
         store_pointer $TAG_CHAR, $char_to_string
         store_pointer $TAG_INT, $integer_to_string
         store_pointer $TAG_SYMBOL, $symbol_to_string
-        store_pointer $TAG_STRING, $unbox_pointer
+        store_pointer $TAG_STRING, $string_to_string
         store_pointer $TAG_PAIR, $pair_to_string
         store_pointer $TAG_VECTOR, $vector_to_string
         store_pointer $TAG_PORT, $port_to_string
@@ -676,16 +682,22 @@ pair_to_string:                 # pair
 char_to_string:
         prologue str
         mov     %edi, %edx
+        testq   $C_TRUE, machine_readable_output
+        jz      1f
         cmp     $(SPACE_CHAR & INT_MASK), %dx
-        jg      1f
+        jg      2f
         mov     char_table(,%edx,POINTER_SIZE), %rax
         test    %rax, %rax
-        jz      1f
+        jz      2f
         tag     TAG_STRING, %rax
         return
-1:      xor     %al, %al
+1:      mov     $char_format, %r11
+        testq   $C_TRUE, machine_readable_output
+        jz      3f
+2:      mov     $machine_readable_char_format, %r11
+3:      xor     %al, %al
         lea     str(%rsp), %rdi
-        call_fn asprintf, %rdi, $char_format, %rdx
+        call_fn asprintf, %rdi, %r11, %rdx
         perror  jge
         tag     TAG_STRING, str(%rsp)
         register_for_gc
@@ -728,6 +740,21 @@ boolean_to_string:              # boolean
         cmovz   %r11, %rax
         tag     TAG_STRING, %rax
         ret
+
+string_to_string:               # string
+        prologue str
+        testq   $C_TRUE, machine_readable_output
+        jnz     1f
+        return  %rdi
+1:      xor     %al, %al
+        unbox_pointer_internal %rdi, %rdx
+        lea     str(%rsp), %rdi
+        ## need to quote chars here, this is simplistic.
+        call_fn asprintf, %rdi, $machine_readable_string_format, %rdx
+        perror  jge
+        tag     TAG_STRING, str(%rsp)
+        register_for_gc
+        return
 
 port_to_string:                 # port
         tag     TAG_STRING, $port_string
@@ -803,7 +830,11 @@ allocate_code:                  # code, size
 
         .data
 char_format:
+        .string "%c"
+machine_readable_char_format:
         .string "#\\%c"
+machine_readable_string_format:
+        .string "\"%s\""
 oct_format:
         .string "%o"
 int_format:
@@ -857,5 +888,8 @@ symbol_table_values:
 symbol_table_names:
         .zero   MAX_NUMBER_OF_SYMBOLS * POINTER_SIZE
 
+        .align  16
 symbol_next_id:
         .quad   TAG_MASK + 1
+machine_readable_output:
+        .quad   C_FALSE

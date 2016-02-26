@@ -41,6 +41,7 @@
         .equ TAG_OBJECT, 56
 
         .equ C_TRUE, 1
+        .equ C_FALSE, 0
         .equ FALSE, (NAN_MASK | (TAG_BOOLEAN << TAG_SHIFT))
         .equ TRUE, (FALSE | C_TRUE)
 
