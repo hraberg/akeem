@@ -266,6 +266,10 @@
         return  %rbx
         .endm
 
+        .macro register_for_gc ptr=%rax
+        nop
+        .endm
+
         .macro lookup_global_symbol_internal symbol_id
         mov     symbol_table_values(,\symbol_id,POINTER_SIZE), %rax
         .endm

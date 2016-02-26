@@ -113,6 +113,7 @@ cons:                           # obj1, obj2
         mov     obj2(%rsp), %rsi
         mov     %rsi, pair_cdr(%rax)
         tag     TAG_PAIR, %rax
+        register_for_gc
         return
 
 car:                            # pair
@@ -203,6 +204,7 @@ make_vector:                    # k
         perror
         mov     %rbx, (%rax)
         tag     TAG_VECTOR, %rax
+        register_for_gc
         return
 
 vector_length:                  # vector
@@ -269,6 +271,7 @@ make_string:                    # k
         perror
         movb    $0, (%rax,%rbx)
         tag     TAG_STRING, %rax
+        register_for_gc
         return
 
 string_length:                  # vector
@@ -328,6 +331,7 @@ char_to_string:
         call_fn asprintf, %rdi, $char_format, %rdx
         perror  jge
         tag     TAG_STRING, str(%rsp)
+        register_for_gc
         return
 
 char_to_integer:
@@ -375,6 +379,7 @@ integer_to_string:              # int
         call_fn asprintf, %rdi, $int_format, %rdx
         perror  jge
         tag     TAG_STRING, str(%rsp)
+        register_for_gc
         return
 
 double_to_string:               # double
@@ -386,6 +391,7 @@ double_to_string:               # double
         call    asprintf
         perror  jge
         tag     TAG_STRING, str(%rsp)
+        register_for_gc
         return
 
 set:                            # variable, expression
