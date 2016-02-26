@@ -752,7 +752,7 @@ boolean_to_string:              # boolean
 
 
 string_to_string:               # string
-        prologue idx, str, size, stream, escape_char
+        prologue idx, str, size, stream
         testq   $C_TRUE, machine_readable_output
         jnz     1f
         return  %rdi
