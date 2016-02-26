@@ -773,6 +773,7 @@ string_to_string:               # string
         test    %al, %al
         jz      5f
 
+        xor     %r11d, %r11d
         mov     escape_char_table(%eax), %r11b
         test    %r11b, %r11b
         jz      3f
@@ -905,11 +906,9 @@ true_string:
         .align  16
 integer_to_string_format_table:
         .zero   16 * POINTER_SIZE
-
         .align  16
 char_table:
         .zero   ((SPACE_CHAR & INT_MASK) + 1) * POINTER_SIZE
-
         .align  16
 escape_char_table:
         .zero   128
@@ -917,7 +916,6 @@ escape_char_table:
         .align  16
 to_string_jump_table:
         .zero   TAG_MASK * POINTER_SIZE
-
         .align  16
 unbox_jump_table:
         .zero   TAG_MASK * POINTER_SIZE
@@ -925,7 +923,6 @@ unbox_jump_table:
         .align  16
 symbol_table_values:
         .zero   MAX_NUMBER_OF_SYMBOLS * POINTER_SIZE
-
         .align  16
 symbol_table_names:
         .zero   MAX_NUMBER_OF_SYMBOLS * POINTER_SIZE
