@@ -773,17 +773,15 @@ string_to_string:               # string
         test    %al, %al
         jz      5f
 
-        xor     %r11d, %r11d
         mov     escape_char_table(%eax), %r11b
         test    %r11b, %r11b
         jz      3f
 
-        mov     %r11, escape_char(%rsp)
-        call_fn fputc, $'\\, stream(%rsp)
-        call_fn fputc, escape_char(%rsp), stream(%rsp)
+        call_fn fprintf, stream(%rsp), $machine_readable_escape_code_format, %r11
         jmp     4f
 
 3:      call_fn fputc, %rax, stream(%rsp)
+
 4:      incq    idx(%rsp)
         jmp     2b
 
@@ -873,6 +871,8 @@ char_format:
         .string "%c"
 machine_readable_char_format:
         .string "#\\%c"
+machine_readable_escape_code_format:
+        .string "\\%c"
 oct_format:
         .string "%o"
 int_format:
