@@ -647,6 +647,22 @@ main:
         call_fn is_eof_object, %rax
         assert
 
+        call_fn current_input_port
+        call_fn is_input_port, %rax
+        assert
+
+        call_fn current_output_port
+        call_fn is_input_port, %rax
+        assert
+
+        call_fn current_input_port
+        call_fn is_output_port, %rax
+        assert
+
+        call_fn current_output_port
+        call_fn is_output_port, %rax
+        assert
+
         test_case "test suite end"
 
         return  $0

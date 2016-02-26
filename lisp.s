@@ -526,8 +526,18 @@ is_eof_object:                  # obj
         ret
 
 is_input_port:                  # obj
+        unbox_pointer_internal %rdi
+        call_fn __freadable, %rax
+        cmp     $0, %rax
+        setg    %al
+        box_boolean_internal
+        ret
+
 is_output_port:                 # obj
-        has_tag TAG_PORT, %rdi
+        unbox_pointer_internal %rdi
+        call_fn __fwritable, %rax
+        cmp     $0, %rax
+        setg    %al
         box_boolean_internal
         ret
 

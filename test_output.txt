@@ -139,4 +139,8 @@ strlen
 #t
 #t
 #f
+#t
+#f
+#f
+#t
 ;;; test suite end
