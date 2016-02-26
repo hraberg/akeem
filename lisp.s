@@ -747,6 +747,7 @@ string_to_string:               # string
         testq   $C_TRUE, machine_readable_output
         jnz     1f
         return  %rdi
+
 1:      xor     %al, %al
         unbox_pointer_internal %rdi, %rbx
         lea     str(%rsp), %rdi
