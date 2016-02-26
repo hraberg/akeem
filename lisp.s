@@ -523,7 +523,21 @@ is_output_port:                 # obj
         ret
 
         ## 6.6.2. Input
-        .globl read_char, peek_char, is_eof_object
+        .globl read, peek_char, is_eof_object
+
+read:                           # port
+        prologue str
+        mov     stdin, %r11
+        has_tag TAG_PORT, %rdi
+        cmovz   %r11, %rdi
+
+        unbox_pointer_internal %rdi, %rdi
+        lea     str(%rsp), %rdx
+        call_fn fscanf, %rdi, $read_format, %rdx
+        perror
+        tag     TAG_STRING, str(%rsp)
+        register_for_gc
+        return
 
 read_char:                      # port
         minimal_prologue
@@ -765,9 +779,12 @@ string_to_string:               # string
         mov     %rax, stream(%rsp)
 
         call_fn fputc, $'\", stream(%rsp)
+        test    %ebx, %ebx
+        jz      5f
 
         movq    $0, idx(%rsp)
 2:      mov     idx(%rsp), %rcx
+
         xor     %eax, %eax
         mov     (%rbx,%rcx), %al
         test    %al, %al
@@ -902,6 +919,8 @@ false_string:
         .string "#f"
 true_string:
         .string "#t"
+read_format:
+        .string "%as"
 
         .align  16
 integer_to_string_format_table:
