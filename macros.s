@@ -55,9 +55,15 @@
         ret
         .endm
 
-        .macro unbox_pointer_internal ptr to=%rax
+        .macro unbox_pointer_internal ptr to=%rax tmp=%r11
+        .ifc \ptr, \to
+        mov     $PAYLOAD_MASK, \tmp
+        and     \ptr, \tmp
+        mov     \tmp, \to
+        .else
         mov     $PAYLOAD_MASK, \to
         and     \ptr, \to
+        .endif
         .endm
 
         .macro eq_internal x y store=true
@@ -236,6 +242,18 @@
 
         .macro lookup_global_symbol_internal symbol_id
         mov     symbol_table_values(,\symbol_id,POINTER_SIZE), %rax
+        .endm
+
+        .macro define symbol_name, value, tmp=%rbx
+        .data
+symbol_string_\@:
+        .string "\symbol_name"
+        .text
+        mov     \value, \tmp
+        call_fn string_to_symbol, $symbol_string_\@
+        call_fn set, %rax, \tmp
+        mov     (symbol_next_id), %rax
+        dec     %rax
         .endm
 
         .macro perror success=jg

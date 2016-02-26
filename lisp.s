@@ -21,10 +21,14 @@ false_string:
         .string "#f"
 true_string:
         .string "#t"
+current_output_port_symbol:
+        .quad   0
+current_input_port_symbol:
+        .quad   0
 
         .align  16
 char_table:
-        .zero   (SPACE_CHAR + 1) * POINTER_SIZE
+        .zero   ((SPACE_CHAR & INT_MASK) + 1) * POINTER_SIZE
 
         .align  16
 to_string_jump_table:
@@ -89,6 +93,14 @@ init_runtime:
         store_pointer $TAG_STRING, $unbox_pointer
         store_pointer $TAG_PAIR, $unbox_pointer
         store_pointer $TAG_VECTOR, $unbox_vector
+
+        tag     TAG_PORT, stdout
+        define "current-output-port", %rax
+        mov     %rax, (current_output_port_symbol)
+
+        tag     TAG_PORT, stdin
+        define "current-input-port", %rax
+        mov     %rax, (current_input_port_symbol)
 
         return
 
@@ -306,7 +318,7 @@ string_to_number:               # string
 char_to_string:
         prologue str
         mov     %edi, %edx
-        cmp     $SPACE_CHAR, %dx
+        cmp     $(SPACE_CHAR & INT_MASK), %dx
         jg      1f
         mov     char_table(,%edx,POINTER_SIZE), %rax
         test    %rax, %rax
@@ -381,7 +393,7 @@ double_to_string:               # double
 set:                            # variable, expression
         unbox_pointer_internal %rdi
         mov     %rsi, symbol_table_values(,%rax,POINTER_SIZE)
-        mov     $NIL, %rax
+        mov     %rdi, %rax
         ret
 
 symbol_to_string:               # symbol
@@ -428,17 +440,39 @@ to_string:                      # value
         return
 
 display:                        # obj
-        minimal_prologue
+        prologue
+        mov    (current_output_port_symbol), %rsi
+        lookup_global_symbol_internal %rsi
+        unbox_pointer_internal %rax, %rbx
         call_fn to_string, %rdi
         unbox_pointer_internal %rax, %rdi
         xor     %al, %al
-        call_fn printf, %rdi
+        call_fn fprintf, %rbx, %rdi
+        call_fn fflush, %rbx
         return $NIL
 
 newline:
-        call_fn putchar, $'\n
-        mov     $NIL, %rax
-        ret
+        minimal_prologue
+        call_fn write_char, $NEWLINE_CHAR
+        return
+
+write_char:
+        minimal_prologue
+        mov     %edi, %edi
+        mov     (current_output_port_symbol), %rsi
+        lookup_global_symbol_internal %rsi
+        unbox_pointer_internal %rax, %rsi
+        call_fn fputc, %rdi, %rsi
+        return $NIL
+
+read_char:
+        minimal_prologue
+        mov     (current_input_port_symbol), %rdi
+        lookup_global_symbol_internal %rdi
+        unbox_pointer_internal %rax, %rdi
+        call_fn fgetc, %rdi
+        tag     TAG_CHAR, %rax
+        return
 
 is_eq:                          # obj1, obj2
 is_eqv:                         # obj1, obj2
@@ -639,7 +673,7 @@ expt:                           # z1, z2
         math_library_binary_call pow, round=true
 
         .globl cons, car, cdr, length
-        .globl display, newline
+        .globl display, newline, write_char, read_char
         .globl is_eq, is_eq_v, is_string, is_boolean, is_char, is_procedure, is_symbol, is_null,
         .globl is_exact, is_inexact, is_integer, is_number, is_pair, is_vector
         .globl make_vector, vector_length, vector_ref, vector_set

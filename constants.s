@@ -20,6 +20,7 @@
         .equ TAG_MASK, 0x3f
 
         .equ PAYLOAD_MASK, (1 << 47) - 1
+        .equ INT_MASK, (1 << 32) - 1
         .equ SIGN_BIT, 63
 
         .equ TAG_DOUBLE, 0
@@ -43,7 +44,8 @@
 
         .equ NIL, (NAN_MASK | (TAG_PAIR << TAG_SHIFT) | NULL)
 
-        .equ SPACE_CHAR, 32
+        .equ NEWLINE_CHAR, (NAN_MASK | (TAG_CHAR << TAG_SHIFT) | 10)
+        .equ SPACE_CHAR, (NAN_MASK | (TAG_CHAR << TAG_SHIFT) | 32)
 
         .equ MAX_NUMBER_OF_SYMBOLS, 1024
 
