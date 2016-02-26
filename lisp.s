@@ -739,21 +739,20 @@ lookup_global_symbol:           # symbol
         lookup_global_symbol_internal %edi
         ret
 
-allocate_code:                  # source_code, source_size
-        prologue source_code, source_size, destination_code
-        mov     %rdi, source_code(%rsp)
-        mov     %rsi, source_size(%rsp)
+allocate_code:                  # code, size
+        prologue code, size
+        mov     %rdi, code(%rsp)
+        mov     %rsi, size(%rsp)
         call_fn mmap, $NULL, $PAGE_SIZE, $(PROT_READ | PROT_WRITE), $(MAP_PRIVATE | MAP_ANONYMOUS), $-1, $0
         perror
-	mov     %rax, destination_code(%rsp)
-
-        call_fn memcpy, destination_code(%rsp), source_code(%rsp), source_size(%rsp)
+	mov     %rax, %rbx
+        call_fn memcpy, %rbx, code(%rsp), size(%rsp)
         perror
-        call_fn mprotect, destination_code(%rsp), $PAGE_SIZE, $(PROT_READ | PROT_EXEC)
+        call_fn mprotect, %rbx, $PAGE_SIZE, $(PROT_READ | PROT_EXEC)
         perror je
-        return destination_code(%rsp)
+        return %rbx
 
-                .data
+        .data
 char_format:
         .string "#\\%c"
 int_format:
