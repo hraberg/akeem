@@ -1,4 +1,5 @@
         .equ NULL, 0
+        .equ EOF, -1
         .equ PAGE_SIZE, 4096
 
         ## dlfcn.h

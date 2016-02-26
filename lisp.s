@@ -437,6 +437,7 @@ to_string:                      # value
         tagged_jump to_string_jump_table
         return
 
+write:                          # obj
 display:                        # obj
         prologue
         unbox_pointer_internal (output_port), %rsi
@@ -458,7 +459,8 @@ write_char:
         mov     %edi, %edi
         unbox_pointer_internal (output_port), %rsi
         call_fn fputc, %rdi, %rsi
-        return $NIL
+        tag     TAG_CHAR, %rax
+        return
 
 read_char:
         minimal_prologue
@@ -508,6 +510,11 @@ box_string:                     # c-string
         mov     $PAYLOAD_MASK, %rax
         and     %rdi, %rax
         tag     TAG_STRING, %rax
+        ret
+
+is_eof_object:
+        eq_internal $EOF, %edi
+        box_boolean_internal
         ret
 
 is_char:                        # obj
@@ -683,8 +690,8 @@ expt:                           # z1, z2
         math_library_binary_call pow, round=true
 
         .globl cons, car, cdr, length
-        .globl display, newline, write_char, read_char, peek_char, current_input_port, current_output_port
-        .globl is_eq, is_eq_v, is_string, is_boolean, is_char, is_procedure, is_symbol, is_null,
+        .globl display, newline, write, write_char, read_char, peek_char, current_input_port, current_output_port
+        .globl is_eq, is_eq_v, is_string, is_boolean, is_char, is_procedure, is_symbol, is_null, is_eof_object
         .globl is_exact, is_inexact, is_integer, is_number, is_pair, is_vector
         .globl make_vector, vector_length, vector_ref, vector_set
         .globl make_string, string_length, string_ref, string_set, string_to_number, string_to_symbol

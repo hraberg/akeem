@@ -635,6 +635,18 @@ main:
         call_fn string_to_number, %rax
         assert
 
+        call_fn box_int, $-1
+        call_fn is_eof_object, %rax
+        assert
+
+        tag     TAG_CHAR, $-1
+        call_fn is_eof_object, %rax
+        assert
+
+        call_fn box_int, $0
+        call_fn is_eof_object, %rax
+        assert
+
         test_case "test suite end"
 
         return  $0
