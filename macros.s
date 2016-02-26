@@ -240,6 +240,32 @@
         jmp     \name\()_op
         .endm
 
+        .macro call_with_file_template name
+        prologue port
+        mov     %rsi, %rbx
+        call_fn open_\name\()_file, %rdi
+        mov     %rax, port(%rsp)
+        call_fn *%rbx, %rax
+        mov     %rax, %rbx
+        call_fn close_\name\()_port, port(%rsp)
+        return  %rbx
+        .endm
+
+        .macro with_file_io_template name
+        prologue previous_port
+        mov     %rsi, %rbx
+        mov     \name\()_port, %rax
+        mov     %rax, previous_port(%rsp)
+        call_fn open_\name\()_file, %rdi
+        mov     %rax, \name\()_port
+        call_fn *%rbx
+        mov     %rax, %rbx
+        call_fn close_\name\()_port, \name\()_port
+        mov     previous_port(%rsp), %rax
+        mov     %rax, \name\()_port
+        return  %rbx
+        .endm
+
         .macro lookup_global_symbol_internal symbol_id
         mov     symbol_table_values(,\symbol_id,POINTER_SIZE), %rax
         .endm

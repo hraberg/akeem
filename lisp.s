@@ -478,12 +478,57 @@ peek_char:
         tag     TAG_CHAR, %rax
         return
 
+open_input_file:                # filename
+        minimal_prologue
+        unbox_pointer_internal %rdi
+        call_fn fopen, %rax, $'r
+        tag     TAG_PORT, %rax
+        return
+
+open_output_file:               # filename
+        minimal_prologue
+        unbox_pointer_internal %rdi
+        call_fn fopen, %rax, $'w
+        tag     TAG_PORT, %rax
+        return
+
+close_input_port:               # port
+close_output_port:              # port
+        minimal_prologue
+        unbox_pointer_internal %rdi
+        call_fn fclose, %rax
+        tag     TAG_INT, %rax
+        return
+
+call_with_input_file:          # filename, proc
+        call_with_file_template input
+
+call_with_output_file:          # filename, proc
+        call_with_file_template output
+
+with_input_from_file:           # filename, thunk
+        with_file_io_template input
+
+with_output_to_file:            # filename, thunk
+        with_file_io_template output
+
 current_output_port:
         mov     (output_port), %rax
         ret
 
 current_input_port:
         mov     (input_port), %rax
+        ret
+
+is_eof_object:                  # obj
+        eq_internal $EOF, %edi
+        box_boolean_internal
+        ret
+
+is_input_port:                  # obj
+is_output_port:                 # obj
+        has_tag TAG_PORT, %rdi
+        box_boolean_internal
         ret
 
 is_eq:                          # obj1, obj2
@@ -510,11 +555,6 @@ box_string:                     # c-string
         mov     $PAYLOAD_MASK, %rax
         and     %rdi, %rax
         tag     TAG_STRING, %rax
-        ret
-
-is_eof_object:
-        eq_internal $EOF, %edi
-        box_boolean_internal
         ret
 
 is_char:                        # obj
@@ -691,8 +731,10 @@ expt:                           # z1, z2
 
         .globl cons, car, cdr, length
         .globl display, newline, write, write_char, read_char, peek_char, current_input_port, current_output_port
+        .globl open_input_file, open_output_file, close_input_port, close_output_port
+        .globl call_with_input_file, call_with_output_file, with_input_from_file, with_output_to_file
         .globl is_eq, is_eq_v, is_string, is_boolean, is_char, is_procedure, is_symbol, is_null, is_eof_object
-        .globl is_exact, is_inexact, is_integer, is_number, is_pair, is_vector
+        .globl is_exact, is_inexact, is_integer, is_number, is_pair, is_vector, is_input_port, is_output_port
         .globl make_vector, vector_length, vector_ref, vector_set
         .globl make_string, string_length, string_ref, string_set, string_to_number, string_to_symbol
         .globl char_to_integer, integer_to_char
