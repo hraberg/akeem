@@ -149,6 +149,7 @@ number_to_string:               # z, radix
 string_to_number:               # string, radix
         prologue tail
         unbox_pointer_internal %rdi, %rbx
+        add     $header_size, %rbx
 
         mov     $10, %r11
         has_tag TAG_INT, %rsi
@@ -356,9 +357,9 @@ make_string:                    # k, fill
         register_for_gc
         return
 
-string_length:                  # vector
+string_length:                  # string
         unbox_pointer_internal %rdi
-        movl    header_object_size(%rdi), %eax
+        movl    header_object_size(%rax), %eax
         dec     %eax
         box_int_internal %eax
         ret
@@ -452,6 +453,7 @@ vector_to_string:                 # vector
         mov     header_size(%rbx,%rcx,POINTER_SIZE), %rax
         call_fn to_string, %rax
         unbox_pointer_internal %rax, %rdi
+        add     $header_size, %rdi
         call_fn fputs, %rdi, stream(%rsp)
 
         incq    idx(%rsp)
@@ -481,6 +483,7 @@ is_procedure:                   # obj
 open_input_file:                # filename
         minimal_prologue
         unbox_pointer_internal %rdi
+        add     $header_size, %rax
         call_fn fopen, %rax, $read_mode
         tag     TAG_PORT, %rax
         return
@@ -488,6 +491,7 @@ open_input_file:                # filename
 open_output_file:               # filename
         minimal_prologue
         unbox_pointer_internal %rdi
+        add     $header_size, %rax
         call_fn fopen, %rax, $write_mode
         tag     TAG_PORT, %rax
         return
@@ -727,6 +731,7 @@ pair_to_string:                 # pair
         call_fn car, pair(%rsp)
         call_fn to_string, %rax
         unbox_pointer_internal %rax, %rdi
+        add     $header_size, %rdi
         call_fn fputs, %rdi, stream(%rsp)
 
         call_fn cdr, pair(%rsp)
@@ -743,6 +748,7 @@ pair_to_string:                 # pair
         call_fn fputc, $' , stream(%rsp)
         call_fn to_string, pair(%rsp)
         unbox_pointer_internal %rax, %rdi
+        add     $header_size, %rdi
         call_fn fputs, %rdi, stream(%rsp)
 
 2:      call_fn fputc, $'), stream(%rsp)
@@ -882,11 +888,11 @@ unbox_integer:                  # int
         movsx   %edi, %rax
         ret
 
+unbox_pair:                     # pair
 unbox_pointer:                  # ptr
         unbox_pointer_internal %rdi
         ret
 
-unbox_pair:                     # pair
 unbox_string:                   # string
 unbox_vector:                   # vector
         unbox_pointer_internal %rdi
