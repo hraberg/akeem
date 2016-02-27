@@ -597,10 +597,17 @@ is_eof_object:                  # obj
         ## 6.6.3. Output
         .globl write, display, newline, write_char
 write:                          # obj, port
-        minimal_prologue
-        movq    $C_TRUE, machine_readable_output
+        prologue
+
+        lea     to_string_jump_table, %rbx
+        store_pointer $TAG_CHAR, $char_to_machine_readable_string
+        store_pointer $TAG_STRING, $string_to_machine_readable_string
+
         call_fn display, %rdi, %rsi
-        movq    $C_FALSE, machine_readable_output
+
+        store_pointer $TAG_CHAR, $char_to_string
+        store_pointer $TAG_STRING, $string_to_string
+
         return
 
 display:                        # obj, port
@@ -729,25 +736,30 @@ pair_to_string:                 # pair
         tag     TAG_STRING, str(%rsp)
         return
 
-char_to_string:
+char_to_string:                 # char
         prologue str
         mov     %edi, %edx
-        testq   $C_TRUE, machine_readable_output
-        jz      1f
+        xor     %al, %al
+        lea     str(%rsp), %rdi
+        call_fn asprintf, %rdi, $char_format, %rdx
+        perror  jge
+        tag     TAG_STRING, str(%rsp)
+        register_for_gc
+        return
+
+char_to_machine_readable_string: # char
+        prologue str
+        mov     %edi, %edx
         cmp     $(SPACE_CHAR & INT_MASK), %dx
-        jg      2f
+        jg      1f
         mov     char_table(,%edx,POINTER_SIZE), %rax
-        test    %rax, %rax
-        jz      2f
+        test    %eax, %eax
+        jz      1f
         tag     TAG_STRING, %rax
         return
-1:      mov     $char_format, %r11
-        testq   $C_TRUE, machine_readable_output
-        jz      3f
-2:      mov     $machine_readable_char_format, %r11
-3:      xor     %al, %al
+1:      xor     %al, %al
         lea     str(%rsp), %rdi
-        call_fn asprintf, %rdi, %r11, %rdx
+        call_fn asprintf, %rdi, $machine_readable_char_format, %rdx
         perror  jge
         tag     TAG_STRING, str(%rsp)
         register_for_gc
@@ -791,14 +803,14 @@ boolean_to_string:              # boolean
         tag     TAG_STRING, %rax
         ret
 
-
 string_to_string:               # string
-        prologue idx, str, size, stream
-        testq   $C_TRUE, machine_readable_output
-        jnz     1f
-        return  %rdi
+        mov     %rdi, %rax
+        ret
 
-1:      unbox_pointer_internal %rdi, %rbx
+string_to_machine_readable_string: # string
+        prologue idx, str, size, stream
+
+        unbox_pointer_internal %rdi, %rbx
         lea     str(%rsp), %rdi
         lea     size(%rsp), %rsi
         call_fn open_memstream, %rdi, %rsi
@@ -807,30 +819,30 @@ string_to_string:               # string
 
         call_fn fputc, $'\", stream(%rsp)
         test    %ebx, %ebx
-        jz      5f
+        jz      4f
 
         movq    $0, idx(%rsp)
-2:      mov     idx(%rsp), %rcx
+1:      mov     idx(%rsp), %rcx
 
         xor     %eax, %eax
         mov     (%rbx,%rcx), %al
         test    %al, %al
-        jz      5f
+        jz      4f
 
         xor     %r11d, %r11d
         mov     escape_char_table(%eax), %r11b
         test    %r11b, %r11b
-        jz      3f
+        jz      2f
 
         call_fn fprintf, stream(%rsp), $machine_readable_escape_code_format, %r11
-        jmp     4f
+        jmp     3f
 
-3:      call_fn fputc, %rax, stream(%rsp)
+2:      call_fn fputc, %rax, stream(%rsp)
 
-4:      incq    idx(%rsp)
-        jmp     2b
+3:      incq    idx(%rsp)
+        jmp     1b
 
-5:      call_fn fputc, $'\", stream(%rsp)
+4:      call_fn fputc, $'\", stream(%rsp)
 
         call_fn fclose, stream(%rsp)
         perror  je
@@ -980,5 +992,3 @@ symbol_table_names:
         .align  16
 symbol_next_id:
         .quad   TAG_MASK + 1
-machine_readable_output:
-        .quad   C_FALSE
