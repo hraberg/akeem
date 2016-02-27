@@ -313,12 +313,11 @@ symbol_string_\@:
 
         .macro string_buffer_to_string str, stream
         call_fn ftell, \stream
-        perror
-        sub     $header_size, %eax
+        perror  jg
+        sub     $(header_size - 1), %eax
         mov     %eax, %ebx
         call_fn fclose, \stream
         perror  je
-
         mov     \str, %rax
         movw    $TAG_STRING, header_object_type(%rax)
         mov     %ebx, header_object_size(%rax)

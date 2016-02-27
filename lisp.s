@@ -454,6 +454,7 @@ vector_to_string:                 # vector
 3:      call_fn fputc, $'), stream(%rsp)
 
         string_buffer_to_string str(%rsp), stream(%rsp)
+        register_for_gc
         return
 
         ## 6.4. Control features
@@ -752,6 +753,7 @@ pair_to_string:                 # pair
 2:      call_fn fputc, $'), stream(%rsp)
 
         string_buffer_to_string str(%rsp), stream(%rsp)
+        register_for_gc
         return
 
 char_to_string:                 # char
@@ -761,6 +763,7 @@ char_to_string:                 # char
         xor     %al, %al
         call_fn fprintf, stream(%rsp), $char_format, %rbx
         string_buffer_to_string str(%rsp), stream(%rsp)
+        register_for_gc
         return
 
 char_to_machine_readable_string: # char
@@ -777,6 +780,7 @@ char_to_machine_readable_string: # char
         xor     %al, %al
         call_fn fprintf, stream(%rsp), $machine_readable_char_format, %rbx
         string_buffer_to_string str(%rsp), stream(%rsp)
+        register_for_gc
         return
 
 integer_to_string:              # int, radix
@@ -794,6 +798,7 @@ integer_to_string:              # int, radix
         xor     %al, %al
         call_fn fprintf, stream(%rsp), format(%rsp), %rbx
         string_buffer_to_string str(%rsp), stream(%rsp)
+        register_for_gc
         return
 
 double_to_string:               # double
@@ -805,6 +810,7 @@ double_to_string:               # double
         mov    $1, %al         # number of vector var arguments http://www.x86-64.org/documentation/abi.pdf p21
         call   fprintf
         string_buffer_to_string str(%rsp), stream(%rsp)
+        register_for_gc
         return
 
 boolean_to_string:              # boolean
@@ -854,6 +860,7 @@ string_to_machine_readable_string: # string
 4:      call_fn fputc, $'\", stream(%rsp)
 
         string_buffer_to_string str(%rsp), stream(%rsp)
+        register_for_gc
         return
 
 port_to_string:                 # port
@@ -909,23 +916,13 @@ box_int:                        # c-int
         ret
 
 box_string:                     # c-string
-        prologue size, str
-        mov     $PAYLOAD_MASK, %rbx
-        and     %rdi, %rbx
-        call_fn strlen, %rbx
-        inc     %rax
-        mov     %rax, size(%rsp)
-        add     $header_size, %rax
-        call_fn malloc, %rax
-        perror
-        mov     %rax, str(%rsp)
-        movw    $TAG_STRING, header_object_type(%rax)
-        mov     size(%rsp), %r11d
-        mov     %r11d, header_object_size(%rax)
-        add     $header_size, %rax
-        call_fn memcpy, %rax, %rbx, size(%rsp)
-        perror
-        tag     TAG_STRING, str(%rsp)
+        prologue str, size, stream
+        mov     %edi, %ebx
+        open_string_buffer str(%rsp), size(%rsp), stream(%rsp)
+        xor     %al, %al
+        call_fn fprintf, stream(%rsp), $string_format, %rbx
+        string_buffer_to_string str(%rsp), stream(%rsp)
+        register_for_gc
         return
 
 set:                            # variable, expression
@@ -952,6 +949,8 @@ allocate_code:                  # code, size
         return  %rbx
 
         .data
+string_format:
+        .string "%s"
 char_format:
         .string "%c"
 machine_readable_char_format:

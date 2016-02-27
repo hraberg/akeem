@@ -708,6 +708,11 @@ main:
 
         call_fn box_int, $10
         call_fn number_to_string, %rax
+        call_fn string_length, %rax
+        assert
+
+        call_fn box_int, $10
+        call_fn number_to_string, %rax
         assert
 
         call_fn box_int, $10
