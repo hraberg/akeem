@@ -384,23 +384,22 @@ is_vector:                      # obj
         ret
 
 make_vector:                    # k, fill
-        prologue fill, size
-        mov     %edi, %ebx
+        prologue fill
         mov     %rsi, fill(%rsp)
         shl     $POINTER_SIZE_SHIFT, %edi
         mov     %edi, size(%rsp)
+        mov     %edi, %ebx
         add     $header_size, %edi
         call_fn aligned_alloc, $POINTER_SIZE, %rdi
         perror
         movw    $TAG_VECTOR, header_object_type(%rax)
-        mov     size(%rsp), %r11d
-        movl    %r11d, header_object_size(%rax)
+        movl    %ebx, header_object_size(%rax)
 
         mov     fill(%rsp), %rsi
 1:      test    %ebx, %ebx
         jz      2f
-        dec     %ebx
-        mov     %rsi, header_size(%rax,%rbx,POINTER_SIZE)
+        sub     $POINTER_SIZE, %ebx
+        mov     %rsi, header_size(%rax,%rbx)
         jmp     1b
 
 2:      tag     TAG_VECTOR, %rax
@@ -428,34 +427,31 @@ vector_set:                     # vector, k, obj
         ret
 
 vector_to_string:                 # vector
-        prologue idx, str, size, stream, len
+        prologue idx, str, size, stream
         unbox_pointer_internal %rdi, %rbx
 
         open_string_buffer str(%rsp), size(%rsp), stream(%rsp)
         call_fn fputc, $'\#, stream(%rsp)
         call_fn fputc, $'(, stream(%rsp)
 
-        mov     header_object_size(%rbx), %eax
-        shr     $POINTER_SIZE_SHIFT, %eax
-        mov     %rax, len(%rsp)
         movq    $0, idx(%rsp)
 1:      mov     idx(%rsp), %rcx
         test    %ecx, %ecx
         jz      2f
-        cmp     len(%rsp), %ecx
+        cmp     header_object_size(%rbx), %ecx
         je      3f
 
         call_fn fputc, $' , stream(%rsp)
 
 2:      mov     idx(%rsp), %rcx
 
-        mov     header_size(%rbx,%rcx,POINTER_SIZE), %rax
+        mov     header_size(%rbx,%rcx), %rax
         call_fn to_string, %rax
         unbox_pointer_internal %rax, %rdi
         add     $header_size, %rdi
         call_fn fputs, %rdi, stream(%rsp)
 
-        incq    idx(%rsp)
+        addq    $POINTER_SIZE, idx(%rsp)
         jmp     1b
 
 3:      call_fn fputc, $'), stream(%rsp)
