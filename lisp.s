@@ -296,9 +296,6 @@ string_to_symbol:               # string
 2:      movq    symbol_next_id, %rbx
         incq    symbol_next_id
 
-        ## call_fn strdup, string(%rsp)
-        ## perror
-        ## call_fn box_string, %rax
         mov     string(%rsp), %rax
         mov     %rax, symbol_table_names(,%rbx,POINTER_SIZE)
 
@@ -430,12 +427,7 @@ vector_to_string:                 # vector
         prologue idx, str, size, stream
         unbox_pointer_internal %rdi, %rbx
 
-        lea     str(%rsp), %rdi
-        lea     size(%rsp), %rsi
-        call_fn open_memstream, %rdi, %rsi
-        perror
-        mov     %rax, stream(%rsp)
-
+        open_string_buffer str(%rsp), size(%rsp), stream(%rsp)
         call_fn fputc, $'\#, stream(%rsp)
         call_fn fputc, $'(, stream(%rsp)
 
@@ -460,9 +452,8 @@ vector_to_string:                 # vector
         jmp     1b
 
 3:      call_fn fputc, $'), stream(%rsp)
-        call_fn fclose, stream(%rsp)
-        perror  je
-        call_fn box_string, str(%rsp)
+
+        string_buffer_to_string str(%rsp), stream(%rsp)
         return
 
         ## 6.4. Control features
@@ -729,12 +720,7 @@ pair_to_string:                 # pair
         prologue pair, str, size, stream
         mov     %rdi, pair(%rsp)
 
-        lea     str(%rsp), %rdi
-        lea     size(%rsp), %rsi
-        call_fn open_memstream, %rdi, %rsi
-        perror
-        mov     %rax, stream(%rsp)
-
+        open_string_buffer str(%rsp), size(%rsp), stream(%rsp)
         call_fn fputc, $'(, stream(%rsp)
         mov     $NIL, %rbx
 1:      cmp     %rbx, pair(%rsp)
@@ -764,9 +750,8 @@ pair_to_string:                 # pair
         call_fn fputs, %rdi, stream(%rsp)
 
 2:      call_fn fputc, $'), stream(%rsp)
-        call_fn fclose, stream(%rsp)
-        perror  je
-        call_fn box_string, str(%rsp)
+
+        string_buffer_to_string str(%rsp), stream(%rsp)
         return
 
 char_to_string:                 # char
@@ -840,11 +825,7 @@ string_to_machine_readable_string: # string
         prologue idx, str, size, stream
 
         unbox_pointer_internal %rdi, %rbx
-        lea     str(%rsp), %rdi
-        lea     size(%rsp), %rsi
-        call_fn open_memstream, %rdi, %rsi
-        perror
-        mov     %rax, stream(%rsp)
+        open_string_buffer str(%rsp), size(%rsp), stream(%rsp)
 
         call_fn fputc, $'\", stream(%rsp)
         test    %ebx, %ebx
@@ -874,10 +855,7 @@ string_to_machine_readable_string: # string
 
 4:      call_fn fputc, $'\", stream(%rsp)
 
-        call_fn fclose, stream(%rsp)
-        perror  je
-
-        call_fn box_string, str(%rsp)
+        string_buffer_to_string str(%rsp), stream(%rsp)
         return
 
 port_to_string:                 # port

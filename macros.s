@@ -301,3 +301,25 @@ symbol_string_\@:
         call_fn exit, $1
 1:      nop
         .endm
+
+        .macro open_string_buffer str, size, stream
+        lea     \str, %rdi
+        lea     \size, %rsi
+        call_fn open_memstream, %rdi, %rsi
+        perror
+        mov     %rax, \stream
+        call_fn fseek, %rax, $header_size, $SEEK_SET
+        .endm
+
+        .macro string_buffer_to_string str, stream
+        call_fn ftell, \stream
+        perror
+        sub     $header_size, %eax
+        mov     %eax, %ebx
+        call_fn fclose, \stream
+        perror  je
+
+        mov     \str, %rax
+        movw    $TAG_STRING, header_object_type(%rax)
+        mov     %ebx, header_object_size(%rax)
+        .endm
