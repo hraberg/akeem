@@ -704,7 +704,7 @@ init_runtime:
         store_pointer $TAG_STRING, $unbox_string
         store_pointer $TAG_PAIR, $unbox_pair
         store_pointer $TAG_VECTOR, $unbox_vector
-        store_pointer $TAG_PORT, $unbox_pointer
+        store_pointer $TAG_PORT, $unbox_port
 
         lea     integer_to_string_format_table, %rbx
         store_pointer $8, $oct_format
@@ -896,7 +896,7 @@ unbox_pair:                     # pair
         add     $header_size, %rax
 1:      ret
 
-unbox_pointer:                  # ptr
+unbox_port:                     # port
         unbox_pointer_internal %rdi
         ret
 
