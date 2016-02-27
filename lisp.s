@@ -207,7 +207,7 @@ cons:                           # obj1, obj2
         mov     %rsi, obj2(%rsp)
         call_fn aligned_alloc, $POINTER_SIZE, $pair_size
         perror
-        movl    $TAG_PAIR, header_object_type(%rax)
+        movw    $TAG_PAIR, header_object_type(%rax)
         movl    $pair_size, header_object_size(%rax)
         mov     obj1(%rsp), %rdi
         mov     %rdi, pair_car(%rax)
@@ -338,7 +338,7 @@ make_string:                    # k, fill
         mov     %rsi, fill(%rsp)
         call_fn malloc, %rdi
         perror
-        movl    $TAG_STRING, header_object_type(%rax)
+        movw    $TAG_STRING, header_object_type(%rax)
         movl    %ebx, header_object_size(%rax)
         incl    header_object_size(%rax)
 
@@ -384,15 +384,18 @@ is_vector:                      # obj
         ret
 
 make_vector:                    # k, fill
-        prologue fill
+        prologue fill, size
         mov     %edi, %ebx
         mov     %rsi, fill(%rsp)
-        imul    $POINTER_SIZE, %edi
+        shl     $POINTER_SIZE_SHIFT, %edi
+        mov     %edi, size(%rsp)
         add     $header_size, %edi
         call_fn aligned_alloc, $POINTER_SIZE, %rdi
         perror
-        movl    $TAG_VECTOR, header_object_type(%rax)
-        movl    %ebx, header_object_size(%rax)
+        movw    $TAG_VECTOR, header_object_type(%rax)
+        mov     size(%rsp), %r11d
+        movl    %r11d, header_object_size(%rax)
+
         mov     fill(%rsp), %rsi
 1:      test    %ebx, %ebx
         jz      2f
@@ -406,7 +409,8 @@ make_vector:                    # k, fill
 
 vector_length:                  # vector
         unbox_pointer_internal %rdi
-        movl    header_object_size(%rax), %eax
+        mov     header_object_size(%rax), %eax
+        shr     $POINTER_SIZE_SHIFT, %eax
         box_int_internal
         ret
 
@@ -424,18 +428,21 @@ vector_set:                     # vector, k, obj
         ret
 
 vector_to_string:                 # vector
-        prologue idx, str, size, stream
+        prologue idx, str, size, stream, len
         unbox_pointer_internal %rdi, %rbx
 
         open_string_buffer str(%rsp), size(%rsp), stream(%rsp)
         call_fn fputc, $'\#, stream(%rsp)
         call_fn fputc, $'(, stream(%rsp)
 
+        mov     header_object_size(%rbx), %eax
+        shr     $POINTER_SIZE_SHIFT, %eax
+        mov     %rax, len(%rsp)
         movq    $0, idx(%rsp)
 1:      mov     idx(%rsp), %rcx
         test    %ecx, %ecx
         jz      2f
-        cmp     header_object_size(%rbx), %ecx
+        cmp     len(%rsp), %ecx
         je      3f
 
         call_fn fputc, $' , stream(%rsp)

@@ -21,6 +21,8 @@
         .equ INT_SIZE, POINTER_SIZE / 2
         .equ WORD_SIZE, INT_SIZE / 2
 
+        .equ POINTER_SIZE_SHIFT, 3
+
         .equ NAN_MASK, 0x7FF8000000000000
         .equ TAG_SHIFT, 45
         .equ TAG_MASK, 0x3f
