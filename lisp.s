@@ -206,6 +206,8 @@ cons:                           # obj1, obj2
         mov     %rsi, obj2(%rsp)
         call_fn aligned_alloc, $POINTER_SIZE, $pair_size
         perror
+        movl    $TAG_PAIR, header_object_type(%rax)
+        movl    $pair_size, header_object_size(%rax)
         mov     obj1(%rsp), %rdi
         mov     %rdi, pair_car(%rax)
         mov     obj2(%rsp), %rsi
@@ -376,17 +378,18 @@ is_vector:                      # obj
 make_vector:                    # k, fill
         prologue fill
         mov     %edi, %ebx
-        inc     %edi
         mov     %rsi, fill(%rsp)
-        imul    $POINTER_SIZE, %rdi
+        imul    $POINTER_SIZE, %edi
+        add     $header_size, %edi
         call_fn aligned_alloc, $POINTER_SIZE, %rdi
         perror
-        mov     %rbx, (%rax)
+        movl    $TAG_VECTOR, header_object_type(%rax)
+        movl    %ebx, header_object_size(%rax)
         mov     fill(%rsp), %rsi
 1:      test    %ebx, %ebx
         jz      2f
-        mov     %rsi, (%rax,%rbx,POINTER_SIZE)
         dec     %ebx
+        mov     %rsi, header_size(%rax,%rbx,POINTER_SIZE)
         jmp     1b
 
 2:      tag     TAG_VECTOR, %rax
@@ -395,20 +398,20 @@ make_vector:                    # k, fill
 
 vector_length:                  # vector
         unbox_pointer_internal %rdi
-        mov     (%rax), %rax
+        movl    header_object_size(%rax), %eax
         box_int_internal
         ret
 
 vector_ref:                     # vector, k
-        inc     %esi
         unbox_pointer_internal %rdi
-        mov     (%rax,%rsi,POINTER_SIZE), %rax
+        mov     %esi, %esi
+        mov     header_size(%rax,%rsi,POINTER_SIZE), %rax
         ret
 
 vector_set:                     # vector, k, obj
-        inc     %esi
         unbox_pointer_internal %rdi
-        mov     %rdx, (%rax,%rsi,POINTER_SIZE)
+        mov     %esi, %esi
+        mov     %rdx, header_size(%rax,%rsi,POINTER_SIZE)
         mov     %rdx, %rax
         ret
 
@@ -427,20 +430,21 @@ vector_to_string:                 # vector
 
         movq    $0, idx(%rsp)
 1:      mov     idx(%rsp), %rcx
-        test    %rcx, %rcx
+        test    %ecx, %ecx
         jz      2f
-        cmp     (%rbx), %rcx
+        cmp     header_object_size(%rbx), %ecx
         je      3f
 
         call_fn fputc, $' , stream(%rsp)
 
-2:      incq    idx(%rsp)
-        mov     idx(%rsp), %rcx
+2:      mov     idx(%rsp), %rcx
 
-        mov     (%rbx,%rcx,POINTER_SIZE), %rax
+        mov     header_size(%rbx,%rcx,POINTER_SIZE), %rax
         call_fn to_string, %rax
         unbox_pointer_internal %rax, %rdi
         call_fn fputs, %rdi, stream(%rsp)
+
+        incq    idx(%rsp)
         jmp     1b
 
 3:      call_fn fputc, $'), stream(%rsp)

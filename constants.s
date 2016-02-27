@@ -55,6 +55,15 @@
         .equ BINARY_OP_SHIFT, 4
 
         .struct 0
+header_object_type:
+        .struct . + POINTER_SIZE / 2
+header_object_size:
+        .struct . + POINTER_SIZE / 2
+header_pad:
+        .struct . + POINTER_SIZE
+header_size:
+
+        .struct header_size
 pair_car:
         .struct . + POINTER_SIZE
 pair_cdr:
