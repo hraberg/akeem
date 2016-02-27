@@ -286,16 +286,19 @@ string_to_symbol:               # string
         test    %eax, %eax
         jz      1b
         add     $header_size, %rax
-        call_fn strcmp, string(%rsp), %rax
+        mov     string(%rsp), %r11
+        add     $header_size, %r11
+        call_fn strcmp, %r11, %rax
         jnz     1b
         jmp     3f
 
 2:      movq    symbol_next_id, %rbx
         incq    symbol_next_id
 
-        call_fn strdup, string(%rsp)
-        perror
-        call_fn box_string, %rax
+        ## call_fn strdup, string(%rsp)
+        ## perror
+        ## call_fn box_string, %rax
+        mov     string(%rsp), %rax
         mov     %rax, symbol_table_names(,%rbx,POINTER_SIZE)
 
 3:      tag     TAG_SYMBOL, %rbx

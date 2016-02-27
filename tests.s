@@ -112,7 +112,7 @@ main:
         call_fn init_runtime
 
         call_fn box_string, $strlen_name
-        ## call_fn string_to_symbol, %rax
+        call_fn string_to_symbol, %rax
         assert
 
         ## call_fn dlsym, $RTLD_DEFAULT, $strlen_name
