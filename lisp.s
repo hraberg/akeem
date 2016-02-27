@@ -535,9 +535,33 @@ read:                           # port
         lea     str(%rsp), %rdx
         call_fn fscanf, %rdi, $read_format, %rdx
         perror
-        tag     TAG_STRING, str(%rsp)
+
+        call_fn string_to_number, str(%rsp)
+        mov     $FALSE, %r11
+        cmp     %r11, %rax
+        jne     2f
+
+        mov     $FALSE, %rbx
+        call_fn strcmp, $false_string, str(%rsp)
+        cmove   %rbx, %rax
+        je      2f
+
+        mov     $TRUE, %rbx
+        call_fn strcmp, $true_string, str(%rsp)
+        cmove   %rbx, %rax
+        je      2f
+
+        mov     str(%rsp), %r11
+        cmpb    $'\", (%r11)
+        je      1f
+
+        call_fn string_to_symbol, str(%rsp)
+        jmp     2f
+
+1:      tag     TAG_STRING, str(%rsp)
         register_for_gc
-        return
+
+2:      return
 
 read_char:                      # port
         minimal_prologue
