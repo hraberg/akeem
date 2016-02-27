@@ -15,6 +15,8 @@
         .equ ROUNDING_MODE_TRUNCATE, 0b11
 
         .equ POINTER_SIZE, 8
+        .equ INT_SIZE, POINTER_SIZE / 2
+        .equ WORD_SIZE, INT_SIZE / 2
 
         .equ NAN_MASK, 0x7FF8000000000000
         .equ TAG_SHIFT, 45
@@ -55,10 +57,12 @@
         .equ BINARY_OP_SHIFT, 4
 
         .struct 0
+header_object_mark:
+        .struct . + WORD_SIZE
 header_object_type:
-        .struct . + POINTER_SIZE / 2
+        .struct . + WORD_SIZE
 header_object_size:
-        .struct . + POINTER_SIZE / 2
+        .struct . + INT_SIZE
 header_size:
 
         .struct header_size
