@@ -755,58 +755,56 @@ pair_to_string:                 # pair
         return
 
 char_to_string:                 # char
-        prologue str
-        mov     %edi, %edx
+        prologue str, size, stream
+        mov     %edi, %ebx
+        open_string_buffer str(%rsp), size(%rsp), stream(%rsp)
         xor     %al, %al
-        lea     str(%rsp), %rdi
-        call_fn asprintf, %rdi, $char_format, %rdx
-        perror  jge
-        call_fn box_string, str(%rsp)
+        call_fn fprintf, stream(%rsp), $char_format, %rbx
+        string_buffer_to_string str(%rsp), stream(%rsp)
         return
 
 char_to_machine_readable_string: # char
-        prologue str
-        mov     %edi, %edx
-        cmp     $(SPACE_CHAR & INT_MASK), %dx
+        prologue str, size, stream
+        mov     %edi, %ebx
+        cmp     $(SPACE_CHAR & INT_MASK), %bx
         jg      1f
-        mov     char_table(,%edx,POINTER_SIZE), %rax
+        mov     char_table(,%ebx,POINTER_SIZE), %rax
         test    %eax, %eax
         jz      1f
         tag     TAG_STRING, %rax
         return
-1:      xor     %al, %al
-        lea     str(%rsp), %rdi
-        call_fn asprintf, %rdi, $machine_readable_char_format, %rdx
-        perror  jge
-        call_fn box_string, str(%rsp)
+1:      open_string_buffer str(%rsp), size(%rsp), stream(%rsp)
+        xor     %al, %al
+        call_fn fprintf, stream(%rsp), $machine_readable_char_format, %rbx
+        string_buffer_to_string str(%rsp), stream(%rsp)
         return
 
 integer_to_string:              # int, radix
-        prologue str
+        prologue str, size, stream, format
 
         mov     $10, %r11
         has_tag TAG_INT, %rsi
         cmovz   %r11, %rsi
         cmovnz  %esi, %esi
-        mov     integer_to_string_format_table(,%rsi,8), %rsi
+        mov     integer_to_string_format_table(,%rsi,8), %rax
+        mov     %rax, format(%rsp)
 
-        movsx   %edi, %rdx
+        movsx   %edi, %rbx
+        open_string_buffer str(%rsp), size(%rsp), stream(%rsp)
         xor     %al, %al
-        lea     str(%rsp), %rdi
-        call_fn asprintf, %rdi, %rsi, %rdx
-        perror  jge
-        call_fn box_string, str(%rsp)
+        call_fn fprintf, stream(%rsp), format(%rsp), %rbx
+        string_buffer_to_string str(%rsp), stream(%rsp)
         return
 
 double_to_string:               # double
-        prologue str
-        movq    %rdi, %xmm0
-        mov     $1, %al         # number of vector var arguments http://www.x86-64.org/documentation/abi.pdf p21
-        lea     str(%rsp), %rdi
-        mov     $double_format, %rsi
-        call    asprintf
-        perror  jge
-        call_fn box_string, str(%rsp)
+        prologue str, size, stream
+        movq   %rdi, %xmm0
+        open_string_buffer str(%rsp), size(%rsp), stream(%rsp)
+        mov    stream(%rsp), %rdi
+        mov    $double_format, %rsi
+        mov    $1, %al         # number of vector var arguments http://www.x86-64.org/documentation/abi.pdf p21
+        call   fprintf
+        string_buffer_to_string str(%rsp), stream(%rsp)
         return
 
 boolean_to_string:              # boolean

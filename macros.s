@@ -322,4 +322,5 @@ symbol_string_\@:
         mov     \str, %rax
         movw    $TAG_STRING, header_object_type(%rax)
         mov     %ebx, header_object_size(%rax)
+        tag     TAG_STRING, %rax
         .endm
