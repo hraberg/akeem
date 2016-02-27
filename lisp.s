@@ -889,6 +889,13 @@ unbox_integer:                  # int
         ret
 
 unbox_pair:                     # pair
+        mov     $NIL, %rax
+        cmp     %rax, %rdi
+        jz      1f
+        unbox_pointer_internal %rdi
+        add     $header_size, %rax
+1:      ret
+
 unbox_pointer:                  # ptr
         unbox_pointer_internal %rdi
         ret
