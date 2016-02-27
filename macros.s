@@ -107,7 +107,7 @@
         and     $C_TRUE, %rax
         .endm
 
-        .macro store_pointer idx ptr at=%rbx
+        .macro store_pointer idx ptr=%rax at=%rbx
         mov     \idx, %ecx
         movq    \ptr, (\at,%rcx,POINTER_SIZE)
         .endm

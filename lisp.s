@@ -560,12 +560,12 @@ read:                           # port
         jne     2f
 
         mov     $FALSE, %rbx
-        call_fn strcmp, $false_string, str(%rsp)
+        call_fn strcmp, false_string, str(%rsp)
         cmove   %rbx, %rax
         je      2f
 
         mov     $TRUE, %rbx
-        call_fn strcmp, $true_string, str(%rsp)
+        call_fn strcmp, true_string, str(%rsp)
         cmove   %rbx, %rax
         je      2f
 
@@ -668,12 +668,24 @@ write_char:                     # char, port
 init_runtime:
         prologue
 
+        call_fn box_string, $port_c_string
+        mov     %rax, port_string
+        call_fn box_string, $true_c_string
+        mov     %rax, true_string
+        call_fn box_string, $false_c_string
+        mov     %rax, false_string
+
         lea     char_table, %rbx
-        store_pointer $'\b, $backspace_char
-        store_pointer $'\t, $tab_char
-        store_pointer $'\n, $newline_char
-        store_pointer $'\r, $return_char
-        store_pointer $'\ , $space_char
+        call_fn box_string, $backspace_char
+        store_pointer $'\b
+        call_fn box_string, $tab_char
+        store_pointer $'\t
+        call_fn box_string, $newline_char
+        store_pointer $'\n
+        call_fn box_string, $return_char
+        store_pointer $'\r
+        call_fn box_string, $space_char
+        store_pointer $'\ ,
 
         lea     escape_char_table, %rbx
         movb    $'b, 8(%rbx)
@@ -813,8 +825,8 @@ double_to_string:               # double
         return
 
 boolean_to_string:              # boolean
-        mov     $true_string, %rax
-        mov     $false_string, %r11
+        mov     true_string, %rax
+        mov     false_string, %r11
         test    $C_TRUE, %rdi
         cmovz   %r11, %rax
         tag     TAG_STRING, %rax
@@ -869,7 +881,7 @@ string_to_machine_readable_string: # string
         return
 
 port_to_string:                 # port
-        tag     TAG_STRING, $port_string
+        tag     TAG_STRING, port_string
         ret
 
 to_string:                      # value
@@ -980,42 +992,35 @@ double_format:
         .string "%f"
 read_format:
         .string "%as"
+
 read_mode:
         .string "r"
 write_mode:
         .string "w"
+
 backspace_char:
-        .int    TAG_STRING
-        .int    12
         .string "#\\backspace"
 tab_char:
-        .int    TAG_STRING
-        .int    6
         .string "#\\tab"
 newline_char:
-        .int    TAG_STRING
-        .int    10
         .string "#\\newline"
 return_char:
-        .int    TAG_STRING
-        .int    10
         .string "#\\return"
 space_char:
-        .int    TAG_STRING
-        .int    8
         .string "#\\space"
-port_string:
-        .int    TAG_STRING
-        .int    8
+
+port_c_string:
         .string "#<port>"
-false_string:
-        .int    TAG_STRING
-        .int    3
+port_string:
+        .quad   0
+false_c_string:
         .string "#f"
-true_string:
-        .int    TAG_STRING
-        .int    3
+false_string:
+        .quad   0
+true_c_string:
         .string "#t"
+true_string:
+        .quad   0
 
         .align  16
 integer_to_string_format_table:
