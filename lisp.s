@@ -171,7 +171,7 @@ string_to_number:               # string, radix
         movq    %xmm0, %rax
         return
 
-2:      return $FALSE
+2:      return  $FALSE
 
         ## 6.3. Other data types
         ## 6.3.1. Booleans
@@ -523,7 +523,7 @@ is_output_port:                 # obj
         ret
 
         ## 6.6.2. Input
-        .globl read, peek_char, is_eof_object
+        .globl read, read_char, peek_char, is_eof_object
 
 read:                           # port
         prologue str
@@ -560,8 +560,11 @@ read:                           # port
 
 1:      tag     TAG_STRING, str(%rsp)
         register_for_gc
+        return
 
-2:      return
+2:      mov     %rax, %rbx
+        call_fn free, str(%rsp)
+        return  %rbx
 
 read_char:                      # port
         minimal_prologue
@@ -612,7 +615,7 @@ display:                        # obj, port
         xor     %al, %al
         call_fn fprintf, %rbx, %rdi
         call_fn fflush, %rbx
-        return $NIL
+        return  $NIL
 
 newline:                        # port
         minimal_prologue
@@ -905,8 +908,8 @@ allocate_code:                  # code, size
         call_fn memcpy, %rbx, code(%rsp), size(%rsp)
         perror
         call_fn mprotect, %rbx, $PAGE_SIZE, $(PROT_READ | PROT_EXEC)
-        perror je
-        return %rbx
+        perror  je
+        return  %rbx
 
         .data
 char_format:
