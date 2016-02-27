@@ -269,7 +269,6 @@ is_symbol:                      # obj
 
 symbol_to_string:               # symbol
         mov     symbol_table_names(,%edi,POINTER_SIZE), %rax
-        tag     TAG_STRING, %rax
         ret
 
 string_to_symbol:               # string
@@ -286,6 +285,7 @@ string_to_symbol:               # string
 
         test    %eax, %eax
         jz      1b
+        add     $header_size, %rax
         call_fn strcmp, string(%rsp), %rax
         jnz     1b
         jmp     3f
@@ -295,6 +295,7 @@ string_to_symbol:               # string
 
         call_fn strdup, string(%rsp)
         perror
+        call_fn box_string, %rax
         mov     %rax, symbol_table_names(,%rbx,POINTER_SIZE)
 
 3:      tag     TAG_SYMBOL, %rbx
@@ -331,15 +332,20 @@ make_string:                    # k, fill
         prologue fill
         mov     %edi, %edi
         mov     %edi, %ebx
+        add     $header_size, %edi
         inc     %edi
         mov     %rsi, fill(%rsp)
         call_fn malloc, %rdi
         perror
-        movb    $NULL, (%rax,%rbx)
+        movl    $TAG_STRING, header_object_type(%rax)
+        movl    %ebx, header_object_size(%rax)
+        incl    header_object_size(%rax)
+
+        movb    $NULL, header_size(%rax,%rbx)
         mov     fill(%rsp), %ecx
 
 1:      dec     %ebx
-        movb    %cl, (%rax,%rbx,1)
+        movb    %cl, header_size(%rax,%rbx,1)
         test    %ebx, %ebx
         jnz     1b
 
@@ -349,21 +355,22 @@ make_string:                    # k, fill
 
 string_length:                  # vector
         unbox_pointer_internal %rdi
-        call_fn strlen, %rax
+        movl    header_object_size(%rdi), %eax
+        dec     %eax
         box_int_internal %eax
         ret
 
 string_ref:                     # string, k
         mov     %esi, %esi
         unbox_pointer_internal %rdi
-        movsxb  (%rax,%rsi), %eax
+        movsxb  header_size(%rax,%rsi), %eax
         tag     TAG_CHAR, %rax
         ret
 
 string_set:                     # string, k, char
         mov     %esi, %esi
         unbox_pointer_internal %rdi
-        mov     %dl, (%rax,%rsi)
+        mov     %dl, header_size(%rax,%rsi)
         box_int_internal %edx
         ret
 
@@ -450,7 +457,7 @@ vector_to_string:                 # vector
 3:      call_fn fputc, $'), stream(%rsp)
         call_fn fclose, stream(%rsp)
         perror  je
-        tag     TAG_STRING, str(%rsp)
+        call_fn box_string, str(%rsp)
         return
 
         ## 6.4. Control features
@@ -562,7 +569,7 @@ read:                           # port
         call_fn string_to_symbol, str(%rsp)
         jmp     2f
 
-1:      tag     TAG_STRING, str(%rsp)
+1:      call_fn box_string, str(%rsp)
         register_for_gc
         return
 
@@ -624,6 +631,7 @@ display:                        # obj, port
         call_fn to_string, %rdi
         unbox_pointer_internal %rax, %rdi
         xor     %al, %al
+        add     $header_size, %rdi
         call_fn fprintf, %rbx, %rdi
         call_fn fflush, %rbx
         return  $NIL
@@ -686,8 +694,8 @@ init_runtime:
         store_pointer $TAG_CHAR, $unbox_char
         store_pointer $TAG_INT, $unbox_integer
         store_pointer $TAG_SYMBOL, $unbox_symbol
-        store_pointer $TAG_STRING, $unbox_pointer
-        store_pointer $TAG_PAIR, $unbox_pointer
+        store_pointer $TAG_STRING, $unbox_string
+        store_pointer $TAG_PAIR, $unbox_pair
         store_pointer $TAG_VECTOR, $unbox_vector
         store_pointer $TAG_PORT, $unbox_pointer
 
@@ -737,7 +745,7 @@ pair_to_string:                 # pair
 2:      call_fn fputc, $'), stream(%rsp)
         call_fn fclose, stream(%rsp)
         perror  je
-        tag     TAG_STRING, str(%rsp)
+        call_fn box_string, str(%rsp)
         return
 
 char_to_string:                 # char
@@ -747,8 +755,7 @@ char_to_string:                 # char
         lea     str(%rsp), %rdi
         call_fn asprintf, %rdi, $char_format, %rdx
         perror  jge
-        tag     TAG_STRING, str(%rsp)
-        register_for_gc
+        call_fn box_string, str(%rsp)
         return
 
 char_to_machine_readable_string: # char
@@ -765,8 +772,7 @@ char_to_machine_readable_string: # char
         lea     str(%rsp), %rdi
         call_fn asprintf, %rdi, $machine_readable_char_format, %rdx
         perror  jge
-        tag     TAG_STRING, str(%rsp)
-        register_for_gc
+        call_fn box_string, str(%rsp)
         return
 
 integer_to_string:              # int, radix
@@ -783,8 +789,7 @@ integer_to_string:              # int, radix
         lea     str(%rsp), %rdi
         call_fn asprintf, %rdi, %rsi, %rdx
         perror  jge
-        tag     TAG_STRING, str(%rsp)
-        register_for_gc
+        call_fn box_string, str(%rsp)
         return
 
 double_to_string:               # double
@@ -795,8 +800,7 @@ double_to_string:               # double
         mov     $double_format, %rsi
         call    asprintf
         perror  jge
-        tag     TAG_STRING, str(%rsp)
-        register_for_gc
+        call_fn box_string, str(%rsp)
         return
 
 boolean_to_string:              # boolean
@@ -825,7 +829,7 @@ string_to_machine_readable_string: # string
         test    %ebx, %ebx
         jz      4f
 
-        movq    $0, idx(%rsp)
+        movq    $header_size, idx(%rsp)
 1:      mov     idx(%rsp), %rcx
 
         xor     %eax, %eax
@@ -852,8 +856,7 @@ string_to_machine_readable_string: # string
         call_fn fclose, stream(%rsp)
         perror  je
 
-        tag     TAG_STRING, str(%rsp)
-        register_for_gc
+        call_fn box_string, str(%rsp)
         return
 
 port_to_string:                 # port
@@ -880,9 +883,11 @@ unbox_pointer:                  # ptr
         unbox_pointer_internal %rdi
         ret
 
+unbox_pair:                     # pair
+unbox_string:                   # string
 unbox_vector:                   # vector
         unbox_pointer_internal %rdi
-        add     $POINTER_SIZE, %rax
+        add     $header_size, %rax
         ret
 
 unbox:                          # value
@@ -900,10 +905,23 @@ box_int:                        # c-int
         ret
 
 box_string:                     # c-string
-        mov     $PAYLOAD_MASK, %rax
-        and     %rdi, %rax
-        tag     TAG_STRING, %rax
-        ret
+        prologue size, str
+        mov     $PAYLOAD_MASK, %rbx
+        and     %rdi, %rbx
+        call_fn strlen, %rbx
+        inc     %rax
+        mov     %rax, size(%rsp)
+        add     $header_size, %rax
+        call_fn malloc, %rax
+        mov     %rax, str(%rsp)
+        movw    $TAG_STRING, header_object_type(%rax)
+        mov     size(%rsp), %r11d
+        mov     %r11d, header_object_size(%rax)
+        add     $header_size, %rax
+        call_fn memcpy, %rax, %rbx, size(%rsp)
+        call_fn free, %rbx
+        tag     TAG_STRING, str(%rsp)
+        return
 
 set:                            # variable, expression
         unbox_pointer_internal %rdi
@@ -943,28 +961,44 @@ hex_format:
         .string "%x"
 double_format:
         .string "%f"
+read_format:
+        .string "%as"
 read_mode:
         .string "r"
 write_mode:
         .string "w"
 backspace_char:
+        .int    TAG_STRING
+        .int    12
         .string "#\\backspace"
 tab_char:
+        .int    TAG_STRING
+        .int    6
         .string "#\\tab"
 newline_char:
+        .int    TAG_STRING
+        .int    10
         .string "#\\newline"
 return_char:
+        .int    TAG_STRING
+        .int    10
         .string "#\\return"
 space_char:
+        .int    TAG_STRING
+        .int    8
         .string "#\\space"
 port_string:
+        .int    TAG_STRING
+        .int    8
         .string "#<port>"
 false_string:
+        .int    TAG_STRING
+        .int    3
         .string "#f"
 true_string:
+        .int    TAG_STRING
+        .int    3
         .string "#t"
-read_format:
-        .string "%as"
 
         .align  16
 integer_to_string_format_table:

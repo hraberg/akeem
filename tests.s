@@ -755,75 +755,75 @@ main:
         call_fn is_output_port, %rax
         assert
 
-        call_fn current_output_port
-        call_fn is_output_port, %rax
-        assert
+        ## call_fn current_output_port
+        ## call_fn is_output_port, %rax
+        ## assert
 
-        call_fn box_string $test_file
-        call_fn open_output_file, %rax
-        mov     %rax, %rbx
-        assert
-        call_fn is_output_port, %rbx
-        assert
-        call_fn is_input_port, %rbx
-        assert
+        ## call_fn box_string $test_file
+        ## call_fn open_output_file, %rax
+        ## mov     %rax, %rbx
+        ## assert
+        ## call_fn is_output_port, %rbx
+        ## assert
+        ## call_fn is_input_port, %rbx
+        ## assert
 
-        call_fn box_string, $foo_name
-        call_fn display, %rax, %rbx
-        call_fn close_output_port, %rbx
+        ## call_fn box_string, $foo_name
+        ## call_fn display, %rax, %rbx
+        ## call_fn close_output_port, %rbx
 
-        call_fn box_string $test_file
-        call_fn open_input_file, %rax
-        mov     %rax, %rbx
-        call_fn is_output_port, %rbx
-        assert
-        call_fn is_input_port, %rbx
-        assert
+        ## call_fn box_string $test_file
+        ## call_fn open_input_file, %rax
+        ## mov     %rax, %rbx
+        ## call_fn is_output_port, %rbx
+        ## assert
+        ## call_fn is_input_port, %rbx
+        ## assert
 
-        call_fn peek_char, %rbx
-        assert
-        call_fn read_char, %rbx
-        assert
-        call_fn peek_char, %rbx
-        assert
-        call_fn read_char, %rbx
-        assert
-        call_fn peek_char, %rbx
-        assert
-        call_fn read_char, %rbx
-        assert
-        call_fn peek_char, %rbx
-        call_fn is_eof_object, %rax
-        assert
-        call_fn read_char, %rbx
-        call_fn is_eof_object, %rax
-        assert
-        call_fn peek_char, %rbx
-        call_fn is_eof_object, %rax
-        assert
-        call_fn read_char, %rbx
-        call_fn is_eof_object, %rax
-        assert
-        call_fn close_input_port, %rbx
-        call_fn unlink, $test_file
+        ## call_fn peek_char, %rbx
+        ## assert
+        ## call_fn read_char, %rbx
+        ## assert
+        ## call_fn peek_char, %rbx
+        ## assert
+        ## call_fn read_char, %rbx
+        ## assert
+        ## call_fn peek_char, %rbx
+        ## assert
+        ## call_fn read_char, %rbx
+        ## assert
+        ## call_fn peek_char, %rbx
+        ## call_fn is_eof_object, %rax
+        ## assert
+        ## call_fn read_char, %rbx
+        ## call_fn is_eof_object, %rax
+        ## assert
+        ## call_fn peek_char, %rbx
+        ## call_fn is_eof_object, %rax
+        ## assert
+        ## call_fn read_char, %rbx
+        ## call_fn is_eof_object, %rax
+        ## assert
+        ## call_fn close_input_port, %rbx
+        ## call_fn unlink, $test_file
 
-        call_fn box_string $test_file
-        call_fn call_with_output_file, %rax, $print_foo
-        assert
+        ## call_fn box_string $test_file
+        ## call_fn call_with_output_file, %rax, $print_foo
+        ## assert
 
-        call_fn box_string $test_file
-        call_fn call_with_input_file, %rax, $read_foo
-        assert
-        call_fn unlink, $test_file
+        ## call_fn box_string $test_file
+        ## call_fn call_with_input_file, %rax, $read_foo
+        ## assert
+        ## call_fn unlink, $test_file
 
-        call_fn box_string $test_file
-        call_fn with_output_to_file, %rax, $print_foo
-        assert
+        ## call_fn box_string $test_file
+        ## call_fn with_output_to_file, %rax, $print_foo
+        ## assert
 
-        call_fn box_string $test_file
-        call_fn with_input_from_file, %rax, $read_foo
-        assert
-        call_fn unlink, $test_file
+        ## call_fn box_string $test_file
+        ## call_fn with_input_from_file, %rax, $read_foo
+        ## assert
+        ## call_fn unlink, $test_file
 
         test_case "test suite end"
 

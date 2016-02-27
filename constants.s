@@ -12,6 +12,9 @@
         .equ MAP_PRIVATE, 0x02
         .equ MAP_ANONYMOUS, 0x20
 
+        ## stdio.h
+        .equ SEEK_SET, 0
+
         .equ ROUNDING_MODE_TRUNCATE, 0b11
 
         .equ POINTER_SIZE, 8
