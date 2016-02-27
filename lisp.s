@@ -549,35 +549,37 @@ read:                           # port
         call_fn fscanf, %rdi, $read_format, %rdx
         perror
 
-        call_fn string_to_number, str(%rsp)
+        call_fn box_string, str(%rsp)
+        register_for_gc
+        mov     %rax, %rbx
+        call_fn free, str(%rsp)
+
+        unbox_pointer_internal %rbx
+        add     $header_size, %rax
+        mov     %rax, str(%rsp)
+
+        call_fn string_to_number, %rbx
         mov     $FALSE, %r11
         cmp     %r11, %rax
-        jne     2f
+        jne     1f
 
-        mov     $FALSE, %rbx
-        call_fn strcmp, false_string, str(%rsp)
-        cmove   %rbx, %rax
-        je      2f
-
-        mov     $TRUE, %rbx
-        call_fn strcmp, true_string, str(%rsp)
-        cmove   %rbx, %rax
-        je      2f
-
-        mov     str(%rsp), %r11
-        cmpb    $'\", (%r11)
+        add     $header_size, %rax
+        call_fn strcmp, $false_c_string, str(%rsp)
+        mov     $FALSE, %rax
         je      1f
 
-        call_fn string_to_symbol, str(%rsp)
-        jmp     2f
+        add     $header_size, %rax
+        call_fn strcmp, $true_c_string, str(%rsp)
+        mov     $TRUE, %rax
+        je      1f
 
-1:      call_fn box_string, str(%rsp)
-        register_for_gc
-        return
+        mov     str(%rsp), %rax
+        cmpb    $'\", (%rax)
+        mov     %rbx, %rax
+        je      1f
 
-2:      mov     %rax, %rbx
-        call_fn free, str(%rsp)
-        return  %rbx
+        call_fn string_to_symbol, %rbx
+1:      return
 
 read_char:                      # port
         minimal_prologue
