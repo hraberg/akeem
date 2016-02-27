@@ -834,6 +834,7 @@ string_to_machine_readable_string: # string
         test    %r11b, %r11b
         jz      2f
 
+        xor     %al, %al
         call_fn fprintf, stream(%rsp), $machine_readable_escape_code_format, %r11
         jmp     3f
 
