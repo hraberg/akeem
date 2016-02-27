@@ -921,7 +921,6 @@ box_string:                     # c-string
         add     $header_size, %rax
         call_fn memcpy, %rax, %rbx, size(%rsp)
         perror
-        call_fn free, %rbx
         tag     TAG_STRING, str(%rsp)
         return
 
