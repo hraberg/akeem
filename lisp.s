@@ -913,6 +913,7 @@ box_string:                     # c-string
         mov     %rax, size(%rsp)
         add     $header_size, %rax
         call_fn malloc, %rax
+        perror
         mov     %rax, str(%rsp)
         movw    $TAG_STRING, header_object_type(%rax)
         mov     size(%rsp), %r11d
