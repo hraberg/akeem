@@ -294,6 +294,10 @@ symbol_string_\@:
         dec     %rax
         .endm
 
+        .macro register_for_gc ptr=%rax
+        call_fn push_pointer_on_stack, $object_space, \ptr
+        .endm
+
         .macro perror success=jg
         cmp    $NULL, %rax
         \success perror_\@

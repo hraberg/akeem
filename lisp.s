@@ -214,7 +214,7 @@ cons:                           # obj1, obj2
         mov     obj2(%rsp), %rsi
         mov     %rsi, pair_cdr(%rax)
         tag     TAG_PAIR, %rax
-        call_fn register_for_gc, %rax
+        register_for_gc
         return
 
 car:                            # pair
@@ -351,7 +351,7 @@ make_string:                    # k, fill
         jnz     1b
 
         tag     TAG_STRING, %rax
-        call_fn register_for_gc, %rax
+        register_for_gc
         return
 
 string_length:                  # string
@@ -403,7 +403,7 @@ make_vector:                    # k, fill
         jmp     1b
 
 2:      tag     TAG_VECTOR, %rax
-        call_fn register_for_gc, %rax
+        register_for_gc
         return
 
 vector_length:                  # vector
@@ -457,7 +457,7 @@ vector_to_string:                 # vector
 3:      call_fn fputc, $'), stream(%rsp)
 
         string_buffer_to_string str(%rsp), stream(%rsp)
-        call_fn register_for_gc, %rax
+        register_for_gc
         return
 
         ## 6.4. Control features
@@ -550,7 +550,7 @@ read:                           # port
         perror
 
         call_fn box_string, str(%rsp)
-        call_fn register_for_gc, %rax
+        register_for_gc
         mov     %rax, %rbx
         call_fn free, str(%rsp)
 
@@ -767,11 +767,6 @@ pop_pointer_from_stack:         # stack
         sub     $POINTER_SIZE, stack_top_offset(%rdi)
         ret
 
-register_for_gc:                # ptr
-        minimal_prologue
-        call_fn push_pointer_on_stack, $object_space, %rdi
-        return
-
 pair_to_string:                 # pair
         prologue pair, str, size, stream
         mov     %rdi, pair(%rsp)
@@ -808,7 +803,7 @@ pair_to_string:                 # pair
 2:      call_fn fputc, $'), stream(%rsp)
 
         string_buffer_to_string str(%rsp), stream(%rsp)
-        call_fn register_for_gc, %rax
+        register_for_gc
         return
 
 char_to_string:                 # char
@@ -818,7 +813,7 @@ char_to_string:                 # char
         xor     %al, %al
         call_fn fprintf, stream(%rsp), $char_format, %rbx
         string_buffer_to_string str(%rsp), stream(%rsp)
-        call_fn register_for_gc, %rax
+        register_for_gc
         return
 
 char_to_machine_readable_string: # char
@@ -835,7 +830,7 @@ char_to_machine_readable_string: # char
         xor     %al, %al
         call_fn fprintf, stream(%rsp), $machine_readable_char_format, %rbx
         string_buffer_to_string str(%rsp), stream(%rsp)
-        call_fn register_for_gc, %rax
+        register_for_gc
         return
 
 integer_to_string:              # int, radix
@@ -853,7 +848,7 @@ integer_to_string:              # int, radix
         xor     %al, %al
         call_fn fprintf, stream(%rsp), format(%rsp), %rbx
         string_buffer_to_string str(%rsp), stream(%rsp)
-        call_fn register_for_gc, %rax
+        register_for_gc
         return
 
 double_to_string:               # double
@@ -865,7 +860,7 @@ double_to_string:               # double
         mov    $1, %al         # number of vector var arguments http://www.x86-64.org/documentation/abi.pdf p21
         call   fprintf
         string_buffer_to_string str(%rsp), stream(%rsp)
-        call_fn register_for_gc, %rax
+        register_for_gc
         return
 
 boolean_to_string:              # boolean
@@ -915,7 +910,7 @@ string_to_machine_readable_string: # string
 4:      call_fn fputc, $'\", stream(%rsp)
 
         string_buffer_to_string str(%rsp), stream(%rsp)
-        call_fn register_for_gc, %rax
+        register_for_gc
         return
 
 port_to_string:                 # port
