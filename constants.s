@@ -58,7 +58,7 @@
         .equ SPACE_CHAR, (NAN_MASK | (TAG_CHAR << TAG_SHIFT) | 32)
 
         .equ MAX_NUMBER_OF_SYMBOLS, 1024
-        .equ OBJECT_SPACE_INITIAL_SIZE, 1024 * 8
+        .equ OBJECT_SPACE_INITIAL_SIZE, 8 * 1024
 
         .equ BINARY_OP_SHIFT, 4
 
@@ -77,3 +77,12 @@ pair_car:
 pair_cdr:
         .struct . + POINTER_SIZE
 pair_size:
+
+        .struct 0
+stack_bottom:
+        .struct . + POINTER_SIZE
+stack_top_offset:
+        .struct . + POINTER_SIZE
+stack_max_size:
+        .struct . + POINTER_SIZE
+stack_size:

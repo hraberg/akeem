@@ -665,15 +665,8 @@ write_char:                     # char, port
 init_runtime:
         prologue
 
-        movq    $OBJECT_SPACE_INITIAL_SIZE, object_space_size
-        call_fn aligned_alloc, $POINTER_SIZE, object_space_size
-        perror
-        mov     %rax, object_space
-
-        movq    $OBJECT_SPACE_INITIAL_SIZE, mark_stack_size
-        call_fn aligned_alloc, $POINTER_SIZE, mark_stack_size
-        perror
-        mov     %rax, mark_stack
+        call_fn init_pointer_stack, $object_space, $OBJECT_SPACE_INITIAL_SIZE,
+        call_fn init_pointer_stack, $mark_stack, $OBJECT_SPACE_INITIAL_SIZE,
 
         call_fn box_string, $port_c_string
         mov     %rax, port_string
@@ -732,26 +725,48 @@ init_runtime:
 
         return
 
-register_for_gc:                # ptr
-        prologue old_object_space, old_object_space_size
+init_pointer_stack:             # stack, size
         mov     %rdi, %rbx
-        mov     object_space_top, %rcx
-        cmp     object_space_size, %rcx
+        movq    %rsi, stack_max_size(%rbx)
+        call_fn aligned_alloc, $POINTER_SIZE, %rsi
+        perror
+        mov     %rax, stack_bottom(%rbx)
+        ret
+
+push_pointer_on_stack:          # stack, ptr
+        prologue stack, old_stack, old_stack_max_size
+        mov     %rdi, stack(%rsp)
+        mov     %rsi, %rbx
+        mov     stack_top_offset(%rdi), %rcx
+        cmp     stack_max_size(%rdi), %rcx
         jl      1f
-        mov     object_space, %rax
-        mov     %rax, old_object_space(%rsp)
-        mov     %rcx, old_object_space_size(%rsp)
-        shlq    object_space_size
-        call_fn aligned_alloc, $POINTER_SIZE, object_space_size
+        mov     %rdi, old_stack(%rsp)
+        mov     %rcx, old_stack_max_size(%rsp)
+        shlq    stack_max_size(%rdi)
+        call_fn aligned_alloc, $POINTER_SIZE, stack_max_size(%rdi)
         perror
-        mov     %rax, object_space
-        call_fn memcpy object_space, old_object_space(%rsp), old_object_space_size(%rsp)
+        mov     stack(%rsp), %rdi
+        mov     %rax, stack_bottom(%rdi)
+        call_fn memcpy %rax, old_stack(%rsp), old_stack_max_size(%rsp)
         perror
-1:      mov     object_space, %rax
-        mov     object_space_top, %rcx
-        mov     %rbx, (%rax,%rcx)
-        add     $POINTER_SIZE, object_space_top
+1:      mov     stack(%rsp), %rdi
+        mov     stack_bottom(%rdi), %r11
+        mov     stack_top_offset(%rdi), %rcx
+        mov     %rbx, (%r11,%rcx)
+        add     $POINTER_SIZE, stack_top_offset(%rdi)
         return  %rbx
+
+pop_pointer_from_stack:         # stack
+        mov     stack_top_offset(%rdi), %rcx
+        mov     stack_bottom(%rdi), %r11
+        mov     (%r11,%rcx), %rax
+        sub     $POINTER_SIZE, stack_top_offset(%rdi)
+        ret
+
+register_for_gc:                # ptr
+        minimal_prologue
+        call_fn push_pointer_on_stack, $object_space, %rdi
+        return
 
 pair_to_string:                 # pair
         prologue pair, str, size, stream
@@ -1063,15 +1078,9 @@ symbol_table_names:
         .align  16
 symbol_next_id:
         .quad   TAG_MASK + 1
+
+        .align  16
 object_space:
-        .quad   0
-object_space_top:
-        .quad   0
-object_space_size:
-        .quad   0
+        .zero   stack_size
 mark_stack:
-        .quad   0
-mark_stack_top:
-        .quad   0
-mark_stack_size:
-        .quad   0
+        .zero   stack_size
