@@ -205,8 +205,7 @@ cons:                           # obj1, obj2
         prologue obj1, obj2
         mov     %rdi, obj1(%rsp)
         mov     %rsi, obj2(%rsp)
-        call_fn malloc, $pair_size
-        perror
+        call_fn allocate_memory, $pair_size
         movw    $TAG_PAIR, header_object_type(%rax)
         movl    $pair_size, header_object_size(%rax)
         mov     obj1(%rsp), %rdi
@@ -336,8 +335,7 @@ make_string:                    # k, fill
         add     $header_size, %edi
         inc     %edi
         mov     %rsi, fill(%rsp)
-        call_fn malloc, %rdi
-        perror
+        call_fn allocate_memory, %rdi
         movw    $TAG_STRING, header_object_type(%rax)
         movl    %ebx, header_object_size(%rax)
         incl    header_object_size(%rax)
@@ -390,8 +388,7 @@ make_vector:                    # k, fill
         mov     %edi, size(%rsp)
         mov     %edi, %ebx
         add     $header_size, %edi
-        call_fn malloc, %rdi
-        perror
+        call_fn allocate_memory, %rdi
         movw    $TAG_VECTOR, header_object_type(%rax)
         movl    %ebx, header_object_size(%rax)
 
@@ -726,12 +723,13 @@ init_runtime:
         return
 
 init_pointer_stack:             # stack, size
+        prologue
         mov     %rdi, %rbx
         movq    %rsi, stack_max_size(%rbx)
         call_fn malloc, %rsi
         perror
         mov     %rax, stack_bottom(%rbx)
-        ret
+        return  %rbx
 
 resize_pointer_stack:           # stack
         prologue
@@ -744,17 +742,18 @@ resize_pointer_stack:           # stack
 
 push_pointer_on_stack:          # stack, ptr
         prologue
-        mov     %rsi, %rbx
         mov     stack_top_offset(%rdi), %rcx
         cmp     stack_max_size(%rdi), %rcx
         jl      1f
+        mov     %rsi, %rbx
         call_fn resize_pointer_stack, %rdi
         mov     %rax, %rdi
+        mov     %rbx, %rsi
 1:      mov     stack_bottom(%rdi), %r11
         mov     stack_top_offset(%rdi), %rcx
-        mov     %rbx, (%r11,%rcx)
+        mov     %rsi, (%r11,%rcx)
         add     $POINTER_SIZE, stack_top_offset(%rdi)
-        return  %rbx
+        return  %rsi
 
 pop_pointer_from_stack:         # stack
         mov     stack_top_offset(%rdi), %rcx
@@ -762,6 +761,21 @@ pop_pointer_from_stack:         # stack
         mov     (%r11,%rcx), %rax
         sub     $POINTER_SIZE, stack_top_offset(%rdi)
         ret
+
+allocate_memory:                # size
+        prologue
+        mov     %rdi, %rbx
+        call_fn malloc, %rbx
+        cmp    $NULL, %rax
+        jg     1f
+        call_fn gc
+        call_fn malloc, %rbx
+        perror
+1:      return
+
+gc:
+        prologue
+        return
 
 pair_to_string:                 # pair
         prologue pair, str, size, stream
