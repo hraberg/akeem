@@ -656,7 +656,7 @@ write_char:                     # char, port
 
         ## Runtime
 
-        .globl init_runtime, allocate_code, set, lookup_global_symbol
+        .globl init_runtime, allocate_code, set, lookup_global_symbol, gc
         .globl int_format, double_format, box_int, box_string, unbox, to_string
 
 init_runtime:                   # execution_stack_top
@@ -730,6 +730,7 @@ init_pointer_stack:             # stack, size
         call_fn malloc, %rsi
         perror
         mov     %rax, stack_bottom(%rbx)
+        movq    $0, stack_top_offset(%rbx)
         return  %rbx
 
 resize_pointer_stack:           # stack
@@ -774,8 +775,38 @@ allocate_memory:                # size
         perror
 1:      return
 
+gc_mark:
+        prologue
+        return
+
+gc_sweep:
+        prologue
+        xor     %ebx, %ebx
+1:      cmp     %rbx, stack_top_offset + object_space
+        je      3f
+
+        mov     stack_bottom + object_space, %rax
+        mov     (%rax,%rbx), %r11
+        unbox_pointer_internal %r11
+        movw    header_object_mark(%rax), %r11w
+        test    %r11w, %r11w
+        jnz     2f
+
+        call_fn free, %r11
+        mov     stack_bottom + object_space, %r11
+        call_fn pop_pointer_from_stack, $object_space
+        mov     %rax, (%r11,%rbx)
+        jmp     1b
+
+2:      movw    $0, header_object_mark(%rax)
+        add     $POINTER_SIZE, %rbx
+        jmp     1b
+3:      return
+
 gc:
         prologue
+        call_fn gc_mark
+        call_fn gc_sweep
         return
 
 pair_to_string:                 # pair
