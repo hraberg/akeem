@@ -179,4 +179,5 @@ print_foo
 f
 print_foo
 f
+#<procedure>
 ;;; test suite end

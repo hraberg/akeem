@@ -666,6 +666,8 @@ init_runtime:                   # execution_stack_top
         call_fn init_pointer_stack, $object_space, $OBJECT_SPACE_INITIAL_SIZE
         call_fn init_pointer_stack, $mark_stack, $OBJECT_SPACE_INITIAL_SIZE
 
+        call_fn box_string, $procedure_c_string
+        mov     %rax, procedure_string
         call_fn box_string, $port_c_string
         mov     %rax, port_string
         call_fn box_string, $true_c_string
@@ -700,10 +702,11 @@ init_runtime:                   # execution_stack_top
         store_pointer $TAG_CHAR, $char_to_string
         store_pointer $TAG_INT, $integer_to_string
         store_pointer $TAG_SYMBOL, $symbol_to_string
+        store_pointer $TAG_PROCEDURE, $procedure_to_string
+        store_pointer $TAG_PORT, $port_to_string
         store_pointer $TAG_STRING, $string_to_string
         store_pointer $TAG_PAIR, $pair_to_string
         store_pointer $TAG_VECTOR, $vector_to_string
-        store_pointer $TAG_PORT, $port_to_string
 
         lea     unbox_jump_table, %rbx
         store_pointer $TAG_DOUBLE, $unbox_double
@@ -711,10 +714,11 @@ init_runtime:                   # execution_stack_top
         store_pointer $TAG_CHAR, $unbox_char
         store_pointer $TAG_INT, $unbox_integer
         store_pointer $TAG_SYMBOL, $unbox_symbol
+        store_pointer $TAG_PROCEDURE, $unbox_port
+        store_pointer $TAG_PORT, $unbox_port
         store_pointer $TAG_STRING, $unbox_string
         store_pointer $TAG_PAIR, $unbox_pair
         store_pointer $TAG_VECTOR, $unbox_vector
-        store_pointer $TAG_PORT, $unbox_port
 
         lea     integer_to_string_format_table, %rbx
         store_pointer $8, $oct_format
@@ -959,6 +963,10 @@ port_to_string:                 # port
         tag     TAG_STRING, port_string
         ret
 
+procedure_to_string:            # procedure
+        tag     TAG_STRING, procedure_string
+        ret
+
 to_string:                      # value
         minimal_prologue
         tagged_jump to_string_jump_table
@@ -983,6 +991,7 @@ unbox_pair:                     # pair
         add     $header_size, %rax
 1:      ret
 
+unbox_procedure:                # procedure
 unbox_port:                     # port
         unbox_pointer_internal %rdi
         ret
@@ -1078,6 +1087,10 @@ space_char:
 port_c_string:
         .string "#<port>"
 port_string:
+        .quad   0
+procedure_c_string:
+        .string "#<procedure>"
+procedure_string:
         .quad   0
 false_c_string:
         .string "#f"

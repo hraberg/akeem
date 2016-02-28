@@ -40,11 +40,12 @@
         .equ TAG_INT, 4
 
         .equ TAG_SYMBOL, 8
-        .equ TAG_STRING, 16
-        .equ TAG_PAIR, 24
-        .equ TAG_VECTOR, 32
-        .equ TAG_PROCEDURE, 40
-        .equ TAG_PORT, 48
+        .equ TAG_PROCEDURE, 16
+        .equ TAG_PORT, 24
+
+        .equ TAG_STRING, 32
+        .equ TAG_PAIR, 40
+        .equ TAG_VECTOR, 48
         .equ TAG_OBJECT, 56
 
         .equ C_TRUE, 1

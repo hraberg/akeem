@@ -832,6 +832,9 @@ main:
         assert
         call_fn unlink, $test_file
 
+        tag     TAG_PROCEDURE, $read_foo
+        assert
+
         call_fn gc
 
         test_case "test suite end"
