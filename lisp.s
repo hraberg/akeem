@@ -734,16 +734,12 @@ init_pointer_stack:             # stack, size
         ret
 
 resize_pointer_stack:           # stack
-        prologue old_stack, old_stack_max_size
+        prologue
         mov     %rdi, %rbx
-        mov     %rbx, old_stack(%rsp)
-        mov     %rcx, old_stack_max_size(%rsp)
         shlq    stack_max_size(%rbx)
-        call_fn malloc, stack_max_size(%rbx)
+        call_fn realloc, stack_bottom(%rdi), stack_max_size(%rbx)
         perror
         mov     %rax, stack_bottom(%rbx)
-        call_fn memcpy %rax, old_stack(%rsp), old_stack_max_size(%rsp)
-        perror
         return  %rbx
 
 push_pointer_on_stack:          # stack, ptr
