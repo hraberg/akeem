@@ -733,24 +733,28 @@ init_pointer_stack:             # stack, size
         mov     %rax, stack_bottom(%rbx)
         ret
 
+resize_pointer_stack:           # stack
+        prologue old_stack, old_stack_max_size
+        mov     %rdi, %rbx
+        mov     %rbx, old_stack(%rsp)
+        mov     %rcx, old_stack_max_size(%rsp)
+        shlq    stack_max_size(%rbx)
+        call_fn aligned_alloc, $POINTER_SIZE, stack_max_size(%rbx)
+        perror
+        mov     %rax, stack_bottom(%rbx)
+        call_fn memcpy %rax, old_stack(%rsp), old_stack_max_size(%rsp)
+        perror
+        return  %rbx
+
 push_pointer_on_stack:          # stack, ptr
-        prologue stack, old_stack, old_stack_max_size
-        mov     %rdi, stack(%rsp)
+        prologue
         mov     %rsi, %rbx
         mov     stack_top_offset(%rdi), %rcx
         cmp     stack_max_size(%rdi), %rcx
         jl      1f
-        mov     %rdi, old_stack(%rsp)
-        mov     %rcx, old_stack_max_size(%rsp)
-        shlq    stack_max_size(%rdi)
-        call_fn aligned_alloc, $POINTER_SIZE, stack_max_size(%rdi)
-        perror
-        mov     stack(%rsp), %rdi
-        mov     %rax, stack_bottom(%rdi)
-        call_fn memcpy %rax, old_stack(%rsp), old_stack_max_size(%rsp)
-        perror
-1:      mov     stack(%rsp), %rdi
-        mov     stack_bottom(%rdi), %r11
+        call_fn resize_pointer_stack, %rdi
+        mov     %rax, %rdi
+1:      mov     stack_bottom(%rdi), %r11
         mov     stack_top_offset(%rdi), %rcx
         mov     %rbx, (%r11,%rcx)
         add     $POINTER_SIZE, stack_top_offset(%rdi)
