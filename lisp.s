@@ -205,7 +205,7 @@ cons:                           # obj1, obj2
         prologue obj1, obj2
         mov     %rdi, obj1(%rsp)
         mov     %rsi, obj2(%rsp)
-        call_fn aligned_alloc, $POINTER_SIZE, $pair_size
+        call_fn malloc, $pair_size
         perror
         movw    $TAG_PAIR, header_object_type(%rax)
         movl    $pair_size, header_object_size(%rax)
@@ -390,7 +390,7 @@ make_vector:                    # k, fill
         mov     %edi, size(%rsp)
         mov     %edi, %ebx
         add     $header_size, %edi
-        call_fn aligned_alloc, $POINTER_SIZE, %rdi
+        call_fn malloc, %rdi
         perror
         movw    $TAG_VECTOR, header_object_type(%rax)
         movl    %ebx, header_object_size(%rax)
@@ -728,7 +728,7 @@ init_runtime:
 init_pointer_stack:             # stack, size
         mov     %rdi, %rbx
         movq    %rsi, stack_max_size(%rbx)
-        call_fn aligned_alloc, $POINTER_SIZE, %rsi
+        call_fn malloc, %rsi
         perror
         mov     %rax, stack_bottom(%rbx)
         ret
@@ -739,7 +739,7 @@ resize_pointer_stack:           # stack
         mov     %rbx, old_stack(%rsp)
         mov     %rcx, old_stack_max_size(%rsp)
         shlq    stack_max_size(%rbx)
-        call_fn aligned_alloc, $POINTER_SIZE, stack_max_size(%rbx)
+        call_fn malloc, stack_max_size(%rbx)
         perror
         mov     %rax, stack_bottom(%rbx)
         call_fn memcpy %rax, old_stack(%rsp), old_stack_max_size(%rsp)
