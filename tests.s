@@ -148,6 +148,7 @@ main:
         call_fn box_int, $3
         call_fn cons, %rax, $NIL
         mov     %rax, %rbx
+
         call_fn box_int, $2
         call_fn cons, %rax, %rbx
         mov     %rax, %rbx
@@ -830,6 +831,8 @@ main:
         call_fn with_input_from_file, %rax, $read_foo
         assert
         call_fn unlink, $test_file
+
+        call_fn gc
 
         test_case "test suite end"
 

@@ -758,10 +758,10 @@ push_pointer_on_stack:          # stack, ptr
         return  %rsi
 
 pop_pointer_from_stack:         # stack
+        sub     $POINTER_SIZE, stack_top_offset(%rdi)
         mov     stack_top_offset(%rdi), %rcx
         mov     stack_bottom(%rdi), %r11
         mov     (%r11,%rcx), %rax
-        sub     $POINTER_SIZE, stack_top_offset(%rdi)
         ret
 
 allocate_memory:                # size
@@ -792,9 +792,9 @@ gc_sweep:
         test    %r11w, %r11w
         jnz     2f
 
-        call_fn free, %r11
-        mov     stack_bottom + object_space, %r11
+        call_fn free, %rax
         call_fn pop_pointer_from_stack, $object_space
+        mov     stack_bottom + object_space, %r11
         mov     %rax, (%r11,%rbx)
         jmp     1b
 
