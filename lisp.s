@@ -927,7 +927,6 @@ box_string:                     # c-string
         xor     %al, %al
         call_fn fprintf, stream(%rsp), $string_format, %rbx
         string_buffer_to_string str(%rsp), stream(%rsp)
-        register_for_gc
         return
 
 set:                            # variable, expression
