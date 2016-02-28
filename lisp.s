@@ -662,8 +662,8 @@ write_char:                     # char, port
 init_runtime:
         prologue
 
-        call_fn init_pointer_stack, $object_space, $OBJECT_SPACE_INITIAL_SIZE,
-        call_fn init_pointer_stack, $mark_stack, $OBJECT_SPACE_INITIAL_SIZE,
+        call_fn init_pointer_stack, $object_space, $OBJECT_SPACE_INITIAL_SIZE
+        call_fn init_pointer_stack, $mark_stack, $OBJECT_SPACE_INITIAL_SIZE
 
         call_fn box_string, $port_c_string
         mov     %rax, port_string
