@@ -664,7 +664,7 @@ init_runtime:                   # execution_stack_top
         mov     %rdi, execution_stack_top
 
         call_fn init_pointer_stack, $object_space, $OBJECT_SPACE_INITIAL_SIZE
-        call_fn init_pointer_stack, $mark_stack, $OBJECT_SPACE_INITIAL_SIZE
+        call_fn init_pointer_stack, $gc_mark_stack, $OBJECT_SPACE_INITIAL_SIZE
 
         call_fn box_string, $procedure_c_string
         mov     %rax, procedure_string
@@ -719,6 +719,22 @@ init_runtime:                   # execution_stack_top
         store_pointer $TAG_STRING, $unbox_string
         store_pointer $TAG_PAIR, $unbox_pair
         store_pointer $TAG_VECTOR, $unbox_vector
+
+        lea     gc_mark_jump_table, %rbx
+        store_pointer $TAG_DOUBLE, $gc_mark_nop
+        store_pointer $TAG_BOOLEAN, $gc_mark_nop
+        store_pointer $TAG_CHAR, $gc_mark_nop
+        store_pointer $TAG_INT, $gc_mark_nop
+        store_pointer $TAG_SYMBOL, $gc_mark_nop
+        store_pointer $TAG_PROCEDURE, $gc_mark_nop
+        store_pointer $TAG_PORT, $gc_mark_nop
+        store_pointer $TAG_STRING, $gc_mark_string
+        store_pointer $TAG_PAIR, $gc_mark_object
+        store_pointer $TAG_VECTOR, $gc_mark_object
+
+        lea     gc_mark_queue_jump_table, %rbx
+        store_pointer $TAG_PAIR, $gc_mark_queue_pair
+        store_pointer $TAG_VECTOR, $gc_mark_queue_vector
 
         lea     integer_to_string_format_table, %rbx
         store_pointer $8, $oct_format
@@ -779,9 +795,77 @@ allocate_memory:                # size
         perror
 1:      return
 
+gc_mark_nop:                    # obj
+        ret
+
+gc_mark_string:                 # string
+        unbox_pointer_internal %rdi
+        movw    $C_TRUE, header_object_mark(%rax)
+        ret
+
+gc_mark_object:                 # pointer
+        minimal_prologue
+        unbox_pointer_internal %rdi
+        testw   $C_TRUE, header_object_mark(%rax)
+        je      1f
+        movw    $C_TRUE, header_object_mark(%rax)
+        call_fn push_pointer_on_stack, $gc_mark_stack, %rdi
+1:      return
+
+gc_maybe_mark:                  # obj
+        minimal_prologue
+        tagged_jump gc_mark_jump_table
+        return
+
+gc_mark_queue_pair:             # pair
+        minimal_prologue
+        unbox_pointer_internal %rdi, %rbx
+        call_fn gc_maybe_mark, pair_car(%rbx)
+        call_fn gc_maybe_mark, pair_cdr(%rbx)
+        return
+
+gc_mark_queue_vector:           # vector
+        prologue vec
+        unbox_pointer_internal %rdi
+        mov     %rax, vec(%rsp)
+        mov     header_object_size(%rax), %ebx
+1:      test    %ebx, %ebx
+        jz      2f
+        sub     $POINTER_SIZE, %ebx
+        mov     vec(%rsp), %rax
+        mov     header_size(%rax,%rbx), %rdi
+        call_fn gc_maybe_mark, %rdi
+        jmp     1b
+2:      return
+
 gc_mark:
         prologue
-        return
+        mov     symbol_next_id, %rbx
+1:      test    %rbx, %rbx
+        jnz     2f
+
+        dec     %rbx
+        mov     symbol_table_values(,%rbx,POINTER_SIZE), %rdi
+        call_fn gc_maybe_mark, %rdi
+        jmp     1b
+
+        mov     execution_stack_top, %rbx
+2:      cmp     %rsp, %rbx
+        je      3f
+
+        call_fn gc_maybe_mark, (%rbx)
+        sub     $POINTER_SIZE, %rbx
+        jmp     2b
+
+3:      cmp     $0, stack_top_offset + gc_mark_stack
+        je      4f
+
+        call_fn pop_pointer_from_stack, $gc_mark_stack
+        mov    %rax, %rdi
+        tagged_jump gc_mark_queue_jump_table
+        jmp     3b
+
+4:      return
 
 gc_sweep:
         prologue
@@ -802,14 +886,14 @@ gc_sweep:
         mov     %rax, (%r11,%rbx)
         jmp     1b
 
-2:      movw    $0, header_object_mark(%rax)
+2:      movw    $C_FALSE, header_object_mark(%rax)
         add     $POINTER_SIZE, %rbx
         jmp     1b
 3:      return
 
 gc:
         prologue
-        call_fn gc_mark
+        ## call_fn gc_mark
         call_fn gc_sweep
         return
 
@@ -1121,6 +1205,15 @@ to_string_jump_table:
 unbox_jump_table:
         .zero   TAG_MASK * POINTER_SIZE
 
+
+        .align  16
+gc_mark_queue_jump_table:
+        .zero   TAG_MASK * POINTER_SIZE
+
+        .align  16
+gc_mark_jump_table:
+        .zero   TAG_MASK * POINTER_SIZE
+
         .align  16
 symbol_table_values:
         .zero   MAX_NUMBER_OF_SYMBOLS * POINTER_SIZE
@@ -1138,5 +1231,5 @@ execution_stack_top:
         .align  16
 object_space:
         .zero   stack_size
-mark_stack:
+gc_mark_stack:
         .zero   stack_size
