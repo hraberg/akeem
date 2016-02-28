@@ -191,14 +191,16 @@
 
         .macro integer_division
         has_tag TAG_INT, %rdi, store=false
-        je      1f
+        je      integer_division_int_\@
         movd    %rdi, %xmm0
         cvtsd2si %xmm0, %rdi
-1:      has_tag TAG_INT, %rsi, store=false
-        je      2f
+integer_division_int_\@:
+        has_tag TAG_INT, %rsi, store=false
+        je      integer_division_int_int_\@
         movq    %rsi, %xmm0
         cvtsd2si %xmm0, %rsi
-2:      mov     %edi, %eax
+integer_division_int_int_\@:
+        mov     %edi, %eax
         cdq
         idiv    %esi
         .endm
@@ -206,12 +208,14 @@
         .macro maybe_round_to_int from=%xmm0 tmp=%xmm1
         roundsd $ROUNDING_MODE_TRUNCATE, \from, \tmp
         ucomisd \from, \tmp
-        je      1f
+        je      round_to_int_\@
         movq    \from, %rax
-        jmp     2f
-1:      cvtsd2si \tmp, %rax
+        jmp     no_round_to_int_\@
+round_to_int_\@:
+        cvtsd2si \tmp, %rax
         box_int_internal
-2:      nop
+no_round_to_int_\@:
+        nop
         .endm
 
         .macro math_library_unary_call name round=false
@@ -274,10 +278,6 @@
         return  %rbx
         .endm
 
-        .macro register_for_gc ptr=%rax
-        nop
-        .endm
-
         .macro lookup_global_symbol_internal symbol_id
         mov     symbol_table_values(,\symbol_id,POINTER_SIZE), %rax
         .endm
@@ -296,10 +296,11 @@ symbol_string_\@:
 
         .macro perror success=jg
         cmp    $NULL, %rax
-        \success 1f
+        \success perror_\@
         call_fn perror, $NULL
         call_fn exit, $1
-1:      nop
+perror_\@:
+        nop
         .endm
 
         .macro open_string_buffer str, size, stream

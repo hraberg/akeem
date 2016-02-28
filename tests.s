@@ -77,10 +77,11 @@ test_string_\@:
         call_fn unbox %rax
         mov     %rax, %rbx
         call_fn strcmp %rax, $test_string_\@
-        jz      1f
+        jz      is_\@
         call_fn printf, $assertion_failed_format, $test_string_\@, %rbx
         call_fn exit, $1
-1:      nop
+is_\@:
+        nop
         .endm
 
 print_foo:
