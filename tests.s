@@ -110,7 +110,7 @@ main:
 
         test_case "test suite start"
 
-        call_fn init_runtime
+        call_fn init_runtime, %rsp
 
         call_fn box_string, $strlen_name
         call_fn string_to_symbol, %rax

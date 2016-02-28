@@ -659,8 +659,9 @@ write_char:                     # char, port
         .globl init_runtime, allocate_code, set, lookup_global_symbol
         .globl int_format, double_format, box_int, box_string, unbox, to_string
 
-init_runtime:
+init_runtime:                   # execution_stack_top
         prologue
+        mov     %rdi, execution_stack_top
 
         call_fn init_pointer_stack, $object_space, $OBJECT_SPACE_INITIAL_SIZE
         call_fn init_pointer_stack, $mark_stack, $OBJECT_SPACE_INITIAL_SIZE
@@ -1087,6 +1088,8 @@ symbol_table_names:
         .align  16
 symbol_next_id:
         .quad   TAG_MASK + 1
+execution_stack_top:
+        .quad   0
 
         .align  16
 object_space:

@@ -6,7 +6,7 @@
 
 main:
         prologue
-        call_fn init_runtime
+        call_fn init_runtime, %rsp
 
         call_fn box_string, $welcome_message
         call_fn display, %rax
