@@ -109,7 +109,6 @@ returns_42_non_local:
 
 returns_42_local:
         prologue
-        mov     %rdi, %rbx
         call_fn box_int, $42
         return
 
