@@ -799,9 +799,8 @@ allocate_memory:                # size
 
 gc_has_mark:                    # pointer
         unbox_pointer_internal %rdi
-        cmpw    $C_TRUE, header_object_mark(%rax)
-        sete    %al
-        and     $C_TRUE, %rax
+        mov     header_object_mark(%rax), %ax
+        eq_internal $C_TRUE, %ax
         box_boolean_internal
         ret
 
