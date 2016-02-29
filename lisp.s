@@ -858,15 +858,14 @@ gc_mark:
         jz      4f
 
         dec     %rbx
-        mov     symbol_table_names(,%rbx,POINTER_SIZE), %rax
-        test    %rax, %rax
+        cmpq    $0, symbol_table_names(,%rbx,POINTER_SIZE)
         jz      3b
 
         mov     symbol_table_values(,%rbx,POINTER_SIZE), %rdi
         call_fn gc_maybe_mark, %rdi
         jmp     3b
 
-4:      cmp     $0, stack_top_offset + gc_mark_stack
+4:      cmpq    $0, stack_top_offset + gc_mark_stack
         je      5f
 
         call_fn pop_pointer_from_stack, $gc_mark_stack
