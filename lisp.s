@@ -22,10 +22,9 @@ is_eqv:                         # obj1, obj2
 
 is_number:                      # obj
         is_double_internal %rdi
-        mov     %rax, %r11
+        jnz     1f
         has_tag TAG_INT, %rdi
-        or      %r11, %rax
-        box_boolean_internal
+1:      box_boolean_internal
         ret
 
 is_integer:                     # obj
