@@ -807,7 +807,7 @@ gc_mark_object:                 # pointer
         minimal_prologue
         unbox_pointer_internal %rdi
         testw   $C_TRUE, header_object_mark(%rax)
-        je      1f
+        jnz     1f
         movw    $C_TRUE, header_object_mark(%rax)
         call_fn push_pointer_on_stack, $gc_mark_stack, %rdi
 1:      return
