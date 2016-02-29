@@ -843,6 +843,7 @@ gc_mark_queue_vector:           # vector
         mov     header_object_size(%rax), %ebx
 1:      test    %ebx, %ebx
         jz      2f
+
         sub     $POINTER_SIZE, %ebx
         mov     vec(%rsp), %rax
         mov     header_size(%rax,%rbx), %rdi
@@ -850,13 +851,15 @@ gc_mark_queue_vector:           # vector
         jmp     1b
 2:      return
 
-gc_mark:
-        prologue
-
+gc_mark_queue_registers:
+        minimal_prologue
         .irp callee_saved, %rbx, %rbp, %r12, %r13, %r14, %r15
         call_fn gc_maybe_mark, \callee_saved
         .endr
+        return
 
+gc_mark_queue_stack:
+        prologue
         mov     %rsp, %rbx
 1:      cmp     execution_stack_top, %rbx
         je      2f
@@ -864,29 +867,37 @@ gc_mark:
         call_fn gc_maybe_mark, (%rbx)
         add     $POINTER_SIZE, %rbx
         jmp     1b
+2:      return
 
-2:      mov     symbol_next_id, %rbx
-3:      test    %rbx, %rbx
-        jz      4f
+
+gc_mark_queue_global_variables:
+        prologue
+        mov     symbol_next_id, %rbx
+1:      test    %rbx, %rbx
+        jz      2f
 
         dec     %rbx
         cmpq    $0, symbol_table_names(,%rbx,POINTER_SIZE)
-        je      3b
+        je      1b
 
         mov     symbol_table_values(,%rbx,POINTER_SIZE), %rdi
         call_fn gc_maybe_mark, %rdi
-        jmp     3b
+        jmp     1b
+2:      return
 
-4:      cmpq    $0, stack_top_offset + gc_mark_stack
-        je      5f
+gc_mark:
+        minimal_prologue
+        call_fn gc_mark_queue_registers
+        call_fn gc_mark_queue_stack
+        call_fn gc_mark_queue_global_variables
 
+1:      cmpq    $0, stack_top_offset + gc_mark_stack
+        je      2f
         call_fn pop_pointer_from_stack, $gc_mark_stack
         mov    %rax, %rdi
         tagged_jump gc_mark_queue_jump_table
-
-        jmp     4b
-
-5:      return
+        jmp     1b
+2:      return
 
 gc_sweep:
         prologue
@@ -910,7 +921,6 @@ gc_sweep:
 2:      movw    $C_FALSE, header_object_mark(%rax)
         add     $POINTER_SIZE, %rbx
         jmp     1b
-
 3:      return
 
 gc:
