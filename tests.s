@@ -835,7 +835,40 @@ main:
         tag     TAG_PROCEDURE, $read_foo
         assert
 
+        call_fn cons, $NIL, $NIL
+        mov     %rax, %rbx
+        call_fn gc_has_mark, %rbx
+        assert
+
+        call_fn gc_mark
+        call_fn gc_has_mark, %rbx
+        assert
+
+        call_fn box_int, $0
+        call_fn make_string, %rax
+        mov     %rax, %rbx
+        call_fn gc_has_mark, %rbx
+        assert
+
+        call_fn gc_mark
+        call_fn gc_has_mark, %rbx
+        assert
+
+        call_fn box_int, $0
+        call_fn make_vector, %rax
+        mov     %rax, %rbx
+        call_fn gc_has_mark, %rbx
+        assert
+
+        call_fn gc_mark
+        call_fn gc_has_mark, %rbx
+        assert
+        call_fn gc_sweep
+
+        xor     %rbx, %rbx
         call_fn gc
+        call_fn object_space_size
+        assert
 
         test_case "test suite end"
 

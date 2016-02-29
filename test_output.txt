@@ -180,4 +180,11 @@ f
 print_foo
 f
 #<procedure>
+#f
+#t
+#f
+#t
+#f
+#t
+0
 ;;; test suite end

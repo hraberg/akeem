@@ -344,12 +344,13 @@ make_string:                    # k, fill
         movb    $NULL, header_size(%rax,%rbx)
         mov     fill(%rsp), %ecx
 
-1:      dec     %ebx
+1:      test    %ebx, %ebx
+        jz      2f
+        dec     %ebx
         movb    %cl, header_size(%rax,%rbx,1)
-        test    %ebx, %ebx
-        jnz     1b
+        jmp     1b
 
-        tag     TAG_STRING, %rax
+2:      tag     TAG_STRING, %rax
         register_for_gc
         return
 
@@ -657,7 +658,7 @@ write_char:                     # char, port
 
         ## Runtime
 
-        .globl init_runtime, allocate_code, set, lookup_global_symbol, gc
+        .globl init_runtime, allocate_code, set, lookup_global_symbol, gc, gc_mark, gc_sweep, gc_has_mark, object_space_size
         .globl int_format, double_format, box_int, box_string, unbox, to_string
 
 init_runtime:                   # execution_stack_top
@@ -796,6 +797,14 @@ allocate_memory:                # size
         perror
 1:      return
 
+gc_has_mark:                    # pointer
+        unbox_pointer_internal %rdi
+        cmpw    $C_TRUE, header_object_mark(%rax)
+        sete    %al
+        and     $C_TRUE, %rax
+        box_boolean_internal
+        ret
+
 gc_mark_nop:                    # obj
         ret
 
@@ -806,6 +815,9 @@ gc_mark_string:                 # string
 
 gc_mark_object:                 # pointer
         minimal_prologue
+        mov     $NIL, %rax
+        cmpq    %rax, %rdi
+        je      1f
         unbox_pointer_internal %rdi
         testw   $C_TRUE, header_object_mark(%rax)
         jnz     1f
@@ -905,6 +917,12 @@ gc:
         call_fn gc_mark
         call_fn gc_sweep
         return
+
+object_space_size:
+        mov     stack_top_offset + object_space, %rax
+        shr     $POINTER_SIZE_SHIFT, %rax
+        box_int_internal
+        ret
 
 pair_to_string:                 # pair
         prologue pair, str, size, stream
