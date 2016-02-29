@@ -278,7 +278,7 @@ string_to_symbol:               # string
         mov     symbol_next_id, %rbx
 
 1:      test    %rbx, %rbx
-        jnz     2f
+        jz      2f
 
         dec     %rbx
         mov     symbol_table_names(,%rbx,POINTER_SIZE), %rax
@@ -818,7 +818,7 @@ gc_maybe_mark:                  # obj
         return
 
 gc_mark_queue_pair:             # pair
-        minimal_prologue
+        prologue
         unbox_pointer_internal %rdi, %rbx
         call_fn gc_maybe_mark, pair_car(%rbx)
         call_fn gc_maybe_mark, pair_cdr(%rbx)
@@ -840,32 +840,41 @@ gc_mark_queue_vector:           # vector
 
 gc_mark:
         prologue
-        mov     symbol_next_id, %rbx
-1:      test    %rbx, %rbx
-        jnz     2f
 
-        dec     %rbx
-        mov     symbol_table_values(,%rbx,POINTER_SIZE), %rdi
-        call_fn gc_maybe_mark, %rdi
-        jmp     1b
+        .irp callee_saved, %rbx, %rbp, %r12, %r13, %r14, %r15
+        call_fn gc_maybe_mark, \callee_saved
+        .endr
 
-        mov     execution_stack_top, %rbx
-2:      cmp     %rsp, %rbx
-        je      3f
+        mov     %rsp, %rbx
+1:      cmp     execution_stack_top, %rbx
+        je      2f
 
         call_fn gc_maybe_mark, (%rbx)
-        sub     $POINTER_SIZE, %rbx
-        jmp     2b
+        add     $POINTER_SIZE, %rbx
+        jmp     1b
 
-3:      cmp     $0, stack_top_offset + gc_mark_stack
-        je      4f
+2:      mov     symbol_next_id, %rbx
+3:      test    %rbx, %rbx
+        jz      4f
+
+        dec     %rbx
+        mov     symbol_table_names(,%rbx,POINTER_SIZE), %rax
+        test    %rax, %rax
+        jz      3b
+
+        mov     symbol_table_values(,%rbx,POINTER_SIZE), %rdi
+        call_fn gc_maybe_mark, %rdi
+        jmp     3b
+
+4:      cmp     $0, stack_top_offset + gc_mark_stack
+        je      5f
 
         call_fn pop_pointer_from_stack, $gc_mark_stack
         mov    %rax, %rdi
         tagged_jump gc_mark_queue_jump_table
-        jmp     3b
+        jmp     4b
 
-4:      return
+5:      return
 
 gc_sweep:
         prologue
@@ -893,7 +902,7 @@ gc_sweep:
 
 gc:
         prologue
-        ## call_fn gc_mark
+        call_fn gc_mark
         call_fn gc_sweep
         return
 
