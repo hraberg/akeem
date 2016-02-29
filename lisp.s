@@ -147,13 +147,11 @@ number_to_string:               # z, radix
 
 string_to_number:               # string, radix
         prologue tail
+        default_arg TAG_INT, $10, %rsi
+        cmovnz  %esi, %esi
+
         unbox_pointer_internal %rdi, %rbx
         add     $header_size, %rbx
-
-        mov     $10, %r11
-        has_tag TAG_INT, %rsi
-        cmovz   %r11, %rsi
-        cmovnz  %esi, %esi
 
         lea     tail(%rsp), %r11
         call_fn strtol, %rbx, %r11, %rsi
@@ -547,9 +545,7 @@ is_output_port:                 # obj
 
 read:                           # port
         prologue str
-        mov     stdin, %r11
-        has_tag TAG_PORT, %rdi
-        cmovz   %r11, %rdi
+        default_arg TAG_PORT, stdin, %rdi
 
         unbox_pointer_internal %rdi, %rdi
         lea     str(%rsp), %rdx
@@ -590,9 +586,7 @@ read:                           # port
 
 read_char:                      # port
         minimal_prologue
-        mov     stdin, %r11
-        has_tag TAG_PORT, %rdi
-        cmovz   %r11, %rdi
+        default_arg TAG_PORT, stdin, %rdi
 
         unbox_pointer_internal %rdi
         call_fn fgetc, %rax
@@ -601,9 +595,7 @@ read_char:                      # port
 
 peek_char:                      # port
         prologue
-        mov     stdin, %r11
-        has_tag TAG_PORT, %rdi
-        cmovz   %r11, %rdi
+        default_arg TAG_PORT, stdin, %rdi
 
         unbox_pointer_internal %rdi, %rbx
         call_fn fgetc, %rbx
@@ -634,9 +626,7 @@ write:                          # obj, port
 
 display:                        # obj, port
         prologue
-        mov     stdout, %r11
-        has_tag TAG_PORT, %rsi
-        cmovz   %r11, %rsi
+        default_arg TAG_PORT, stdout, %rsi
 
         unbox_pointer_internal %rsi, %rbx
         call_fn to_string, %rdi
@@ -654,12 +644,10 @@ newline:                        # port
 
 write_char:                     # char, port
         prologue
-        mov     %edi, %edi
-        mov     stdout, %r11
-        has_tag TAG_PORT, %rsi
-        cmovz   %r11, %rsi
+        default_arg TAG_PORT, stdout, %rsi
 
         unbox_pointer_internal %rsi, %rbx
+        mov     %edi, %edi
         call_fn fputc, %rdi, %rbx
         tag     TAG_CHAR, %rax
         return
@@ -1011,11 +999,9 @@ char_to_machine_readable_string: # char
 
 integer_to_string:              # int, radix
         prologue str, size, stream, format
-
-        mov     $10, %r11
-        has_tag TAG_INT, %rsi
-        cmovz   %r11, %rsi
+        default_arg TAG_INT, $10, %rsi
         cmovnz  %esi, %esi
+
         mov     integer_to_string_format_table(,%rsi,8), %rax
         mov     %rax, format(%rsp)
 

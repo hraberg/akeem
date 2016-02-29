@@ -278,6 +278,12 @@ no_round_to_int_\@:
         return  %rbx
         .endm
 
+        .macro default_arg tag, default, value, tmp=%r11
+        mov     \default, \tmp
+        has_tag \tag, \value
+        cmovz   \tmp, \value
+        .endm
+
         .macro lookup_global_symbol_internal symbol_id
         mov     symbol_table_values(,\symbol_id,POINTER_SIZE), %rax
         .endm
