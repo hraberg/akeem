@@ -470,7 +470,7 @@ is_procedure:                   # obj
 call_with_current_continuation: # proc
         prologue
         mov     %rdi, %rbx
-        call_fn setjmp, $jump_buffer
+        call_fn setjmp, $jump_buffer # https://www.gnu.org/software/libc/manual/html_mono/libc.html#System-V-contexts
         jnz 1f
         call_fn *%rbx, $call_with_current_continuation_escape
         return
