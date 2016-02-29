@@ -474,7 +474,7 @@ call_with_current_continuation: # proc
         jnz 1f
         call_fn *%rbx, $call_with_current_continuation_escape
         return
-1:      return %xmm0
+1:      return  %xmm0
 
         ## 6.6. Input and output
         ## 6.6.1. Ports
