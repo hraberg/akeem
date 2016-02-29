@@ -18,6 +18,8 @@ FIVE:
 NAN:
         .quad NAN_MASK
 
+not_reachable_string:
+        .string "not reachable"
 empty_string:
         .string ""
 forty_two_string:
@@ -103,7 +105,7 @@ returns_42_non_local:
         call_fn box_int, $42
         call_fn *%rbx, %rax
 
-        call_fn box_int, $10
+        call_fn box_string, $not_reachable_string
         assert
         return
 

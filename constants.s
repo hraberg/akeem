@@ -3,7 +3,7 @@
         .equ PAGE_SIZE, 4096
 
         ## setjmp.h
-        .equ JMP_BUF_SIZE, POINTER_SIZE * 8
+        .equ JMP_BUF_SIZE, POINTER_SIZE * 16
 
         ## dlfcn.h
         .equ RTLD_DEFAULT, 0
