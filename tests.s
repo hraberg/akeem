@@ -886,6 +886,29 @@ main:
         call_fn gc
         call_fn object_space_size
         assert
+        call_fn gc
+
+        call_fn box_int, $1
+        call_fn make_vector, %rax
+        mov     %rax, vec(%rsp)
+
+        call_fn box_int, $0
+        mov     %rax, %rbx
+        call_fn make_string, %rax
+        call_fn vector_set, vec(%rsp), %rbx, %rax
+        mov     vec(%rsp), %rbx
+
+        call_fn object_space_size
+        assert
+
+        call_fn gc
+        xor     %rbx, %rbx
+        call_fn object_space_size
+        assert
+
+        call_fn gc
+        call_fn object_space_size
+        assert
 
         test_case "test suite end"
 
