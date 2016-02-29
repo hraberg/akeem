@@ -186,6 +186,7 @@ is_boolean:                     # obj
 not:                            # obj
         mov     $FALSE, %rax
         eq_internal %rdi, %rax
+        box_boolean_internal
         ret
 
         ## 6.3.2. Pairs and lists
