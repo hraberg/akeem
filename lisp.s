@@ -521,7 +521,7 @@ current_input_port:
 is_input_port:                  # obj
         unbox_pointer_internal %rdi
         call_fn __freadable, %rax
-        cmp     $0, %rax
+        cmp     $NULL, %rax
         setg    %al
         box_boolean_internal
         ret
@@ -529,7 +529,7 @@ is_input_port:                  # obj
 is_output_port:                 # obj
         unbox_pointer_internal %rdi
         call_fn __fwritable, %rax
-        cmp     $0, %rax
+        cmp     $NULL, %rax
         setg    %al
         box_boolean_internal
         ret
