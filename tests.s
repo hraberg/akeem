@@ -863,9 +863,9 @@ main:
         call_fn gc_mark
         call_fn gc_has_mark, %rbx
         assert
+        xor     %rbx, %rbx
         call_fn gc_sweep
 
-        xor     %rbx, %rbx
         call_fn gc
         call_fn object_space_size
         assert

@@ -819,8 +819,8 @@ gc_mark_object:                 # pointer
         cmpq    %rax, %rdi
         je      1f
         unbox_pointer_internal %rdi
-        testw   $C_TRUE, header_object_mark(%rax)
-        jnz     1f
+        cmpw    $C_TRUE, header_object_mark(%rax)
+        je      1f
         movw    $C_TRUE, header_object_mark(%rax)
         call_fn push_pointer_on_stack, $gc_mark_stack, %rdi
 1:      return
@@ -872,7 +872,7 @@ gc_mark:
 
         dec     %rbx
         cmpq    $0, symbol_table_names(,%rbx,POINTER_SIZE)
-        jz      3b
+        je      3b
 
         mov     symbol_table_values(,%rbx,POINTER_SIZE), %rdi
         call_fn gc_maybe_mark, %rdi
@@ -884,6 +884,7 @@ gc_mark:
         call_fn pop_pointer_from_stack, $gc_mark_stack
         mov    %rax, %rdi
         tagged_jump gc_mark_queue_jump_table
+
         jmp     4b
 
 5:      return
@@ -897,9 +898,9 @@ gc_sweep:
         mov     stack_bottom + object_space, %rax
         mov     (%rax,%rbx), %r11
         unbox_pointer_internal %r11
-        movw    header_object_mark(%rax), %r11w
-        test    %r11w, %r11w
-        jnz     2f
+
+        cmpw    $C_TRUE, header_object_mark(%rax)
+        je      2f
 
         call_fn free, %rax
         call_fn pop_pointer_from_stack, $object_space
@@ -910,10 +911,11 @@ gc_sweep:
 2:      movw    $C_FALSE, header_object_mark(%rax)
         add     $POINTER_SIZE, %rbx
         jmp     1b
+
 3:      return
 
 gc:
-        prologue
+        minimal_prologue
         call_fn gc_mark
         call_fn gc_sweep
         return
