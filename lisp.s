@@ -460,12 +460,21 @@ vector_to_string:                 # vector
         return
 
         ## 6.4. Control features
-        .globl is_procedure
+        .globl is_procedure, call_with_current_continuation
 
 is_procedure:                   # obj
         has_tag TAG_PROCEDURE, %rdi
         box_boolean_internal
         ret
+
+call_with_current_continuation: # proc
+        prologue
+        mov     %rdi, %rbx
+        call_fn setjmp, $jump_buffer
+        jnz 1f
+        call_fn *%rbx, $call_with_current_continuation_escape
+        return
+1:      return %xmm0
 
         ## 6.6. Input and output
         ## 6.6.1. Ports
@@ -1147,6 +1156,12 @@ box_string:                     # c-string
         string_buffer_to_string str(%rsp), stream(%rsp)
         return
 
+call_with_current_continuation_escape: # return
+        minimal_prologue
+        movq    %rdi, %xmm0
+        call_fn longjmp, $jump_buffer, $C_TRUE
+        return
+
 set:                            # variable, expression
         unbox_pointer_internal %rdi
         mov     %rsi, symbol_table_values(,%rax,POINTER_SIZE)
@@ -1271,3 +1286,7 @@ object_space:
         .zero   stack_size
 gc_mark_stack:
         .zero   stack_size
+
+        .align  16
+jump_buffer:
+        .zero   JMP_BUF_SIZE

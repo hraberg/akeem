@@ -180,6 +180,8 @@ f
 print_foo
 f
 #<procedure>
+42
+42
 #f
 #t
 #f

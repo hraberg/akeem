@@ -97,6 +97,22 @@ read_foo:
         call_fn read_char, %rdi
         return
 
+returns_42_non_local:
+        prologue
+        mov     %rdi, %rbx
+        call_fn box_int, $42
+        call_fn *%rbx, %rax
+
+        call_fn box_int, $10
+        assert
+        return
+
+returns_42_local:
+        prologue
+        mov     %rdi, %rbx
+        call_fn box_int, $42
+        return
+
 example_code:
         mov     %rdi, %rax
         add     $4, %rax
@@ -833,6 +849,12 @@ main:
         call_fn unlink, $test_file
 
         tag     TAG_PROCEDURE, $read_foo
+        assert
+
+        call_fn call_with_current_continuation, $returns_42_non_local
+        assert
+
+        call_fn call_with_current_continuation, $returns_42_local
         assert
 
         call_fn cons, $NIL, $NIL
