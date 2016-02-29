@@ -869,6 +869,23 @@ main:
         call_fn gc
         call_fn object_space_size
         assert
+        call_fn gc
+
+        call_fn box_int, $0
+        call_fn make_string, %rax
+        call_fn cons, %rax, $NIL
+        mov     %rax, %rbx
+        call_fn object_space_size
+        assert
+
+        call_fn gc
+        xor     %rbx, %rbx
+        call_fn object_space_size
+        assert
+
+        call_fn gc
+        call_fn object_space_size
+        assert
 
         test_case "test suite end"
 

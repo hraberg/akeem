@@ -187,4 +187,7 @@ f
 #f
 #t
 0
+2
+2
+0
 ;;; test suite end
