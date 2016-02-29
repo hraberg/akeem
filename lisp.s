@@ -193,12 +193,12 @@ not:                            # obj
         .globl is_pair, cons, car, cdr, set_car, set_cdr, is_null, length
 
 is_pair:                        # obj
-        has_tag TAG_PAIR, %rdi
-        mov     %rax, %r11
         mov     $NIL, %rax
-        eq_internal %rax, %rdi
-        btc     $0, %rax
-        and     %r11, %rax
+        cmp     %rax, %rdi
+        jne     1f
+        mov     $FALSE, %rax
+        ret
+1:      has_tag TAG_PAIR, %rdi
         box_boolean_internal
         ret
 
@@ -877,7 +877,7 @@ gc_mark_queue_global_variables:
         jz      2f
 
         dec     %rbx
-        cmpq    $0, symbol_table_names(,%rbx,POINTER_SIZE)
+        cmpq    $NULL, symbol_table_names(,%rbx,POINTER_SIZE)
         je      1b
 
         mov     symbol_table_values(,%rbx,POINTER_SIZE), %rdi

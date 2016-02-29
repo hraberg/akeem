@@ -114,7 +114,7 @@
 
         .macro tagged_jump table
         is_double_internal %rdi
-        mov     $0, %rax
+        mov     $TAG_DOUBLE, %rax
         cmovz   %rdi, %rax
         shr     $TAG_SHIFT, %rax
         and     $TAG_MASK, %rax
