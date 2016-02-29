@@ -815,7 +815,7 @@ gc_mark_string:                 # string
 gc_mark_object:                 # pointer
         minimal_prologue
         mov     $NIL, %rax
-        cmpq    %rax, %rdi
+        cmp     %rax, %rdi
         je      1f
         unbox_pointer_internal %rdi
         cmpw    $C_TRUE, header_object_mark(%rax)
