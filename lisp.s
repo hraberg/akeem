@@ -873,14 +873,14 @@ gc_mark_queue_stack:
 gc_mark_queue_global_variables:
         prologue
         mov     symbol_next_id, %rbx
-1:      test    %rbx, %rbx
+1:      test    %ebx, %ebx
         jz      2f
 
-        dec     %rbx
-        cmpq    $NULL, symbol_table_names(,%rbx,POINTER_SIZE)
+        dec     %ebx
+        cmpq    $NULL, symbol_table_names(,%ebx,POINTER_SIZE)
         je      1b
 
-        mov     symbol_table_values(,%rbx,POINTER_SIZE), %rdi
+        mov     symbol_table_values(,%ebx,POINTER_SIZE), %rdi
         call_fn gc_maybe_mark, %rdi
         jmp     1b
 2:      return
@@ -919,7 +919,7 @@ gc_sweep:
         jmp     1b
 
 2:      movw    $C_FALSE, header_object_mark(%rax)
-        add     $POINTER_SIZE, %rbx
+        add     $POINTER_SIZE, %ebx
         jmp     1b
 3:      return
 
