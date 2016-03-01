@@ -638,20 +638,6 @@ open_input_string:              # string
         tag     TAG_PORT, %rax
         return
 
-open_output_string:
-        prologue str, size, stream
-        open_string_buffer str(%rsp), size(%rsp), stream(%rsp)
-        mov     stream(%rsp), %rbx
-        mov     %rbx, str(%rsp)
-        tag     TAG_PORT, %rbx
-        return
-
-get_output_string:              # output-port
-        prologue str
-        unbox_pointer_internal %rdi, %rbx
-        string_buffer_to_string str(%rsp), %rbx
-        return
-
         ## Runtime
 
         .globl init_runtime, allocate_code, set, lookup_global_symbol, gc, gc_mark, gc_sweep, gc_has_mark, object_space_size
@@ -1227,8 +1213,6 @@ read_mode:
         .string "r"
 write_mode:
         .string "w"
-read_write_mode:
-        .string "rw"
 
 backspace_char:
         .string "#\\backspace"
