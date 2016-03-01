@@ -1399,9 +1399,9 @@ char_table:
 
         .align  16
 escape_char_table:
-        .zero   256
+        .zero   CHAR_TABLE_SIZE
 unescape_char_table:
-        .zero   256
+        .zero   CHAR_TABLE_SIZE
 
         .align  16
 to_string_jump_table:
@@ -1436,11 +1436,11 @@ execution_stack_top:
 
         .align  16
 read_datum_jump_table:
-        .rept   256
+        .rept   CHAR_TABLE_SIZE
         .quad   read_symbol
         .endr
 read_hash_jump_table:
-        .zero   256 * POINTER_SIZE
+        .zero   CHAR_TABLE_SIZE * POINTER_SIZE
 
         .align  16
 object_space:

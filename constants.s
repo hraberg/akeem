@@ -28,7 +28,7 @@
 
         .equ NAN_MASK, 0x7FF8000000000000
         .equ TAG_SHIFT, 45
-        .equ TAG_MASK, 0x3f
+        .equ TAG_MASK, (1 << 6) - 1
         .equ POINTER_TAG_MASK, ~(TAG_SYMBOL - 1)
 
         .equ PAYLOAD_MASK, (1 << 47) - 1
@@ -63,6 +63,8 @@
 
         .equ MAX_NUMBER_OF_SYMBOLS, 1024
         .equ OBJECT_SPACE_INITIAL_SIZE, 8 * 1024
+
+        .equ CHAR_TABLE_SIZE, 256
 
         .equ BINARY_OP_SHIFT, 4
 
