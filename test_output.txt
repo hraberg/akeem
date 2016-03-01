@@ -205,6 +205,9 @@ f
 +
 -+
 foo
+""
+"Hello World"
+"H\be\"l\rlo\nW\\o\'rld\t!"
 ()
 (#t . #f)
 ;;; test suite end

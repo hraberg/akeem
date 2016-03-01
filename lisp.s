@@ -685,6 +685,15 @@ init_runtime:                   # execution_stack_top
         movb    $'', 39(%rbx)
         movb    $'\\, 92(%rbx)
 
+        lea     unescape_char_table, %rbx
+        movb    $8, 98(%rbx)
+        movb    $9, 116(%rbx)
+        movb    $10, 110(%rbx)
+        movb    $13, 114(%rbx)
+        movb    $'\", 34(%rbx)
+        movb    $'', 39(%rbx)
+        movb    $'\\, 92(%rbx)
+
         lea     to_string_jump_table, %rbx
         store_pointer $TAG_DOUBLE, $double_to_string
         store_pointer $TAG_BOOLEAN, $boolean_to_string
@@ -733,6 +742,7 @@ init_runtime:                   # execution_stack_top
         lea     read_datum_jump_table, %rbx
         store_pointer $'\#, $read_hash
         store_pointer $'(, $read_list
+        store_pointer $'\", $read_string
         .irp digit, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9
         store_pointer $(\digit + '0), $read_number
         .endr
@@ -1163,7 +1173,6 @@ read_datum:                     # c-stream
         prologue
         mov     %rdi, %rbx
         call_fn read_whitespace, %rbx
-
         call_fn fgetc, %rbx
         read_byte_jump read_datum_jump_table, %rbx, %rax
         return
@@ -1187,7 +1196,7 @@ read_token:                     # c-stream
         call_fn free, str(%rsp)
         return  %rbx
 
-read_symbol:                    # c-stream, char
+read_symbol:                    # c-stream, c-char
         prologue str
         mov     %rdi, %rbx
         mov     %rsi, %rdi
@@ -1196,7 +1205,7 @@ read_symbol:                    # c-stream, char
         call_fn string_to_symbol, %rax
         return
 
-read_number:                    # c-stream, char
+read_number:                    # c-stream, c-char
         prologue str
         mov     %rdi, %rbx
         mov     %rsi, %rdi
@@ -1205,7 +1214,7 @@ read_number:                    # c-stream, char
         call_fn string_to_number, %rax
         return
 
-read_number_or_symbol:          # c-stream, char
+read_number_or_symbol:          # c-stream, c-char
         prologue sign, char
         mov     %rdi, %rbx
         mov     %rsi, sign(%rsp)
@@ -1217,6 +1226,27 @@ read_number_or_symbol:          # c-stream, char
         call_fn read_number %rbx, sign(%rsp)
         return
 2:      call_fn read_symbol, %rbx, sign(%rsp)
+        return
+
+read_string:                    # c-stream, c-char
+        prologue str, size, stream
+        mov     %rdi, %rbx
+        open_string_buffer str(%rsp), size(%rsp), stream(%rsp)
+
+1:      call_fn fgetc, %rbx
+        cmp     $'\", %rax
+        je      3f
+
+        cmp     $'\\, %rax
+        jne     2f
+        call_fn fgetc, %rbx
+        mov     unescape_char_table(%eax), %al
+
+2:      call_fn fputc, %rax, stream(%rsp)
+        jmp     1b
+
+3:      string_buffer_to_string str(%rsp), stream(%rsp)
+        register_for_gc
         return
 
 read_true:                      # c-stream
@@ -1369,6 +1399,8 @@ char_table:
 
         .align  16
 escape_char_table:
+        .zero   256
+unescape_char_table:
         .zero   256
 
         .align  16

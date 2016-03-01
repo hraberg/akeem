@@ -36,6 +36,12 @@ minus_plus_string:
         .string "-+"
 escape_codes:
         .string "H\be\"l\rlo\nW\\o\'rld\t!"
+escape_codes_string:
+        .string "\"H\\be\\\"l\\rlo\\nW\\\\o\\'rld\\t!\""
+string_string:
+        .string "\"Hello World\""
+empty_string_string:
+        .string "\"\""
 char_string:
         .string "#\\a"
 empty_list_string:
@@ -995,6 +1001,21 @@ main:
         assert  write=true
 
         call_fn box_string, $foo_name
+        call_fn open_input_string, %rax
+        call_fn read, %rax
+        assert  write=true
+
+        call_fn box_string, $empty_string_string
+        call_fn open_input_string, %rax
+        call_fn read, %rax
+        assert  write=true
+
+        call_fn box_string, $string_string
+        call_fn open_input_string, %rax
+        call_fn read, %rax
+        assert  write=true
+
+        call_fn box_string, $escape_codes_string
         call_fn open_input_string, %rax
         call_fn read, %rax
         assert  write=true
