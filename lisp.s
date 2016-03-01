@@ -187,7 +187,7 @@ not:                            # obj
         ret
 
         ## 6.3.2. Pairs and lists
-        .globl is_pair, cons, car, cdr, set_car, set_cdr, is_null, length
+        .globl is_pair, cons, car, cdr, set_car, set_cdr, is_null, length, reverse
 
 is_pair:                        # obj
         mov     $NIL, %rax
@@ -255,6 +255,24 @@ length:                         # list
 
 2:      box_int_internal %ebx
         return
+
+reverse:                        # list
+        prologue
+        mov     $NIL, %r12
+        mov     %rdi, %rbx
+1:      mov     $NIL, %r11
+        cmp     %r11, %rbx
+        je      2f
+
+        calL_fn car, %rbx
+        call_fn cons, %rax, %r12
+        mov     %rax, %r12
+
+        call_fn cdr, %rbx
+        mov     %rax, %rbx
+        jmp     1b
+
+2:      return  %r12
 
         ## 6.3.3. Symbols
         .globl is_symbol, symbol_to_string, string_to_symbol
@@ -1303,14 +1321,20 @@ read_list:                      # c-stream
         mov     %rax, %r12
         jmp     1b
 
-2:      call_fn read_datum, %rbx
+2:      call_fn reverse, %r12
+        mov     %rax, %r12
+        call_fn read_datum, %rbx
         call_fn set_cdr, %r12, %rax
 
         call_fn read_whitespace, %rbx
         call_fn fgetc, %rbx
         cmp     $'), %rax
+        return  %r12
 
-3:      return  %r12
+3:      call_fn reverse, %r12
+        mov     %rax, %r12
+
+4:      return  %r12
 
 call_with_current_continuation_escape: # return
         minimal_prologue

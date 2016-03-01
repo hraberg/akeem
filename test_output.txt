@@ -8,6 +8,7 @@ strlen
 #f
 #f
 (1 2 3)
+(3 2 1)
 #(1 2 3)
 3
 0
@@ -211,4 +212,5 @@ foo
 "H\be\"l\rlo\nW\\o\'rld\t!"
 ()
 (#t . #f)
+(#t #f)
 ;;; test suite end

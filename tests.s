@@ -195,6 +195,9 @@ main:
         mov     %rax, %rbx
         assert
 
+        call_fn reverse, %rbx
+        assert
+
         call_fn list_to_vector, %rbx
         assert
 
@@ -1033,10 +1036,10 @@ main:
         call_fn read, %rax
         assert  write=true
 
-        ## call_fn box_string, $list_with_booleans_string
-        ## call_fn open_input_string, %rax
-        ## call_fn read, %rax
-        ## assert  write=true
+        call_fn box_string, $list_with_booleans_string
+        call_fn open_input_string, %rax
+        call_fn read, %rax
+        assert  write=true
 
         test_case "test suite end"
 
