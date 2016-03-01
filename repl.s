@@ -25,6 +25,8 @@ main:
         call_fn display, %rax
         call_fn newline
 
+        call_fn gc
+
         jmp     1b
 
 2:      return  $0
