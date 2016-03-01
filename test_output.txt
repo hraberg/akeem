@@ -195,4 +195,7 @@ f
 2
 2
 0
+#\a
+#t
+#f
 ;;; test suite end

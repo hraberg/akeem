@@ -28,6 +28,8 @@ pi_string:
         .string "3.14159"
 escape_codes:
         .string "H\be\"l\rlo\nW\\o\'rld\t!"
+char_string:
+        .string "#\\a"
 foo_name:
         .string "foo"
 strlen_name:
@@ -232,36 +234,36 @@ main:
 
         call_fn box_int, $65
         call_fn integer_to_char, %rax
-        assert write=true
+        assert  write=true
 
         call_fn box_int, $8
         call_fn integer_to_char, %rax
-        assert write=true
+        assert  write=true
 
         call_fn box_int, $9
         call_fn integer_to_char, %rax
-        assert write=true
+        assert  write=true
 
         call_fn box_int, $10
         call_fn integer_to_char, %rax
-        assert write=true
+        assert  write=true
 
         call_fn box_int, $13
         call_fn integer_to_char, %rax
-        assert write=true
+        assert  write=true
 
         call_fn box_int, $32
         call_fn integer_to_char, %rax
-        assert write=true
+        assert  write=true
 
         call_fn box_string, $foo_name
-        assert write=true
+        assert  write=true
 
         call_fn box_string, $escape_codes
-        assert write=true
+        assert  write=true
 
         call_fn box_string, $empty_string
-        assert write=true
+        assert  write=true
 
         call_fn is_string, PI
         assert
@@ -932,6 +934,21 @@ main:
         call_fn gc
         call_fn object_space_size
         assert
+
+        call_fn box_string, $char_string
+        call_fn open_input_string, %rax
+        call_fn read, %rax
+        assert  write=true
+
+        call_fn box_string, $true_c_string
+        call_fn open_input_string, %rax
+        call_fn read, %rax
+        assert  write=true
+
+        call_fn box_string, $false_c_string
+        call_fn open_input_string, %rax
+        call_fn read, %rax
+        assert  write=true
 
         test_case "test suite end"
 

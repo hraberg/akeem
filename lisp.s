@@ -544,44 +544,17 @@ is_output_port:                 # obj
         .globl read, read_char, peek_char, is_eof_object
 
 read:                           # port
-        prologue str
+        prologue
         default_arg TAG_PORT, stdin, %rdi
+        mov     %rdi, %rbx
+        call_fn read_whitespace, %rbx
 
-        unbox_pointer_internal %rdi, %rdi
-        lea     str(%rsp), %rdx
-        call_fn fscanf, %rdi, $read_format, %rdx
-        perror
-
-        call_fn box_string, str(%rsp)
-        register_for_gc
-        mov     %rax, %rbx
-        call_fn free, str(%rsp)
-
-        unbox_pointer_internal %rbx
-        add     $header_size, %rax
-        mov     %rax, str(%rsp)
-
-        call_fn string_to_number, %rbx
-        mov     $FALSE, %r11
-        cmp     %r11, %rax
+        unbox_pointer_internal %rbx, %rbx
+        call_fn fgetc, %rbx
+        cmp     $'\#, %rax
         jne     1f
+        call_fn read_hash, %rbx
 
-        add     $header_size, %rax
-        call_fn strcmp, $false_c_string, str(%rsp)
-        mov     $FALSE, %rax
-        je      1f
-
-        add     $header_size, %rax
-        call_fn strcmp, $true_c_string, str(%rsp)
-        mov     $TRUE, %rax
-        je      1f
-
-        mov     str(%rsp), %rax
-        cmpb    $'\", (%rax)
-        mov     %rbx, %rax
-        je      1f
-
-        call_fn string_to_symbol, %rbx
 1:      return
 
 read_char:                      # port
@@ -652,10 +625,37 @@ write_char:                     # char, port
         tag     TAG_CHAR, %rax
         return
 
+        ## SRFI 6: Basic String Ports
+        .globl open_input_string, open_output_string, get_output_string
+
+open_input_string:              # string
+        prologue
+        unbox_pointer_internal %rdi
+        movl    header_object_size(%rax), %esi
+        dec     %esi
+        add     $header_size, %rax
+        call_fn fmemopen, %rax, %rsi, $read_mode
+        tag     TAG_PORT, %rax
+        return
+
+open_output_string:
+        prologue str, size, stream
+        open_string_buffer str(%rsp), size(%rsp), stream(%rsp)
+        mov     stream(%rsp), %rbx
+        mov     %rbx, str(%rsp)
+        tag     TAG_PORT, %rbx
+        return
+
+get_output_string:              # output-port
+        prologue str
+        unbox_pointer_internal %rdi, %rbx
+        string_buffer_to_string str(%rsp), %rbx
+        return
+
         ## Runtime
 
         .globl init_runtime, allocate_code, set, lookup_global_symbol, gc, gc_mark, gc_sweep, gc_has_mark, object_space_size
-        .globl int_format, double_format, box_int, box_string, unbox, to_string
+        .globl int_format, double_format, read_mode, box_int, box_string, unbox, to_string, true_c_string, false_c_string
 
 init_runtime:                   # execution_stack_top
         prologue
@@ -1141,6 +1141,39 @@ box_string:                     # c-string
         string_buffer_to_string str(%rsp), stream(%rsp)
         return
 
+read_whitespace:                # port
+        prologue char
+        unbox_pointer_internal %rdi, %rbx
+
+1:      call_fn fgetc, %rbx
+        mov     %rax, char(%rsp)
+        call_fn isspace, %rax
+        jnz     1b
+        call_fn ungetc, char(%rsp), %rbx
+        return
+
+read_hash:                      # port
+        prologue
+        unbox_pointer_internal %rdi, %rbx
+        call_fn fgetc, %rbx
+
+        cmp     $'t, %rax
+        jne     1f
+        return  $TRUE
+
+1:      cmp     $'f, %rax
+        jne     2f
+        return  $FALSE
+
+2:      cmp     $'\\, %rax
+        jne     3f
+
+        call_fn fgetc, %rbx
+        tag     TAG_CHAR, %rax
+
+3:      return
+
+
 call_with_current_continuation_escape: # return
         minimal_prologue
         movq    %rdi, %xmm0
@@ -1194,6 +1227,8 @@ read_mode:
         .string "r"
 write_mode:
         .string "w"
+read_write_mode:
+        .string "rw"
 
 backspace_char:
         .string "#\\backspace"
