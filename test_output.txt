@@ -214,4 +214,5 @@ foo
 (#t . #f)
 (#t #f)
 (1 2 . 3)
+#\newline
 ;;; test suite end

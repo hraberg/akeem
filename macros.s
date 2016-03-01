@@ -111,7 +111,8 @@
 
         .macro store_pointer idx ptr=%rax at=%rbx
         mov     \idx, %ecx
-        movq    \ptr, (\at,%rcx,POINTER_SIZE)
+        mov     \ptr, %rax
+        movq    %rax, (\at,%rcx,POINTER_SIZE)
         .endm
 
         .macro tagged_jump table

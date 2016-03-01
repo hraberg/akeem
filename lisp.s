@@ -678,20 +678,21 @@ init_runtime:                   # execution_stack_top
         intern_string read_error_string, "unexpected input\n"
         intern_string port_string, "#<port>"
         intern_string procedure_string, "#<procedure>"
-        intern_string false_string "#f"
-        intern_string true_string "#t"
+        intern_string false_string, "#f"
+        intern_string true_string, "#t"
+
+        intern_string backspace_char, "#\\backspace"
+        intern_string tab_char, "#\\tab"
+        intern_string newline_char, "#\\newline"
+        intern_string return_char, "#\\return"
+        intern_string space_char, "#\\space"
 
         lea     char_table, %rbx
-        call_fn box_string, $backspace_char
-        store_pointer $'\b
-        call_fn box_string, $tab_char
-        store_pointer $'\t
-        call_fn box_string, $newline_char
-        store_pointer $'\n
-        call_fn box_string, $return_char
-        store_pointer $'\r
-        call_fn box_string, $space_char
-        store_pointer $'\ ,
+        store_pointer $'\b, backspace_char
+        store_pointer $'\t, tab_char
+        store_pointer $'\n, newline_char
+        store_pointer $'\r, return_char
+        store_pointer $'\ , space_char
 
         lea     escape_char_table, %rbx
         movb    $'b, 8(%rbx)
@@ -1054,7 +1055,6 @@ char_to_machine_readable_string: # char
         mov     char_table(,%ebx,POINTER_SIZE), %rax
         test    %eax, %eax
         jz      1f
-        tag     TAG_STRING, %rax
         return
 1:      open_string_buffer str(%rsp), size(%rsp), %r12
         xor     %al, %al
@@ -1306,11 +1306,39 @@ read_false:                     # c-stream
         mov     $FALSE, %rax
         ret
 
-read_character:                 # c-stream
+read_character:                 # c-stream, c-char
         prologue
         mov     %rdi, %rbx
-        call_fn fgetc, %rbx
-        tag     TAG_CHAR, %rax
+        call_fn read_token, %rbx
+        mov     %rax, %r12
+        call_fn string_length, %r12
+        cmp     $1, %eax
+        je      3f
+
+        mov     $CHAR_TABLE_SIZE, %rbx
+        unbox_pointer_internal %r12, %r12
+1:      test    %ebx, %ebx
+        jz      2f
+        dec     %ebx
+        mov     char_table(,%rbx,POINTER_SIZE), %rax
+        unbox_pointer_internal %rax
+
+        test    %eax, %eax
+        jz      1b
+
+        add     $header_size + 2, %rax
+        mov     %r12, %r11
+        add     $header_size, %r11
+        call_fn strcmp, %r11, %rax
+        jnz     1b
+
+        tag     TAG_CHAR, %rbx
+        return
+
+2:      call_fn error, read_error_string
+        return
+
+3:      call_fn string_ref, %r12, $ZERO_INT
         return
 
 read_quote:                     # c-stream
@@ -1441,24 +1469,13 @@ read_mode:
 write_mode:
         .string "w"
 
-backspace_char:
-        .string "#\\backspace"
-tab_char:
-        .string "#\\tab"
-newline_char:
-        .string "#\\newline"
-return_char:
-        .string "#\\return"
-space_char:
-        .string "#\\space"
-
         .align  16
 integer_to_string_format_table:
         .zero   16 * POINTER_SIZE
 
         .align  16
 char_table:
-        .zero   ((SPACE_CHAR & INT_MASK) + 1) * POINTER_SIZE
+        .zero   CHAR_TABLE_SIZE * POINTER_SIZE
 
         .align  16
 escape_char_table:

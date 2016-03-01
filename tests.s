@@ -52,6 +52,8 @@ pair_with_booleans_string:
         .string "(#t . #f)"
 irregular_list_string:
         .string "(1 2 . 3)"
+newline_char_string:
+        .string "#\\newline"
 foo_name:
         .string "foo"
 strlen_name:
@@ -1044,6 +1046,11 @@ main:
         assert  write=true
 
         call_fn box_string, $irregular_list_string
+        call_fn open_input_string, %rax
+        call_fn read, %rax
+        assert  write=true
+
+        call_fn box_string, $newline_char_string
         call_fn open_input_string, %rax
         call_fn read, %rax
         assert  write=true
