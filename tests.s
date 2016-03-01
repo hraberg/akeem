@@ -968,12 +968,12 @@ main:
         call_fn read, %rax
         assert  write=true
 
-        call_fn box_string, $true_c_string
+        call_fn box_string, $true_string_c
         call_fn open_input_string, %rax
         call_fn read, %rax
         assert  write=true
 
-        call_fn box_string, $false_c_string
+        call_fn box_string, $false_string_c
         call_fn open_input_string, %rax
         call_fn read, %rax
         assert  write=true

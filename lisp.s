@@ -297,6 +297,7 @@ string_to_symbol:               # string
 
         dec     %rbx
         mov     symbol_table_names(,%rbx,POINTER_SIZE), %rax
+        unbox_pointer_internal %rax
 
         test    %eax, %eax
         jz      1b
@@ -310,7 +311,8 @@ string_to_symbol:               # string
 2:      movq    symbol_next_id, %rbx
         incq    symbol_next_id
 
-        mov     %r12, symbol_table_names(,%rbx,POINTER_SIZE)
+        tag     TAG_STRING, %r12
+        mov     %rax, symbol_table_names(,%rbx,POINTER_SIZE)
 
 3:      tag     TAG_SYMBOL, %rbx
         return
@@ -646,7 +648,7 @@ error:                          # reason
         ## Runtime
 
         .globl init_runtime, allocate_code, set, lookup_global_symbol, gc, gc_mark, gc_sweep, gc_has_mark, object_space_size
-        .globl int_format, double_format, read_mode, box_int, box_string, unbox, to_string, true_c_string, false_c_string
+        .globl int_format, double_format, read_mode, box_int, box_string, unbox, to_string, true_string_c, false_string_c
 
 init_runtime:                   # execution_stack_top
         prologue
@@ -655,16 +657,26 @@ init_runtime:                   # execution_stack_top
         call_fn init_pointer_stack, $object_space, $OBJECT_SPACE_INITIAL_SIZE
         call_fn init_pointer_stack, $gc_mark_stack, $OBJECT_SPACE_INITIAL_SIZE
 
-        call_fn box_string, $procedure_c_string
-        mov     %rax, procedure_string
-        call_fn box_string, $port_c_string
-        mov     %rax, port_string
-        call_fn box_string, $true_c_string
-        mov     %rax, true_string
-        call_fn box_string, $false_c_string
-        mov     %rax, false_string
-        call_fn box_string, $read_error_c_string
-        mov     %rax, read_error_string
+        intern_symbol double_symbol, "double", id=TAG_DOUBLE
+        intern_symbol boolean_symbol, "boolean", id=TAG_BOOLEAN
+        intern_symbol byte_symbol, "byte", id=TAG_BYTE
+        intern_symbol char_symbol, "char", id=TAG_CHAR
+        intern_symbol int_symbol, "int", id=TAG_INT
+        intern_symbol symbol_symbol, "symbol", id=TAG_SYMBOL
+        intern_symbol procedure_symbol, "procedure", id=TAG_PROCEDURE
+        intern_symbol port_symbol, "port", id=TAG_PORT
+        intern_symbol string_symbol, "string", id=TAG_STRING
+        intern_symbol pair_symbol, "pair", id=TAG_PAIR
+        intern_symbol vector_symbol, "vector", id=TAG_VECTOR
+        intern_symbol object_symbol, "object", id=TAG_OBJECT
+
+        intern_symbol quote_symbol, "quote"
+
+        intern_string read_error_string, "unexpected input\n"
+        intern_string port_string, "#<port>"
+        intern_string procedure_string, "#<procedure>"
+        intern_string false_string "#f"
+        intern_string true_string "#t"
 
         lea     char_table, %rbx
         call_fn box_string, $backspace_char
@@ -750,6 +762,7 @@ init_runtime:                   # execution_stack_top
         .endr
         store_pointer $'+, $read_number_or_symbol
         store_pointer $'-, $read_number_or_symbol
+        store_pointer $'', $read_quote
 
         lea     read_hash_jump_table, %rbx
         store_pointer $'t, $read_true
@@ -1295,6 +1308,13 @@ read_character:                 # c-stream
         tag     TAG_CHAR, %rax
         return
 
+read_quote:                     # c-stream
+        prologue
+        call_fn read_datum, %rbx
+        call_fn cons, %rax, $NIL
+        call_fn cons, quote_symbol, %rax
+        return
+
 read_vector:                    # c-stream
         prologue
         call_fn read_list, %rdi
@@ -1389,13 +1409,6 @@ hex_format:
         .string "%x"
 double_format:
         .string "%f"
-read_format:
-        .string "%as"
-
-read_error_c_string:
-        .string "unexpected input\n"
-read_error_string:
-        .quad   0
 
 read_mode:
         .string "r"
@@ -1412,23 +1425,6 @@ return_char:
         .string "#\\return"
 space_char:
         .string "#\\space"
-
-port_c_string:
-        .string "#<port>"
-port_string:
-        .quad   0
-procedure_c_string:
-        .string "#<procedure>"
-procedure_string:
-        .quad   0
-false_c_string:
-        .string "#f"
-false_string:
-        .quad   0
-true_c_string:
-        .string "#t"
-true_string:
-        .quad   0
 
         .align  16
 integer_to_string_format_table:

@@ -289,18 +289,6 @@ no_round_to_int_\@:
         mov     symbol_table_values(,\symbol_id,POINTER_SIZE), %rax
         .endm
 
-        .macro define symbol_name, value, tmp=%rbx
-        .data
-symbol_string_\@:
-        .string "\symbol_name"
-        .text
-        mov     \value, \tmp
-        call_fn string_to_symbol, $symbol_string_\@
-        call_fn set, %rax, \tmp
-        mov     (symbol_next_id), %rax
-        dec     %rax
-        .endm
-
         .macro register_for_gc ptr=%rax
         call_fn push_pointer_on_stack, $object_space, \ptr
         .endm
@@ -344,4 +332,28 @@ perror_ok_\@:
 read_byte_jump_call_\@:
         call_fn *\tmp, \stream, \byte
 read_byte_jump_after_\@:
+        .endm
+
+        .macro intern_string var, name
+        .data
+\var\()_c:
+        .string "\name"
+\var:
+        .quad   0
+        .text
+        call_fn box_string, $\var\()_c
+        mov     %rax, \var
+        .endm
+
+        .macro intern_symbol var, name, value=, id=
+        intern_string \var, \name
+        .ifnb \id
+        mov     $\id, %r11
+        mov     %rax, symbol_table_names(,%r11,POINTER_SIZE)
+        .endif
+        call_fn string_to_symbol, %rax
+        mov     %rax, \var
+        .ifnb \value
+        call_fn set, %rax, \value
+        .endif
         .endm
