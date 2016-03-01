@@ -50,10 +50,9 @@
         mov_reg \value1, %rax
         mov_reg \value2, %rdx
         .if callee_saved_size > 0
-        mov     local_offset(%rsp), %rbx
         mov     local_offset+POINTER_SIZE(%rsp), %r12
+        mov     local_offset(%rsp), %rbx
         .endif
-        .equ callee_saved_size, POINTER_SIZE * 1
         add     $stack_frame_size, %rsp
         ret
         .endm
