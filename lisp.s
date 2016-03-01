@@ -671,6 +671,9 @@ init_runtime:                   # execution_stack_top
         intern_symbol object_symbol, "object", id=TAG_OBJECT
 
         intern_symbol quote_symbol, "quote"
+        intern_symbol quasiquote_symbol, "quasiquote"
+        intern_symbol unquote_symbol, "unquote"
+        intern_symbol unquote_splicing_symbol, "unquote-splicing"
 
         intern_string read_error_string, "unexpected input\n"
         intern_string port_string, "#<port>"
@@ -763,6 +766,8 @@ init_runtime:                   # execution_stack_top
         store_pointer $'+, $read_number_or_symbol
         store_pointer $'-, $read_number_or_symbol
         store_pointer $'', $read_quote
+        store_pointer $'`, $read_quasiquote
+        store_pointer $',, $read_unquote
 
         lea     read_hash_jump_table, %rbx
         store_pointer $'t, $read_true
@@ -1313,6 +1318,27 @@ read_quote:                     # c-stream
         call_fn read_datum, %rbx
         call_fn cons, %rax, $NIL
         call_fn cons, quote_symbol, %rax
+        return
+
+read_quasiquote:                # c-stream
+        prologue
+        call_fn read_datum, %rbx
+        call_fn cons, %rax, $NIL
+        call_fn cons, quasiquote_symbol, %rax
+        return
+
+read_unquote:                   # c-stream
+        prologue
+        mov     unquote_symbol, %r12
+        call_fn fgetc, %rbx
+        cmp     $'@, %rax
+        je      1f
+        call_fn ungetc, %rax, %rbx
+        jmp     2f
+1:      mov     unquote_splicing_symbol, %r12
+2:      call_fn read_datum, %rbx
+        call_fn cons, %rax, $NIL
+        call_fn cons, %r12, %rax
         return
 
 read_vector:                    # c-stream
