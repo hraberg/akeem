@@ -24,8 +24,16 @@ empty_string:
         .string ""
 forty_two_string:
         .string "42"
+minus_forty_two_string:
+        .string "-42"
 pi_string:
         .string "3.14159"
+minus_pi_string:
+        .string "-3.14159"
+plus_string:
+        .string "+"
+minus_plus_string:
+        .string "-+"
 escape_codes:
         .string "H\be\"l\rlo\nW\\o\'rld\t!"
 char_string:
@@ -952,6 +960,41 @@ main:
         assert  write=true
 
         call_fn box_string, $false_c_string
+        call_fn open_input_string, %rax
+        call_fn read, %rax
+        assert  write=true
+
+        call_fn box_string, $forty_two_string
+        call_fn open_input_string, %rax
+        call_fn read, %rax
+        assert  write=true
+
+        call_fn box_string, $minus_forty_two_string
+        call_fn open_input_string, %rax
+        call_fn read, %rax
+        assert  write=true
+
+        call_fn box_string, $pi_string
+        call_fn open_input_string, %rax
+        call_fn read, %rax
+        assert  write=true
+
+        call_fn box_string, $minus_pi_string
+        call_fn open_input_string, %rax
+        call_fn read, %rax
+        assert  write=true
+
+        call_fn box_string, $plus_string
+        call_fn open_input_string, %rax
+        call_fn read, %rax
+        assert  write=true
+
+        call_fn box_string, $minus_plus_string
+        call_fn open_input_string, %rax
+        call_fn read, %rax
+        assert  write=true
+
+        call_fn box_string, $foo_name
         call_fn open_input_string, %rax
         call_fn read, %rax
         assert  write=true

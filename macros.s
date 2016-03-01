@@ -333,7 +333,7 @@ perror_ok_\@:
         tag     TAG_STRING, %rax
         .endm
 
-        .macro read_byte_jump table, byte=%rax, stream=%rbx tmp=%r11
+        .macro read_byte_jump table, stream=%rbx byte=%rax, tmp=%r11
         mov     \table(,\byte,POINTER_SIZE), \tmp
         test    \tmp, \tmp
         jnz     read_byte_jump_call_\@

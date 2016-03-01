@@ -733,6 +733,11 @@ init_runtime:                   # execution_stack_top
         lea     read_datum_jump_table, %rbx
         store_pointer $'\#, $read_hash
         store_pointer $'(, $read_list
+        .irp digit, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9
+        store_pointer $(\digit + '0), $read_number
+        .endr
+        store_pointer $'+, $read_number_or_symbol
+        store_pointer $'-, $read_number_or_symbol
 
         lea     read_hash_jump_table, %rbx
         store_pointer $'t, $read_true
@@ -1160,14 +1165,58 @@ read_datum:                     # c-stream
         call_fn read_whitespace, %rbx
 
         call_fn fgetc, %rbx
-        read_byte_jump read_datum_jump_table, %rax, %rbx
+        read_byte_jump read_datum_jump_table, %rbx, %rax
         return
 
 read_hash:                      # c-stream
         prologue
         mov     %rdi, %rbx
         call_fn fgetc, %rbx
-        read_byte_jump read_hash_jump_table, %rax, %rbx
+        read_byte_jump read_hash_jump_table, %rbx, %rax
+        return
+
+read_token:                     # c-stream
+        prologue str
+        mov     %rdi, %rbx
+        lea     str(%rsp), %rdx
+        xor     %al, %al
+        call_fn fscanf, %rbx, $token_format, %rdx
+        perror
+        call_fn box_string, str(%rsp)
+        mov     %rax, %rbx
+        call_fn free, str(%rsp)
+        return  %rbx
+
+read_symbol:                    # c-stream, char
+        prologue str
+        mov     %rdi, %rbx
+        mov     %rsi, %rdi
+        call_fn ungetc, %rdi, %rbx
+        call_fn read_token, %rbx
+        call_fn string_to_symbol, %rax
+        return
+
+read_number:                    # c-stream, char
+        prologue str
+        mov     %rdi, %rbx
+        mov     %rsi, %rdi
+        call_fn ungetc, %rdi, %rbx
+        call_fn read_token, %rbx
+        call_fn string_to_number, %rax
+        return
+
+read_number_or_symbol:          # c-stream, char
+        prologue sign, char
+        mov     %rdi, %rbx
+        mov     %rsi, sign(%rsp)
+        call_fn fgetc, %rbx
+        mov     %rax, char(%rsp)
+        call_fn ungetc, char(%rsp), %rbx
+        call_fn isdigit, char(%rsp)
+        jz      2f
+        call_fn read_number %rbx, sign(%rsp)
+        return
+2:      call_fn read_symbol, %rbx, sign(%rsp)
         return
 
 read_true:                      # c-stream
@@ -1253,6 +1302,8 @@ allocate_code:                  # code, size
         .data
 string_format:
         .string "%s"
+token_format:
+        .string "%a[^ \f\n\r\t\v()\";]"
 char_format:
         .string "%c"
 machine_readable_char_format:
@@ -1353,7 +1404,9 @@ execution_stack_top:
 
         .align  16
 read_datum_jump_table:
-        .zero   256 * POINTER_SIZE
+        .rept   256
+        .quad   read_symbol
+        .endr
 read_hash_jump_table:
         .zero   256 * POINTER_SIZE
 
