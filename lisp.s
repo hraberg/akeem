@@ -1302,28 +1302,35 @@ read_vector:                    # c-stream
         return
 
 read_list:                      # c-stream
-        prologue
+        prologue head
         mov     %rdi, %rbx
 
-        movq    $NIL, %r12
+        mov     $NIL, %r12
+        mov     %r12, head(%rsp)
 1:      call_fn read_whitespace, %rbx
         call_fn fgetc, %rbx
         cmp     $'), %rax
-        je      3f
+        je      4f
 
         cmp     $'., %rax
-        je      2f
+        je      3f
 
         call_fn ungetc, %rax, %rbx
 
         call_fn read_datum, %rbx
-        call_fn cons, %rax, %r12
+        call_fn cons, %rax, $NIL
+        mov     $NIL, %r11
+        cmp     %r11, %r12
+        jne     2f
         mov     %rax, %r12
+        mov     %r12, head(%rsp)
+
+2:      mov     %r12, %r11
+        mov     %rax, %r12
+        call_fn set_cdr, %r11, %r12
         jmp     1b
 
-2:      call_fn reverse, %r12
-        mov     %rax, %r12
-        call_fn read_datum, %rbx
+3:      call_fn read_datum, %rbx
         call_fn set_cdr, %r12, %rax
 
         call_fn read_whitespace, %rbx
@@ -1331,12 +1338,8 @@ read_list:                      # c-stream
         cmp     $'), %rax
         je      4f
         call_fn error, read_error_string
-        return  %r12
 
-3:      call_fn reverse, %r12
-        mov     %rax, %r12
-
-4:      return  %r12
+4:      return  head(%rsp)
 
 call_with_current_continuation_escape: # return
         minimal_prologue
