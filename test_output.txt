@@ -199,4 +199,5 @@ f
 #t
 #f
 ()
+(#t . #f)
 ;;; test suite end

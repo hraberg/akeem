@@ -544,20 +544,20 @@ is_output_port:                 # obj
         .globl read, read_char, peek_char, is_eof_object
 
 read:                           # port
-        prologue
+        prologue port
         default_arg TAG_PORT, stdin, %rdi
-        mov     %rdi, %rbx
-        call_fn read_whitespace, %rbx
+        mov     %rdi, port(%rsp)
+        call_fn read_whitespace, port(%rsp)
 
-        unbox_pointer_internal %rbx, %rbx
+        unbox_pointer_internal port(%rsp), %rbx
         call_fn fgetc, %rbx
         cmp     $'\#, %rax
         jne     1f
-        call_fn read_hash, %rbx
+        call_fn read_hash, port(%rsp)
 
 1:      cmp     $'\(, %rax
         jne     2f
-        call_fn read_list, %rbx
+        call_fn read_list, port(%rsp)
 
 2:      return
 
@@ -630,7 +630,7 @@ write_char:                     # char, port
         return
 
         ## SRFI 6: Basic String Ports
-        .globl open_input_string, open_output_string, get_output_string
+        .globl open_input_string
 
 open_input_string:              # string
         prologue
@@ -1143,7 +1143,8 @@ read_whitespace:                # port
         return
 
 read_hash:                      # port
-        prologue
+        prologue port
+        mov     %rdi, port(%rsp)
         unbox_pointer_internal %rdi, %rbx
         call_fn fgetc, %rbx
 
@@ -1161,12 +1162,43 @@ read_hash:                      # port
         call_fn fgetc, %rbx
         tag     TAG_CHAR, %rax
 
-3:      return
+3:      cmp     $'(, %rax
+        jne     4f
+
+        call_fn read_list, port(%rsp)
+4:      return
 
 read_list:                      # port
-        prologue
+        prologue port, list
+        mov     %rdi, port(%rsp)
         unbox_pointer_internal %rdi, %rbx
-        return $NIL
+        movq    $NIL, %rax
+        mov     %rax, list(%rsp)
+
+1:      call_fn read_whitespace, port(%rsp)
+        call_fn fgetc, %rbx
+        cmp     $'), %rax
+        je      3f
+
+        cmp     $'., %rax
+        je      2f
+
+        call_fn ungetc, %rax, %rbx
+
+        call_fn read, port(%rsp)
+        call_fn cons, %rax, list(%rsp)
+        mov     %rax, list(%rsp)
+        jmp     1b
+
+2:      call_fn read, port(%rsp)
+        call_fn set_cdr, list(%rsp), %rax
+
+        call_fn read_whitespace, port(%rsp)
+        call_fn fgetc, %rbx
+        cmp     $'), %rax
+        return  list(%rsp)
+
+3:      return  list(%rsp)
 
 call_with_current_continuation_escape: # return
         minimal_prologue

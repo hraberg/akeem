@@ -32,6 +32,10 @@ char_string:
         .string "#\\a"
 empty_list_string:
         .string "()"
+list_with_booleans_string:
+        .string "(#t #f)"
+pair_with_booleans_string:
+        .string "(#t . #f)"
 foo_name:
         .string "foo"
 strlen_name:
@@ -956,6 +960,16 @@ main:
         call_fn open_input_string, %rax
         call_fn read, %rax
         assert  write=true
+
+        call_fn box_string, $pair_with_booleans_string
+        call_fn open_input_string, %rax
+        call_fn read, %rax
+        assert  write=true
+
+        ## call_fn box_string, $list_with_booleans_string
+        ## call_fn open_input_string, %rax
+        ## call_fn read, %rax
+        ## assert  write=true
 
         test_case "test suite end"
 
