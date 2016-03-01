@@ -1329,6 +1329,8 @@ read_list:                      # c-stream
         call_fn read_whitespace, %rbx
         call_fn fgetc, %rbx
         cmp     $'), %rax
+        je      4f
+        call_fn error, read_error_string
         return  %r12
 
 3:      call_fn reverse, %r12
