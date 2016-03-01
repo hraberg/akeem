@@ -17,7 +17,12 @@ main:
 1:      call_fn display, prompt
 
         call_fn read
+        mov     %rax, %rbx
         call_fn write, %rax
+        call_fn newline
+
+        call_fn class_of, %rbx
+        call_fn display, %rax
         call_fn newline
 
         jmp     1b

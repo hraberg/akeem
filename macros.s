@@ -115,10 +115,10 @@
         movq    %rax, (\at,%rcx,POINTER_SIZE)
         .endm
 
-        .macro tagged_jump table
-        is_double_internal %rdi
+        .macro extract_tag from=%rdi
+        is_double_internal \from
         mov     $TAG_DOUBLE, %rax
-        cmovz   %rdi, %rax
+        cmovz   \from, %rax
         shr     $TAG_SHIFT, %rax
         and     $TAG_MASK, %rax
         mov     $POINTER_TAG_MASK, %r11b
@@ -126,6 +126,10 @@
         test    %r11b, %al
         cmovnz  %r11w, %cx
         and     %cl, %al
+        .endm
+
+        .macro tagged_jump table
+        extract_tag
         call    *\table(,%rax,POINTER_SIZE)
         .endm
 

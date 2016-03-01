@@ -647,7 +647,7 @@ error:                          # reason
 
         ## Runtime
 
-        .globl init_runtime, allocate_code, set, lookup_global_symbol, gc, gc_mark, gc_sweep, gc_has_mark, object_space_size
+        .globl init_runtime, allocate_code, set, lookup_global_symbol, gc, gc_mark, gc_sweep, gc_has_mark, object_space_size, class_of
         .globl int_format, double_format, read_mode, box_int, box_string, unbox, to_string, true_string_c, false_string_c
 
 init_runtime:                   # execution_stack_top
@@ -718,8 +718,8 @@ init_runtime:                   # execution_stack_top
         store_pointer $TAG_CHAR, $char_to_string
         store_pointer $TAG_INT, $integer_to_string
         store_pointer $TAG_SYMBOL, $symbol_to_string
-        store_pointer $TAG_PROCEDURE, $procedure_to_string
-        store_pointer $TAG_PORT, $port_to_string
+        store_pointer $TAG_PROCEDURE, $object_to_string
+        store_pointer $TAG_PORT, $object_to_string
         store_pointer $TAG_STRING, $string_to_string
         store_pointer $TAG_PAIR, $pair_to_string
         store_pointer $TAG_VECTOR, $vector_to_string
@@ -967,6 +967,12 @@ object_space_size:
         box_int_internal
         ret
 
+class_of:                       # obj
+        minimal_prologue
+        extract_tag
+        tag     TAG_SYMBOL, %rax
+        return
+
 vector_to_string:               # vector
         prologue str, stream, size
         unbox_pointer_internal %rdi, %rbx
@@ -1140,13 +1146,17 @@ string_to_machine_readable_string: # string
         register_for_gc
         return
 
-port_to_string:                 # port
-        tag     TAG_STRING, port_string
-        ret
-
-procedure_to_string:            # procedure
-        tag     TAG_STRING, procedure_string
-        ret
+object_to_string:               # obj
+        prologue str, size
+        call_fn class_of, %rdi
+        call_fn to_string, %rax
+        call_fn unbox_string, %rax
+        mov     %rax, %rbx
+        open_string_buffer str(%rsp), size(%rsp), %r12
+        call_fn fprintf, %r12, $object_format, %rbx
+        string_buffer_to_string str(%rsp), %r12
+        register_for_gc
+        return
 
 to_string:                      # value
         minimal_prologue
@@ -1463,6 +1473,8 @@ hex_format:
         .string "%x"
 double_format:
         .string "%f"
+object_format:
+        .string "#<%s>"
 
 read_mode:
         .string "r"
@@ -1490,7 +1502,6 @@ to_string_jump_table:
         .align  16
 unbox_jump_table:
         .zero   TAG_MASK * POINTER_SIZE
-
 
         .align  16
 gc_mark_queue_jump_table:
