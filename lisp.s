@@ -245,16 +245,17 @@ is_null:                        # obj
 length:                         # list
         prologue
         mov     %rdi, %rax
-        xor     %ecx, %ecx
-        mov     $NIL, %rbx
-1:      cmp     %rbx, %rax
+        xor     %ebx, %ebx
+
+1:      mov     $NIL, %r11
+        cmp     %r11, %rax
         je      2f
 
         call_fn cdr, %rax
-        inc     %rcx
+        inc     %rbx
         jmp     1b
 
-2:      box_int_internal %ecx
+2:      box_int_internal %ebx
         return
 
         ## 6.3.3. Symbols
@@ -373,7 +374,7 @@ string_set:                     # string, k, char
         ret
 
         ## 6.3.6. Vectors
-        .globl is_vector, make_vector, vector_length, vector_ref, vector_set
+        .globl is_vector, make_vector, vector_length, vector_ref, vector_set, list_to_vector
 
 is_vector:                      # obj
         has_tag TAG_VECTOR, %rdi
@@ -422,39 +423,28 @@ vector_set:                     # vector, k, obj
         mov     %rdx, %rax
         ret
 
-vector_to_string:                 # vector
-        prologue idx, str, size, stream
-        unbox_pointer_internal %rdi, %rbx
+list_to_vector:                 # list
+        prologue vec, pair
+        mov     %rdi, pair(%rsp)
+        call_fn length, pair(%rsp)
+        call_fn make_vector, %rax
+        mov     %rax, vec(%rsp)
 
-        open_string_buffer str(%rsp), size(%rsp), stream(%rsp)
-        call_fn fputc, $'\#, stream(%rsp)
-        call_fn fputc, $'(, stream(%rsp)
+        xor     %ebx, %ebx
+        mov     pair(%rsp), %rax
+1:      mov     $NIL, %r11
+        cmp     %r11, %rax
+        je      2f
 
-        movq    $0, idx(%rsp)
-1:      mov     idx(%rsp), %rcx
-        test    %ecx, %ecx
-        jz      2f
-        cmp     header_object_size(%rbx), %ecx
-        je      3f
+        call_fn car, pair(%rsp)
+        call_fn vector_set, vec(%rsp), %rbx, %rax
+        call_fn cdr, pair(%rsp)
+        mov     %rax, pair(%rsp)
 
-        call_fn fputc, $' , stream(%rsp)
-
-2:      mov     idx(%rsp), %rcx
-
-        mov     header_size(%rbx,%rcx), %rax
-        call_fn to_string, %rax
-        unbox_pointer_internal %rax, %rdi
-        add     $header_size, %rdi
-        call_fn fputs, %rdi, stream(%rsp)
-
-        addq    $POINTER_SIZE, idx(%rsp)
+        inc     %rbx
         jmp     1b
 
-3:      call_fn fputc, $'), stream(%rsp)
-
-        string_buffer_to_string str(%rsp), stream(%rsp)
-        register_for_gc
-        return
+2:      return  vec(%rsp)
 
         ## 6.4. Control features
         .globl is_procedure, call_with_current_continuation
@@ -986,6 +976,40 @@ pair_to_string:                 # pair
         register_for_gc
         return
 
+vector_to_string:                 # vector
+        prologue idx, str, size, stream
+        unbox_pointer_internal %rdi, %rbx
+
+        open_string_buffer str(%rsp), size(%rsp), stream(%rsp)
+        call_fn fputc, $'\#, stream(%rsp)
+        call_fn fputc, $'(, stream(%rsp)
+
+        movq    $0, idx(%rsp)
+1:      mov     idx(%rsp), %rcx
+        test    %ecx, %ecx
+        jz      2f
+        cmp     header_object_size(%rbx), %ecx
+        je      3f
+
+        call_fn fputc, $' , stream(%rsp)
+
+2:      mov     idx(%rsp), %rcx
+
+        mov     header_size(%rbx,%rcx), %rax
+        call_fn to_string, %rax
+        unbox_pointer_internal %rax, %rdi
+        add     $header_size, %rdi
+        call_fn fputs, %rdi, stream(%rsp)
+
+        addq    $POINTER_SIZE, idx(%rsp)
+        jmp     1b
+
+3:      call_fn fputc, $'), stream(%rsp)
+
+        string_buffer_to_string str(%rsp), stream(%rsp)
+        register_for_gc
+        return
+
 char_to_string:                 # char
         prologue str, size, stream
         mov     %edi, %ebx
@@ -1267,6 +1291,7 @@ read_character:                 # c-stream
 read_vector:                    # c-stream
         prologue
         call_fn read_list, %rdi
+        call_fn list_to_vector, %rax
         return
 
 read_list:                      # c-stream

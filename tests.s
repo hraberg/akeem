@@ -187,12 +187,15 @@ main:
         call_fn box_int, $3
         call_fn cons, %rax, $NIL
         mov     %rax, %rbx
-
         call_fn box_int, $2
         call_fn cons, %rax, %rbx
         mov     %rax, %rbx
         call_fn box_int, $1
         call_fn cons, %rax, %rbx
+        mov     %rax, %rbx
+        assert
+
+        call_fn list_to_vector, %rbx
         assert
 
         call_fn cons, $3, $NIL
