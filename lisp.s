@@ -544,22 +544,11 @@ is_output_port:                 # obj
         .globl read, read_char, peek_char, is_eof_object
 
 read:                           # port
-        prologue port
+        prologue
         default_arg TAG_PORT, stdin, %rdi
-        mov     %rdi, port(%rsp)
-        call_fn read_whitespace, port(%rsp)
-
-        unbox_pointer_internal port(%rsp), %rbx
-        call_fn fgetc, %rbx
-        cmp     $'\#, %rax
-        jne     1f
-        call_fn read_hash, port(%rsp)
-
-1:      cmp     $'\(, %rax
-        jne     2f
-        call_fn read_list, port(%rsp)
-
-2:      return
+        unbox_pointer_internal %rdi
+        call_fn read_datum, %rax
+        return
 
 read_char:                      # port
         minimal_prologue
@@ -1131,21 +1120,37 @@ box_string:                     # c-string
         string_buffer_to_string str(%rsp), stream(%rsp)
         return
 
-read_whitespace:                # port
+read_datum:                     # c-stream
+        prologue
+        mov     %rdi, %rbx
+        call_fn read_whitespace, %rbx
+
+        call_fn fgetc, %rbx
+        cmp     $'\#, %rax
+        jne     1f
+        call_fn read_hash, %rbx
+
+1:      cmp     $'\(, %rax
+        jne     2f
+        call_fn read_list, %rbx
+
+2:      return
+
+read_whitespace:                # c-stream
         prologue char
-        unbox_pointer_internal %rdi, %rbx
+        mov     %rdi, %rbx
 
 1:      call_fn fgetc, %rbx
         mov     %rax, char(%rsp)
         call_fn isspace, %rax
         jnz     1b
+
         call_fn ungetc, char(%rsp), %rbx
         return
 
-read_hash:                      # port
-        prologue port
-        mov     %rdi, port(%rsp)
-        unbox_pointer_internal %rdi, %rbx
+read_hash:                      # c-stream
+        prologue
+        mov     %rdi, %rbx
         call_fn fgetc, %rbx
 
         cmp     $'t, %rax
@@ -1158,24 +1163,35 @@ read_hash:                      # port
 
 2:      cmp     $'\\, %rax
         jne     3f
-
-        call_fn fgetc, %rbx
-        tag     TAG_CHAR, %rax
+        call_fn read_character, %rbx
+        return
 
 3:      cmp     $'(, %rax
         jne     4f
+        call_fn read_vector, %rbx
 
-        call_fn read_list, port(%rsp)
 4:      return
 
-read_list:                      # port
-        prologue port, list
-        mov     %rdi, port(%rsp)
-        unbox_pointer_internal %rdi, %rbx
+read_character:                 # c-stream
+        prologue
+        mov     %rdi, %rbx
+        call_fn fgetc, %rbx
+        tag     TAG_CHAR, %rax
+        return
+
+read_vector:                    # c-stream
+        prologue
+        call_fn read_list, %rdi
+        return
+
+read_list:                      # c-stream
+        prologue list
+        mov     %rdi, %rbx
+
         movq    $NIL, %rax
         mov     %rax, list(%rsp)
 
-1:      call_fn read_whitespace, port(%rsp)
+1:      call_fn read_whitespace, %rbx
         call_fn fgetc, %rbx
         cmp     $'), %rax
         je      3f
@@ -1185,18 +1201,17 @@ read_list:                      # port
 
         call_fn ungetc, %rax, %rbx
 
-        call_fn read, port(%rsp)
+        call_fn read_datum, %rbx
         call_fn cons, %rax, list(%rsp)
         mov     %rax, list(%rsp)
         jmp     1b
 
-2:      call_fn read, port(%rsp)
+2:      call_fn read_datum, %rbx
         call_fn set_cdr, list(%rsp), %rax
 
-        call_fn read_whitespace, port(%rsp)
+        call_fn read_whitespace, %rbx
         call_fn fgetc, %rbx
         cmp     $'), %rax
-        return  list(%rsp)
 
 3:      return  list(%rsp)
 
