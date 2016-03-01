@@ -67,6 +67,7 @@
         .equ OBJECT_SPACE_INITIAL_SIZE, 8 * 1024
 
         .equ CHAR_TABLE_SIZE, 256
+        .equ CHAR_PREFIX_LENGTH, 2
 
         .equ BINARY_OP_SHIFT, 4
 

@@ -703,10 +703,10 @@ init_runtime:                   # execution_stack_top
         movb    $'\\, 92(%rbx)
 
         lea     unescape_char_table, %rbx
-        movb    $8, 98(%rbx)
-        movb    $9, 116(%rbx)
-        movb    $10, 110(%rbx)
-        movb    $13, 114(%rbx)
+        movb    $'\b, 98(%rbx)
+        movb    $'\t, 116(%rbx)
+        movb    $'\n, 110(%rbx)
+        movb    $'\r, 114(%rbx)
         movb    $'\", 34(%rbx)
         movb    $'', 39(%rbx)
         movb    $'\\, 92(%rbx)
@@ -1334,7 +1334,7 @@ read_character:                 # c-stream, c-char
         test    %eax, %eax
         jz      1b
 
-        add     $header_size + 2, %rax
+        add     $header_size + CHAR_PREFIX_LENGTH, %rax
         mov     %r12, %r11
         add     $header_size, %r11
         call_fn strcmp, %r11, %rax
