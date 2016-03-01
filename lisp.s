@@ -200,16 +200,14 @@ is_pair:                        # obj
         ret
 
 cons:                           # obj1, obj2
-        prologue obj1, obj2
-        mov     %rdi, obj1(%rsp)
-        mov     %rsi, obj2(%rsp)
+        prologue
+        mov     %rdi, %rbx
+        mov     %rsi, %r12
         call_fn allocate_memory, $pair_size
         movw    $TAG_PAIR, header_object_type(%rax)
         movl    $pair_size, header_object_size(%rax)
-        mov     obj1(%rsp), %rdi
-        mov     %rdi, pair_car(%rax)
-        mov     obj2(%rsp), %rsi
-        mov     %rsi, pair_cdr(%rax)
+        mov     %rbx, pair_car(%rax)
+        mov     %r12, pair_cdr(%rax)
         tag     TAG_PAIR, %rax
         register_for_gc
         return
@@ -247,8 +245,8 @@ length:                         # list
         mov     %rdi, %rax
         xor     %ebx, %ebx
 
-1:      mov     $NIL, %r11
-        cmp     %r11, %rax
+        mov     $NIL, %r12
+1:      cmp     %r12, %rax
         je      2f
 
         call_fn cdr, %rax
@@ -271,9 +269,9 @@ symbol_to_string:               # symbol
         ret
 
 string_to_symbol:               # string
-        prologue string
+        prologue
         unbox_pointer_internal %rdi
-        mov     %rax, string(%rsp)
+        mov     %rax, %r12
         mov     symbol_next_id, %rbx
 
 1:      test    %rbx, %rbx
@@ -285,7 +283,7 @@ string_to_symbol:               # string
         test    %eax, %eax
         jz      1b
         add     $header_size, %rax
-        mov     string(%rsp), %r11
+        mov     %r12, %r11
         add     $header_size, %r11
         call_fn strcmp, %r11, %rax
         jnz     1b
@@ -294,8 +292,7 @@ string_to_symbol:               # string
 2:      movq    symbol_next_id, %rbx
         incq    symbol_next_id
 
-        mov     string(%rsp), %rax
-        mov     %rax, symbol_table_names(,%rbx,POINTER_SIZE)
+        mov     %r12, symbol_table_names(,%rbx,POINTER_SIZE)
 
 3:      tag     TAG_SYMBOL, %rbx
         return
@@ -328,24 +325,23 @@ is_string:                      # obj
         ret
 
 make_string:                    # k, fill
-        prologue fill
+        prologue
         mov     %edi, %edi
         mov     %edi, %ebx
         add     $header_size, %edi
         inc     %edi
-        mov     %rsi, fill(%rsp)
+        mov     %rsi, %r12
         call_fn allocate_memory, %rdi
         movw    $TAG_STRING, header_object_type(%rax)
         movl    %ebx, header_object_size(%rax)
         incl    header_object_size(%rax)
 
         movb    $NULL, header_size(%rax,%rbx)
-        mov     fill(%rsp), %ecx
 
 1:      test    %ebx, %ebx
         jz      2f
         dec     %ebx
-        movb    %cl, header_size(%rax,%rbx,1)
+        movb    %r12b, header_size(%rax,%rbx,1)
         jmp     1b
 
 2:      tag     TAG_STRING, %rax
@@ -382,8 +378,8 @@ is_vector:                      # obj
         ret
 
 make_vector:                    # k, fill
-        prologue fill
-        mov     %rsi, fill(%rsp)
+        prologue
+        mov     %rsi, %r12
         shl     $POINTER_SIZE_SHIFT, %edi
         mov     %edi, size(%rsp)
         mov     %edi, %ebx
@@ -392,11 +388,10 @@ make_vector:                    # k, fill
         movw    $TAG_VECTOR, header_object_type(%rax)
         movl    %ebx, header_object_size(%rax)
 
-        mov     fill(%rsp), %rsi
 1:      test    %ebx, %ebx
         jz      2f
         sub     $POINTER_SIZE, %ebx
-        mov     %rsi, header_size(%rax,%rbx)
+        mov     %r12, header_size(%rax,%rbx)
         jmp     1b
 
 2:      tag     TAG_VECTOR, %rax
@@ -424,22 +419,21 @@ vector_set:                     # vector, k, obj
         ret
 
 list_to_vector:                 # list
-        prologue vec, pair
-        mov     %rdi, pair(%rsp)
-        call_fn length, pair(%rsp)
+        prologue vec
+        mov     %rdi, %r12
+        call_fn length, %r12
         call_fn make_vector, %rax
         mov     %rax, vec(%rsp)
 
         xor     %ebx, %ebx
-        mov     pair(%rsp), %rax
 1:      mov     $NIL, %r11
-        cmp     %r11, %rax
+        cmp     %r11, %r12
         je      2f
 
-        call_fn car, pair(%rsp)
+        call_fn car, %r12
         call_fn vector_set, vec(%rsp), %rbx, %rax
-        call_fn cdr, pair(%rsp)
-        mov     %rax, pair(%rsp)
+        call_fn cdr, %r12
+        mov     %rax, %r12
 
         inc     %rbx
         jmp     1b
@@ -839,16 +833,15 @@ gc_mark_queue_pair:             # pair
         return
 
 gc_mark_queue_vector:           # vector
-        prologue vec
+        prologue
         unbox_pointer_internal %rdi
-        mov     %rax, vec(%rsp)
+        mov     %rax, %r12
         mov     header_object_size(%rax), %ebx
 1:      test    %ebx, %ebx
         jz      2f
 
         sub     $POINTER_SIZE, %ebx
-        mov     vec(%rsp), %rax
-        mov     header_size(%rax,%rbx), %rdi
+        mov     header_size(%r12,%rbx), %rdi
         call_fn gc_maybe_mark, %rdi
         jmp     1b
 2:      return
@@ -977,31 +970,28 @@ pair_to_string:                 # pair
         return
 
 vector_to_string:                 # vector
-        prologue idx, str, size, stream
+        prologue str, size, stream
         unbox_pointer_internal %rdi, %rbx
 
         open_string_buffer str(%rsp), size(%rsp), stream(%rsp)
         call_fn fputc, $'\#, stream(%rsp)
         call_fn fputc, $'(, stream(%rsp)
 
-        movq    $0, idx(%rsp)
-1:      mov     idx(%rsp), %rcx
-        test    %ecx, %ecx
+        xor     %r12d, %r12d
+1:      test    %r12d, %r12d
         jz      2f
-        cmp     header_object_size(%rbx), %ecx
+        cmp     header_object_size(%rbx), %r12d
         je      3f
 
         call_fn fputc, $' , stream(%rsp)
 
-2:      mov     idx(%rsp), %rcx
-
-        mov     header_size(%rbx,%rcx), %rax
+2:      mov     header_size(%rbx,%r12), %rax
         call_fn to_string, %rax
         unbox_pointer_internal %rax, %rdi
         add     $header_size, %rdi
         call_fn fputs, %rdi, stream(%rsp)
 
-        addq    $POINTER_SIZE, idx(%rsp)
+        add     $POINTER_SIZE, %r12d
         jmp     1b
 
 3:      call_fn fputc, $'), stream(%rsp)
@@ -1011,17 +1001,17 @@ vector_to_string:                 # vector
         return
 
 char_to_string:                 # char
-        prologue str, size, stream
+        prologue str, size
         mov     %edi, %ebx
-        open_string_buffer str(%rsp), size(%rsp), stream(%rsp)
+        open_string_buffer str(%rsp), size(%rsp), %r12
         xor     %al, %al
-        call_fn fprintf, stream(%rsp), $char_format, %rbx
-        string_buffer_to_string str(%rsp), stream(%rsp)
+        call_fn fprintf, %r12, $char_format, %rbx
+        string_buffer_to_string str(%rsp), %r12
         register_for_gc
         return
 
 char_to_machine_readable_string: # char
-        prologue str, size, stream
+        prologue str, size
         mov     %edi, %ebx
         cmp     $(SPACE_CHAR & INT_MASK), %bx
         jg      1f
@@ -1030,15 +1020,15 @@ char_to_machine_readable_string: # char
         jz      1f
         tag     TAG_STRING, %rax
         return
-1:      open_string_buffer str(%rsp), size(%rsp), stream(%rsp)
+1:      open_string_buffer str(%rsp), size(%rsp), %r12
         xor     %al, %al
-        call_fn fprintf, stream(%rsp), $machine_readable_char_format, %rbx
-        string_buffer_to_string str(%rsp), stream(%rsp)
+        call_fn fprintf, %r12, $machine_readable_char_format, %rbx
+        string_buffer_to_string str(%rsp), %r12
         register_for_gc
         return
 
 integer_to_string:              # int, radix
-        prologue str, size, stream, format
+        prologue str, size, format
         default_arg TAG_INT, $10, %rsi
         cmovnz  %esi, %esi
 
@@ -1046,22 +1036,23 @@ integer_to_string:              # int, radix
         mov     %rax, format(%rsp)
 
         movsx   %edi, %rbx
-        open_string_buffer str(%rsp), size(%rsp), stream(%rsp)
+        open_string_buffer str(%rsp), size(%rsp), %r12
         xor     %al, %al
-        call_fn fprintf, stream(%rsp), format(%rsp), %rbx
-        string_buffer_to_string str(%rsp), stream(%rsp)
+        call_fn fprintf, %r12, format(%rsp), %rbx
+        string_buffer_to_string str(%rsp), %r12
+
         register_for_gc
         return
 
 double_to_string:               # double
-        prologue str, size, stream
+        prologue str, size
         movq   %rdi, %xmm0
-        open_string_buffer str(%rsp), size(%rsp), stream(%rsp)
-        mov    stream(%rsp), %rdi
+        open_string_buffer str(%rsp), size(%rsp), %r12
+        mov    %r12, %rdi
         mov    $double_format, %rsi
         mov    $1, %al         # number of vector var arguments http://www.x86-64.org/documentation/abi.pdf p21
         call   fprintf
-        string_buffer_to_string str(%rsp), stream(%rsp)
+        string_buffer_to_string str(%rsp), %r12
         register_for_gc
         return
 
@@ -1078,7 +1069,7 @@ string_to_string:               # string
         ret
 
 string_to_machine_readable_string: # string
-        prologue idx, str, size, stream
+        prologue str, size, stream
 
         unbox_pointer_internal %rdi, %rbx
         open_string_buffer str(%rsp), size(%rsp), stream(%rsp)
@@ -1087,11 +1078,9 @@ string_to_machine_readable_string: # string
         test    %ebx, %ebx
         jz      4f
 
-        movq    $header_size, idx(%rsp)
-1:      mov     idx(%rsp), %rcx
-
-        xor     %eax, %eax
-        mov     (%rbx,%rcx), %al
+        movq    $header_size, %r12
+1:      xor     %eax, %eax
+        mov     (%rbx,%r12), %al
         test    %al, %al
         jz      4f
 
@@ -1106,7 +1095,7 @@ string_to_machine_readable_string: # string
 
 2:      call_fn fputc, %rax, stream(%rsp)
 
-3:      incq    idx(%rsp)
+3:      incq    %r12
         jmp     1b
 
 4:      call_fn fputc, $'\", stream(%rsp)
@@ -1173,24 +1162,24 @@ box_int:                        # c-int
         ret
 
 box_string:                     # c-string
-        prologue str, size, stream
+        prologue str, size
         mov     %edi, %ebx
-        open_string_buffer str(%rsp), size(%rsp), stream(%rsp)
+        open_string_buffer str(%rsp), size(%rsp), %r12
         xor     %al, %al
-        call_fn fprintf, stream(%rsp), $string_format, %rbx
-        string_buffer_to_string str(%rsp), stream(%rsp)
+        call_fn fprintf, %r12, $string_format, %rbx
+        string_buffer_to_string str(%rsp), %r12
         return
 
 read_whitespace:                # c-stream
-        prologue char
+        prologue
         mov     %rdi, %rbx
 
 1:      call_fn fgetc, %rbx
-        mov     %rax, char(%rsp)
+        mov     %rax, %r12
         call_fn isspace, %rax
         jnz     1b
 
-        call_fn ungetc, char(%rsp), %rbx
+        call_fn ungetc, %r12, %rbx
         return
 
 read_datum:                     # c-stream
@@ -1221,7 +1210,7 @@ read_token:                     # c-stream
         return  %rbx
 
 read_symbol:                    # c-stream, c-char
-        prologue str
+        prologue
         mov     %rdi, %rbx
         mov     %rsi, %rdi
         call_fn ungetc, %rdi, %rbx
@@ -1230,7 +1219,7 @@ read_symbol:                    # c-stream, c-char
         return
 
 read_number:                    # c-stream, c-char
-        prologue str
+        prologue
         mov     %rdi, %rbx
         mov     %rsi, %rdi
         call_fn ungetc, %rdi, %rbx
@@ -1239,13 +1228,13 @@ read_number:                    # c-stream, c-char
         return
 
 read_number_or_symbol:          # c-stream, c-char
-        prologue sign, char
+        prologue sign
         mov     %rdi, %rbx
         mov     %rsi, sign(%rsp)
         call_fn fgetc, %rbx
-        mov     %rax, char(%rsp)
-        call_fn ungetc, char(%rsp), %rbx
-        call_fn isdigit, char(%rsp)
+        mov     %rax, %r12
+        call_fn ungetc, %r12, %rbx
+        call_fn isdigit, %r12
         jz      2f
         call_fn read_number %rbx, sign(%rsp)
         return
@@ -1253,9 +1242,9 @@ read_number_or_symbol:          # c-stream, c-char
         return
 
 read_string:                    # c-stream, c-char
-        prologue str, size, stream
+        prologue str, size
         mov     %rdi, %rbx
-        open_string_buffer str(%rsp), size(%rsp), stream(%rsp)
+        open_string_buffer str(%rsp), size(%rsp), %r12
 
 1:      call_fn fgetc, %rbx
         cmp     $'\", %rax
@@ -1266,10 +1255,10 @@ read_string:                    # c-stream, c-char
         call_fn fgetc, %rbx
         mov     unescape_char_table(%eax), %al
 
-2:      call_fn fputc, %rax, stream(%rsp)
+2:      call_fn fputc, %rax, %r12
         jmp     1b
 
-3:      string_buffer_to_string str(%rsp), stream(%rsp)
+3:      string_buffer_to_string str(%rsp), %r12
         register_for_gc
         return
 
@@ -1295,12 +1284,10 @@ read_vector:                    # c-stream
         return
 
 read_list:                      # c-stream
-        prologue list
+        prologue
         mov     %rdi, %rbx
 
-        movq    $NIL, %rax
-        mov     %rax, list(%rsp)
-
+        movq    $NIL, %r12
 1:      call_fn read_whitespace, %rbx
         call_fn fgetc, %rbx
         cmp     $'), %rax
@@ -1312,18 +1299,18 @@ read_list:                      # c-stream
         call_fn ungetc, %rax, %rbx
 
         call_fn read_datum, %rbx
-        call_fn cons, %rax, list(%rsp)
-        mov     %rax, list(%rsp)
+        call_fn cons, %rax, %r12
+        mov     %rax, %r12
         jmp     1b
 
 2:      call_fn read_datum, %rbx
-        call_fn set_cdr, list(%rsp), %rax
+        call_fn set_cdr, %r12, %rax
 
         call_fn read_whitespace, %rbx
         call_fn fgetc, %rbx
         cmp     $'), %rax
 
-3:      return  list(%rsp)
+3:      return  %r12
 
 call_with_current_continuation_escape: # return
         minimal_prologue

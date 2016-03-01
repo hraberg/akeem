@@ -28,7 +28,7 @@
 
         .macro prologue locals:vararg
         .equ local_offset, 0
-        .equ callee_saved_size, POINTER_SIZE * 1
+        .equ callee_saved_size, POINTER_SIZE * 2
         .ifnb \locals
         local_variables \locals
         .endif
@@ -37,20 +37,23 @@
         sub     $stack_frame_size, %rsp
         .endif
         mov     %rbx, local_offset(%rsp)
+        mov     %r12, local_offset+POINTER_SIZE(%rsp)
         .endm
 
         .macro minimal_prologue
         .equ stack_frame_size, POINTER_SIZE
+        .equ callee_saved_size, 0
         sub     $stack_frame_size, %rsp
         .endm
 
         .macro return value1=%rax value2=%rdx
-        .equ callee_saved_size, POINTER_SIZE * 1
         mov_reg \value1, %rax
         mov_reg \value2, %rdx
-        .if stack_frame_size > POINTER_SIZE
+        .if callee_saved_size > 0
         mov     local_offset(%rsp), %rbx
+        mov     local_offset+POINTER_SIZE(%rsp), %r12
         .endif
+        .equ callee_saved_size, POINTER_SIZE * 1
         add     $stack_frame_size, %rsp
         ret
         .endm
@@ -317,7 +320,7 @@ perror_ok_\@:
         call_fn open_memstream, %rdi, %rsi
         perror
         mov     %rax, \stream
-        call_fn fseek, %rax, $header_size, $SEEK_SET
+        call_fn fseek, \stream, $header_size, $SEEK_SET
         .endm
 
         .macro string_buffer_to_string str, stream
