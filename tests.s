@@ -54,6 +54,8 @@ irregular_list_string:
         .string "(1 2 . 3)"
 newline_char_string:
         .string "#\\newline"
+vector_string:
+        .string "#(1)"
 foo_name:
         .string "foo"
 strlen_name:
@@ -406,6 +408,14 @@ main:
         assert
 
         assert vec(%rsp)
+
+        call_fn box_int, $0
+        call_fn make_vector, %rax
+        assert
+
+        call_fn box_int, $1
+        call_fn make_vector, %rax, PI
+        assert
 
         call_fn box_int, $4
         call_fn make_vector, %rax, PI
@@ -1051,6 +1061,11 @@ main:
         assert  write=true
 
         call_fn box_string, $newline_char_string
+        call_fn open_input_string, %rax
+        call_fn read, %rax
+        assert  write=true
+
+        call_fn box_string, $vector_string
         call_fn open_input_string, %rax
         call_fn read, %rax
         assert  write=true

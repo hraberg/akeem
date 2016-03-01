@@ -401,7 +401,6 @@ make_vector:                    # k, fill
         prologue
         mov     %rsi, %r12
         shl     $POINTER_SIZE_SHIFT, %edi
-        mov     %edi, size(%rsp)
         mov     %edi, %ebx
         add     $header_size, %edi
         call_fn allocate_memory, %rdi
@@ -982,10 +981,10 @@ vector_to_string:               # vector
         call_fn fputc, $'(, stream(%rsp)
 
         xor     %r12d, %r12d
-1:      test    %r12d, %r12d
-        jz      2f
-        cmp     header_object_size(%rbx), %r12d
+1:      cmp     header_object_size(%rbx), %r12d
         je      3f
+        test    %r12d, %r12d
+        jz      2f
 
         call_fn fputc, $' , stream(%rsp)
 
@@ -1408,6 +1407,7 @@ read_list:                      # c-stream
         jne     2f
         mov     %rax, %r12
         mov     %r12, head(%rsp)
+        jmp     1b
 
 2:      mov     %r12, %r11
         mov     %rax, %r12
