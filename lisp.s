@@ -967,10 +967,9 @@ object_space_size:
         ret
 
 class_of:                       # obj
-        minimal_prologue
         extract_tag
         tag     TAG_SYMBOL, %rax
-        return
+        ret
 
 vector_to_string:               # vector
         prologue str, stream, size
