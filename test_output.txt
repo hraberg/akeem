@@ -198,4 +198,5 @@ f
 #\a
 #t
 #f
+()
 ;;; test suite end

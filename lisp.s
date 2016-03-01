@@ -555,7 +555,11 @@ read:                           # port
         jne     1f
         call_fn read_hash, %rbx
 
-1:      return
+1:      cmp     $'\(, %rax
+        jne     2f
+        call_fn read_list, %rbx
+
+2:      return
 
 read_char:                      # port
         minimal_prologue
@@ -1159,6 +1163,10 @@ read_hash:                      # port
 
 3:      return
 
+read_list:                      # port
+        prologue
+        unbox_pointer_internal %rdi, %rbx
+        return $NIL
 
 call_with_current_continuation_escape: # return
         minimal_prologue

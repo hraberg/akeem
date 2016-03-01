@@ -30,6 +30,8 @@ escape_codes:
         .string "H\be\"l\rlo\nW\\o\'rld\t!"
 char_string:
         .string "#\\a"
+empty_list_string:
+        .string "()"
 foo_name:
         .string "foo"
 strlen_name:
@@ -946,6 +948,11 @@ main:
         assert  write=true
 
         call_fn box_string, $false_c_string
+        call_fn open_input_string, %rax
+        call_fn read, %rax
+        assert  write=true
+
+        call_fn box_string, $empty_list_string
         call_fn open_input_string, %rax
         call_fn read, %rax
         assert  write=true
