@@ -932,8 +932,9 @@ object_space_size:
 
 vector_to_string:               # vector
         ## str cannot be in the first position here, haven't found the
-        ## root cause.
-        prologue alignment_bug, str, size, stream
+        ## root cause. Also works if not filling vector in list->vector.
+        ## The issue seems to happen in combination.
+        prologue bug, str, size, stream
         unbox_pointer_internal %rdi, %rbx
 
         open_string_buffer str(%rsp), size(%rsp), stream(%rsp)
