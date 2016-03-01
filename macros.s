@@ -215,7 +215,6 @@ round_to_int_\@:
         cvtsd2si \tmp, %rax
         box_int_internal
 no_round_to_int_\@:
-        nop
         .endm
 
         .macro math_library_unary_call name round=false
@@ -306,11 +305,10 @@ symbol_string_\@:
 
         .macro perror success=jg
         cmp    $NULL, %rax
-        \success perror_\@
+        \success perror_ok_\@
         call_fn perror, $NULL
         call_fn exit, $1
-perror_\@:
-        nop
+perror_ok_\@:
         .endm
 
         .macro open_string_buffer str, size, stream
@@ -333,4 +331,15 @@ perror_\@:
         movw    $TAG_STRING, header_object_type(%rax)
         mov     %ebx, header_object_size(%rax)
         tag     TAG_STRING, %rax
+        .endm
+
+        .macro read_byte_jump table, byte=%rax, stream=%rbx tmp=%r11
+        mov     \table(,\byte,POINTER_SIZE), \tmp
+        test    \tmp, \tmp
+        jnz     read_byte_jump_call_\@
+        call_fn error, read_error_string
+        jmp     read_byte_jump_after_\@
+read_byte_jump_call_\@:
+        call_fn *\tmp, \stream, \byte
+read_byte_jump_after_\@:
         .endm

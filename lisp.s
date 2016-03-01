@@ -544,7 +544,7 @@ is_output_port:                 # obj
         .globl read, read_char, peek_char, is_eof_object
 
 read:                           # port
-        prologue
+        minimal_prologue
         default_arg TAG_PORT, stdin, %rdi
         unbox_pointer_internal %rdi
         call_fn read_datum, %rax
@@ -631,6 +631,16 @@ open_input_string:              # string
         tag     TAG_PORT, %rax
         return
 
+        ## SRFI 23: Error reporting mechanism
+        .globl error
+
+error:                          # reason
+        minimal_prologue
+        tag     TAG_PORT, stderr
+        call_fn display, %rdi, %rax
+        call_fn exit, $1
+        return
+
         ## Runtime
 
         .globl init_runtime, allocate_code, set, lookup_global_symbol, gc, gc_mark, gc_sweep, gc_has_mark, object_space_size
@@ -651,6 +661,8 @@ init_runtime:                   # execution_stack_top
         mov     %rax, true_string
         call_fn box_string, $false_c_string
         mov     %rax, false_string
+        call_fn box_string, $read_error_c_string
+        mov     %rax, read_error_string
 
         lea     char_table, %rbx
         call_fn box_string, $backspace_char
@@ -717,6 +729,16 @@ init_runtime:                   # execution_stack_top
         store_pointer $8, $oct_format
         store_pointer $10, $int_format
         store_pointer $16, $hex_format
+
+        lea     read_datum_jump_table, %rbx
+        store_pointer $'\#, $read_hash
+        store_pointer $'(, $read_list
+
+        lea     read_hash_jump_table, %rbx
+        store_pointer $'t, $read_true
+        store_pointer $'f, $read_false
+        store_pointer $'\\, $read_character
+        store_pointer $'(, $read_vector
 
         return
 
@@ -1120,22 +1142,6 @@ box_string:                     # c-string
         string_buffer_to_string str(%rsp), stream(%rsp)
         return
 
-read_datum:                     # c-stream
-        prologue
-        mov     %rdi, %rbx
-        call_fn read_whitespace, %rbx
-
-        call_fn fgetc, %rbx
-        cmp     $'\#, %rax
-        jne     1f
-        call_fn read_hash, %rbx
-
-1:      cmp     $'\(, %rax
-        jne     2f
-        call_fn read_list, %rbx
-
-2:      return
-
 read_whitespace:                # c-stream
         prologue char
         mov     %rdi, %rbx
@@ -1148,29 +1154,29 @@ read_whitespace:                # c-stream
         call_fn ungetc, char(%rsp), %rbx
         return
 
+read_datum:                     # c-stream
+        prologue
+        mov     %rdi, %rbx
+        call_fn read_whitespace, %rbx
+
+        call_fn fgetc, %rbx
+        read_byte_jump read_datum_jump_table, %rax, %rbx
+        return
+
 read_hash:                      # c-stream
         prologue
         mov     %rdi, %rbx
         call_fn fgetc, %rbx
-
-        cmp     $'t, %rax
-        jne     1f
-        return  $TRUE
-
-1:      cmp     $'f, %rax
-        jne     2f
-        return  $FALSE
-
-2:      cmp     $'\\, %rax
-        jne     3f
-        call_fn read_character, %rbx
+        read_byte_jump read_hash_jump_table, %rax, %rbx
         return
 
-3:      cmp     $'(, %rax
-        jne     4f
-        call_fn read_vector, %rbx
+read_true:                      # c-stream
+        mov     $TRUE, %rax
+        ret
 
-4:      return
+read_false:                     # c-stream
+        mov     $FALSE, %rax
+        ret
 
 read_character:                 # c-stream
         prologue
@@ -1264,6 +1270,11 @@ double_format:
 read_format:
         .string "%as"
 
+read_error_c_string:
+        .string "unexpected input\n"
+read_error_string:
+        .quad   0
+
 read_mode:
         .string "r"
 write_mode:
@@ -1307,7 +1318,7 @@ char_table:
 
         .align  16
 escape_char_table:
-        .zero   128
+        .zero   256
 
         .align  16
 to_string_jump_table:
@@ -1339,6 +1350,12 @@ symbol_next_id:
         .quad   TAG_MASK + 1
 execution_stack_top:
         .quad   0
+
+        .align  16
+read_datum_jump_table:
+        .zero   256 * POINTER_SIZE
+read_hash_jump_table:
+        .zero   256 * POINTER_SIZE
 
         .align  16
 object_space:
