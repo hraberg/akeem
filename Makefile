@@ -28,7 +28,7 @@ run-tests-catchsegv: tests
 	sudo apt-get install -y rlwrap
 
 run-repl: repl /usr/bin/rlwrap
-	@rlwrap -nm ./$<
+	@rlwrap -nm -q "\"" ./$<
 
 /usr/bin/entr:
 	sudo apt-get install -y entr
