@@ -930,47 +930,10 @@ object_space_size:
         box_int_internal
         ret
 
-pair_to_string:                 # pair
-        prologue pair, str, size, stream
-        mov     %rdi, pair(%rsp)
-
-        open_string_buffer str(%rsp), size(%rsp), stream(%rsp)
-        call_fn fputc, $'(, stream(%rsp)
-        mov     $NIL, %rbx
-1:      cmp     %rbx, pair(%rsp)
-        je      2f
-
-        call_fn car, pair(%rsp)
-        call_fn to_string, %rax
-        unbox_pointer_internal %rax, %rdi
-        add     $header_size, %rdi
-        call_fn fputs, %rdi, stream(%rsp)
-
-        call_fn cdr, pair(%rsp)
-        mov     %rax, pair(%rsp)
-        cmp     %rbx, %rax
-        je      2f
-
-        call_fn fputc, $' , stream(%rsp)
-
-        has_tag TAG_PAIR, pair(%rsp), store=false
-        je      1b
-
-        call_fn fputc, $'., stream(%rsp)
-        call_fn fputc, $' , stream(%rsp)
-        call_fn to_string, pair(%rsp)
-        unbox_pointer_internal %rax, %rdi
-        add     $header_size, %rdi
-        call_fn fputs, %rdi, stream(%rsp)
-
-2:      call_fn fputc, $'), stream(%rsp)
-
-        string_buffer_to_string str(%rsp), stream(%rsp)
-        register_for_gc
-        return
-
-vector_to_string:                 # vector
-        prologue str, size, stream
+vector_to_string:               # vector
+        ## str cannot be in the first position here, haven't found the
+        ## root cause.
+        prologue alignment_bug, str, size, stream
         unbox_pointer_internal %rdi, %rbx
 
         open_string_buffer str(%rsp), size(%rsp), stream(%rsp)
@@ -991,10 +954,49 @@ vector_to_string:                 # vector
         add     $header_size, %rdi
         call_fn fputs, %rdi, stream(%rsp)
 
-        add     $POINTER_SIZE, %r12d
+        add     $POINTER_SIZE, %r12
         jmp     1b
 
 3:      call_fn fputc, $'), stream(%rsp)
+
+        string_buffer_to_string str(%rsp), stream(%rsp)
+        register_for_gc
+        return
+
+pair_to_string:                 # pair
+        prologue str, size, stream
+        mov     %rdi, %r12
+
+        open_string_buffer str(%rsp), size(%rsp), stream(%rsp)
+        call_fn fputc, $'(, stream(%rsp)
+        mov     $NIL, %rbx
+1:      cmp     %rbx, %r12
+        je      2f
+
+        call_fn car, %r12
+        call_fn to_string, %rax
+        unbox_pointer_internal %rax, %rdi
+        add     $header_size, %rdi
+        call_fn fputs, %rdi, stream(%rsp)
+
+        call_fn cdr, %r12
+        mov     %rax, %r12
+        cmp     %rbx, %r12
+        je      2f
+
+        call_fn fputc, $' , stream(%rsp)
+
+        has_tag TAG_PAIR, %r12, store=false
+        je      1b
+
+        call_fn fputc, $'., stream(%rsp)
+        call_fn fputc, $' , stream(%rsp)
+        call_fn to_string, %r12
+        unbox_pointer_internal %rax, %rdi
+        add     $header_size, %rdi
+        call_fn fputs, %rdi, stream(%rsp)
+
+2:      call_fn fputc, $'), stream(%rsp)
 
         string_buffer_to_string str(%rsp), stream(%rsp)
         register_for_gc
