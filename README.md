@@ -3,11 +3,13 @@
 *When you think of garbage, think of Akeem.*
 -- [Prince Akeem of Zamunda](http://www.imdb.com/title/tt0094898/)
 
-Akeem is a small JIT-ed subset of R5RS Scheme written in x86-64
-assembler as an experiment.
+Akeem is a small JIT-ed subset of
+[R5RS Scheme](http://www.schemers.org/Documents/Standards/R5RS/)
+written in x86-64 assembler as an experiment.
 
 Only tested on Linux. Written in GNU Assembler using AT&T
-syntax. Akeem depends on [glibc](https://www.gnu.org/software/libc/manual/html_mono/libc.html).
+syntax. Akeem depends on
+[glibc](https://www.gnu.org/software/libc/manual/html_mono/libc.html).
 
 
 ## Implementation Notes / Ideas
