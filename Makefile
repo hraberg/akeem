@@ -1,20 +1,27 @@
 DEBUG = true
 
 ifdef DEBUG
-DEBUGFLAGS = -g
+ASFLAGS += -g
+LDFLAGS += -g
+else
+LDFLAGS += -s
 endif
-CFLAGS += -rdynamic -ldl -lm $(DEBUGFLAGS)
+
+ASFLAGS += --64
+
+LDFLAGS += -rdynamic
+LDLIBS = -ldl -lm
 
 default: repl
 
 %.o: %.s constants.s macros.s
-	as --64 $(DEBUGFLAGS) $< -o $@
+	$(AS) $< $(ASFLAGS) -o $@
 
 tests: tests.o lisp.o
-	gcc $^ $(CFLAGS) $(DEBUGFLAGS) -o $@
+	$(CC) $^ $(LDFLAGS) $(LDLIBS) -o $@
 
 repl: repl.o lisp.o
-	gcc $^ $(CFLAGS) $(DEBUGFLAGS) -o $@
+	$(CC) $^ $(LDFLAGS) $(LDLIBS) -o $@
 
 run-tests: tests
 	./$< | diff -y -W250 test_output.txt - | expand | grep --color=always -nEC1 '^.{123} [|<>]( |$$)' \
