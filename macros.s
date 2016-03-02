@@ -120,7 +120,7 @@
         mov     $TAG_DOUBLE, %rax
         cmovz   \from, %rax
         shr     $TAG_SHIFT, %rax
-        and     $TAG_MASK, %rax
+        and     $TAG_MASK, %eax
         mov     $POINTER_TAG_MASK, %r11b
         mov     $TAG_MASK, %cl
         test    %r11b, %al

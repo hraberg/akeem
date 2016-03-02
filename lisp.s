@@ -353,7 +353,7 @@ make_string:                    # k, fill
         mov     %rsi, %r12
         call_fn allocate_memory, %rdi
         movw    $TAG_STRING, header_object_type(%rax)
-        movl    %ebx, header_object_size(%rax)
+        mov     %ebx, header_object_size(%rax)
         incl    header_object_size(%rax)
 
         movb    $NULL, header_size(%rax,%rbx)
@@ -361,7 +361,7 @@ make_string:                    # k, fill
 1:      test    %ebx, %ebx
         jz      2f
         dec     %ebx
-        movb    %r12b, header_size(%rax,%rbx,1)
+        mov     %r12b, header_size(%rax,%rbx,1)
         jmp     1b
 
 2:      tag     TAG_STRING, %rax
@@ -370,7 +370,7 @@ make_string:                    # k, fill
 
 string_length:                  # string
         unbox_pointer_internal %rdi
-        movl    header_object_size(%rax), %eax
+        mov     header_object_size(%rax), %eax
         dec     %eax
         box_int_internal %eax
         ret
@@ -405,7 +405,7 @@ make_vector:                    # k, fill
         add     $header_size, %edi
         call_fn allocate_memory, %rdi
         movw    $TAG_VECTOR, header_object_type(%rax)
-        movl    %ebx, header_object_size(%rax)
+        mov     %ebx, header_object_size(%rax)
 
 1:      test    %ebx, %ebx
         jz      2f
@@ -627,7 +627,7 @@ write_char:                     # char, port
 open_input_string:              # string
         prologue
         unbox_pointer_internal %rdi
-        movl    header_object_size(%rax), %esi
+        mov     header_object_size(%rax), %esi
         dec     %esi
         add     $header_size, %rax
         call_fn fmemopen, %rax, %rsi, $read_mode
@@ -1367,7 +1367,7 @@ read_unquote:                   # c-stream
         prologue
         mov     unquote_symbol, %r12
         call_fn fgetc, %rbx
-        cmp     $'@, %rax
+        cmp     $'@, %al
         je      1f
         call_fn ungetc, %rax, %rbx
         jmp     2f
@@ -1391,7 +1391,7 @@ read_list:                      # c-stream
         mov     %r12, head(%rsp)
 1:      call_fn read_whitespace, %rbx
         call_fn fgetc, %rbx
-        cmp     $'), %rax
+        cmp     $'), %al
         je      4f
 
         cmp     $'., %rax
@@ -1418,7 +1418,7 @@ read_list:                      # c-stream
 
         call_fn read_whitespace, %rbx
         call_fn fgetc, %rbx
-        cmp     $'), %rax
+        cmp     $'), %al
         je      4f
         call_fn error, read_error_string
 
