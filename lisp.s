@@ -1332,7 +1332,7 @@ read_character:                 # c-stream, c-char
         jz      1b
 
         add     $header_size + CHAR_PREFIX_LENGTH, %rax
-        lea     header_size(%r12), %11
+        lea     header_size(%r12), %r11
         call_fn strcmp, %r11, %rax
         jnz     1b
 
