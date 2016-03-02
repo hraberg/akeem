@@ -203,7 +203,7 @@ cons:                           # obj1, obj2
         prologue
         mov     %rdi, %rbx
         mov     %rsi, %r12
-        call_fn allocate_memory, $pair_size
+        call_fn gc_allocate_memory, $pair_size
         movw    $TAG_PAIR, header_object_type(%rax)
         movl    $pair_size, header_object_size(%rax)
         mov     %rbx, pair_car(%rax)
@@ -350,7 +350,7 @@ make_string:                    # k, fill
         add     $header_size, %edi
         inc     %edi
         mov     %rsi, %r12
-        call_fn allocate_memory, %rdi
+        call_fn gc_allocate_memory, %rdi
         movw    $TAG_STRING, header_object_type(%rax)
         mov     %ebx, header_object_size(%rax)
         incl    header_object_size(%rax)
@@ -402,7 +402,7 @@ make_vector:                    # k, fill
         shl     $POINTER_SIZE_SHIFT, %edi
         mov     %edi, %ebx
         add     $header_size, %edi
-        call_fn allocate_memory, %rdi
+        call_fn gc_allocate_memory, %rdi
         movw    $TAG_VECTOR, header_object_type(%rax)
         mov     %ebx, header_object_size(%rax)
 
@@ -777,6 +777,93 @@ init_runtime:                   # execution_stack_top, jit_code_debug
 
         return
 
+        ## Public API
+set:                            # variable, expression
+        unbox_pointer_internal %rdi
+        mov     %rsi, symbol_table_values(,%rax,POINTER_SIZE)
+        mov     %rdi, %rax
+        ret
+
+class_of:                       # obj
+        extract_tag
+        tag     TAG_SYMBOL, %rax
+        ret
+
+lookup_global_symbol:           # symbol
+        lookup_global_symbol_internal %edi
+        ret
+
+object_space_size:
+        mov     stack_top_offset + object_space, %rax
+        shr     $POINTER_SIZE_SHIFT, %rax
+        box_int_internal
+        ret
+
+        ## Boxing from C
+box_boolean:                    # c-boolean
+        and     $C_TRUE, %edi
+        box_boolean_internal %rdi
+        ret
+
+box_int:                        # c-int
+        box_int_internal %edi
+        ret
+
+box_string:                     # c-string
+        prologue str, size
+        mov     %edi, %ebx
+        open_string_buffer str(%rsp), size(%rsp), %r12
+        xor     %al, %al
+        call_fn fprintf, %r12, $string_format, %rbx
+        string_buffer_to_string str(%rsp), %r12
+        return
+
+        ## Unboxing to C
+unbox_double:                   # double
+        mov     %rdi, %rax
+        ret
+
+unbox_boolean:                  # boolean
+unbox_char:                     # char
+unbox_symbol:                   # symbol
+unbox_integer:                  # int
+        movsx   %edi, %rax
+        ret
+
+unbox_pair:                     # pair
+        mov     $NIL, %rax
+        cmp     %rax, %rdi
+        jz      1f
+        unbox_pointer_internal %rdi
+        add     $header_size, %rax
+1:      ret
+
+unbox_procedure:                # procedure
+unbox_port:                     # port
+        unbox_pointer_internal %rdi
+        ret
+
+unbox_string:                   # string
+unbox_vector:                   # vector
+        unbox_pointer_internal %rdi
+        add     $header_size, %rax
+        ret
+
+unbox:                          # value
+        minimal_prologue
+        tagged_jump unbox_jump_table
+        return
+
+        ## Runtime Internals
+
+        ## Call/CC Helper
+call_with_current_continuation_escape: # return
+        minimal_prologue
+        movq    %rdi, %xmm0
+        call_fn longjmp, $jump_buffer, $C_TRUE
+        return
+
+        ## Stack ADT
 init_pointer_stack:             # stack, size
         prologue
         mov     %rdi, %rbx
@@ -818,7 +905,8 @@ pop_pointer_from_stack:         # stack
         mov     (%r11,%rcx), %rax
         ret
 
-allocate_memory:                # c-size
+        ## Garbage Collection
+gc_allocate_memory:             # c-size
         prologue
         mov     %rdi, %rbx
         call_fn malloc, %rbx
@@ -959,17 +1047,7 @@ gc:
         call_fn gc_sweep
         return
 
-object_space_size:
-        mov     stack_top_offset + object_space, %rax
-        shr     $POINTER_SIZE_SHIFT, %rax
-        box_int_internal
-        ret
-
-class_of:                       # obj
-        extract_tag
-        tag     TAG_SYMBOL, %rax
-        ret
-
+        ## Printer
 vector_to_string:               # vector
         prologue str, stream, size
         unbox_pointer_internal %rdi, %rbx
@@ -1157,59 +1235,7 @@ to_string:                      # value
         tagged_jump to_string_jump_table
         return
 
-unbox_double:                   # double
-        mov     %rdi, %rax
-        ret
-
-unbox_boolean:                  # boolean
-unbox_char:                     # char
-unbox_symbol:                   # symbol
-unbox_integer:                  # int
-        movsx   %edi, %rax
-        ret
-
-unbox_pair:                     # pair
-        mov     $NIL, %rax
-        cmp     %rax, %rdi
-        jz      1f
-        unbox_pointer_internal %rdi
-        add     $header_size, %rax
-1:      ret
-
-unbox_procedure:                # procedure
-unbox_port:                     # port
-        unbox_pointer_internal %rdi
-        ret
-
-unbox_string:                   # string
-unbox_vector:                   # vector
-        unbox_pointer_internal %rdi
-        add     $header_size, %rax
-        ret
-
-unbox:                          # value
-        minimal_prologue
-        tagged_jump unbox_jump_table
-        return
-
-box_boolean:                    # c-boolean
-        and     $C_TRUE, %edi
-        box_boolean_internal %rdi
-        ret
-
-box_int:                        # c-int
-        box_int_internal %edi
-        ret
-
-box_string:                     # c-string
-        prologue str, size
-        mov     %edi, %ebx
-        open_string_buffer str(%rsp), size(%rsp), %r12
-        xor     %al, %al
-        call_fn fprintf, %r12, $string_format, %rbx
-        string_buffer_to_string str(%rsp), %r12
-        return
-
+        ## Reader
 read_whitespace:                # c-stream
         prologue
         mov     %rdi, %rbx
@@ -1420,22 +1446,7 @@ read_list:                      # c-stream
 
 4:      return  head(%rsp)
 
-call_with_current_continuation_escape: # return
-        minimal_prologue
-        movq    %rdi, %xmm0
-        call_fn longjmp, $jump_buffer, $C_TRUE
-        return
-
-set:                            # variable, expression
-        unbox_pointer_internal %rdi
-        mov     %rsi, symbol_table_values(,%rax,POINTER_SIZE)
-        mov     %rdi, %rax
-        ret
-
-lookup_global_symbol:           # symbol
-        lookup_global_symbol_internal %edi
-        ret
-
+        ## JIT
 jit_write_code_to_disk:         # c-code, c-size
         prologue filename, file
         testq   $C_TRUE, jit_code_debug
