@@ -55,13 +55,6 @@ use a literal pool than to generate the code that builds the
 structure. Java (and Clojure) generates byte code building the array,
 and only strings are constants (as they're immutable).
 
-For disassembling generated raw code:
-
-```bash
-objdump -b binary -D -mi386:x86-64 code.bin
-
-```
-
 
 ## Road Map:
 

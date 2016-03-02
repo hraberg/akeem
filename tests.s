@@ -60,8 +60,8 @@ foo_name:
         .string "foo"
 strlen_name:
         .string "strlen"
-allocate_code_name:
-        .string "allocate_code"
+jit_allocate_code_name:
+        .string "jit_allocate_code"
 test_file:
         .string "test.txt"
 print_foo_string:
@@ -155,7 +155,7 @@ main:
 
         test_case "test suite start"
 
-        call_fn init_runtime, %rsp
+        call_fn init_runtime, %rsp, $C_TRUE
 
         call_fn box_string, $strlen_name
         call_fn string_to_symbol, %rax
@@ -166,7 +166,7 @@ main:
         call_fn box_int, %rax
         assert
 
-        call_fn dlsym, $RTLD_DEFAULT, $allocate_code_name
+        call_fn dlsym, $RTLD_DEFAULT, $jit_allocate_code_name
         call_fn *%rax, $example_code, $example_code_size
         call_fn *%rax, $2
         call_fn box_int, %rax

@@ -645,12 +645,13 @@ error:                          # reason
 
         ## Runtime
 
-        .globl init_runtime, allocate_code, set, lookup_global_symbol, gc, gc_mark, gc_sweep, gc_has_mark, object_space_size, class_of
+        .globl init_runtime, jit_allocate_code, set, lookup_global_symbol, gc, gc_mark, gc_sweep, gc_has_mark, object_space_size, class_of
         .globl int_format, double_format, read_mode, box_int, box_string, unbox, to_string, true_string_c, false_string_c
 
-init_runtime:                   # execution_stack_top
+init_runtime:                   # execution_stack_top, jit_code_debug
         prologue
         mov     %rdi, execution_stack_top
+        movq    %rsi, jit_code_debug
 
         call_fn init_pointer_stack, $object_space, $OBJECT_SPACE_INITIAL_SIZE
         call_fn init_pointer_stack, $gc_mark_stack, $OBJECT_SPACE_INITIAL_SIZE
@@ -674,8 +675,6 @@ init_runtime:                   # execution_stack_top
         intern_symbol unquote_splicing_symbol, "unquote-splicing"
 
         intern_string read_error_string, "unexpected input\n"
-        intern_string port_string, "#<port>"
-        intern_string procedure_string, "#<procedure>"
         intern_string false_string, "#f"
         mov     %rax, boolean_string_table + POINTER_SIZE * C_FALSE
         intern_string true_string, "#t"
@@ -1437,10 +1436,31 @@ lookup_global_symbol:           # symbol
         lookup_global_symbol_internal %edi
         ret
 
-allocate_code:                  # c-code, c-size
+jit_write_code_to_disk:         # c-code, c-size
+        prologue filename, file
+        testq   $C_TRUE, jit_code_debug
+        jz      1f
+        mov     %rdi, %rbx
+        mov     %rsi, %r12
+        lea     filename(%rsp), %r11
+        incq    jit_code_file_counter
+        xor     %al, %al
+        call_fn asprintf, %r11, $jit_code_file_format, jit_code_file_counter
+        perror
+        call_fn fopen, filename(%rsp), $write_mode
+        perror
+        mov     %rax, file(%rsp)
+        call_fn fwrite, %rbx, $1, %r12, file(%rsp)
+        call_fn fclose, file(%rsp)
+        perror  jz
+        call_fn free, filename(%rsp)
+1:      return
+
+jit_allocate_code:              # c-code, c-size
         prologue code, size
         mov     %rdi, code(%rsp)
         mov     %rsi, size(%rsp)
+        call_fn jit_write_code_to_disk, %rdi, %rsi
         call_fn mmap, $NULL, $PAGE_SIZE, $(PROT_READ | PROT_WRITE), $(MAP_PRIVATE | MAP_ANONYMOUS), $-1, $0
         perror
 	mov     %rax, %rbx
@@ -1517,6 +1537,12 @@ gc_mark_stack:
 jump_buffer:
         .zero   JMP_BUF_SIZE
 
+        .align  16
+jit_code_file_counter:
+        .quad   0
+jit_code_debug:
+        .quad   0
+
         .section .rodata
 string_format:
         .string "%s"
@@ -1542,6 +1568,8 @@ read_mode:
         .string "r"
 write_mode:
         .string "w"
+jit_code_file_format:
+        .string "jit_code_%d.bin"
 
         ## register numbers:
         ## rax = r0, rcx = r1, rdx = r2, rbx = r3,

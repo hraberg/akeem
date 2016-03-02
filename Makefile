@@ -36,12 +36,18 @@ retest: /usr/bin/entr
 	while true; do find . -name '*.s' -o -name Makefile -o -name test_output.txt | \
 		$< -r $(MAKE) -s run-tests ; done
 
+jit_dissassmble:
+	objdump -b binary -D -mi386:x86-64 jit_code_*.bin
+
+jit_clean:
+	rm -f *.bin
+
 release: CFLAGS += -s
 release: clean repl
 
-clean:
+clean:	jit_clean
 	rm -f tests repl *.o
 
 check: run-tests
 
-.PHONY: run-tests run-tests-catchsegv run-repl retest clean check release
+.PHONY: run-tests run-tests-catchsegv run-repl retest jit_clean jit_dissassmble clean check release
