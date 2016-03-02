@@ -100,13 +100,15 @@
         eq_internal $(\tag | NAN_MASK >> TAG_SHIFT), %eax, \store
         .endm
 
-        .macro is_double_internal value tmp=%r11
+        .macro is_double_internal value tmp=%r11 store=true
         mov     \value, \tmp
         btr     $SIGN_BIT, \tmp
         mov     $NAN_MASK, %rax
         cmp     %rax, \tmp
+        .ifc \store, true
         setle   %al
         and     $C_TRUE, %eax
+        .endif
         .endm
 
         .macro store_pointer idx ptr=%rax at=%rbx
@@ -116,9 +118,9 @@
         .endm
 
         .macro extract_tag from=%rdi
-        is_double_internal \from
-        mov     $TAG_DOUBLE, %rax
-        cmovz   \from, %rax
+        is_double_internal \from, store=false
+        mov     $TAG_DOUBLE, %eax
+        cmovg   \from, %rax
         shr     $TAG_SHIFT, %rax
         and     $TAG_MASK, %eax
         mov     $POINTER_TAG_MASK, %r11b
@@ -286,8 +288,8 @@ no_round_to_int_\@:
 
         .macro default_arg tag, default, value, tmp=%r11
         mov     \default, \tmp
-        has_tag \tag, \value
-        cmovz   \tmp, \value
+        has_tag \tag, \value, store=false
+        cmovne  \tmp, \value
         .endm
 
         .macro lookup_global_symbol_internal symbol_id

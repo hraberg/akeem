@@ -148,7 +148,7 @@ number_to_string:               # z, radix
 string_to_number:               # string, radix
         prologue tail
         default_arg TAG_INT, $10, %rsi
-        cmovnz  %esi, %esi
+        mov     %esi, %esi
 
         unbox_pointer_internal %rdi, %rbx
         add     $header_size, %rbx
@@ -1071,7 +1071,7 @@ char_to_machine_readable_string: # char
 integer_to_string:              # int, radix
         prologue str, size, format
         default_arg TAG_INT, $10, %rsi
-        cmovnz  %esi, %esi
+        mov     %esi, %esi
 
         mov     integer_to_string_format_table(,%rsi,8), %rax
         mov     %rax, format(%rsp)
