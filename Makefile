@@ -14,7 +14,7 @@ tests: tests.o lisp.o
 	gcc $^ $(CFLAGS) $(DEBUGFLAGS) -o $@
 
 repl: repl.o lisp.o
-	gcc $^ $(CFLAGS) -o $@
+	gcc $^ $(CFLAGS) $(DEBUGFLAGS) -o $@
 
 run-tests: tests
 	./$< | diff -y -W250 test_output.txt - | expand | grep --color=always -nEC1 '^.{123} [|<>]( |$$)' \
