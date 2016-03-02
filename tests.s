@@ -66,16 +66,18 @@ test_file:
         .string "test.txt"
 print_foo_string:
         .string "print_foo"
+int_format:
+        .string "%d"
+double_format:
+        .string "%f"
+true_string_c:
+        .string "#t"
+false_string_c:
+        .string "#f"
 assertion_failed_format:
         .string "expected: '%s' but was: '%s'\n"
 test_case_prefix:
         .string ";;; "
-
-        .macro assert_equals expected actual
-        .if (\expected != \actual)
-        .error "Assertion failed: \expected \actual"
-        .endif
-        .endm
 
         .macro test_case str
         .data
@@ -98,28 +100,11 @@ tmp_string_\@:
         call_fn newline
         .endm
 
-        .macro is expected, actual=%rax
-        .section .rodata
-test_string_\@:
-        .string "\expected"
-        .text
-        call_fn to_string, \actual
-        call_fn unbox %rax
-        mov     %rax, %rbx
-        call_fn strcmp %rax, $test_string_\@
-        jz      is_\@
-        call_fn printf, $assertion_failed_format, $test_string_\@, %rbx
-        call_fn exit, $1
-is_\@:
-        nop
-        .endm
-
 example_code:
         mov     %rdi, %rax
         add     $4, %rax
         ret
         .equ example_code_size, (. - example_code)
-        assert_equals 8, example_code_size
 
         .text
 print_foo:

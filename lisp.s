@@ -1,6 +1,9 @@
         .include "macros.s"
 
         .text
+
+        ## R5RS
+
         ## 6. Standard procedures
         ## 6.1. Equivalence predicates
         .globl is_eq, is_eq_v
@@ -620,6 +623,8 @@ write_char:                     # char, port
         tag     TAG_CHAR, %rax
         return
 
+        ## Scheme Requests for Implementation
+
         ## SRFI 6: Basic String Ports
         .globl open_input_string
 
@@ -645,8 +650,7 @@ error:                          # reason
 
         ## Runtime
 
-        .globl init_runtime, jit_allocate_code, set, lookup_global_symbol, gc, gc_mark, gc_sweep, gc_has_mark, object_space_size, class_of
-        .globl int_format, double_format, read_mode, box_int, box_string, unbox, to_string, true_string_c, false_string_c
+        .globl init_runtime
 
 init_runtime:                   # execution_stack_top, jit_code_debug
         prologue
@@ -778,6 +782,9 @@ init_runtime:                   # execution_stack_top, jit_code_debug
         return
 
         ## Public API
+        .globl set, lookup_global_symbol, object_space_size, class_of
+        .globl box_boolean, box_int, box_string, unbox
+
 set:                            # variable, expression
         unbox_pointer_internal %rdi
         mov     %rsi, symbol_table_values(,%rax,POINTER_SIZE)
@@ -906,6 +913,8 @@ pop_pointer_from_stack:         # stack
         ret
 
         ## Garbage Collection
+        .globl gc, gc_mark, gc_sweep, gc_has_mark
+
 gc_allocate_memory:             # c-size
         prologue
         mov     %rdi, %rbx
@@ -1447,6 +1456,8 @@ read_list:                      # c-stream
 4:      return  head(%rsp)
 
         ## JIT
+        .globl jit_allocate_code,
+
 jit_write_code_to_disk:         # c-code, c-size
         prologue filename, file
         testq   $C_TRUE, jit_code_debug
