@@ -798,7 +798,7 @@ init_runtime:                   # execution_stack_top, jit_code_debug
         define "open-input-string", $open_input_string
         define "error", $error
         define "gc", $gc
-        define "object-space-count", $object_space_count
+        define "object-space-count", $object_space_size
         define "class-of", $class_of
         define "lookup-global-symbol", $lookup_global_symbol
 
