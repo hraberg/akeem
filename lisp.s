@@ -302,8 +302,7 @@ string_to_symbol:               # string
         test    %eax, %eax
         jz      1b
         add     $header_size, %rax
-        mov     %r12, %r11
-        add     $header_size, %r11
+        lea     header_size(%r12), %r11
         call_fn strcmp, %r11, %rax
         jnz     1b
         jmp     3f
@@ -1116,7 +1115,7 @@ string_to_machine_readable_string: # string
         test    %ebx, %ebx
         jz      4f
 
-        movq    $header_size, %r12
+        mov     $header_size, %r12
 1:      xor     %eax, %eax
         mov     (%rbx,%r12), %al
         test    %al, %al
@@ -1333,8 +1332,7 @@ read_character:                 # c-stream, c-char
         jz      1b
 
         add     $header_size + CHAR_PREFIX_LENGTH, %rax
-        mov     %r12, %r11
-        add     $header_size, %r11
+        lea     header_size(%r12), %11
         call_fn strcmp, %r11, %rax
         jnz     1b
 
