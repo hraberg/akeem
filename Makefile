@@ -1,15 +1,6 @@
-DEBUG = true
+ASFLAGS += -g --64 -march=generic64+sse4.2
+CFLAGS += -rdynamic
 
-ifdef DEBUG
-ASFLAGS += -g
-LDFLAGS += -g
-else
-LDFLAGS += -s
-endif
-
-ASFLAGS += --64 -march=generic64+sse4.2
-
-LDFLAGS += -rdynamic
 LDLIBS = -ldl -lm
 
 default: repl
@@ -18,10 +9,10 @@ default: repl
 	$(AS) $< $(ASFLAGS) -o $@
 
 tests: tests.o lisp.o
-	$(CC) $^ $(LDFLAGS) $(LDLIBS) -o $@
+	$(CC) $^ $(CFLAGS) $(LDLIBS) -o $@
 
 repl: repl.o lisp.o
-	$(CC) $^ $(LDFLAGS) $(LDLIBS) -o $@
+	$(CC) $^ $(CFLAGS) $(LDLIBS) -o $@
 
 run-tests: tests
 	./$< | diff -y -W250 test_output.txt - | expand | grep --color=always -nEC1 '^.{123} [|<>]( |$$)' \
@@ -45,8 +36,8 @@ retest: /usr/bin/entr
 	while true; do find . -name '*.s' -o -name Makefile -o -name test_output.txt | \
 		$< -r $(MAKE) -s run-tests ; done
 
-release: clean
-	$(MAKE) DEBUG= repl
+release: CFLAGS += -s
+release: clean repl
 
 clean:
 	rm -f tests repl *.o
