@@ -795,6 +795,13 @@ init_runtime:                   # execution_stack_top, jit_code_debug
         mov     symbol_next_id, %rax
         mov     %rax, max_scheme_report_environment_symbol
 
+        define "open-input-string", $open_input_string
+        define "error", $error
+        define "gc", $gc
+        define "object-space-count", $object_space_count
+        define "class-of", $class_of
+        define "lookup-global-symbol", $lookup_global_symbol
+
         intern_string read_error_string, "unexpected input\n"
         intern_string false_string, "#f"
         mov     %rax, boolean_string_table + POINTER_SIZE * C_FALSE
