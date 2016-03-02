@@ -678,7 +678,9 @@ init_runtime:                   # execution_stack_top
         intern_string port_string, "#<port>"
         intern_string procedure_string, "#<procedure>"
         intern_string false_string, "#f"
+        mov     %rax, boolean_string_table + POINTER_SIZE * C_FALSE
         intern_string true_string, "#t"
+        mov     %rax, boolean_string_table + POINTER_SIZE * C_TRUE
 
         intern_string backspace_char, "#\\backspace"
         intern_string tab_char, "#\\tab"
@@ -1096,11 +1098,8 @@ double_to_string:               # double
         return
 
 boolean_to_string:              # boolean
-        mov     true_string, %rax
-        mov     false_string, %r11
-        test    $C_TRUE, %edi
-        cmovz   %r11, %rax
-        tag     TAG_STRING, %rax
+        and    $C_TRUE, %edi
+        mov    boolean_string_table(,%edi,POINTER_SIZE), %rax
         ret
 
 string_to_string:               # string
@@ -1493,6 +1492,10 @@ escape_char_table:
         .zero   CHAR_TABLE_SIZE
 unescape_char_table:
         .zero   CHAR_TABLE_SIZE
+
+        .align  16
+boolean_string_table:
+        .zero   2 * POINTER_SIZE
 
         .align  16
 to_string_jump_table:
