@@ -433,17 +433,21 @@ main:
         assert
 
         call_fn box_int, $1
-        call_fn neg, %rax
+        mov     %rax, %rbx
+        call_fn box_int, $0
+        call_fn minus, %rax, %rbx
         assert
 
         call_fn box_int, $-1
-        call_fn neg, %rax
+        mov     %rax, %rbx
+        call_fn box_int, $0
+        call_fn minus, %rax, %rbx
         assert
 
-        call_fn neg, PLUS_ONE
+        call_fn minus, ZERO, PLUS_ONE
         assert
 
-        call_fn neg, MINUS_ONE
+        call_fn minus, ZERO, MINUS_ONE
         assert
 
         call_fn is_inexact, PLUS_ONE
@@ -647,13 +651,13 @@ main:
         assert
 
         call_fn box_int, $2
-        call_fn expt, %rax, PI
+        call_fn expt_, %rax, PI
         assert
 
         call_fn box_int, $5
         mov     %rax, %rbx
         call_fn box_int, $2
-        call_fn expt, %rax, %rbx
+        call_fn expt_, %rax, %rbx
         assert
 
         call_fn box_int, $5

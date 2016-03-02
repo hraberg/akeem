@@ -18,9 +18,9 @@ is_eqv:                         # obj1, obj2
         ## 6.2.5. Numerical operations
         .globl is_number, is_integer, is_exact, is_inexact
         .globl equal, less_than, greater_than, less_than_or_equal, greater_than_or_equal
-        .globl neg, plus, minus, multiply, divide
+        .globl plus, minus, multiply, divide
         .globl quotient, remainder, modulo
-        .globl floor_, ceiling, truncate, round_, exp_, log_, sin_, cos_, tan_, asin_, acos_, atan_, sqrt_, expt
+        .globl floor_, ceiling_, truncate_, round_, exp_, log_, sin_, cos_, tan_, asin_, acos_, atan_, sqrt_, expt_
         .globl exact_to_inexact, inexact_to_exact
 
 is_number:                      # obj
@@ -55,18 +55,6 @@ less_than_or_equal:             # z1, z2
 
 greater_than_or_equal:          # z1, z2
         binary_comparsion greater_than_or_equals, setae, setge
-
-neg:                            # z1
-        has_tag TAG_INT, %rdi, store=false
-        je      neg_int
-neg_double:
-        mov     %rdi, %rax
-        btc     $SIGN_BIT, %rax
-        ret
-neg_int:
-        neg     %edi
-        box_int_internal %edi
-        ret
 
 plus:                           # z1, z2
         binary_op plus, addsd, add
@@ -109,10 +97,10 @@ modulo:                         # n1, n2
 floor_:                         # z
         math_library_unary_call floor
 
-ceiling:                        # z
+ceiling_:                       # z
         math_library_unary_call ceil
 
-truncate:                       # z
+truncate_:                      # z
         math_library_unary_call trunc
 
 round_:                         # z
@@ -126,7 +114,7 @@ round_:                         # z
 sqrt_:                          # z
         math_library_unary_call sqrt, round=true
 
-expt:                           # z1, z2
+expt_:                          # z1, z2
         math_library_binary_call pow, round=true
 
 exact_to_inexact:               # z
@@ -176,16 +164,16 @@ string_to_number:               # string, radix
 
         ## 6.3. Other data types
         ## 6.3.1. Booleans
-        .globl is_boolean, not
-
-is_boolean:                     # obj
-        has_tag TAG_BOOLEAN, %rdi
-        box_boolean_internal
-        ret
+        .globl not, is_boolean
 
 not:                            # obj
         mov     $FALSE, %rax
         eq_internal %rdi, %rax
+        box_boolean_internal
+        ret
+
+is_boolean:                     # obj
+        has_tag TAG_BOOLEAN, %rdi
         box_boolean_internal
         ret
 
@@ -478,6 +466,29 @@ call_with_current_continuation: # proc
         return
 1:      return  %xmm0
 
+        ## 6.5. Eval
+        .globl scheme_report_environment, null_environment, interaction_environment
+
+eval:                           # expression environment-specifier
+        prologue max_global_symbol
+        default_arg TAG_INT, $-1, %rsi
+
+        mov     %esi, max_global_symbol(%rsp)
+        mov     %rdi, %rax
+        ret
+
+scheme_report_environment:      # version
+        box_int_internal max_scheme_report_environment_symbol
+        ret
+
+null_environment:               # version
+        box_int_internal max_null_environment_symbol
+        ret
+
+interaction_environment:
+        box_int_internal $-1
+        ret
+
         ## 6.6. Input and output
         ## 6.6.1. Ports
         .globl call_with_input_file, call_with_output_file
@@ -677,6 +688,112 @@ init_runtime:                   # execution_stack_top, jit_code_debug
         intern_symbol quasiquote_symbol, "quasiquote"
         intern_symbol unquote_symbol, "unquote"
         intern_symbol unquote_splicing_symbol, "unquote-splicing"
+
+        mov     symbol_next_id, %rax
+        mov     %rax, max_null_environment_symbol
+
+        .irp name, eq, eqv, number, integer, exact, inexact
+        define "\name?", $is_\name
+        .endr
+
+        define "=", $equal
+        define "<", $less_than
+        define "<=", $less_than_or_equal
+        define ">", $greater_than
+        define ">=", $greater_than_or_equal
+
+        define "+", $plus
+        define "-", $minus
+        define "*", $multiply
+        define "/", $divide
+
+        define "quotient", $quotient
+        define "remainder", $remainder
+        define "modulo", $modulo
+
+        .irp name, ceiling, truncate, round, floor, exp, log, sin, cos, tan, asin, acos, atan, sqrt, expt
+        define "\name", $\name\()_
+        .endr
+
+        define "exact->inexact", $exact_to_inexact
+        define "inexact->exact", $inexact_to_exact
+
+        define "number->string", $number_to_string
+        define "string->number", $string_to_number
+
+        define "not", $not
+        define "boolean?", $is_boolean
+
+        define "pair?", $is_pair
+        define "cons", $cons
+        define "car", $car
+        define "cdr", $cdr
+        define "set-car!", $set_car
+        define "set-cdr!", $set_cdr
+
+        define "null?", $is_null
+        define "length", $length
+        define "reverse", $reverse
+
+        define "symbol?", $is_symbol
+        define "symbol->string", $symbol_to_string
+        define "string->symbol", $string_to_symbol
+
+        define "char?", $is_char
+        define "char->integer", $char_to_integer
+        define "integer->char", $integer_to_char
+
+        define "string?", $is_string
+        define "make-string", $make_string
+        define "string-length", $string_length
+        define "string-ref", $string_ref
+        define "string-set!", $string_set
+
+        define "vector?", $is_vector
+        define "make-vector", $make_vector
+        define "vecetor-length", $vector_length
+        define "vector-ref", $vector_ref
+        define "vector-set!", $vector_set
+        define "list->vector", $list_to_vector
+
+        define "procedure?", $is_procedure
+        define "call-with-current-continuation", $call_with_current_continuation
+
+        define "eval", $eval
+        define "scheme-report-environment", $scheme_report_environment
+        define "null-environment", $null_environment
+        define "interaction-environment", $interaction_environment
+
+        define "call-with-input-file", $call_with_input_file
+        define "call-with-output-file", $call_with_output_file
+
+        define "input-port?", $is_input_port
+        define "output-port?", $is_output_port
+
+        define "current-input-port", $current_input_port
+        define "current-output-port", $current_output_port
+
+        define "with-input-from-file", $with_input_from_file
+        define "with-output-to-file", $with_output_to_file
+
+        define "open-input-file", $open_input_file
+        define "open-output-file", $open_output_file
+
+        define "close-input-port", $close_input_port
+        define "close-output-port", $close_output_port
+
+        define "read", $read
+        define "read-char", $read_char
+        define "peek-char", $peek_char
+        define "eof-object?", $is_eof_object
+
+        define "write", $write
+        define "display", $display
+        define "newline", $newline
+        define "write-char", $write_char
+
+        mov     symbol_next_id, %rax
+        mov     %rax, max_scheme_report_environment_symbol
 
         intern_string read_error_string, "unexpected input\n"
         intern_string false_string, "#f"
@@ -1563,6 +1680,12 @@ jump_buffer:
 jit_code_file_counter:
         .quad   0
 jit_code_debug:
+        .quad   0
+
+        .align  16
+max_scheme_report_environment_symbol:
+        .quad   0
+max_null_environment_symbol:
         .quad   0
 
         .section .rodata

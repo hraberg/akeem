@@ -365,3 +365,13 @@ read_byte_jump_after_\@:
         call_fn set, %rax, \value
         .endif
         .endm
+
+        .macro define name, value
+        .section .rodata
+tmp_string_\@:
+        .string "\name"
+        .text
+        call_fn box_string, $tmp_string_\@
+        call_fn string_to_symbol, %rax
+        call_fn set, %rax, \value
+        .endm
