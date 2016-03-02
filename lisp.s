@@ -818,7 +818,7 @@ pop_pointer_from_stack:         # stack
         mov     (%r11,%rcx), %rax
         ret
 
-allocate_memory:                # size
+allocate_memory:                # c-size
         prologue
         mov     %rdi, %rbx
         call_fn malloc, %rbx
@@ -1440,7 +1440,7 @@ lookup_global_symbol:           # symbol
         lookup_global_symbol_internal %edi
         ret
 
-allocate_code:                  # code, size
+allocate_code:                  # c-code, c-size
         prologue code, size
         mov     %rdi, code(%rsp)
         mov     %rsi, size(%rsp)
