@@ -62,8 +62,6 @@ We aim to implement a subset of R5RS.
 
 ### Milestone 1
 
-[milestone1.txt]
-
 * Parser
 ** integers and doubles.
 ** No define-syntax

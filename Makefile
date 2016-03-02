@@ -3,7 +3,7 @@ CFLAGS += -rdynamic
 
 LDLIBS = -ldl -lm
 
-default: repl
+default: akeem
 
 %.o: %.s constants.s macros.s
 	$(AS) $< $(ASFLAGS) -o $@
@@ -11,7 +11,7 @@ default: repl
 tests: tests.o lisp.o
 	$(CC) $^ $(CFLAGS) $(LDLIBS) -o $@
 
-repl: repl.o lisp.o
+akeem: repl.o lisp.o
 	$(CC) $^ $(CFLAGS) $(LDLIBS) -o $@
 
 # based on http://unix.stackexchange.com/a/79137
@@ -26,7 +26,7 @@ run-tests-catchsegv: tests
 /usr/bin/rlwrap:
 	sudo apt-get install -y rlwrap
 
-run-repl: repl /usr/bin/rlwrap
+run-repl: akeem /usr/bin/rlwrap
 	@rlwrap -nm -q "\"" ./$<
 
 /usr/bin/entr:
@@ -43,10 +43,10 @@ jit_clean:
 	rm -f *.bin
 
 release: CFLAGS += -s
-release: clean repl
+release: clean akeem
 
 clean:	jit_clean
-	rm -f tests repl *.o
+	rm -f tests akeem *.o
 
 check: run-tests
 
