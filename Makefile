@@ -7,7 +7,7 @@ else
 LDFLAGS += -s
 endif
 
-ASFLAGS += --64
+ASFLAGS += --64 -march=generic64+sse4.2
 
 LDFLAGS += -rdynamic
 LDLIBS = -ldl -lm
