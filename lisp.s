@@ -1543,6 +1543,9 @@ read_mode:
 write_mode:
         .string "w"
 
+        ## register numbers:
+        ## rax = r0, rcx = r1, rdx = r2, rbx = r3,
+        ## rsp = r4, rbp = r5, rsi = r6, rdi = r7
         .align  16
 jit_prologue:
         push    %rbp
@@ -1621,3 +1624,21 @@ jit_pop_register_size:
         .quad   . - jit_pop_register
 jit_pop_register_register_offset:
         .quad   (jit_pop_register_size - INT_SIZE)
+
+        .align  16
+jit_lookup_symbol:
+        mov     0x1122334455667788, %rax
+jit_lookup_symbol_size:
+        .quad   . - jit_lookup_symbol
+jit_lookup_symbol_address_offset:
+        .quad   (jit_lookup_symbol_size - POINTER_SIZE)
+
+        .align  16
+jit_local_variable:
+        mov     -0x11223344(%rbp), %rax
+jit_local_variable_size:
+        .quad   . - jit_local_variable_size
+jit_local_variable_register_offset:
+        .quad   (jit_local_variable_size - (INT_SIZE + 1))
+jit_local_variable_index_offset:
+        .quad   (jit_local_variable_size - INT_SIZE)
