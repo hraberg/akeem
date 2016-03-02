@@ -1450,33 +1450,6 @@ allocate_code:                  # c-code, c-size
         perror  je
         return  %rbx
 
-
-        .section .rodata
-string_format:
-        .string "%s"
-token_format:
-        .string "%a[^ \f\n\r\t\v()\";]"
-char_format:
-        .string "%c"
-machine_readable_char_format:
-        .string "#\\%c"
-machine_readable_escape_code_format:
-        .string "\\%c"
-oct_format:
-        .string "%o"
-int_format:
-        .string "%d"
-hex_format:
-        .string "%x"
-double_format:
-        .string "%f"
-object_format:
-        .string "#<%s>"
-read_mode:
-        .string "r"
-write_mode:
-        .string "w"
-
         .data
         .align  16
 integer_to_string_format_table:
@@ -1543,3 +1516,108 @@ gc_mark_stack:
         .align  16
 jump_buffer:
         .zero   JMP_BUF_SIZE
+
+        .section .rodata
+string_format:
+        .string "%s"
+token_format:
+        .string "%a[^ \f\n\r\t\v()\";]"
+char_format:
+        .string "%c"
+machine_readable_char_format:
+        .string "#\\%c"
+machine_readable_escape_code_format:
+        .string "\\%c"
+oct_format:
+        .string "%o"
+int_format:
+        .string "%d"
+hex_format:
+        .string "%x"
+double_format:
+        .string "%f"
+object_format:
+        .string "#<%s>"
+read_mode:
+        .string "r"
+write_mode:
+        .string "w"
+
+        .align  16
+jit_prologue:
+        push    %rbp
+        mov     %rsp, %rbp
+        sub     $0x11223344, %rbp
+jit_prologue_size:
+        .quad   . - jit_prologue
+jit_prologue_stack_size_offset:
+        .quad   (jit_prologue_size - INT_SIZE)
+
+        .align  16
+jit_epilogue:
+        leave
+        ret
+jit_epilogue_size:
+        .quad   . - jit_epilogue
+
+        .align  16
+jit_intermediate:
+        mov     $0x1122334455667788, %rax
+jit_intermediate_size:
+        .quad   . - jit_intermediate
+jit_intermediate_register_offset:
+        .quad   (jit_intermediate_size - (POINTER_SIZE + 1))
+jit_intermediate_value_offset:
+        .quad   (jit_intermediate_size - POINTER_SIZE)
+
+        .align  16
+jit_unconditional_jump:
+        jmp     0
+jit_unconditional_jump_size:
+        .quad   . - jit_unconditional_jump
+jit_unconditional_jump_relative_offset:
+        .quad   (jit_unconditional_jump_size - INT_SIZE)
+
+        .align  16
+jit_conditional_false_jump:
+        mov     $FALSE, %r11
+        cmp     %rax, %r11
+        je      0
+jit_conditional_false_jump_size:
+        .quad   . - jit_conditional_false_jump
+jit_conditional_false_jump_register_offset:
+        .quad   (jit_conditional_false_jump_size - (INT_SIZE + WORD_SIZE + 1))
+jit_conditional_false_jump_relative_offset:
+        .quad   (jit_conditional_false_jump_size - INT_SIZE)
+
+        .align  16
+jit_call:
+        call     11223344
+jit_call_size:
+        .quad   . - jit_call
+jit_call_target_offset:
+        .quad   (jit_call_size - INT_SIZE)
+
+        .align  16
+jit_call_register:
+        call    *%rax
+jit_call_register_size:
+        .quad   . - jit_call_register
+jit_call_register_register_offset:
+        .quad   (jit_call_register_size - 1)
+
+        .align  16
+jit_push_register:
+        push    %rax
+jit_push_register_size:
+        .quad   . - jit_push_register
+jit_push_register_register_offset:
+        .quad   (jit_push_register_size - INT_SIZE)
+
+        .align  16
+jit_pop_register:
+        pop    %rax
+jit_pop_register_size:
+        .quad   . - jit_pop_register
+jit_pop_register_register_offset:
+        .quad   (jit_pop_register_size - INT_SIZE)
