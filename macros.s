@@ -342,9 +342,10 @@ read_byte_jump_after_\@:
         .endm
 
         .macro intern_string var, name
-        .data
+        .section .rodata
 \var\()_c:
         .string "\name"
+        .data
 \var:
         .quad   0
         .text

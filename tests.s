@@ -1,6 +1,6 @@
         .include "macros.s"
 
-        .data
+        .section .rodata
 PI:
         .double 3.14159
 E:
@@ -99,7 +99,7 @@ tmp_string_\@:
         .endm
 
         .macro is expected, actual=%rax
-        .data
+        .section .rodata
 test_string_\@:
         .string "\expected"
         .text
@@ -114,6 +114,14 @@ is_\@:
         nop
         .endm
 
+example_code:
+        mov     %rdi, %rax
+        add     $4, %rax
+        ret
+        .equ example_code_size, (. - example_code)
+        assert_equals 8, example_code_size
+
+        .text
 print_foo:
         prologue
         mov     %rdi, %rbx
@@ -142,14 +150,6 @@ returns_42_local:
         call_fn box_int, $42
         return
 
-example_code:
-        mov     %rdi, %rax
-        add     $4, %rax
-        ret
-        .equ example_code_size, (. - example_code)
-        assert_equals 8, example_code_size
-
-        .text
 main:
         prologue vec
 

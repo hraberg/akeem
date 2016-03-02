@@ -1452,7 +1452,8 @@ allocate_code:                  # c-code, c-size
         perror  je
         return  %rbx
 
-        .data
+
+        .section .rodata
 string_format:
         .string "%s"
 token_format:
@@ -1473,12 +1474,12 @@ double_format:
         .string "%f"
 object_format:
         .string "#<%s>"
-
 read_mode:
         .string "r"
 write_mode:
         .string "w"
 
+        .data
         .align  16
 integer_to_string_format_table:
         .zero   16 * POINTER_SIZE
