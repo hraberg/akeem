@@ -689,6 +689,12 @@ init_runtime:                   # execution_stack_top, jit_code_debug
         intern_symbol unquote_symbol, "unquote"
         intern_symbol unquote_splicing_symbol, "unquote-splicing"
 
+        intern_symbol lambda_symbol, "lambda"
+        intern_symbol if_symbol, "if"
+        intern_symbol let_symbol, "let"
+        intern_symbol define_symbol, "define"
+        intern_symbol set_symbol, "set!"
+
         mov     symbol_next_id, %rax
         mov     %rax, max_null_environment_symbol
 
