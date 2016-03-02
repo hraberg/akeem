@@ -45,6 +45,13 @@ local variable reference.
 Closures modifying a local variable requires the variable to be moved
 to the heap.
 
+Literal vectors produced by the reader in Racket are immutable, but
+lists aren't. In Emacs Lisp compiled literal vectors and lists are
+mutable, but refer to the same instance. It's easier, short-term, to
+use a literal pool than to generate the code that builds the
+structure. Java (and Clojure) generates byte code building the array,
+and only strings are constants (as they're immutable).
+
 For disassembling generated raw code:
 
 ```bash
