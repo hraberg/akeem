@@ -14,6 +14,7 @@ tests: tests.o lisp.o
 repl: repl.o lisp.o
 	$(CC) $^ $(CFLAGS) $(LDLIBS) -o $@
 
+# based on http://unix.stackexchange.com/a/79137
 run-tests: tests
 	./$< | diff -y -W250 test_output.txt - | expand | grep --color=always -nEC1 '^.{123} [|<>]( |$$)' \
 		&& echo Tests FAILED \
@@ -31,7 +32,6 @@ run-repl: repl /usr/bin/rlwrap
 /usr/bin/entr:
 	sudo apt-get install -y entr
 
-# based on http://unix.stackexchange.com/a/79137
 retest: /usr/bin/entr
 	while true; do find . -name '*.s' -o -name Makefile -o -name test_output.txt | \
 		$< -r $(MAKE) -s run-tests ; done
