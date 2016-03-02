@@ -612,12 +612,12 @@ newline:                        # port
         return
 
 write_char:                     # char, port
-        prologue
+        minimal_prologue
         default_arg TAG_PORT, stdout, %rsi
 
-        unbox_pointer_internal %rsi, %rbx
+        unbox_pointer_internal %rsi, %rax
         mov     %edi, %edi
-        call_fn fputc, %rdi, %rbx
+        call_fn fputc, %rdi, %rax
         tag     TAG_CHAR, %rax
         return
 
@@ -625,7 +625,7 @@ write_char:                     # char, port
         .globl open_input_string
 
 open_input_string:              # string
-        prologue
+        minimal_prologue
         unbox_pointer_internal %rdi
         mov     header_object_size(%rax), %esi
         dec     %esi
@@ -1350,21 +1350,22 @@ read_character:                 # c-stream, c-char
         return
 
 read_quote:                     # c-stream
-        prologue
-        call_fn read_datum, %rbx
+        minimal_prologue
+        call_fn read_datum, %rdi
         call_fn cons, %rax, $NIL
         call_fn cons, quote_symbol, %rax
         return
 
 read_quasiquote:                # c-stream
-        prologue
-        call_fn read_datum, %rbx
+        minimal_prologue
+        call_fn read_datum, %rdi
         call_fn cons, %rax, $NIL
         call_fn cons, quasiquote_symbol, %rax
         return
 
 read_unquote:                   # c-stream
         prologue
+        mov     %rdi, %rbx
         mov     unquote_symbol, %r12
         call_fn fgetc, %rbx
         cmp     $'@, %al
