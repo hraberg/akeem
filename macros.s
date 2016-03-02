@@ -72,7 +72,7 @@
         cmp     \x, \y
         .ifc \store, true
         sete    %al
-        and     $C_TRUE, %rax
+        and     $C_TRUE, %eax
         .endif
         .endm
 
@@ -106,7 +106,7 @@
         mov     $NAN_MASK, %rax
         cmp     %rax, \tmp
         setle   %al
-        and     $C_TRUE, %rax
+        and     $C_TRUE, %eax
         .endm
 
         .macro store_pointer idx ptr=%rax at=%rbx

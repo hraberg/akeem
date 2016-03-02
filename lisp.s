@@ -831,8 +831,9 @@ allocate_memory:                # size
 
 gc_has_mark:                    # pointer
         unbox_pointer_internal %rdi
-        mov     header_object_mark(%rax), %ax
-        eq_internal $C_TRUE, %ax
+        btw     $GC_MARK_BIT, header_object_mark(%rax)
+        setc    %al
+        and     $C_TRUE, %eax
         box_boolean_internal
         ret
 
@@ -841,7 +842,7 @@ gc_mark_nop:                    # obj
 
 gc_mark_string:                 # string
         unbox_pointer_internal %rdi
-        movw    $C_TRUE, header_object_mark(%rax)
+        btsw    $GC_MARK_BIT, header_object_mark(%rax)
         ret
 
 gc_mark_object:                 # pointer
@@ -850,9 +851,8 @@ gc_mark_object:                 # pointer
         cmp     %rax, %rdi
         je      1f
         unbox_pointer_internal %rdi
-        cmpw    $C_TRUE, header_object_mark(%rax)
-        je      1f
-        movw    $C_TRUE, header_object_mark(%rax)
+        btsw    $GC_MARK_BIT, header_object_mark(%rax)
+        jc      1f
         call_fn push_pointer_on_stack, $gc_mark_stack, %rdi
 1:      return
 
@@ -940,8 +940,8 @@ gc_sweep:
         mov     (%rax,%rbx), %r11
         unbox_pointer_internal %r11
 
-        cmpw    $C_TRUE, header_object_mark(%rax)
-        je      2f
+        btrw    $GC_MARK_BIT, header_object_mark(%rax)
+        jc      2f
 
         call_fn free, %rax
         call_fn pop_pointer_from_stack, $object_space
@@ -949,8 +949,7 @@ gc_sweep:
         mov     %rax, (%r11,%rbx)
         jmp     1b
 
-2:      movw    $C_FALSE, header_object_mark(%rax)
-        add     $POINTER_SIZE, %ebx
+2:      add     $POINTER_SIZE, %ebx
         jmp     1b
 3:      return
 

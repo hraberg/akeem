@@ -71,6 +71,8 @@
 
         .equ BINARY_OP_SHIFT, 4
 
+        .equ GC_MARK_BIT, 0
+
         .struct 0
 header_object_mark:
         .struct . + WORD_SIZE
