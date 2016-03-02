@@ -1098,7 +1098,7 @@ double_to_string:               # double
 boolean_to_string:              # boolean
         mov     true_string, %rax
         mov     false_string, %r11
-        test    $C_TRUE, %rdi
+        test    $C_TRUE, %edi
         cmovz   %r11, %rax
         tag     TAG_STRING, %rax
         ret
@@ -1196,7 +1196,7 @@ unbox:                          # value
         return
 
 box_boolean:                    # c-boolean
-        and     $C_TRUE, %rdi
+        and     $C_TRUE, %edi
         box_boolean_internal %rdi
         ret
 
