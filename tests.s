@@ -1104,6 +1104,24 @@ main:
         call_fn eval, %rax
         assert  write=true
 
+        call_fn box_int, $1
+        call_fn cons, %rax, $NIL
+        mov     %rax, %rbx
+        string_literal "x"
+        call_fn string_to_symbol, %rax
+        call_fn cons, %rax, %rbx
+        mov     %rax, %rbx
+        string_literal "set!"
+        call_fn string_to_symbol, %rax
+        call_fn cons, %rax, %rbx
+        call_fn eval, %rax
+        assert  write=true
+
+        string_literal "x"
+        call_fn string_to_symbol, %rax
+        call_fn eval, %rax
+        assert  write=true
+
         test_case "test suite end"
 
         return  $0

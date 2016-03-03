@@ -977,6 +977,8 @@ init_runtime:                   # execution_stack_top, jit_code_debug
         store_pointer %eax, $jit_quote
         unbox_pointer_internal if_symbol
         store_pointer %eax, $jit_if
+        unbox_pointer_internal set_symbol
+        store_pointer %eax, $jit_set
 
         return
 
@@ -1820,6 +1822,26 @@ jit_if:                         # form, c-stream
 
         patch_jump %r12, end_offset(%rsp), else_offset(%rsp), jump_offset(%rsp)
 
+        return
+
+jit_set:                        # form, c-stream
+        prologue symbol_address
+        mov     %rdi, %rbx
+        mov     %rsi, %r12
+        call_fn cdr, %rbx
+        mov     %rax, %rbx
+
+        call_fn car, %rbx
+        lea     symbol_table_values(,%eax,POINTER_SIZE), %rax
+        mov     %rax, symbol_address(%rsp)
+
+        call_fn cdr, %rbx
+        call_fn car, %rax
+        call_fn jit_datum, %rax, %r12
+
+        call_fn fwrite, $jit_rax_to_global, $1, jit_rax_to_global_size, %r12
+        lea     symbol_address(%rsp), %rax
+        call_fn fwrite, %rax, $1, $POINTER_SIZE, %r12
         return
 
 jit_quote:                      # form, c-stream
