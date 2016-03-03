@@ -380,12 +380,15 @@ tmp_string_\@_c:
         .endif
         .endm
 
-        .macro define name, value
+        .macro define name, value, tag=TAG_PROCEDURE
         .section .rodata
 tmp_string_\@:
         .string "\name"
         .text
         call_fn box_string, $tmp_string_\@
         call_fn string_to_symbol, %rax
-        call_fn set, %rax, \value
+        .ifnb \tag
+        tag    \tag, \value, target=%rcx
+        .endif
+        call_fn set, %rax, %rcx
         .endm

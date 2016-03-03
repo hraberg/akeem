@@ -2,6 +2,7 @@
 strlen
 #t
 #t
+#t
 #f
 #f
 #f
@@ -143,6 +144,7 @@ A
 1
 3.141590
 #t
+#<procedure>
 #t
 42
 66
@@ -224,4 +226,5 @@ foo
 ("foo")
 #("foo")
 foo
+#<procedure>
 ;;; test suite end

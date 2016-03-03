@@ -917,7 +917,7 @@ init_runtime:                   # execution_stack_top, jit_code_debug
         store_pointer $TAG_BOOLEAN, $jit_literal
         store_pointer $TAG_CHAR, $jit_literal
         store_pointer $TAG_INT, $jit_literal
-        store_pointer $TAG_SYMBOL, $jit_literal
+        store_pointer $TAG_SYMBOL, $jit_symbol
         store_pointer $TAG_PROCEDURE, $jit_literal
         store_pointer $TAG_PORT, $jit_literal
         store_pointer $TAG_STRING, $jit_literal
@@ -1734,14 +1734,26 @@ jit_pair:                       # form, c-stream
         call_fn jit_literal, %rax, %r12
         return
 
+jit_symbol:                    # symbol, c-stream
+        prologue symbol_address
+        mov     %rsi, %r12
+
+        lea     symbol_table_values(,%edi,POINTER_SIZE), %rax
+        mov     %rax, symbol_address(%rsp)
+
+        call_fn fwrite, $jit_global_to_rax, $1, jit_global_to_rax_size, %r12
+        lea     symbol_address(%rsp), %rax
+        call_fn fwrite, %rax, $1, $POINTER_SIZE, %r12
+        return
+
 jit_literal:                    # literal, c-stream
         prologue literal
         mov     %rdi, literal(%rsp)
-        mov     %rsi, %rbx
+        mov     %rsi, %r12
         call_fn jit_maybe_add_to_constant_pool, %rdi
-        call_fn fwrite, $jit_literal_to_rax, $1, jit_literal_to_rax_size, %rbx
+        call_fn fwrite, $jit_literal_to_rax, $1, jit_literal_to_rax_size, %r12
         lea     literal(%rsp), %rax
-        call_fn fwrite, %rax, $1, $POINTER_SIZE, %rbx
+        call_fn fwrite, %rax, $1, $POINTER_SIZE, %r12
         return
 
 jit_add_to_constant_pool_nop:   # obj
@@ -1961,6 +1973,12 @@ jit_global_to_rax:
         mov     0x1122334455667788, %rax
 jit_global_to_rax_size:
         .quad   (. - jit_global_to_rax) - POINTER_SIZE
+
+        .align  16
+jit_rax_to_global:
+        mov     %rax, 0x1122334455667788
+jit_rax_to_global_size:
+        .quad   (. - jit_rax_to_global) - POINTER_SIZE
 
         .align  16
 jit_local_to_rax:

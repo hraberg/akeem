@@ -80,6 +80,11 @@ main:
         intern_string test_file, "test.txt"
 
         call_fn string_to_symbol, strlen_name
+        mov     %rax, %rbx
+        assert
+
+        call_fn string_to_symbol, strlen_name
+        call_fn is_eq, %rax, %rbx
         assert
 
         call_fn cons, $1, $NIL
@@ -653,6 +658,11 @@ main:
         call_fn lookup_global_symbol, %rbx
         assert
 
+        string_literal "cons"
+        call_fn string_to_symbol, %rax
+        call_fn lookup_global_symbol, %rax
+        assert
+
         string_literal "42"
         call_fn string_to_number, %rax
         mov     %rax, %rbx
@@ -1010,6 +1020,11 @@ main:
         string_literal "quote"
         call_fn string_to_symbol, %rax
         call_fn cons, %rax, %rbx
+        call_fn eval, %rax
+        assert  write=true
+
+        string_literal "cons"
+        call_fn string_to_symbol, %rax
         call_fn eval, %rax
         assert  write=true
 
