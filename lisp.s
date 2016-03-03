@@ -1840,7 +1840,8 @@ jit_prologue_size:
 
         .align  16
 jit_epilogue:
-        leave
+        mov     %rbp, %rsp
+        pop     %rbp
         ret
 jit_epilogue_size:
         .quad   . - jit_epilogue
