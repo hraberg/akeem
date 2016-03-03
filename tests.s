@@ -74,8 +74,6 @@ true_string_c:
         .string "#t"
 false_string_c:
         .string "#f"
-assertion_failed_format:
-        .string "expected: '%s' but was: '%s'\n"
 test_case_prefix:
         .string ";;; "
 
