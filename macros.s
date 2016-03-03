@@ -136,11 +136,13 @@
         .endm
 
         .macro binary_op_jump name
-        has_tag TAG_INT, %rdi
-        mov     %eax, %edx
-        has_tag TAG_INT, %rsi
+        has_tag TAG_INT, %rdi, store=false
+        sete    %r11b
+        has_tag TAG_INT, %rsi, store=false
+        sete    %al
         shl     %al
-        or      %dl, %al
+        or      %r11b, %al
+        and     $BINARY_OP_MASK, %eax
         shl     $BINARY_OP_SHIFT, %al
         lea     \name\()_double_double(%eax), %rax
         jmp     *%rax

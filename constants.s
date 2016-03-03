@@ -70,6 +70,7 @@
         .equ CHAR_PREFIX_LENGTH, 2
 
         .equ BINARY_OP_SHIFT, 4
+        .equ BINARY_OP_MASK, 4 - 1
 
         .equ GC_MARK_BIT, 0
 
