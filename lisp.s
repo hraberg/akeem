@@ -636,6 +636,18 @@ write_char:                     # char, port
         tag     TAG_CHAR, %rax
         return
 
+        ## 6.6.4. System interface
+        .globl load
+
+load:                           # filename
+        prologue
+        call_fn open_input_file, %rdi
+        mov     %rax, %rbx
+        call_fn read_all, %rax
+        mov     %rax, %r12
+        call_fn close_input_port, %rbx
+        return  $TRUE
+
         ## Scheme Requests for Implementation
 
         ## SRFI 6: Basic String Ports
@@ -700,116 +712,6 @@ init_runtime:                   # execution_stack_top, jit_code_debug
 
         mov     symbol_next_id, %rax
         mov     %rax, max_null_environment_symbol
-
-        .irp name, eq, eqv, number, integer, exact, inexact
-        define "\name?", $is_\name
-        .endr
-
-        define "=", $equal
-        define "<", $less_than
-        define "<=", $less_than_or_equal
-        define ">", $greater_than
-        define ">=", $greater_than_or_equal
-
-        define "+", $plus
-        define "-", $minus
-        define "*", $multiply
-        define "/", $divide
-
-        define "quotient", $quotient
-        define "remainder", $remainder
-        define "modulo", $modulo
-
-        .irp name, ceiling, truncate, round, floor, exp, log, sin, cos, tan, asin, acos, atan, sqrt, expt
-        define "\name", $\name\()_
-        .endr
-
-        define "exact->inexact", $exact_to_inexact
-        define "inexact->exact", $inexact_to_exact
-
-        define "number->string", $number_to_string
-        define "string->number", $string_to_number
-
-        define "not", $not
-        define "boolean?", $is_boolean
-
-        define "pair?", $is_pair
-        define "cons", $cons
-        define "car", $car
-        define "cdr", $cdr
-        define "set-car!", $set_car
-        define "set-cdr!", $set_cdr
-
-        define "null?", $is_null
-        define "length", $length
-        define "reverse", $reverse
-
-        define "symbol?", $is_symbol
-        define "symbol->string", $symbol_to_string
-        define "string->symbol", $string_to_symbol
-
-        define "char?", $is_char
-        define "char->integer", $char_to_integer
-        define "integer->char", $integer_to_char
-
-        define "string?", $is_string
-        define "make-string", $make_string
-        define "string-length", $string_length
-        define "string-ref", $string_ref
-        define "string-set!", $string_set
-
-        define "vector?", $is_vector
-        define "make-vector", $make_vector
-        define "vector-length", $vector_length
-        define "vector-ref", $vector_ref
-        define "vector-set!", $vector_set
-        define "list->vector", $list_to_vector
-
-        define "procedure?", $is_procedure
-        define "call-with-current-continuation", $call_with_current_continuation
-
-        define "eval", $eval
-        define "scheme-report-environment", $scheme_report_environment
-        define "null-environment", $null_environment
-        define "interaction-environment", $interaction_environment
-
-        define "call-with-input-file", $call_with_input_file
-        define "call-with-output-file", $call_with_output_file
-
-        define "input-port?", $is_input_port
-        define "output-port?", $is_output_port
-
-        define "current-input-port", $current_input_port
-        define "current-output-port", $current_output_port
-
-        define "with-input-from-file", $with_input_from_file
-        define "with-output-to-file", $with_output_to_file
-
-        define "open-input-file", $open_input_file
-        define "open-output-file", $open_output_file
-
-        define "close-input-port", $close_input_port
-        define "close-output-port", $close_output_port
-
-        define "read", $read
-        define "read-char", $read_char
-        define "peek-char", $peek_char
-        define "eof-object?", $is_eof_object
-
-        define "write", $write
-        define "display", $display
-        define "newline", $newline
-        define "write-char", $write_char
-
-        mov     symbol_next_id, %rax
-        mov     %rax, max_scheme_report_environment_symbol
-
-        define "open-input-string", $open_input_string
-        define "error", $error
-        define "gc", $gc
-        define "object-space-count", $object_space_size
-        define "class-of", $class_of
-        define "lookup-global-symbol", $lookup_global_symbol
 
         intern_string read_error_string, "unexpected input\n"
         intern_string false_string, "#f"
@@ -982,6 +884,126 @@ init_runtime:                   # execution_stack_top, jit_code_debug
         unbox_pointer_internal lambda_symbol
         store_pointer %eax, $jit_lambda
 
+        .irp name, eq, eqv, number, integer, exact, inexact
+        define "\name?", $is_\name
+        .endr
+
+        define "=", $equal
+        define "<", $less_than
+        define "<=", $less_than_or_equal
+        define ">", $greater_than
+        define ">=", $greater_than_or_equal
+
+        define "+", $plus
+        define "-", $minus
+        define "*", $multiply
+        define "/", $divide
+
+        define "quotient", $quotient
+        define "remainder", $remainder
+        define "modulo", $modulo
+
+        .irp name, ceiling, truncate, round, floor, exp, log, sin, cos, tan, asin, acos, atan, sqrt, expt
+        define "\name", $\name\()_
+        .endr
+
+        define "exact->inexact", $exact_to_inexact
+        define "inexact->exact", $inexact_to_exact
+
+        define "number->string", $number_to_string
+        define "string->number", $string_to_number
+
+        define "not", $not
+        define "boolean?", $is_boolean
+
+        define "pair?", $is_pair
+        define "cons", $cons
+        define "car", $car
+        define "cdr", $cdr
+        define "set-car!", $set_car
+        define "set-cdr!", $set_cdr
+
+        define "null?", $is_null
+        define "length", $length
+        define "reverse", $reverse
+
+        define "symbol?", $is_symbol
+        define "symbol->string", $symbol_to_string
+        define "string->symbol", $string_to_symbol
+
+        define "char?", $is_char
+        define "char->integer", $char_to_integer
+        define "integer->char", $integer_to_char
+
+        define "string?", $is_string
+        define "make-string", $make_string
+        define "string-length", $string_length
+        define "string-ref", $string_ref
+        define "string-set!", $string_set
+
+        define "vector?", $is_vector
+        define "make-vector", $make_vector
+        define "vector-length", $vector_length
+        define "vector-ref", $vector_ref
+        define "vector-set!", $vector_set
+        define "list->vector", $list_to_vector
+
+        define "procedure?", $is_procedure
+        define "call-with-current-continuation", $call_with_current_continuation
+
+        define "eval", $eval
+        define "scheme-report-environment", $scheme_report_environment
+        define "null-environment", $null_environment
+        define "interaction-environment", $interaction_environment
+
+        define "call-with-input-file", $call_with_input_file
+        define "call-with-output-file", $call_with_output_file
+
+        define "input-port?", $is_input_port
+        define "output-port?", $is_output_port
+
+        define "current-input-port", $current_input_port
+        define "current-output-port", $current_output_port
+
+        define "with-input-from-file", $with_input_from_file
+        define "with-output-to-file", $with_output_to_file
+
+        define "open-input-file", $open_input_file
+        define "open-output-file", $open_output_file
+
+        define "close-input-port", $close_input_port
+        define "close-output-port", $close_output_port
+
+        define "read", $read
+        define "read-char", $read_char
+        define "peek-char", $peek_char
+        define "eof-object?", $is_eof_object
+
+        define "write", $write
+        define "display", $display
+        define "newline", $newline
+        define "write-char", $write_char
+
+        define "load", $load
+
+        call_fn box_string, $r5rs_scm
+        call_fn open_input_string, %rax
+        call_fn read_all, %rax
+
+        mov     symbol_next_id, %rax
+        mov     %rax, max_scheme_report_environment_symbol
+
+        define "open-input-string", $open_input_string
+        define "read-all", $read_all
+        define "error", $error
+        define "gc", $gc
+        define "object-space-count", $object_space_size
+        define "class-of", $class_of
+        define "lookup-global-symbol", $lookup_global_symbol
+
+        call_fn box_string, $core_scm
+        call_fn open_input_string, %rax
+        call_fn read_all, %rax
         return
 
         ## Public API
@@ -993,6 +1015,16 @@ set:                            # variable, expression
         mov     %rsi, symbol_table_values(,%rax,POINTER_SIZE)
         mov     %rdi, %rax
         ret
+
+read_all:                       # port
+        prologue
+        mov     %rdi, %rbx
+1:      call_fn read, %rbx
+        cmp     $EOF, %eax
+        je      2f
+        call_fn eval, %rax
+        jmp     1b
+        return  $TRUE
 
 class_of:                       # obj
         extract_tag
@@ -1479,16 +1511,18 @@ read_whitespace:                # c-stream
         call_fn ungetc, %r12, %rbx
         return
 
-2:      call_fn exit, $0
+2:      tag     TAG_CHAR, %rax
         return
 
 read_datum:                     # c-stream
         prologue
         mov     %rdi, %rbx
         call_fn read_whitespace, %rbx
+        cmp     $EOF, %eax
+        je      1f
         call_fn fgetc, %rbx
         read_byte_jump read_datum_jump_table, %rbx, %rax
-        return
+1:      return
 
 read_hash:                      # c-stream
         prologue
@@ -2220,3 +2254,12 @@ jit_rax_to_local:
         mov     %rax, -0x11223344(%rbp)
 jit_rax_to_local_size:
         .quad   (. - jit_rax_to_local) - INT_SIZE
+
+        .align  16
+r5rs_scm:
+        .incbin "r5rs.scm"
+        .byte   0
+
+core_scm:
+        .incbin "core.scm"
+        .byte   0
