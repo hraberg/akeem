@@ -955,9 +955,10 @@ init_runtime:                   # execution_stack_top, jit_code_debug
         store_pointer $6, jit_pop_r9_size
 
         lea     jit_syntax_jump_table, %rbx
-
         unbox_pointer_internal quote_symbol
         store_pointer %eax, $jit_quote
+        unbox_pointer_internal if_symbol
+        store_pointer %eax, $jit_if
 
         return
 
@@ -1768,6 +1769,41 @@ jit_procedure_call:             # form, c-stream
 4:      call_fn fwrite, $jit_call_rax, $1, jit_call_rax_size, %r12
         return
 
+jit_if:                         # form, c-stream
+        prologue if_offset, else_offset, end_offset, jump_offset
+        mov     %rdi, %rbx
+        mov     %rsi, %r12
+
+        call_fn cdr, %rbx
+        mov     %rax, %rbx
+        call_fn car, %rax
+        call_fn jit_datum, %rax, %r12
+        call_fn fwrite, $jit_conditional_rax_is_false_jump, $1, jit_conditional_rax_is_false_jump_size, %r12
+
+        call_fn ftell, %r12
+        mov     %rax, if_offset(%rsp)
+
+        call_fn cdr, %rbx
+        mov     %rax, %rbx
+        call_fn car, %rax
+        call_fn jit_datum, %rax, %r12
+        call_fn fwrite, $jit_unconditional_jump, $1, jit_unconditional_jump_size, %r12
+
+        patch_jump %r12, else_offset(%rsp), if_offset(%rsp), jump_offset(%rsp)
+
+        call_fn cdr, %rbx
+        mov     $NIL, %r11
+        cmp     %rax, %r11
+        jne     1f
+        mov     $FALSE, %rax
+        jmp     2f
+1:      call_fn car, %rax
+2:      call_fn jit_datum, %rax, %r12
+
+        patch_jump %r12, end_offset(%rsp), else_offset(%rsp), jump_offset(%rsp)
+
+        return
+
 jit_quote:                      # form, c-stream
         prologue
         mov     %rdi, %rbx
@@ -1990,13 +2026,13 @@ jit_conditional_rax_is_false_jump:
         cmp     %rax, %r11
         je      0
 jit_conditional_rax_is_false_jump_size:
-        .quad   (. - jit_conditional_rax_is_false_jump) - INT_SIZE
+        .quad   (. - jit_conditional_rax_is_false_jump)
 
         .align  16
 jit_unconditional_jump:
         jmp     0
 jit_unconditional_jump_size:
-        .quad   (. - jit_unconditional_jump) - INT_SIZE
+        .quad   (. - jit_unconditional_jump)
 
         .align  16
 jit_call_rax:
