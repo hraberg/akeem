@@ -1738,6 +1738,9 @@ jit_code_file_format:
         ## register numbers:
         ## rax = r0, rcx = r1, rdx = r2, rbx = r3,
         ## rsp = r4, rbp = r5, rsi = r6, rdi = r7
+
+        ## movbe for LE/BE moves if necessary to write parameters.
+
         .align  16
 jit_prologue:
         push    %rbp
