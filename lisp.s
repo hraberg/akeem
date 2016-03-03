@@ -672,6 +672,7 @@ init_runtime:                   # execution_stack_top, jit_code_debug
 
         call_fn init_pointer_stack, $object_space, $OBJECT_SPACE_INITIAL_SIZE
         call_fn init_pointer_stack, $gc_mark_stack, $OBJECT_SPACE_INITIAL_SIZE
+        call_fn init_pointer_stack, $constant_pool, $OBJECT_SPACE_INITIAL_SIZE
 
         intern_symbol double_symbol, "double", id=TAG_DOUBLE
         intern_symbol boolean_symbol, "boolean", id=TAG_BOOLEAN
@@ -923,6 +924,18 @@ init_runtime:                   # execution_stack_top, jit_code_debug
         store_pointer $TAG_PAIR, $jit_pair
         store_pointer $TAG_VECTOR, $jit_literal
 
+        lea     jit_constant_pool_jump_table, %rbx
+        store_pointer $TAG_DOUBLE, $jit_add_to_constant_pool_nop
+        store_pointer $TAG_BOOLEAN, $jit_add_to_constant_pool_nop
+        store_pointer $TAG_CHAR, $jit_add_to_constant_pool_nop
+        store_pointer $TAG_INT, $jit_add_to_constant_pool_nop
+        store_pointer $TAG_SYMBOL, $jit_add_to_constant_pool_nop
+        store_pointer $TAG_PROCEDURE, $jit_add_to_constant_pool_nop
+        store_pointer $TAG_PORT, $jit_add_to_constant_pool_nop
+        store_pointer $TAG_STRING, $jit_add_to_constant_pool
+        store_pointer $TAG_PAIR, $jit_add_to_constant_pool
+        store_pointer $TAG_VECTOR, $jit_add_to_constant_pool
+
         return
 
         ## Public API
@@ -1157,11 +1170,27 @@ gc_mark_queue_global_variables:
         jmp     1b
 2:      return
 
+gc_mark_queue_constant_pool:
+        prologue
+        xor     %ebx, %ebx
+1:      cmp     %rbx, stack_top_offset + constant_pool
+        je      2f
+
+        mov     stack_bottom + object_space, %rax
+        mov     (%rax,%rbx), %r11
+        call_fn gc_maybe_mark, %rdi
+
+        add     $POINTER_SIZE, %ebx
+        jmp     1b
+
+2:      return
+
 gc_mark:
         minimal_prologue
         call_fn gc_mark_queue_registers
         call_fn gc_mark_queue_stack
         call_fn gc_mark_queue_global_variables
+        call_fn gc_mark_queue_constant_pool
 
 1:      cmpq    $0, stack_top_offset + gc_mark_stack
         je      2f
@@ -1705,15 +1734,27 @@ jit_pair:                       # form, c-stream
         call_fn jit_literal, %rax, %r12
         return
 
-        ## Need to split out semi-constant literals stored on heap and
-        ## add them to a literal stack for GC.
 jit_literal:                    # literal, c-stream
         prologue literal
         mov     %rdi, literal(%rsp)
         mov     %rsi, %rbx
+        call_fn jit_maybe_add_to_constant_pool, %rdi
         call_fn fwrite, $jit_literal_to_rax, $1, jit_literal_to_rax_size, %rbx
         lea     literal(%rsp), %rax
         call_fn fwrite, %rax, $1, $POINTER_SIZE, %rbx
+        return
+
+jit_add_to_constant_pool_nop:   # obj
+        ret
+
+jit_add_to_constant_pool:       # obj
+        minimal_prologue
+        call_fn push_pointer_on_stack, $constant_pool, %rdi
+        return
+
+jit_maybe_add_to_constant_pool: # obj
+        minimal_prologue
+        tagged_jump jit_constant_pool_jump_table
         return
 
         .data
@@ -1756,6 +1797,10 @@ jit_jump_table:
         .zero   TAG_MASK * POINTER_SIZE
 
         .align  16
+jit_constant_pool_jump_table:
+        .zero   TAG_MASK * POINTER_SIZE
+
+        .align  16
 symbol_table_values:
         .zero   MAX_NUMBER_OF_SYMBOLS * POINTER_SIZE
 
@@ -1781,6 +1826,8 @@ read_hash_jump_table:
 object_space:
         .zero   stack_size
 gc_mark_stack:
+        .zero   stack_size
+constant_pool:
         .zero   stack_size
 
         .align  16
