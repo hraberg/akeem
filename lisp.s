@@ -1723,7 +1723,7 @@ jit_code:                       # form
         perror
         mov     %rax, %rbx
 
-        call_fn jit_function, %r12, $0, %rbx
+        call_fn jit_function, %r12, %rbx, $NIL
         call_fn fclose, %rbx
         perror  je
 
@@ -1731,35 +1731,38 @@ jit_code:                       # form
         call_fn jit_allocate_code, code(%rsp), %r11
         return
 
-jit_function:                   # form, locals, c-stream
-        prologue body, locals
-        mov     %rdi, body(%rsp)
+jit_function:                   # form, c-stream, environment
+        prologue env, locals
+        mov     %rdi, %rbx
         mov     %rsi, %r12
-        mov     %rdx, %rbx
+        mov     %rdx, env(%rsp)
 
-        call_fn fwrite, $jit_prologue, $1, jit_prologue_size, %rbx
+        call_fn fwrite, $jit_prologue, $1, jit_prologue_size, %r12
 
-        shl     $POINTER_SIZE_SHIFT, %r12d
-        add     $POINTER_SIZE, %r12d
-        and     $-(POINTER_SIZE * 2), %r12d
-        mov     %r12d, locals(%rsp)
+        call_fn length, env(%rsp)
+
+        shl     $POINTER_SIZE_SHIFT, %eax
+        add     $POINTER_SIZE, %eax
+        and     $-(POINTER_SIZE * 2), %eax
+        mov     %eax, locals(%rsp)
         lea     locals(%rsp), %rax
-        call_fn fwrite, %rax $1, $INT_SIZE, %rbx
+        call_fn fwrite, %rax $1, $INT_SIZE, %r12
 
-        call_fn jit_datum, body(%rsp), %rbx
+        call_fn jit_datum, %rbx, %r12, env(%rsp)
 
-        call_fn fwrite, $jit_epilogue, $1, jit_epilogue_size, %rbx
+        call_fn fwrite, $jit_epilogue, $1, jit_epilogue_size, %r12
         return
 
-jit_datum:                      # form, c-stream
+jit_datum:                      # form, c-stream, environment
         minimal_prologue
         tagged_jump jit_jump_table
         return
 
-jit_procedure_call:             # form, c-stream
-        prologue len
+jit_procedure_call:             # form, c-stream, environment
+        prologue len, env
         mov     %rdi, %rbx
         mov     %rsi, %r12
+        mov     %rdx, env(%rsp)
 
         call_fn length, %rbx
         mov     %rax, len(%rsp)
@@ -1769,7 +1772,7 @@ jit_procedure_call:             # form, c-stream
         je      2f
 
         call_fn car, %rbx
-        call_fn jit_datum, %rax, %r12
+        call_fn jit_datum, %rax, %r12, env(%rsp)
         call_fn fwrite, $jit_push_rax, $1, jit_push_rax_size, %r12
 
         call_fn cdr, %rbx
@@ -1789,15 +1792,16 @@ jit_procedure_call:             # form, c-stream
 4:      call_fn fwrite, $jit_call_rax, $1, jit_call_rax_size, %r12
         return
 
-jit_if:                         # form, c-stream
-        prologue if_offset, else_offset, end_offset, jump_offset
+jit_if:                         # form, c-stream, environment
+        prologue if_offset, else_offset, end_offset, jump_offset, env
         mov     %rdi, %rbx
         mov     %rsi, %r12
+        mov     %rdx, env(%rsp)
 
         call_fn cdr, %rbx
         mov     %rax, %rbx
         call_fn car, %rax
-        call_fn jit_datum, %rax, %r12
+        call_fn jit_datum, %rax, %r12, env(%rsp)
         call_fn fwrite, $jit_conditional_rax_is_false_jump, $1, jit_conditional_rax_is_false_jump_size, %r12
 
         call_fn ftell, %r12
@@ -1806,7 +1810,7 @@ jit_if:                         # form, c-stream
         call_fn cdr, %rbx
         mov     %rax, %rbx
         call_fn car, %rax
-        call_fn jit_datum, %rax, %r12
+        call_fn jit_datum, %rax, %r12, env(%rsp)
         call_fn fwrite, $jit_unconditional_jump, $1, jit_unconditional_jump_size, %r12
 
         patch_jump %r12, else_offset(%rsp), if_offset(%rsp), jump_offset(%rsp)
@@ -1818,16 +1822,17 @@ jit_if:                         # form, c-stream
         mov     $FALSE, %rax
         jmp     2f
 1:      call_fn car, %rax
-2:      call_fn jit_datum, %rax, %r12
+2:      call_fn jit_datum, %rax, %r12, env(%rsp)
 
         patch_jump %r12, end_offset(%rsp), else_offset(%rsp), jump_offset(%rsp)
 
         return
 
-jit_set:                        # form, c-stream
-        prologue symbol_address
+jit_set:                        # form, c-stream, environment
+        prologue symbol_address, env
         mov     %rdi, %rbx
         mov     %rsi, %r12
+        mov     %rdx, env(%rsp)
         call_fn cdr, %rbx
         mov     %rax, %rbx
 
@@ -1837,26 +1842,28 @@ jit_set:                        # form, c-stream
 
         call_fn cdr, %rbx
         call_fn car, %rax
-        call_fn jit_datum, %rax, %r12
+        call_fn jit_datum, %rax, %r12, env(%rsp)
 
         call_fn fwrite, $jit_rax_to_global, $1, jit_rax_to_global_size, %r12
         lea     symbol_address(%rsp), %rax
         call_fn fwrite, %rax, $1, $POINTER_SIZE, %r12
         return
 
-jit_quote:                      # form, c-stream
-        prologue
+jit_quote:                      # form, c-stream, environment
+        prologue env
         mov     %rdi, %rbx
         mov     %rsi, %r12
+        mov     %rdx, env(%rsp)
         call_fn cdr, %rbx
         call_fn car, %rax
-        call_fn jit_literal, %rax, %r12
+        call_fn jit_literal, %rax, %r12, env(%rsp)
         return
 
-jit_pair:                       # form, c-stream
-        prologue
+jit_pair:                       # form, c-stream, environment
+        prologue env
         mov     %rdi, %rbx
         mov     %rsi, %r12
+        mov     %rdx, env(%rsp)
 
         call_fn car, %rbx
         unbox_pointer_internal %rax
@@ -1864,13 +1871,13 @@ jit_pair:                       # form, c-stream
         test    %eax, %eax
         jnz     1f
 
-        call_fn jit_procedure_call, %rbx, %r12
+        call_fn jit_procedure_call, %rbx, %r12, env(%rsp)
         return
 
 1:      call_fn *%rax, %rbx, %r12
         return
 
-jit_symbol:                    # symbol, c-stream
+jit_symbol:                    # symbol, c-stream, environment
         prologue symbol_address
         mov     %rsi, %r12
 
@@ -1882,7 +1889,7 @@ jit_symbol:                    # symbol, c-stream
         call_fn fwrite, %rax, $1, $POINTER_SIZE, %r12
         return
 
-jit_literal:                    # literal, c-stream
+jit_literal:                    # literal, c-stream, environment
         prologue literal
         mov     %rdi, literal(%rsp)
         mov     %rsi, %r12

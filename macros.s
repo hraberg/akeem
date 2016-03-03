@@ -294,13 +294,9 @@
         mov     \origin, %rax
         sub     $INT_SIZE, %rax
         call_fn fseek, \stream, %rax, $SEEK_SET
-        perror  jge
         lea     \offset, %rax
         call_fn fwrite, %rax, $1, $INT_SIZE, \stream
-        perror
         call_fn fseek, \stream, \target, $SEEK_SET
-        perror  jge
-
         .endm
 
         .macro default_arg tag, default, value, tmp=%r11
