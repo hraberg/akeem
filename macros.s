@@ -314,16 +314,14 @@
         call_fn fseek, \stream, $header_size, $SEEK_SET
         .endm
 
-        .macro string_buffer_to_string str, stream
-        call_fn ftell, \stream
-        perror  jg
-        sub     $(header_size - 1), %eax
-        mov     %eax, %ebx
+        .macro string_buffer_to_string str, size, stream
         call_fn fclose, \stream
         perror  je
         mov     \str, %rax
         movw    $TAG_STRING, header_object_type(%rax)
-        mov     %ebx, header_object_size(%rax)
+        mov     \size, %r11d
+        sub     $(header_size - 1), %r11d
+        mov     %r11d, header_object_size(%rax)
         tag     TAG_STRING, %rax
         .endm
 

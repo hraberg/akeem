@@ -952,7 +952,7 @@ box_string:                     # c-string
         open_string_buffer str(%rsp), size(%rsp), %r12
         xor     %al, %al
         call_fn fprintf, %r12, $string_format, %rbx
-        string_buffer_to_string str(%rsp), %r12
+        string_buffer_to_string str(%rsp), size(%rsp), %r12
         return
 
         ## Unboxing to C
@@ -1214,7 +1214,7 @@ vector_to_string:               # vector
 
 3:      call_fn fputc, $'), stream(%rsp)
 
-        string_buffer_to_string str(%rsp), stream(%rsp)
+        string_buffer_to_string str(%rsp), size(%rsp), stream(%rsp)
         register_for_gc
         return
 
@@ -1253,7 +1253,7 @@ pair_to_string:                 # pair
 
 2:      call_fn fputc, $'), stream(%rsp)
 
-        string_buffer_to_string str(%rsp), stream(%rsp)
+        string_buffer_to_string str(%rsp), size(%rsp), stream(%rsp)
         register_for_gc
         return
 
@@ -1263,7 +1263,7 @@ char_to_string:                 # char
         open_string_buffer str(%rsp), size(%rsp), %r12
         xor     %al, %al
         call_fn fprintf, %r12, $char_format, %rbx
-        string_buffer_to_string str(%rsp), %r12
+        string_buffer_to_string str(%rsp), size(%rsp), %r12
         register_for_gc
         return
 
@@ -1279,7 +1279,7 @@ char_to_machine_readable_string: # char
 1:      open_string_buffer str(%rsp), size(%rsp), %r12
         xor     %al, %al
         call_fn fprintf, %r12, $machine_readable_char_format, %rbx
-        string_buffer_to_string str(%rsp), %r12
+        string_buffer_to_string str(%rsp), size(%rsp), %r12
         register_for_gc
         return
 
@@ -1295,7 +1295,7 @@ integer_to_string:              # int, radix
         open_string_buffer str(%rsp), size(%rsp), %r12
         xor     %al, %al
         call_fn fprintf, %r12, format(%rsp), %rbx
-        string_buffer_to_string str(%rsp), %r12
+        string_buffer_to_string str(%rsp), size(%rsp), %r12
 
         register_for_gc
         return
@@ -1308,7 +1308,7 @@ double_to_string:               # double
         mov    $double_format, %rsi
         mov    $1, %al         # number of vector var arguments http://www.x86-64.org/documentation/abi.pdf p21
         call   fprintf
-        string_buffer_to_string str(%rsp), %r12
+        string_buffer_to_string str(%rsp), size(%rsp), %r12
         register_for_gc
         return
 
@@ -1353,7 +1353,7 @@ string_to_machine_readable_string: # string
 
 4:      call_fn fputc, $'\", stream(%rsp)
 
-        string_buffer_to_string str(%rsp), stream(%rsp)
+        string_buffer_to_string str(%rsp), size(%rsp), stream(%rsp)
         register_for_gc
         return
 
@@ -1365,7 +1365,7 @@ object_to_string:               # obj
         mov     %rax, %rbx
         open_string_buffer str(%rsp), size(%rsp), %r12
         call_fn fprintf, %r12, $object_format, %rbx
-        string_buffer_to_string str(%rsp), %r12
+        string_buffer_to_string str(%rsp), size(%rsp), %r12
         register_for_gc
         return
 
@@ -1469,7 +1469,7 @@ read_string:                    # c-stream, c-char
 2:      call_fn fputc, %rax, %r12
         jmp     1b
 
-3:      string_buffer_to_string str(%rsp), %r12
+3:      string_buffer_to_string str(%rsp), size(%rsp), %r12
         register_for_gc
         return
 
@@ -1592,7 +1592,7 @@ read_list:                      # c-stream
 4:      return  head(%rsp)
 
         ## JIT
-        .globl jit_allocate_code,
+        .globl jit_allocate_code, jit_code
 
 jit_write_code_to_disk:         # c-code, c-size
         prologue filename, file
@@ -1627,6 +1627,48 @@ jit_allocate_code:              # c-code, c-size
         call_fn mprotect, %rbx, $PAGE_SIZE, $(PROT_READ | PROT_EXEC)
         perror  je
         return  %rbx
+
+jit_code:                       # body
+        prologue code, size
+        mov     %rdi, %r12
+        lea     code(%rsp), %rdi
+        lea     size(%rsp), %rsi
+        call_fn open_memstream, %rdi, %rsi
+        perror
+        mov     %rax, %rbx
+
+        call_fn jit_function, %rbx, $0, %r12
+        call_fn fclose, %rbx
+        perror  je
+
+        call_fn jit_allocate_code, code(%rsp), size(%rsp)
+        return
+
+jit_function:                   # c-stream, locals, body
+        prologue body
+        mov     %rdi, %rbx
+        mov     %rsi, %r12
+        mov     %rdx, body(%rsp)
+
+        call_fn fwrite, jit_prologue, $1, jit_prologue_size, %rdi
+        shl     $POINTER_SIZE_SHIFT, %r12
+        add     $8, %r12
+        and     $-16, %r12
+        call_fn fwrite, %r12, $1, $INT_SIZE, %rbx
+
+        call_fn jit_immediate %rbx, body(%rsp)
+
+        call_fn fwrite, jit_epilogue, $1, jit_epilogue_size, %rdi
+        return
+
+jit_immediate:                  # c-stream, value
+        prologue value
+        mov     %rdi, %rbx
+        mov     %rsi, value(%rsp)
+        call_fn fwrite, jit_immediate_to_rax, $1, jit_immediate_to_rax_size, %rbx
+        lea     value(%rsp), %rax
+        call_fn fwrite, %rax, $1, $POINTER_SIZE, %rbx
+        return
 
         .data
         .align  16
