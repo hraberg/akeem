@@ -221,7 +221,7 @@ foo
 3.141590
 "foo"
 #\A
-(quote ("foo"))
+("foo")
 #("foo")
 foo
 ;;; test suite end

@@ -1700,7 +1700,9 @@ jit_pair:                       # form, c-stream
         call_fn jit_procedure_call, %rbx, %r12
         return
 
-1:      call_fn jit_literal, %rbx, %r12
+1:      call_fn cdr, %rbx
+        call_fn car, %rax
+        call_fn jit_literal, %rax, %r12
         return
 
         ## Need to split out semi-constant literals stored on heap and
