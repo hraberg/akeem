@@ -1,73 +1,7 @@
         .include "macros.s"
 
         .section .rodata
-PI:
-        .double 3.14159
-E:
-        .double 2.71828
-ZERO:
-        .double 0.0
-PLUS_ONE:
-        .double 1.0
-MINUS_ONE:
-        .double -1.0
-MINUS_TWO:
-        .double -2.0
-FIVE:
-        .double 5.0
-NAN:
-        .quad NAN_MASK
 
-not_reachable_string:
-        .string "not reachable"
-empty_string:
-        .string ""
-forty_two_string:
-        .string "42"
-minus_forty_two_string:
-        .string "-42"
-pi_string:
-        .string "3.14159"
-minus_pi_string:
-        .string "-3.14159"
-plus_string:
-        .string "+"
-minus_plus_string:
-        .string "-+"
-escape_codes:
-        .string "H\be\"l\rlo\nW\\o\'rld\t!"
-escape_codes_string:
-        .string "\"H\\be\\\"l\\rlo\\nW\\\\o\\'rld\\t!\""
-string_string:
-        .string "\"Hello World\""
-empty_string_string:
-        .string "\"\""
-char_string:
-        .string "#\\a"
-empty_list_string:
-        .string "()"
-list_with_booleans_string:
-        .string "(#t #f)"
-pair_with_booleans_string:
-        .string "(#t . #f)"
-irregular_list_string:
-        .string "(1 2 . 3)"
-newline_char_string:
-        .string "#\\newline"
-vector_string:
-        .string "#(1)"
-quote_string:
-        .string "quote"
-foo_name:
-        .string "foo"
-strlen_name:
-        .string "strlen"
-test_file:
-        .string "test.txt"
-print_foo_string:
-        .string "print_foo"
-int_format:
-        .string "%d"
 double_format:
         .string "%f"
 true_string_c:
@@ -102,9 +36,8 @@ tmp_string_\@:
 print_foo:
         prologue
         mov     %rdi, %rbx
-        call_fn box_string, $foo_name
-        call_fn display, %rax, %rbx
-        call_fn box_string $print_foo_string
+        call_fn display, foo_name, %rbx
+        string_literal "print_foo"
         return
 
 read_foo:
@@ -118,7 +51,7 @@ returns_42_non_local:
         call_fn box_int, $42
         call_fn *%rbx, %rax
 
-        call_fn box_string, $not_reachable_string
+        string_literal "not reachable"
         assert
         return
 
@@ -134,8 +67,19 @@ main:
 
         call_fn init_runtime, %rsp, $C_TRUE
 
-        call_fn box_string, $strlen_name
-        call_fn string_to_symbol, %rax
+        intern_double PI, 3.14159
+        intern_double E, 2.71828
+        intern_double ZERO, 0.0
+        intern_double PLUS_ONE, 1.0
+        intern_double MINUS_ONE, -1.0
+        intern_double MINUS_TWO, -2.0
+        intern_double FIVE, 5.0
+
+        intern_string strlen_name, "strlen"
+        intern_string foo_name, "foo"
+        intern_string test_file, "test.txt"
+
+        call_fn string_to_symbol, strlen_name
         assert
 
         call_fn cons, $1, $NIL
@@ -202,18 +146,14 @@ main:
         call_fn is_boolean, %rax
         assert
 
-        call_fn box_string, $strlen_name
-        call_fn is_string, %rax
+        call_fn is_string, strlen_name
         assert
 
-        call_fn box_string, $strlen_name
-        call_fn string_length, %rax
+        call_fn string_length, strlen_name
         assert
 
-        call_fn box_string, $strlen_name
-        mov     %rax, %rbx
         call_fn box_int $0
-        call_fn string_ref, %rbx, %rax
+        call_fn string_ref, strlen_name, %rax
         mov     %rax, %rbx
         assert
 
@@ -254,13 +194,13 @@ main:
         call_fn integer_to_char, %rax
         assert  write=true
 
-        call_fn box_string, $foo_name
+        mov     foo_name, %rax
         assert  write=true
 
-        call_fn box_string, $escape_codes
+        string_literal "H\be\"l\rlo\nW\\o\'rld\t!"
         assert  write=true
 
-        call_fn box_string, $empty_string
+        string_literal ""
         assert  write=true
 
         call_fn is_string, PI
@@ -318,9 +258,9 @@ main:
         assert ZERO
 
         assert PI
-        assert NAN
+        assert $NAN_MASK
 
-        call_fn box_string, $strlen_name
+        mov   strlen_name, %rax
         assert
 
         call_fn unbox, $TRUE
@@ -435,7 +375,7 @@ main:
         assert
         call_fn is_inexact, MINUS_ONE
         assert
-        call_fn is_inexact, NAN
+        call_fn is_inexact, $NAN_MASK
         assert
 
         call_fn box_int, $1
@@ -702,7 +642,7 @@ main:
         call_fn remainder, FIVE, MINUS_TWO
         assert
 
-        call_fn string_to_symbol, $foo_name
+        call_fn string_to_symbol, foo_name
         mov     %rax, %rbx
         call_fn set, %rbx, PI
 
@@ -713,28 +653,27 @@ main:
         call_fn lookup_global_symbol, %rbx
         assert
 
-        call_fn box_string, $forty_two_string
+        string_literal "42"
         call_fn string_to_number, %rax
         mov     %rax, %rbx
         call_fn is_exact, %rax
         assert
         assert %rbx
 
-        call_fn box_string, $forty_two_string
+        string_literal "42"
         mov     %rax, %rbx
         call_fn box_int, $16
         call_fn string_to_number, %rbx, %rax
         assert
 
-        call_fn box_string, $pi_string
+        string_literal "3.14159"
         call_fn string_to_number, %rax
         mov     %rax, %rbx
         call_fn is_inexact, %rax
         assert
         assert %rbx
 
-        call_fn box_string, $foo_name
-        call_fn string_to_number, %rax
+        call_fn string_to_number, foo_name
         assert
 
         call_fn box_int, $10
@@ -795,8 +734,7 @@ main:
         call_fn is_output_port, %rax
         assert
 
-        call_fn box_string $test_file
-        call_fn open_output_file, %rax
+        call_fn open_output_file, test_file
         mov     %rax, %rbx
         assert
         call_fn is_output_port, %rbx
@@ -804,12 +742,10 @@ main:
         call_fn is_input_port, %rbx
         assert
 
-        call_fn box_string, $foo_name
-        call_fn display, %rax, %rbx
+        call_fn display, foo_name, %rbx
         call_fn close_output_port, %rbx
 
-        call_fn box_string $test_file
-        call_fn open_input_file, %rax
+        call_fn open_input_file, test_file
         mov     %rax, %rbx
         call_fn is_output_port, %rbx
         assert
@@ -841,25 +777,21 @@ main:
         call_fn is_eof_object, %rax
         assert
         call_fn close_input_port, %rbx
-        call_fn unlink, $test_file
+        call_fn unlink, $test_file_c
 
-        call_fn box_string $test_file
-        call_fn call_with_output_file, %rax, $print_foo
+        call_fn call_with_output_file, test_file, $print_foo
         assert
 
-        call_fn box_string $test_file
-        call_fn call_with_input_file, %rax, $read_foo
+        call_fn call_with_input_file, test_file, $read_foo
         assert
-        call_fn unlink, $test_file
+        call_fn unlink, $test_file_c
 
-        call_fn box_string $test_file
-        call_fn with_output_to_file, %rax, $print_foo
+        call_fn with_output_to_file, test_file, $print_foo
         assert
 
-        call_fn box_string $test_file
-        call_fn with_input_from_file, %rax, $read_foo
+        call_fn with_input_from_file, test_file, $read_foo
         assert
-        call_fn unlink, $test_file
+        call_fn unlink, $test_file_c
 
         tag     TAG_PROCEDURE, $read_foo
         assert
@@ -945,7 +877,7 @@ main:
         call_fn object_space_size
         assert
 
-        call_fn box_string, $char_string
+        string_literal "#\\a"
         call_fn open_input_string, %rax
         call_fn read, %rax
         assert  write=true
@@ -960,82 +892,81 @@ main:
         call_fn read, %rax
         assert  write=true
 
-        call_fn box_string, $forty_two_string
+        string_literal "42"
         call_fn open_input_string, %rax
         call_fn read, %rax
         assert  write=true
 
-        call_fn box_string, $minus_forty_two_string
+        string_literal "-42"
         call_fn open_input_string, %rax
         call_fn read, %rax
         assert  write=true
 
-        call_fn box_string, $pi_string
+        string_literal "3.14159"
         call_fn open_input_string, %rax
         call_fn read, %rax
         assert  write=true
 
-        call_fn box_string, $minus_pi_string
+        string_literal "-3.14159"
         call_fn open_input_string, %rax
         call_fn read, %rax
         assert  write=true
 
-        call_fn box_string, $plus_string
+        string_literal "+"
         call_fn open_input_string, %rax
         call_fn read, %rax
         assert  write=true
 
-        call_fn box_string, $minus_plus_string
+        string_literal "-+"
         call_fn open_input_string, %rax
         call_fn read, %rax
         assert  write=true
 
-        call_fn box_string, $foo_name
+        call_fn open_input_string, foo_name
+        call_fn read, %rax
+        assert  write=true
+
+        string_literal "\"\""
         call_fn open_input_string, %rax
         call_fn read, %rax
         assert  write=true
 
-        call_fn box_string, $empty_string_string
+        string_literal "\"Hello World\""
         call_fn open_input_string, %rax
         call_fn read, %rax
         assert  write=true
 
-        call_fn box_string, $string_string
+        string_literal "\"H\\be\\\"l\\rlo\\nW\\\\o\\'rld\\t!\""
         call_fn open_input_string, %rax
         call_fn read, %rax
         assert  write=true
 
-        call_fn box_string, $escape_codes_string
+        string_literal "()"
         call_fn open_input_string, %rax
         call_fn read, %rax
         assert  write=true
 
-        call_fn box_string, $empty_list_string
+        string_literal "(#t . #f)"
         call_fn open_input_string, %rax
         call_fn read, %rax
         assert  write=true
 
-        call_fn box_string, $pair_with_booleans_string
+        string_literal "(#t #f)"
         call_fn open_input_string, %rax
         call_fn read, %rax
         assert  write=true
 
-        call_fn box_string, $list_with_booleans_string
+        string_literal "(1 2 . 3)"
         call_fn open_input_string, %rax
         call_fn read, %rax
         assert  write=true
 
-        call_fn box_string, $irregular_list_string
+        string_literal "#\\newline"
         call_fn open_input_string, %rax
         call_fn read, %rax
         assert  write=true
 
-        call_fn box_string, $newline_char_string
-        call_fn open_input_string, %rax
-        call_fn read, %rax
-        assert  write=true
-
-        call_fn box_string, $vector_string
+        string_literal "#(1)"
         call_fn open_input_string, %rax
         call_fn read, %rax
         assert  write=true
@@ -1050,8 +981,7 @@ main:
         call_fn eval, PI
         assert  write=true
 
-        call_fn box_string, $foo_name
-        call_fn eval, %rax
+        call_fn eval, foo_name
         assert  write=true
 
         call_fn box_int, $65
@@ -1059,26 +989,23 @@ main:
         call_fn eval, %rax
         assert  write=true
 
-        call_fn box_string, $foo_name
-        call_fn cons, %rax, $NIL
+        call_fn cons, foo_name, $NIL
         call_fn cons, %rax, $NIL
         mov     %rax, %rbx
 
-        call_fn box_string, $quote_string
+        string_literal "quote"
         call_fn string_to_symbol, %rax
         call_fn cons, %rax, %rbx
 
         call_fn eval, %rax
         assert  write=true
 
-        call_fn box_string, $foo_name
-        call_fn cons, %rax, $NIL
+        call_fn cons, foo_name, $NIL
         call_fn list_to_vector, %rax
         call_fn eval, %rax
         assert  write=true
 
-        call_fn box_string, $foo_name
-        call_fn string_to_symbol, %rax
+        call_fn string_to_symbol, foo_name
         call_fn eval, %rax
         assert  write=true
 

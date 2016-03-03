@@ -351,6 +351,22 @@
         mov     %rax, \var
         .endm
 
+        .macro string_literal str
+        .section .rodata
+tmp_string_\@_c:
+        .string "\str"
+        .text
+        call_fn box_string, $tmp_string_\@_c
+        .endm
+
+        .macro intern_double var, value
+        .section .rodata
+\var:
+        .double   \value
+        .text
+        mov     \var, %rax
+        .endm
+
         .macro intern_symbol var, name, value=, id=
         intern_string \var, \name
         .ifnb \id
