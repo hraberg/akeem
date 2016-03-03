@@ -200,16 +200,14 @@
 
         .macro integer_division
         has_tag TAG_INT, %rdi, store=false
-        je      .L_integer_division_int_\@
+        je      1f
         movd    %rdi, %xmm0
         cvtsd2si %xmm0, %rdi
-.L_integer_division_int_\@:
-        has_tag TAG_INT, %rsi, store=false
-        je      .L_integer_division_int_int_\@
+1:      has_tag TAG_INT, %rsi, store=false
+        je      2f
         movq    %rsi, %xmm0
         cvtsd2si %xmm0, %rsi
-.L_integer_division_int_int_\@:
-        mov     %edi, %eax
+2:      mov     %edi, %eax
         cdq
         idiv    %esi
         .endm
@@ -217,13 +215,12 @@
         .macro maybe_round_to_int from=%xmm0 tmp=%xmm1
         roundsd $ROUNDING_MODE_TRUNCATE, \from, \tmp
         ucomisd \from, \tmp
-        je      .L_round_to_int_\@
+        je      1f
         movq    \from, %rax
-        jmp     .L_no_round_to_int_\@
-.L_round_to_int_\@:
-        cvtsd2si \tmp, %rax
+        jmp     2f
+1:      cvtsd2si \tmp, %rax
         box_int_internal
-.L_no_round_to_int_\@:
+2:      nop
         .endm
 
         .macro math_library_unary_call name round=false
@@ -302,10 +299,10 @@
 
         .macro perror success=jg
         cmp    $NULL, %rax
-        \success .L_perror_ok_\@
+        \success 1f
         call_fn perror, $NULL
         call_fn exit, $1
-.L_perror_ok_\@:
+1:
         .endm
 
         .macro open_string_buffer str, size, stream
@@ -333,12 +330,11 @@
         .macro read_byte_jump table, stream=%rbx byte=%rax, tmp=%r11
         mov     \table(,\byte,POINTER_SIZE), \tmp
         test    \tmp, \tmp
-        jnz     .L_read_byte_jump_call_\@
+        jnz     1f
         call_fn error, read_error_string
-        jmp     .L_read_byte_jump_after_\@
-.L_read_byte_jump_call_\@:
-        call_fn *\tmp, \stream, \byte
-.L_read_byte_jump_after_\@:
+        jmp     2f
+1:      call_fn *\tmp, \stream, \byte
+2:      nop
         .endm
 
         .macro intern_string var, name

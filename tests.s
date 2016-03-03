@@ -80,7 +80,7 @@ test_case_prefix:
         .string ";;; "
 
         .macro test_case str
-        .data
+        .section .rodata
 tmp_string_\@:
         .string "\str"
         .text
