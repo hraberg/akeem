@@ -62,8 +62,6 @@ foo_name:
         .string "foo"
 strlen_name:
         .string "strlen"
-jit_allocate_code_name:
-        .string "jit_allocate_code"
 test_file:
         .string "test.txt"
 print_foo_string:
@@ -101,12 +99,6 @@ tmp_string_\@:
         .endif
         call_fn newline
         .endm
-
-example_code:
-        mov     %rdi, %rax
-        add     $4, %rax
-        ret
-        .equ example_code_size, (. - example_code)
 
         .text
 print_foo:
@@ -150,12 +142,6 @@ main:
 
         call_fn dlsym, $RTLD_DEFAULT, $strlen_name
         call_fn *%rax, $int_format
-        call_fn box_int, %rax
-        assert
-
-        call_fn dlsym, $RTLD_DEFAULT, $jit_allocate_code_name
-        call_fn *%rax, $example_code, $example_code_size
-        call_fn *%rax, $2
         call_fn box_int, %rax
         assert
 

@@ -1606,7 +1606,6 @@ read_list:                      # c-stream
 4:      return  head(%rsp)
 
         ## JIT
-        .globl jit_allocate_code, jit_code
 
 jit_write_code_to_disk:         # c-code, c-size
         prologue filename, file

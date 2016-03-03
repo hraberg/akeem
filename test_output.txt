@@ -1,7 +1,6 @@
 ;;; test suite start
 strlen
 2
-6
 #t
 #t
 #f
