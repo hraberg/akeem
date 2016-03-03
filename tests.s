@@ -56,6 +56,8 @@ newline_char_string:
         .string "#\\newline"
 vector_string:
         .string "#(1)"
+quote_string:
+        .string "quote"
 foo_name:
         .string "foo"
 strlen_name:
@@ -1057,6 +1059,48 @@ main:
         call_fn box_string, $vector_string
         call_fn open_input_string, %rax
         call_fn read, %rax
+        assert  write=true
+
+        call_fn eval, $TRUE
+        assert  write=true
+
+        call_fn box_int, $42
+        call_fn eval, %rax
+        assert  write=true
+
+        call_fn eval, PI
+        assert  write=true
+
+        call_fn box_string, $foo_name
+        call_fn eval, %rax
+        assert  write=true
+
+        call_fn box_int, $65
+        call_fn integer_to_char, %rax
+        call_fn eval, %rax
+        assert  write=true
+
+        call_fn box_string, $foo_name
+        call_fn cons, %rax, $NIL
+        call_fn cons, %rax, $NIL
+        mov     %rax, %rbx
+
+        call_fn box_string, $quote_string
+        call_fn string_to_symbol, %rax
+        call_fn cons, %rax, %rbx
+
+        call_fn eval, %rax
+        assert  write=true
+
+        call_fn box_string, $foo_name
+        call_fn cons, %rax, $NIL
+        call_fn list_to_vector, %rax
+        call_fn eval, %rax
+        assert  write=true
+
+        call_fn box_string, $foo_name
+        call_fn string_to_symbol, %rax
+        call_fn eval, %rax
         assert  write=true
 
         test_case "test suite end"

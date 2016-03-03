@@ -467,15 +467,17 @@ call_with_current_continuation: # proc
 1:      return  %xmm0
 
         ## 6.5. Eval
-        .globl scheme_report_environment, null_environment, interaction_environment
+        .globl eval, scheme_report_environment, null_environment, interaction_environment
 
 eval:                           # expression environment-specifier
         prologue max_global_symbol
         default_arg TAG_INT, $-1, %rsi
 
         mov     %esi, max_global_symbol(%rsp)
-        mov     %rdi, %rax
-        ret
+
+        call_fn jit_code, %rdi
+        call    *%rax
+        return
 
 scheme_report_environment:      # version
         box_int_internal max_scheme_report_environment_symbol
@@ -666,7 +668,7 @@ error:                          # reason
 init_runtime:                   # execution_stack_top, jit_code_debug
         prologue
         mov     %rdi, execution_stack_top
-        movq    %rsi, jit_code_debug
+        mov     %rsi, jit_code_debug
 
         call_fn init_pointer_stack, $object_space, $OBJECT_SPACE_INITIAL_SIZE
         call_fn init_pointer_stack, $gc_mark_stack, $OBJECT_SPACE_INITIAL_SIZE
@@ -908,6 +910,18 @@ init_runtime:                   # execution_stack_top, jit_code_debug
         store_pointer $'f, $read_false
         store_pointer $'\\, $read_character
         store_pointer $'(, $read_vector
+
+        lea     jit_jump_table, %rbx
+        store_pointer $TAG_DOUBLE, $jit_literal
+        store_pointer $TAG_BOOLEAN, $jit_literal
+        store_pointer $TAG_CHAR, $jit_literal
+        store_pointer $TAG_INT, $jit_literal
+        store_pointer $TAG_SYMBOL, $jit_literal
+        store_pointer $TAG_PROCEDURE, $jit_literal
+        store_pointer $TAG_PORT, $jit_literal
+        store_pointer $TAG_STRING, $jit_literal
+        store_pointer $TAG_PAIR, $jit_pair
+        store_pointer $TAG_VECTOR, $jit_literal
 
         return
 
@@ -1628,7 +1642,7 @@ jit_allocate_code:              # c-code, c-size
         perror  je
         return  %rbx
 
-jit_code:                       # body
+jit_code:                       # form
         prologue code, size
         mov     %rdi, %r12
         lea     code(%rsp), %rdi
@@ -1637,36 +1651,65 @@ jit_code:                       # body
         perror
         mov     %rax, %rbx
 
-        call_fn jit_function, %rbx, $0, %r12
+        call_fn jit_function, %r12, $0, %rbx
         call_fn fclose, %rbx
         perror  je
 
-        call_fn jit_allocate_code, code(%rsp), size(%rsp)
+        mov     size(%rsp), %r11d
+        call_fn jit_allocate_code, code(%rsp), %r11
         return
 
-jit_function:                   # c-stream, locals, body
-        prologue body
+jit_function:                   # form, locals, c-stream
+        prologue body, locals
+        mov     %rdi, body(%rsp)
+        mov     %rsi, %r12
+        mov     %rdx, %rbx
+
+        call_fn fwrite, $jit_prologue, $1, jit_prologue_size, %rbx
+
+        shl     $POINTER_SIZE_SHIFT, %r12d
+        add     $POINTER_SIZE, %r12d
+        and     $-(POINTER_SIZE * 2), %r12d
+        mov     %r12d, locals(%rsp)
+        lea     locals(%rsp), %rax
+        call_fn fwrite, %rax $1, $INT_SIZE, %rbx
+
+        call_fn jit_datum, body(%rsp), %rbx
+
+        call_fn fwrite, $jit_epilogue, $1, jit_epilogue_size, %rbx
+        return
+
+jit_datum:                      # form, c-stream
+        minimal_prologue
+        tagged_jump jit_jump_table
+        return
+
+jit_procedure_call:             # form, c-stream
+        prologue
+        return
+
+jit_pair:                       # form, c-stream
+        prologue
         mov     %rdi, %rbx
         mov     %rsi, %r12
-        mov     %rdx, body(%rsp)
 
-        call_fn fwrite, jit_prologue, $1, jit_prologue_size, %rdi
-        shl     $POINTER_SIZE_SHIFT, %r12
-        add     $8, %r12
-        and     $-16, %r12
-        call_fn fwrite, %r12, $1, $INT_SIZE, %rbx
+        call_fn car, %rbx
+        mov     quote_symbol, %r11
+        cmp     %rax, %r11
+        je      1f
 
-        call_fn jit_immediate %rbx, body(%rsp)
-
-        call_fn fwrite, jit_epilogue, $1, jit_epilogue_size, %rdi
+        call_fn jit_procedure_call, %rbx, %r12
         return
 
-jit_immediate:                  # c-stream, value
-        prologue value
-        mov     %rdi, %rbx
-        mov     %rsi, value(%rsp)
-        call_fn fwrite, jit_immediate_to_rax, $1, jit_immediate_to_rax_size, %rbx
-        lea     value(%rsp), %rax
+1:      call_fn jit_literal, %rbx, %r12
+        return
+
+jit_literal:                    # literal, c-stream
+        prologue literal
+        mov     %rdi, literal(%rsp)
+        mov     %rsi, %rbx
+        call_fn fwrite, $jit_literal_to_rax, $1, jit_literal_to_rax_size, %rbx
+        lea     literal(%rsp), %rax
         call_fn fwrite, %rax, $1, $POINTER_SIZE, %rbx
         return
 
@@ -1703,6 +1746,10 @@ gc_mark_queue_jump_table:
 
         .align  16
 gc_mark_jump_table:
+        .zero   TAG_MASK * POINTER_SIZE
+
+        .align  16
+jit_jump_table:
         .zero   TAG_MASK * POINTER_SIZE
 
         .align  16
@@ -1787,7 +1834,7 @@ jit_code_file_format:
 jit_prologue:
         push    %rbp
         mov     %rsp, %rbp
-        sub     $0x11223344, %rbp
+        sub     $0x11223344, %rsp
 jit_prologue_size:
         .quad   (. - jit_prologue) - INT_SIZE
 
@@ -1799,10 +1846,10 @@ jit_epilogue_size:
         .quad   . - jit_epilogue
 
         .align  16
-jit_immediate_to_rax:
+jit_literal_to_rax:
         mov     $0x1122334455667788, %rax
-jit_immediate_to_rax_size:
-        .quad   (. - jit_immediate_to_rax) - POINTER_SIZE
+jit_literal_to_rax_size:
+        .quad   (. - jit_literal_to_rax) - POINTER_SIZE
 
         .align  16
 jit_conditional_rax_is_false_jump:

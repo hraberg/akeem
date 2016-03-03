@@ -218,4 +218,12 @@ foo
 (1 2 . 3)
 #\newline
 #(1)
+#t
+42
+3.141590
+"foo"
+#\A
+(quote ("foo"))
+#("foo")
+foo
 ;;; test suite end
