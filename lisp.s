@@ -1759,14 +1759,22 @@ jit_epilogue_size:
         .quad   . - jit_epilogue
 
         .align  16
-jit_immediate:
+jit_immediate_to_rax:
         mov     $0x1122334455667788, %rax
-jit_immediate_size:
-        .quad   . - jit_immediate
-jit_immediate_register_offset:
-        .quad   (jit_immediate_size - (POINTER_SIZE + 1))
-jit_immediate_value_offset:
-        .quad   (jit_immediate_size - POINTER_SIZE)
+jit_immediate_to_rax_size:
+        .quad   . - jit_immediate_to_rax
+jit_immediate_to_rax_value_offset:
+        .quad   (jit_immediate_to_rax_size - POINTER_SIZE)
+
+        .align  16
+jit_conditional_rax_is_false_jump:
+        mov     $FALSE, %r11
+        cmp     %rax, %r11
+        je      0
+jit_conditional_rax_is_false_jump_size:
+        .quad   . - jit_conditional_rax_is_false_jump
+jit_conditional_rax_is_false_jump_relative_offset:
+        .quad   (jit_conditional_rax_is_false_jump_size - INT_SIZE)
 
         .align  16
 jit_unconditional_jump:
@@ -1777,73 +1785,65 @@ jit_unconditional_jump_relative_offset:
         .quad   (jit_unconditional_jump_size - INT_SIZE)
 
         .align  16
-jit_conditional_false_jump:
-        mov     $FALSE, %r11
-        cmp     %rax, %r11
-        je      0
-jit_conditional_false_jump_size:
-        .quad   . - jit_conditional_false_jump
-jit_conditional_false_jump_register_offset:
-        .quad   (jit_conditional_false_jump_size - (INT_SIZE + WORD_SIZE + 1))
-jit_conditional_false_jump_relative_offset:
-        .quad   (jit_conditional_false_jump_size - INT_SIZE)
-
-        .align  16
-jit_call:
-        call     0x11223344
-jit_call_size:
-        .quad   . - jit_call
-jit_call_target_offset:
-        .quad   (jit_call_size - INT_SIZE)
-
-        .align  16
-jit_call_register:
+jit_call_rax:
+        mov     $PAYLOAD_MASK, %r11
+        and     %r11, %rax
         call    *%rax
-jit_call_register_size:
-        .quad   . - jit_call_register
-jit_call_register_register_offset:
-        .quad   (jit_call_register_size - 1)
+jit_call_rax_size:
+        .quad   . - jit_call_rax
 
         .align  16
-jit_push_register:
+jit_push_rax:
         push    %rax
-jit_push_register_size:
-        .quad   . - jit_push_register
-jit_push_register_register_offset:
-        .quad   (jit_push_register_size - INT_SIZE)
+jit_push_rax_size:
+        .quad   . - jit_push_rax
+
+        .irp reg, rax, rdi, rsi, rdx, rcx, r8, r9
+        .align  16
+jit_pop_\reg\():
+        pop    %\reg
+jit_pop_\reg\()_size:
+        .quad   . - jit_pop_\reg\()
+        .endr
 
         .align  16
-jit_pop_register:
-        pop    %rax
-jit_pop_register_size:
-        .quad   . - jit_pop_register
-jit_pop_register_register_offset:
-        .quad   (jit_pop_register_size - INT_SIZE)
+jit_pop_argument_table:
+        .quad   jit_pop_rdi
+        .quad   jit_pop_rsi
+        .quad   jit_pop_rdx
+        .quad   jit_pop_rcx
+        .quad   jit_pop_r8
+        .quad   jit_pop_r9
 
         .align  16
-jit_lookup_symbol:
+jit_pop_argument_size_table:
+        .quad   jit_pop_rdi_size
+        .quad   jit_pop_rsi_size
+        .quad   jit_pop_rdx_size
+        .quad   jit_pop_rcx_size
+        .quad   jit_pop_r8_size
+        .quad   jit_pop_r9_size
+
+        .align  16
+jit_global_to_rax:
         mov     0x1122334455667788, %rax
-jit_lookup_symbol_size:
-        .quad   . - jit_lookup_symbol
-jit_lookup_symbol_address_offset:
-        .quad   (jit_lookup_symbol_size - POINTER_SIZE)
+jit_global_to_rax_size:
+        .quad   . - jit_global_to_rax
+jit_global_to_rax_address_offset:
+        .quad   (jit_global_to_rax_size - POINTER_SIZE)
 
         .align  16
-jit_local_variable_get:
+jit_local_to_rax:
         mov     -0x11223344(%rbp), %rax
-jit_local_variable_get_size:
-        .quad   . - jit_local_variable_get_size
-jit_local_variable_get_register_offset:
-        .quad   (jit_local_variable_get_size - (INT_SIZE + 1))
-jit_local_variable_get_index_offset:
-        .quad   (jit_local_variable_get_size - INT_SIZE)
+jit_local_to_rax_size:
+        .quad   . - jit_local_to_rax
+jit_local_to_rax_index_offset:
+        .quad   (jit_local_to_rax_size - INT_SIZE)
 
         .align  16
-jit_local_variable_set:
+jit_rax_to_local:
         mov     %rax, -0x11223344(%rbp)
-jit_local_variable_set_size:
-        .quad   . - jit_local_variable_set_size
-jit_local_variable_set_register_offset:
-        .quad   (jit_local_variable_set_size - (INT_SIZE + 1))
-jit_local_variable_set_index_offset:
-        .quad   (jit_local_variable_set_size - INT_SIZE)
+jit_rax_to_local_size:
+        .quad   . - jit_rax_to_local_size
+jit_rax_to_local_index_offset:
+        .quad   (jit_rax_to_local_size - INT_SIZE)
