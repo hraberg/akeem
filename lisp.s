@@ -1821,7 +1821,7 @@ read_mode:
 write_mode:
         .string "w"
 jit_code_file_format:
-        .string "jit_code_%d.bin"
+        .string "jit_code_%04d.bin"
 
         ## register numbers:
         ## rax = r0, rcx = r1, rdx = r2, rbx = r3,
