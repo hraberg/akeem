@@ -1747,9 +1747,7 @@ jit_prologue:
         mov     %rsp, %rbp
         sub     $0x11223344, %rbp
 jit_prologue_size:
-        .quad   . - jit_prologue
-jit_prologue_stack_size_offset:
-        .quad   (jit_prologue_size - INT_SIZE)
+        .quad   (. - jit_prologue) - INT_SIZE
 
         .align  16
 jit_epilogue:
@@ -1762,9 +1760,7 @@ jit_epilogue_size:
 jit_immediate_to_rax:
         mov     $0x1122334455667788, %rax
 jit_immediate_to_rax_size:
-        .quad   . - jit_immediate_to_rax
-jit_immediate_to_rax_value_offset:
-        .quad   (jit_immediate_to_rax_size - POINTER_SIZE)
+        .quad   (. - jit_immediate_to_rax) - POINTER_SIZE
 
         .align  16
 jit_conditional_rax_is_false_jump:
@@ -1772,17 +1768,13 @@ jit_conditional_rax_is_false_jump:
         cmp     %rax, %r11
         je      0
 jit_conditional_rax_is_false_jump_size:
-        .quad   . - jit_conditional_rax_is_false_jump
-jit_conditional_rax_is_false_jump_relative_offset:
-        .quad   (jit_conditional_rax_is_false_jump_size - INT_SIZE)
+        .quad   (. - jit_conditional_rax_is_false_jump) - INT_SIZE
 
         .align  16
 jit_unconditional_jump:
         jmp     0
 jit_unconditional_jump_size:
-        .quad   . - jit_unconditional_jump
-jit_unconditional_jump_relative_offset:
-        .quad   (jit_unconditional_jump_size - INT_SIZE)
+        .quad   (. - jit_unconditional_jump) - INT_SIZE
 
         .align  16
 jit_call_rax:
@@ -1828,22 +1820,16 @@ jit_pop_argument_size_table:
 jit_global_to_rax:
         mov     0x1122334455667788, %rax
 jit_global_to_rax_size:
-        .quad   . - jit_global_to_rax
-jit_global_to_rax_address_offset:
-        .quad   (jit_global_to_rax_size - POINTER_SIZE)
+        .quad   (. - jit_global_to_rax) - POINTER_SIZE
 
         .align  16
 jit_local_to_rax:
         mov     -0x11223344(%rbp), %rax
 jit_local_to_rax_size:
-        .quad   . - jit_local_to_rax
-jit_local_to_rax_index_offset:
-        .quad   (jit_local_to_rax_size - INT_SIZE)
+        .quad   (. - jit_local_to_rax) - INT_SIZE
 
         .align  16
 jit_rax_to_local:
         mov     %rax, -0x11223344(%rbp)
 jit_rax_to_local_size:
-        .quad   . - jit_rax_to_local_size
-jit_rax_to_local_index_offset:
-        .quad   (jit_rax_to_local_size - INT_SIZE)
+        .quad   (. - jit_rax_to_local) - INT_SIZE
