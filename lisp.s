@@ -475,7 +475,7 @@ eval:                           # expression environment-specifier
 
         mov     %esi, max_global_symbol(%rsp)
 
-        call_fn jit_code, %rdi
+        call_fn jit_code, %rdi, $NIL
         call    *%rax
         return
 
@@ -1714,16 +1714,17 @@ jit_allocate_code:              # c-code, c-size
         perror  je
         return  %rbx
 
-jit_code:                       # form
-        prologue code, size
+jit_code:                       # form, environment
+        prologue env, code, size
         mov     %rdi, %r12
+        mov     %rsi, env(%rsp)
         lea     code(%rsp), %rdi
         lea     size(%rsp), %rsi
         call_fn open_memstream, %rdi, %rsi
         perror
         mov     %rax, %rbx
 
-        call_fn jit_function, %r12, %rbx, $NIL
+        call_fn jit_function, %r12, %rbx, env(%rsp)
         call_fn fclose, %rbx
         perror  je
 
