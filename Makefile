@@ -1,7 +1,5 @@
 ASFLAGS += -g --64 -march=generic64+sse4.1
-CFLAGS += -rdynamic
-
-LDLIBS = -ldl -lm
+LDLIBS = -lm
 
 default: akeem
 

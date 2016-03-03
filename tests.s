@@ -138,11 +138,6 @@ main:
         call_fn string_to_symbol, %rax
         assert
 
-        call_fn dlsym, $RTLD_DEFAULT, $strlen_name
-        call_fn *%rax, $int_format
-        call_fn box_int, %rax
-        assert
-
         call_fn cons, $1, $NIL
         call_fn is_pair, %rax
         assert
