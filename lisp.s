@@ -1756,14 +1756,14 @@ jit_epilogue_size:
         .quad   . - jit_epilogue
 
         .align  16
-jit_intermediate:
+jit_immediate:
         mov     $0x1122334455667788, %rax
-jit_intermediate_size:
-        .quad   . - jit_intermediate
-jit_intermediate_register_offset:
-        .quad   (jit_intermediate_size - (POINTER_SIZE + 1))
-jit_intermediate_value_offset:
-        .quad   (jit_intermediate_size - POINTER_SIZE)
+jit_immediate_size:
+        .quad   . - jit_immediate
+jit_immediate_register_offset:
+        .quad   (jit_immediate_size - (POINTER_SIZE + 1))
+jit_immediate_value_offset:
+        .quad   (jit_immediate_size - POINTER_SIZE)
 
         .align  16
 jit_unconditional_jump:
@@ -1787,7 +1787,7 @@ jit_conditional_false_jump_relative_offset:
 
         .align  16
 jit_call:
-        call     11223344
+        call     0x11223344
 jit_call_size:
         .quad   . - jit_call
 jit_call_target_offset:
@@ -1826,11 +1826,21 @@ jit_lookup_symbol_address_offset:
         .quad   (jit_lookup_symbol_size - POINTER_SIZE)
 
         .align  16
-jit_local_variable:
+jit_local_variable_get:
         mov     -0x11223344(%rbp), %rax
-jit_local_variable_size:
-        .quad   . - jit_local_variable_size
-jit_local_variable_register_offset:
-        .quad   (jit_local_variable_size - (INT_SIZE + 1))
-jit_local_variable_index_offset:
-        .quad   (jit_local_variable_size - INT_SIZE)
+jit_local_variable_get_size:
+        .quad   . - jit_local_variable_get_size
+jit_local_variable_get_register_offset:
+        .quad   (jit_local_variable_get_size - (INT_SIZE + 1))
+jit_local_variable_get_index_offset:
+        .quad   (jit_local_variable_get_size - INT_SIZE)
+
+        .align  16
+jit_local_variable_set:
+        mov     %rax, -0x11223344(%rbp)
+jit_local_variable_set_size:
+        .quad   . - jit_local_variable_set_size
+jit_local_variable_set_register_offset:
+        .quad   (jit_local_variable_set_size - (INT_SIZE + 1))
+jit_local_variable_set_index_offset:
+        .quad   (jit_local_variable_set_size - INT_SIZE)

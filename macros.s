@@ -200,15 +200,15 @@
 
         .macro integer_division
         has_tag TAG_INT, %rdi, store=false
-        je      integer_division_int_\@
+        je      .L_integer_division_int_\@
         movd    %rdi, %xmm0
         cvtsd2si %xmm0, %rdi
-integer_division_int_\@:
+.L_integer_division_int_\@:
         has_tag TAG_INT, %rsi, store=false
-        je      integer_division_int_int_\@
+        je      .L_integer_division_int_int_\@
         movq    %rsi, %xmm0
         cvtsd2si %xmm0, %rsi
-integer_division_int_int_\@:
+.L_integer_division_int_int_\@:
         mov     %edi, %eax
         cdq
         idiv    %esi
@@ -217,13 +217,13 @@ integer_division_int_int_\@:
         .macro maybe_round_to_int from=%xmm0 tmp=%xmm1
         roundsd $ROUNDING_MODE_TRUNCATE, \from, \tmp
         ucomisd \from, \tmp
-        je      round_to_int_\@
+        je      .L_round_to_int_\@
         movq    \from, %rax
-        jmp     no_round_to_int_\@
-round_to_int_\@:
+        jmp     .L_no_round_to_int_\@
+.L_round_to_int_\@:
         cvtsd2si \tmp, %rax
         box_int_internal
-no_round_to_int_\@:
+.L_no_round_to_int_\@:
         .endm
 
         .macro math_library_unary_call name round=false
@@ -302,10 +302,10 @@ no_round_to_int_\@:
 
         .macro perror success=jg
         cmp    $NULL, %rax
-        \success perror_ok_\@
+        \success .L_perror_ok_\@
         call_fn perror, $NULL
         call_fn exit, $1
-perror_ok_\@:
+.L_perror_ok_\@:
         .endm
 
         .macro open_string_buffer str, size, stream
@@ -333,12 +333,12 @@ perror_ok_\@:
         .macro read_byte_jump table, stream=%rbx byte=%rax, tmp=%r11
         mov     \table(,\byte,POINTER_SIZE), \tmp
         test    \tmp, \tmp
-        jnz     read_byte_jump_call_\@
+        jnz     .L_read_byte_jump_call_\@
         call_fn error, read_error_string
-        jmp     read_byte_jump_after_\@
-read_byte_jump_call_\@:
+        jmp     .L_read_byte_jump_after_\@
+.L_read_byte_jump_call_\@:
         call_fn *\tmp, \stream, \byte
-read_byte_jump_after_\@:
+.L_read_byte_jump_after_\@:
         .endm
 
         .macro intern_string var, name
