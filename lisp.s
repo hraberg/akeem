@@ -979,6 +979,8 @@ init_runtime:                   # execution_stack_top, jit_code_debug
         store_pointer %eax, $jit_if
         unbox_pointer_internal set_symbol
         store_pointer %eax, $jit_set
+        unbox_pointer_internal lambda_symbol
+        store_pointer %eax, $jit_lambda
 
         return
 
@@ -1829,6 +1831,25 @@ jit_if:                         # form, c-stream, environment
 
         return
 
+jit_lambda:                     # form, c-stream, environment
+        prologue env, args
+        mov     %rdi, %rbx
+        mov     %rsi, %r12
+        mov     %rdx, env(%rsp)
+
+        call_fn cdr, %rbx
+        mov     %rax, %rbx
+        call_fn car, %rbx
+        mov     %rax, env(%rsp)
+        call_fn cdr, %rbx
+        call_fn car, %rax
+        call_fn jit_code, %rax, env(%rsp)
+
+        tag     TAG_PROCEDURE, %rax
+        call_fn jit_datum, %rax, %r12, env(%rsp)
+
+        return
+
 jit_set:                        # form, c-stream, environment
         prologue symbol_address, env
         mov     %rdi, %rbx
@@ -1867,15 +1888,18 @@ jit_pair:                       # form, c-stream, environment
         mov     %rdx, env(%rsp)
 
         call_fn car, %rbx
-        unbox_pointer_internal %rax
+        mov     %rax, %r11
+        has_tag TAG_SYMBOL, %r11, store=false
+        jne     1f
+        unbox_pointer_internal %r11
         mov     jit_syntax_jump_table(,%rax,8), %rax
         test    %eax, %eax
-        jnz     1f
+        jnz     2f
 
-        call_fn jit_procedure_call, %rbx, %r12, env(%rsp)
+1:      call_fn jit_procedure_call, %rbx, %r12, env(%rsp)
         return
 
-1:      call_fn *%rax, %rbx, %r12
+2:      call_fn *%rax, %rbx, %r12
         return
 
 jit_symbol:                    # symbol, c-stream, environment
