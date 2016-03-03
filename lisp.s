@@ -936,6 +936,24 @@ init_runtime:                   # execution_stack_top, jit_code_debug
         store_pointer $TAG_PAIR, $jit_add_to_constant_pool
         store_pointer $TAG_VECTOR, $jit_add_to_constant_pool
 
+        lea     jit_pop_argument_table, %rbx
+        store_pointer $0, $jit_pop_rax
+        store_pointer $1, $jit_pop_rdi
+        store_pointer $2, $jit_pop_rsi
+        store_pointer $3, $jit_pop_rdx
+        store_pointer $4, $jit_pop_rcx
+        store_pointer $5, $jit_pop_r8
+        store_pointer $6, $jit_pop_r9
+
+        lea     jit_pop_argument_size_table, %rbx
+        store_pointer $0, jit_pop_rax_size
+        store_pointer $1, jit_pop_rdi_size
+        store_pointer $2, jit_pop_rsi_size
+        store_pointer $3, jit_pop_rdx_size
+        store_pointer $4, jit_pop_rcx_size
+        store_pointer $5, jit_pop_r8_size
+        store_pointer $6, jit_pop_r9_size
+
         return
 
         ## Public API
@@ -1713,43 +1731,36 @@ jit_datum:                      # form, c-stream
         return
 
 jit_procedure_call:             # form, c-stream
-        prologue arg_count
+        prologue len
         mov     %rdi, %rbx
         mov     %rsi, %r12
 
         call_fn length, %rbx
-        dec     %eax
-        mov     %rax, arg_count(%rsp)
+        mov     %rax, len(%rsp)
 
-        call_fn car, %rbx
-        call_fn jit_datum, %rax
-        call_fn fwrite, $jit_push_rax, $1, jit_push_rax_size, %r12
-
-1:      call_fn cdr, %rbx
-        mov     %rax, %rbx
-
-        mov     $NIL, %r11
+1:      mov     $NIL, %r11
         cmp     %r11, %rbx
         je      2f
 
         call_fn car, %rbx
-        call_fn jit_datum, %rax
+        call_fn jit_datum, %rax, %r12
         call_fn fwrite, $jit_push_rax, $1, jit_push_rax_size, %r12
+
+        call_fn cdr, %rbx
+        mov     %rax, %rbx
         jmp     1b
 
-2:      mov     arg_count(%rsp), %rbx
+2:      mov     len(%rsp), %rbx
 3:      test    %ebx, %ebx
         jz      4f
-
-        mov     jit_pop_argument_table(,%ebx,POINTER_SIZE), %rax
-        mov     jit_pop_argument_size_table(,%ebx,POINTER_SIZE), %r11
-        call_fn fwrite, %rax, $1, %r11, %r12
-
         dec     %ebx
+
+        mov     jit_pop_argument_table(,%rbx,POINTER_SIZE), %rax
+        mov     jit_pop_argument_size_table(,%rbx,POINTER_SIZE), %r11
+        call_fn fwrite, %rax, $1, %r11, %r12
         jmp     3b
 
-4:      call_fn fwrite, $jit_pop_rax, $1, jit_pop_rax_size, %r12
-        call_fn fwrite, $jit_call_rax, $1, jit_call_rax_size, %r12
+4:      call_fn fwrite, $jit_call_rax, $1, jit_call_rax_size, %r12
         return
 
 jit_pair:                       # form, c-stream
@@ -1849,6 +1860,14 @@ jit_constant_pool_jump_table:
         .zero   TAG_MASK * POINTER_SIZE
 
         .align  16
+jit_pop_argument_table:
+        .zero   16 * POINTER_SIZE
+
+        .align  16
+jit_pop_argument_size_table:
+        .zero   16 * POINTER_SIZE
+
+        .align  16
 symbol_table_values:
         .zero   MAX_NUMBER_OF_SYMBOLS * POINTER_SIZE
 
@@ -1926,8 +1945,6 @@ jit_code_file_format:
         ## rax = r0, rcx = r1, rdx = r2, rbx = r3,
         ## rsp = r4, rbp = r5, rsi = r6, rdi = r7
 
-        ## movbe for LE/BE moves if necessary to write parameters.
-
         .align  16
 jit_prologue:
         push    %rbp
@@ -1985,26 +2002,6 @@ jit_pop_\reg\():
 jit_pop_\reg\()_size:
         .quad   . - jit_pop_\reg\()
         .endr
-
-        .align  16
-jit_pop_argument_table:
-        .quad   jit_pop_rax
-        .quad   jit_pop_rdi
-        .quad   jit_pop_rsi
-        .quad   jit_pop_rdx
-        .quad   jit_pop_rcx
-        .quad   jit_pop_r8
-        .quad   jit_pop_r9
-
-        .align  16
-jit_pop_argument_size_table:
-        .quad   jit_pop_rax_size
-        .quad   jit_pop_rdi_size
-        .quad   jit_pop_rsi_size
-        .quad   jit_pop_rdx_size
-        .quad   jit_pop_rcx_size
-        .quad   jit_pop_r8_size
-        .quad   jit_pop_r9_size
 
         .align  16
 jit_global_to_rax:

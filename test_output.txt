@@ -228,4 +228,6 @@ foo
 foo
 #<procedure>
 #<port>
+1.414214
+0.718280
 ;;; test suite end
