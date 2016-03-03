@@ -954,6 +954,24 @@ init_runtime:                   # execution_stack_top, jit_code_debug
         store_pointer $5, jit_pop_r8_size
         store_pointer $6, jit_pop_r9_size
 
+        lea     jit_push_parameter_table, %rbx
+        store_pointer $0, $jit_push_rax
+        store_pointer $1, $jit_push_rdi
+        store_pointer $2, $jit_push_rsi
+        store_pointer $3, $jit_push_rdx
+        store_pointer $4, $jit_push_rcx
+        store_pointer $5, $jit_push_r8
+        store_pointer $6, $jit_push_r9
+
+        lea     jit_push_parameter_size_table, %rbx
+        store_pointer $0, jit_push_rax_size
+        store_pointer $1, jit_push_rdi_size
+        store_pointer $2, jit_push_rsi_size
+        store_pointer $3, jit_push_rdx_size
+        store_pointer $4, jit_push_rcx_size
+        store_pointer $5, jit_push_r8_size
+        store_pointer $6, jit_push_r9_size
+
         lea     jit_syntax_jump_table, %rbx
         unbox_pointer_internal quote_symbol
         store_pointer %eax, $jit_quote
@@ -1921,6 +1939,14 @@ jit_pop_argument_size_table:
         .zero   16 * POINTER_SIZE
 
         .align  16
+jit_push_parameter_table:
+        .zero   16 * POINTER_SIZE
+
+        .align  16
+jit_push_parameter_size_table:
+        .zero   16 * POINTER_SIZE
+
+        .align  16
 symbol_table_values:
         .zero   MAX_NUMBER_OF_SYMBOLS * POINTER_SIZE
 
@@ -2042,18 +2068,21 @@ jit_call_rax:
 jit_call_rax_size:
         .quad   . - jit_call_rax
 
-        .align  16
-jit_push_rax:
-        push    %rax
-jit_push_rax_size:
-        .quad   . - jit_push_rax
-
         .irp reg, rax, rdi, rsi, rdx, rcx, r8, r9
         .align  16
 jit_pop_\reg\():
         pop    %\reg
 jit_pop_\reg\()_size:
         .quad   . - jit_pop_\reg\()
+        .endr
+
+        .align  16
+        .irp reg, rax, rdi, rsi, rdx, rcx, r8, r9
+        .align  16
+jit_push_\reg\():
+        push    %\reg
+jit_push_\reg\()_size:
+        .quad   . - jit_push_\reg
         .endr
 
         .align  16
