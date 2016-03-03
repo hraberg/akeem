@@ -368,7 +368,7 @@ string_length:                  # string
 string_ref:                     # string, k
         mov     %esi, %esi
         unbox_pointer_internal %rdi
-        movsxb  header_size(%rax,%rsi), %eax
+        movzxb  header_size(%rax,%rsi), %eax
         tag     TAG_CHAR, %rax
         ret
 
