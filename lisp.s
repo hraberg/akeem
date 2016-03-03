@@ -1381,10 +1381,16 @@ read_whitespace:                # c-stream
 
 1:      call_fn fgetc, %rbx
         mov     %rax, %r12
+        cmp     $EOF, %al
+        je      2f
+
         call_fn isspace, %rax
         jnz     1b
 
         call_fn ungetc, %r12, %rbx
+        return
+
+2:      call_fn exit, $0
         return
 
 read_datum:                     # c-stream

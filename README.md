@@ -11,6 +11,13 @@ Only tested on Linux. Written in GNU Assembler using AT&T
 syntax. Akeem depends on
 [glibc](https://www.gnu.org/software/libc/manual/html_mono/libc.html).
 
+## Usage
+
+``` bash
+make
+`which rlwrap` ./akeem
+```
+
 
 ## Implementation Notes / Ideas
 
