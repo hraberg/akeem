@@ -992,7 +992,6 @@ main:
         call_fn cons, foo_name, $NIL
         call_fn cons, %rax, $NIL
         mov     %rax, %rbx
-
         string_literal "quote"
         call_fn string_to_symbol, %rax
         call_fn cons, %rax, %rbx
@@ -1006,6 +1005,11 @@ main:
         assert  write=true
 
         call_fn string_to_symbol, foo_name
+        call_fn cons, %rax, $NIL
+        mov     %rax, %rbx
+        string_literal "quote"
+        call_fn string_to_symbol, %rax
+        call_fn cons, %rax, %rbx
         call_fn eval, %rax
         assert  write=true
 
