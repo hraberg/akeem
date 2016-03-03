@@ -1703,6 +1703,8 @@ jit_pair:                       # form, c-stream
 1:      call_fn jit_literal, %rbx, %r12
         return
 
+        ## Need to split out semi-constant literals stored on heap and
+        ## add them to a literal stack for GC.
 jit_literal:                    # literal, c-stream
         prologue literal
         mov     %rdi, literal(%rsp)
