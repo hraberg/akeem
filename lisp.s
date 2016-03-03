@@ -954,6 +954,11 @@ init_runtime:                   # execution_stack_top, jit_code_debug
         store_pointer $5, jit_pop_r8_size
         store_pointer $6, jit_pop_r9_size
 
+        lea     jit_syntax_jump_table, %rbx
+
+        unbox_pointer_internal quote_symbol
+        store_pointer %eax, $jit_quote
+
         return
 
         ## Public API
@@ -1763,22 +1768,30 @@ jit_procedure_call:             # form, c-stream
 4:      call_fn fwrite, $jit_call_rax, $1, jit_call_rax_size, %r12
         return
 
+jit_quote:                      # form, c-stream
+        prologue
+        mov     %rdi, %rbx
+        mov     %rsi, %r12
+        call_fn cdr, %rbx
+        call_fn car, %rax
+        call_fn jit_literal, %rax, %r12
+        return
+
 jit_pair:                       # form, c-stream
         prologue
         mov     %rdi, %rbx
         mov     %rsi, %r12
 
         call_fn car, %rbx
-        mov     quote_symbol, %r11
-        cmp     %rax, %r11
-        je      1f
+        unbox_pointer_internal %rax
+        mov     jit_syntax_jump_table(,%rax,8), %rax
+        test    %eax, %eax
+        jnz     1f
 
         call_fn jit_procedure_call, %rbx, %r12
         return
 
-1:      call_fn cdr, %rbx
-        call_fn car, %rax
-        call_fn jit_literal, %rax, %r12
+1:      call_fn *%rax, %rbx, %r12
         return
 
 jit_symbol:                    # symbol, c-stream
@@ -1858,6 +1871,10 @@ jit_jump_table:
         .align  16
 jit_constant_pool_jump_table:
         .zero   TAG_MASK * POINTER_SIZE
+
+        .align  16
+jit_syntax_jump_table:
+        .zero   MAX_NUMBER_OF_SYMBOLS * POINTER_SIZE
 
         .align  16
 jit_pop_argument_table:
