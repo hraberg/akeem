@@ -760,7 +760,7 @@ init_runtime:                   # execution_stack_top, jit_code_debug
 
         define "vector?", $is_vector
         define "make-vector", $make_vector
-        define "vecetor-length", $vector_length
+        define "vector-length", $vector_length
         define "vector-ref", $vector_ref
         define "vector-set!", $vector_set
         define "list->vector", $list_to_vector
