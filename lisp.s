@@ -1713,7 +1713,43 @@ jit_datum:                      # form, c-stream
         return
 
 jit_procedure_call:             # form, c-stream
-        prologue
+        prologue arg_count
+        mov     %rdi, %rbx
+        mov     %rsi, %r12
+
+        call_fn length, %rbx
+        dec     %eax
+        mov     %rax, arg_count(%rsp)
+
+        call_fn car, %rbx
+        call_fn jit_datum, %rax
+        call_fn fwrite, $jit_push_rax, $1, jit_push_rax_size, %r12
+
+1:      call_fn cdr, %rbx
+        mov     %rax, %rbx
+
+        mov     $NIL, %r11
+        cmp     %r11, %rbx
+        je      2f
+
+        call_fn car, %rbx
+        call_fn jit_datum, %rax
+        call_fn fwrite, $jit_push_rax, $1, jit_push_rax_size, %r12
+        jmp     1b
+
+2:      mov     arg_count(%rsp), %rbx
+3:      test    %ebx, %ebx
+        jz      4f
+
+        mov     jit_pop_argument_table(,%ebx,POINTER_SIZE), %rax
+        mov     jit_pop_argument_size_table(,%ebx,POINTER_SIZE), %r11
+        call_fn fwrite, %rax, $1, %r11, %r12
+
+        dec     %ebx
+        jmp     3b
+
+4:      call_fn fwrite, $jit_pop_rax, $1, jit_pop_rax_size, %r12
+        call_fn fwrite, $jit_call_rax, $1, jit_call_rax_size, %r12
         return
 
 jit_pair:                       # form, c-stream
@@ -1952,6 +1988,7 @@ jit_pop_\reg\()_size:
 
         .align  16
 jit_pop_argument_table:
+        .quad   jit_pop_rax
         .quad   jit_pop_rdi
         .quad   jit_pop_rsi
         .quad   jit_pop_rdx
@@ -1961,6 +1998,7 @@ jit_pop_argument_table:
 
         .align  16
 jit_pop_argument_size_table:
+        .quad   jit_pop_rax_size
         .quad   jit_pop_rdi_size
         .quad   jit_pop_rsi_size
         .quad   jit_pop_rdx_size

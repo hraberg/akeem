@@ -227,4 +227,5 @@ foo
 #("foo")
 foo
 #<procedure>
+#<port>
 ;;; test suite end

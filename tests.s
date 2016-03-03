@@ -1028,6 +1028,12 @@ main:
         call_fn eval, %rax
         assert  write=true
 
+        string_literal "current-output-port"
+        call_fn string_to_symbol, %rax
+        call_fn cons, %rax, $NIL
+        call_fn eval, %rax
+        assert  write=true
+
         test_case "test suite end"
 
         return  $0
