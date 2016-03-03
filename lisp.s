@@ -954,23 +954,21 @@ init_runtime:                   # execution_stack_top, jit_code_debug
         store_pointer $5, jit_pop_r8_size
         store_pointer $6, jit_pop_r9_size
 
-        lea     jit_push_parameter_table, %rbx
-        store_pointer $0, $jit_push_rax
-        store_pointer $1, $jit_push_rdi
-        store_pointer $2, $jit_push_rsi
-        store_pointer $3, $jit_push_rdx
-        store_pointer $4, $jit_push_rcx
-        store_pointer $5, $jit_push_r8
-        store_pointer $6, $jit_push_r9
+        lea     jit_parameter_to_rax_table, %rbx
+        store_pointer $0, $jit_rdi_to_rax
+        store_pointer $1, $jit_rsi_to_rax
+        store_pointer $2, $jit_rdx_to_rax
+        store_pointer $3, $jit_rcx_to_rax
+        store_pointer $4, $jit_r8_to_rax
+        store_pointer $5, $jit_r9_to_rax
 
-        lea     jit_push_parameter_size_table, %rbx
-        store_pointer $0, jit_push_rax_size
-        store_pointer $1, jit_push_rdi_size
-        store_pointer $2, jit_push_rsi_size
-        store_pointer $3, jit_push_rdx_size
-        store_pointer $4, jit_push_rcx_size
-        store_pointer $5, jit_push_r8_size
-        store_pointer $6, jit_push_r9_size
+        lea     jit_parameter_to_rax_size_table, %rbx
+        store_pointer $0, jit_rdi_to_rax_size
+        store_pointer $1, jit_rsi_to_rax_size
+        store_pointer $2, jit_rdx_to_rax_size
+        store_pointer $3, jit_rcx_to_rax_size
+        store_pointer $4, jit_r8_to_rax_size
+        store_pointer $5, jit_r9_to_rax_size
 
         lea     jit_syntax_jump_table, %rbx
         unbox_pointer_internal quote_symbol
@@ -979,6 +977,8 @@ init_runtime:                   # execution_stack_top, jit_code_debug
         store_pointer %eax, $jit_if
         unbox_pointer_internal set_symbol
         store_pointer %eax, $jit_set
+        unbox_pointer_internal define_symbol
+        store_pointer %eax, $jit_define
         unbox_pointer_internal lambda_symbol
         store_pointer %eax, $jit_lambda
 
@@ -1735,7 +1735,7 @@ jit_code:                       # form, environment
         return
 
 jit_function:                   # form, c-stream, environment
-        prologue env, locals
+        prologue env, frame_size, local_idx, local
         mov     %rdi, %rbx
         mov     %rsi, %r12
         mov     %rdx, env(%rsp)
@@ -1743,15 +1743,37 @@ jit_function:                   # form, c-stream, environment
         call_fn fwrite, $jit_prologue, $1, jit_prologue_size, %r12
 
         call_fn length, env(%rsp)
+        mov     %eax, local_idx(%rsp)
 
         shl     $POINTER_SIZE_SHIFT, %eax
         add     $POINTER_SIZE, %eax
         and     $-(POINTER_SIZE * 2), %eax
-        mov     %eax, locals(%rsp)
-        lea     locals(%rsp), %rax
+        mov     %eax, frame_size(%rsp)
+        lea     frame_size(%rsp), %rax
         call_fn fwrite, %rax $1, $INT_SIZE, %r12
 
-        call_fn jit_datum, %rbx, %r12, env(%rsp)
+1:      mov     local_idx(%rsp), %ecx
+        test    %ecx, %ecx
+        jz      2f
+        dec     %ecx
+        mov     %ecx, local_idx(%rsp)
+
+        mov     jit_parameter_to_rax_table(,%rcx,POINTER_SIZE), %rax
+        mov     jit_parameter_to_rax_size_table(,%rcx,POINTER_SIZE), %r11
+        call_fn fwrite, %rax, $1, %r11, %r12
+
+        mov     local_idx(%rsp), %ecx
+        inc     %ecx
+        shl     $POINTER_SIZE_SHIFT, %ecx
+        neg     %ecx
+        mov     %ecx, local(%rsp)
+        call_fn fwrite, $jit_rax_to_local, $1, jit_rax_to_local_size, %r12
+        lea     local(%rsp), %rax
+        call_fn fwrite, %rax, $1, $INT_SIZE, %r12
+
+        jmp     1b
+
+2:      call_fn jit_datum, %rbx, %r12, env(%rsp)
 
         call_fn fwrite, $jit_epilogue, $1, jit_epilogue_size, %r12
         return
@@ -1850,6 +1872,7 @@ jit_lambda:                     # form, c-stream, environment
 
         return
 
+jit_define:                     # form, c-stream, environment
 jit_set:                        # form, c-stream, environment
         prologue symbol_address, env
         mov     %rdi, %rbx
@@ -1903,15 +1926,41 @@ jit_pair:                       # form, c-stream, environment
         return
 
 jit_symbol:                    # symbol, c-stream, environment
-        prologue symbol_address
+        prologue env, symbol_address, symbol, local
+        mov     %rdi, symbol(%rsp)
         mov     %rsi, %r12
+        mov     %rdx, env(%rsp)
 
+        xor     %ebx, %ebx
+        mov     $NIL, %r11
+1:      cmp     %r11, env(%rsp)
+        je      2f
+
+        call_fn car, env(%rsp)
+        cmp     symbol(%rsp), %rax
+        je      3f
+
+        call_fn cdr, env(%rsp)
+        mov     %rax, env(%rsp)
+        inc     %rbx
+        jmp     1b
+
+2:      mov     symbol(%rsp), %rdi
         lea     symbol_table_values(,%edi,POINTER_SIZE), %rax
         mov     %rax, symbol_address(%rsp)
 
         call_fn fwrite, $jit_global_to_rax, $1, jit_global_to_rax_size, %r12
         lea     symbol_address(%rsp), %rax
         call_fn fwrite, %rax, $1, $POINTER_SIZE, %r12
+        return
+
+3:      inc     %ebx
+        shl     $POINTER_SIZE_SHIFT, %ebx
+        neg     %ebx
+        mov     %ebx, local(%rsp)
+        call_fn fwrite, $jit_local_to_rax, $1, jit_local_to_rax_size, %r12
+        lea     local(%rsp), %rax
+        call_fn fwrite, %rax, $1, $INT_SIZE, %r12
         return
 
 jit_literal:                    # literal, c-stream, environment
@@ -1993,11 +2042,11 @@ jit_pop_argument_size_table:
         .zero   16 * POINTER_SIZE
 
         .align  16
-jit_push_parameter_table:
+jit_parameter_to_rax_table:
         .zero   16 * POINTER_SIZE
 
         .align  16
-jit_push_parameter_size_table:
+jit_parameter_to_rax_size_table:
         .zero   16 * POINTER_SIZE
 
         .align  16
@@ -2137,6 +2186,15 @@ jit_push_\reg\():
         push    %\reg
 jit_push_\reg\()_size:
         .quad   . - jit_push_\reg
+        .endr
+
+        .align  16
+        .irp reg, rdi, rsi, rdx, rcx, r8, r9
+        .align  16
+jit_\reg\()_to_rax:
+        mov    %\reg, %rax
+jit_\reg\()_to_rax_size:
+        .quad   . - jit_\reg\()_to_rax
         .endr
 
         .align  16
