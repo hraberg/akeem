@@ -137,10 +137,10 @@
 
         .macro binary_op_jump name
         has_tag TAG_INT, %rdi
-        mov     %al, %dl
+        mov     %eax, %edx
         has_tag TAG_INT, %rsi
         shl     %al
-        or      %edx, %eax
+        or      %dl, %al
         shl     $BINARY_OP_SHIFT, %al
         lea     \name\()_double_double(%eax), %rax
         jmp     *%rax
