@@ -53,6 +53,10 @@ make
 * The memory for the generated code is allocated in a very wasteful
   way.
 
+Most of the above is intended to be solved at some point. The focus is
+slightly geared towards hacking on and exploring the JIT more than
+aiming for full R5RS compliance.
+
 
 ## Implementation Notes
 
