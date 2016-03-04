@@ -278,12 +278,12 @@ is_char:                        # obj
         box_boolean_internal
         ret
 
-char_to_integer:
+char_to_integer:                # char
         movsx   %di, %eax
         box_int_internal
         ret
 
-integer_to_char:
+integer_to_char:                # n
         xor     %eax, %eax
         mov     %di, %ax
         tag     TAG_CHAR, %rax
@@ -472,7 +472,7 @@ call_with_current_continuation: # proc
         ## 6.5. Eval
         .globl eval, scheme_report_environment, null_environment, interaction_environment
 
-eval:                           # expression environment-specifier
+eval:                           # expression, environment-specifier
         prologue max_global_symbol
         default_arg TAG_INT, $-1, %rsi
 
@@ -525,7 +525,7 @@ close_output_port:              # port
         tag     TAG_INT, %rax
         return
 
-call_with_input_file:          # filename, proc
+call_with_input_file:           # filename, proc
         call_with_file_template input
 
 call_with_output_file:          # filename, proc
@@ -1141,7 +1141,7 @@ call_with_current_continuation_escape: # return
         return
 
         ## Stack ADT
-init_pointer_stack:             # stack, size
+init_pointer_stack:             # a-stack, c-size
         prologue
         mov     %rdi, %rbx
         movq    %rsi, stack_max_size(%rbx)
@@ -1151,7 +1151,7 @@ init_pointer_stack:             # stack, size
         movq    $0, stack_top_offset(%rbx)
         return  %rbx
 
-resize_pointer_stack:           # stack
+resize_pointer_stack:           # a-stack
         prologue
         mov     %rdi, %rbx
         shlq    stack_max_size(%rbx)
@@ -1160,7 +1160,7 @@ resize_pointer_stack:           # stack
         mov     %rax, stack_bottom(%rbx)
         return  %rbx
 
-push_pointer_on_stack:          # stack, ptr
+push_pointer_on_stack:          # a-stack, pointer
         prologue
         mov     stack_top_offset(%rdi), %rcx
         cmp     stack_max_size(%rdi), %rcx
@@ -1175,7 +1175,7 @@ push_pointer_on_stack:          # stack, ptr
         add     $POINTER_SIZE, stack_top_offset(%rdi)
         return  %rsi
 
-pop_pointer_from_stack:         # stack
+pop_pointer_from_stack:         # c-stack
         sub     $POINTER_SIZE, stack_top_offset(%rdi)
         mov     stack_top_offset(%rdi), %rcx
         mov     stack_bottom(%rdi), %r11
