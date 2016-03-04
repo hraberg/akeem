@@ -448,20 +448,22 @@ apply:                          # proc, args
         .align  16
 apply_6:
         pop      %r9
+        .align  APPLY_JUMP_ALIGNMENT
 apply_5:
         pop      %r8
+        .align  APPLY_JUMP_ALIGNMENT
 apply_4:
         pop      %rcx
-        nop
+        .align  APPLY_JUMP_ALIGNMENT
 apply_3:
         pop      %rdx
-        nop
+        .align  APPLY_JUMP_ALIGNMENT
 apply_2:
         pop      %rsi
-        nop
+        .align  APPLY_JUMP_ALIGNMENT
 apply_1:
         pop      %rdi
-        nop
+        .align  APPLY_JUMP_ALIGNMENT
 apply_0:
         pop     %rax
         nop
