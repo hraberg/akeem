@@ -29,6 +29,11 @@ make
 * Mark and Sweep GC.
 
 
+## What's next?
+
+* Support for let bindings.
+
+
 ## What doesn't work?
 
 * Almost no error handling.
@@ -47,11 +52,6 @@ make
 * The JIT is static, once a function is generated its done.
 * The memory for the generated code is allocated in a very wasteful
   way.
-
-
-## What's next?
-
-* Support for let bindings.
 
 
 ## Implementation Notes
