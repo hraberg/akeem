@@ -16,7 +16,7 @@ syntax. Akeem depends on
 
 ``` bash
 make
-`which rlwrap` ./akeem
+`which rlwrap` ./akeem # or make run-repl
 ```
 
 ## What Works?
