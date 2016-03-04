@@ -78,6 +78,18 @@ for simple unit testing. To run and keep watching the tests (uses
 make retest
 ```
 
+Part of the implementation is in
+[`r5rs.scm`](https://github.com/hraberg/akeem/blob/master/r5rs.scm)
+which gets embedded as a string during compilation and loaded at
+startup.
+
+While running, the result of the JIT is logged into `jit_code`, and
+can be inspected using `objdump` via:
+
+``` bash
+make jit_dissassmble
+```
+
 
 ## References
 
