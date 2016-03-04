@@ -709,6 +709,7 @@ init_runtime:                   # execution_stack_top, jit_code_debug
         intern_symbol let_symbol, "let"
         intern_symbol define_symbol, "define"
         intern_symbol begin_symbol, "begin"
+        intern_symbol delay_symbol, "delay"
         intern_symbol set_symbol, "set!"
 
         mov     symbol_next_id, %rax
@@ -886,6 +887,8 @@ init_runtime:                   # execution_stack_top, jit_code_debug
         store_pointer %eax, $jit_lambda
         unbox_pointer_internal begin_symbol
         store_pointer %eax, $jit_begin
+        unbox_pointer_internal delay_symbol
+        store_pointer %eax, $jit_delay
 
         .irp name, eq, eqv, number, integer, exact, inexact
         define "\name?", $is_\name
@@ -1928,6 +1931,20 @@ jit_begin:                     # form, c-stream, environment
         jmp     1b
 
 2:      return
+
+
+jit_delay:                      # form, c-stream, environment
+        prologue env, form
+        mov     %rdi, %rbx
+        mov     %rsi, %r12
+        mov     %rdx, env(%rsp)
+
+        call_fn cdr, %rbx
+        call_fn cons, $NIL, %rax
+        call_fn cons, lambda_symbol, %rax
+
+        call_fn jit_datum, %rax, %r12, env(%rsp)
+        return
 
 jit_lambda:                     # form, c-stream, environment
         prologue env, args
