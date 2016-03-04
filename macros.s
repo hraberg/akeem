@@ -288,7 +288,7 @@
         return  %rbx
         .endm
 
-        .macro patch_jump, stream, target, origin, offset
+        .macro patch_jump stream, target, origin, offset
         call_fn ftell, \stream
         mov     %rax, \target
         sub     \origin, %rax
