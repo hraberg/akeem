@@ -3,7 +3,7 @@ LDLIBS = -lm
 
 default: akeem
 
-%.o: %.s constants.s macros.s
+%.o: %.s constants.s macros.s r5rs.scm core.scm
 	$(AS) $< $(ASFLAGS) -o $@
 
 tests: tests.o lisp.o

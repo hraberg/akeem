@@ -163,22 +163,9 @@ string_to_number:               # string, radix
 2:      return  $FALSE
 
         ## 6.3. Other data types
-        ## 6.3.1. Booleans
-        .globl not, is_boolean
-
-not:                            # obj
-        mov     $FALSE, %rax
-        eq_internal %rdi, %rax
-        box_boolean_internal
-        ret
-
-is_boolean:                     # obj
-        has_tag TAG_BOOLEAN, %rdi
-        box_boolean_internal
-        ret
 
         ## 6.3.2. Pairs and lists
-        .globl is_pair, cons, car, cdr, set_car, set_cdr, is_null, length, reverse
+        .globl is_pair, cons, car, cdr, set_car, set_cdr, length
 
 is_pair:                        # obj
         mov     $NIL, %rax
@@ -225,12 +212,6 @@ set_cdr:                        # pair, obj
         mov     %rsi, %rax
         ret
 
-is_null:                        # obj
-        mov     $NIL, %rax
-        eq_internal %rax, %rdi
-        box_boolean_internal
-        ret
-
 length:                         # list
         prologue
         mov     %rdi, %rax
@@ -246,24 +227,6 @@ length:                         # list
 
 2:      box_int_internal %ebx
         return
-
-reverse:                        # list
-        prologue
-        mov     $NIL, %r12
-        mov     %rdi, %rbx
-1:      mov     $NIL, %r11
-        cmp     %r11, %rbx
-        je      2f
-
-        calL_fn car, %rbx
-        call_fn cons, %rax, %r12
-        mov     %rax, %r12
-
-        call_fn cdr, %rbx
-        mov     %rax, %rbx
-        jmp     1b
-
-2:      return  %r12
 
         ## 6.3.3. Symbols
         .globl is_symbol, symbol_to_string, string_to_symbol
@@ -477,7 +440,7 @@ apply:                          # proc, args
 
 2:      cmp     $MAX_REGISTER_ARGS, %rbx
         jg      apply_6
-        jmp     apply_jump_table(,%ebx,POINTER_SIZE)
+        jmp     *apply_jump_table(,%ebx,POINTER_SIZE)
 
         .align  16
 apply_6:
@@ -957,9 +920,6 @@ init_runtime:                   # execution_stack_top, jit_code_debug
         define "number->string", $number_to_string
         define "string->number", $string_to_number
 
-        define "not", $not
-        define "boolean?", $is_boolean
-
         define "pair?", $is_pair
         define "cons", $cons
         define "car", $car
@@ -967,9 +927,7 @@ init_runtime:                   # execution_stack_top, jit_code_debug
         define "set-car!", $set_car
         define "set-cdr!", $set_cdr
 
-        define "null?", $is_null
         define "length", $length
-        define "reverse", $reverse
 
         define "symbol?", $is_symbol
         define "symbol->string", $symbol_to_string

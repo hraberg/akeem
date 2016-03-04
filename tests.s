@@ -112,9 +112,6 @@ main:
         mov     %rax, %rbx
         assert
 
-        call_fn reverse, %rbx
-        assert
-
         call_fn list_to_vector, %rbx
         assert
 
@@ -141,10 +138,6 @@ main:
 
         call_fn box_int, $1
         call_fn is_exact, %rax
-        assert
-
-        call_fn box_int, $1
-        call_fn is_boolean, %rax
         assert
 
         call_fn is_string, strlen_name
@@ -210,23 +203,11 @@ main:
         assert $TRUE
         assert $FALSE
 
-        call_fn is_boolean, $TRUE
-        assert
-
-        call_fn is_boolean, $FALSE
-        assert
-
         call_fn is_symbol, $NIL
         assert
 
         assert $NIL
         assert $TRUE
-
-        call_fn is_null, $NIL
-        assert
-
-        call_fn is_null, PI
-        assert
 
         call_fn is_inexact, PI
         assert

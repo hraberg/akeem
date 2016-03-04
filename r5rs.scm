@@ -35,6 +35,16 @@
       (- 0 x)
       x))
 
+;;; 6.3.1. Booleans
+
+(define (not obj)
+  (if (eq? obj #f)
+      #t
+      #f))
+
+(define (boolean? obj)
+  (or (eq? #t obj) (eq? #f obj)))
+
 ;;; 6.3.2. Pairs and lists
 
 (define (caar obj)
@@ -121,6 +131,9 @@
 (define (cddddr obj)
   (cdr (cdr (cdr (cdr obj)))))
 
+(define (null? obj)
+  (eq? '() obj))
+
 (define (list? obj)
   (or (null? obj)
       (and (pair? obj) (list? (cdr obj)))))
@@ -129,6 +142,13 @@
   (if (null? list1)
       list2
       (cons (car list1) (append (cdr list1) list2))))
+
+(define (reverse-aux list acc)
+  (if (null? list) acc
+      (reverse-aux (cdr list) (cons (car list) acc))))
+
+(define (reverse list)
+  (reverse-aux list '()))
 
 (define (list-tail list k)
   (if (zero? k)
