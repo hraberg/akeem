@@ -1008,7 +1008,7 @@ init_runtime:                   # execution_stack_top, argc, argv, jit_code_debu
         define "class-of", $class_of
         define "lookup-global-symbol", $lookup_global_symbol
 
-        call_fn box_string, $core_scm
+        call_fn box_string, $extensions_scm
         call_fn open_input_string, %rax
         call_fn read_all, %rax
 
@@ -2468,6 +2468,6 @@ r5rs_scm:
         .byte   0
 
         .align  16
-core_scm:
-        .incbin "core.scm"
+extensions_scm:
+        .incbin "extensions.scm"
         .byte   0
