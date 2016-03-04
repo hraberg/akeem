@@ -1780,7 +1780,7 @@ jit_code:                       # form, environment
         perror
         mov     %rax, %rbx
 
-        call_fn jit_function, %r12, %rbx, env(%rsp)
+        call_fn jit_procedure, %r12, %rbx, env(%rsp)
         call_fn fclose, %rbx
         perror  je
 
@@ -1788,7 +1788,7 @@ jit_code:                       # form, environment
         call_fn jit_allocate_code, code(%rsp), %r11
         return
 
-jit_function:                   # form, c-stream, environment
+jit_procedure:                  # form, c-stream, environment
         prologue env, frame_size, local_idx, local
         mov     %rdi, %rbx
         mov     %rsi, %r12
