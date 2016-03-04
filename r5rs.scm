@@ -1,3 +1,5 @@
+;;; 6.4. Control features
+
 (define map
   (lambda (f coll)
     (if (null? coll) '()

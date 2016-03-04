@@ -1514,12 +1514,30 @@ read_whitespace:                # c-stream
 2:      tag     TAG_CHAR, %rax
         return
 
+read_comment:                   # c-stream
+        prologue
+        mov     %rdi, %rbx
+
+        call_fn fgetc, %rbx
+        cmp     $';, %al
+        jne     2f
+
+1:      call_fn fgetc, %rbx
+        cmp     $'\n, %al
+        je      3f
+        jmp     1b
+
+2:      call_fn ungetc, %rax, %rbx
+3:      return  $FALSE
+
 read_datum:                     # c-stream
         prologue
         mov     %rdi, %rbx
+        call_fn read_comment, %rbx
         call_fn read_whitespace, %rbx
         cmp     $EOF, %eax
         je      1f
+        call_fn read_comment, %rbx
         call_fn fgetc, %rbx
         read_byte_jump read_datum_jump_table, %rbx, %rax
 1:      return
@@ -1537,7 +1555,7 @@ read_token:                     # c-stream
         lea     str(%rsp), %rdx
         xor     %al, %al
         call_fn fscanf, %rbx, $token_format, %rdx
-        perror
+        perror  jge
         call_fn box_string, str(%rsp)
         mov     %rax, %rbx
         call_fn free, str(%rsp)
