@@ -465,7 +465,6 @@ apply_1:
         .align  APPLY_JUMP_ALIGNMENT
 apply_0:
         pop     %rax
-        nop
         call    *%rax
         return
 
