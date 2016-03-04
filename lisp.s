@@ -710,6 +710,8 @@ init_runtime:                   # execution_stack_top, jit_code_debug
         intern_symbol define_symbol, "define"
         intern_symbol begin_symbol, "begin"
         intern_symbol delay_symbol, "delay"
+        intern_symbol and_symbol, "and"
+        intern_symbol or_symbol, "or"
         intern_symbol set_symbol, "set!"
 
         mov     symbol_next_id, %rax
@@ -889,6 +891,10 @@ init_runtime:                   # execution_stack_top, jit_code_debug
         store_pointer %eax, $jit_begin
         unbox_pointer_internal delay_symbol
         store_pointer %eax, $jit_delay
+        unbox_pointer_internal and_symbol
+        store_pointer %eax, $jit_and
+        unbox_pointer_internal or_symbol
+        store_pointer %eax, $jit_or
 
         .irp name, eq, eqv, number, integer, exact, inexact
         define "\name?", $is_\name
@@ -1932,6 +1938,76 @@ jit_begin:                     # form, c-stream, environment
 
 2:      return
 
+
+jit_and_expander:               # form
+        prologue
+        mov     %rdi, %rbx
+
+        mov     $NIL, %r11
+        cmp     %rbx, %r11
+        je      1f
+
+        call_fn car, %rbx
+        mov     %rax, %r12
+        call_fn cdr, %rbx
+        mov     %rax, %rbx
+        call_fn jit_and_expander, %rax
+        mov     %rax, %rbx
+
+        call_fn cons, $FALSE, $NIL
+        call_fn cons, %rbx, %rax
+        call_fn cons, %r12, %rax
+        call_fn cons, if_symbol, %rax
+        return
+
+1:      return $TRUE
+
+jit_and:                        # form, c-stream, environment
+        prologue env, form
+        mov     %rdi, %rbx
+        mov     %rsi, %r12
+        mov     %rdx, env(%rsp)
+
+        call_fn cdr, %rbx
+        call_fn jit_and_expander, %rax
+
+        call_fn jit_datum, %rax, %r12, env(%rsp)
+        return
+
+jit_or_expander:                # form
+        prologue
+        mov     %rdi, %rbx
+
+        mov     $NIL, %r11
+        cmp     %rbx, %r11
+        je      1f
+
+        call_fn car, %rbx
+        mov     %rax, %r12
+        call_fn cdr, %rbx
+        mov     %rax, %rbx
+        call_fn jit_or_expander, %rax
+        mov     %rax, %rbx
+
+        call_fn cons, %rbx, %rax
+        call_fn cons, $TRUE, %rax # Should be %r12 but needs let.
+        call_fn cons, %r12, %rax
+        call_fn cons, if_symbol, %rax
+        return
+
+1:      return $FALSE
+
+jit_or:                         # form, c-stream, environment
+        prologue env, form
+        mov     %rdi, %rbx
+        mov     %rsi, %r12
+        mov     %rdx, env(%rsp)
+
+        call_fn cdr, %rbx
+        call_fn jit_or_expander, %rax
+
+        call_fn jit_datum, %rax, %r12, env(%rsp)
+        return
 
 jit_delay:                      # form, c-stream, environment
         prologue env, form
