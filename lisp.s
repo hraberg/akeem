@@ -874,21 +874,21 @@ init_runtime:                   # execution_stack_top, argc, argv, jit_code_debu
         store_pointer $5, jit_pop_r8_size
         store_pointer $6, jit_pop_r9_size
 
-        lea     jit_parameter_to_rax_table, %rbx
-        store_pointer $0, $jit_rdi_to_rax
-        store_pointer $1, $jit_rsi_to_rax
-        store_pointer $2, $jit_rdx_to_rax
-        store_pointer $3, $jit_rcx_to_rax
-        store_pointer $4, $jit_r8_to_rax
-        store_pointer $5, $jit_r9_to_rax
+        lea     jit_parameter_to_local_table, %rbx
+        store_pointer $0, $jit_rdi_to_local
+        store_pointer $1, $jit_rsi_to_local
+        store_pointer $2, $jit_rdx_to_local
+        store_pointer $3, $jit_rcx_to_local
+        store_pointer $4, $jit_r8_to_local
+        store_pointer $5, $jit_r9_to_local
 
-        lea     jit_parameter_to_rax_size_table, %rbx
-        store_pointer $0, jit_rdi_to_rax_size
-        store_pointer $1, jit_rsi_to_rax_size
-        store_pointer $2, jit_rdx_to_rax_size
-        store_pointer $3, jit_rcx_to_rax_size
-        store_pointer $4, jit_r8_to_rax_size
-        store_pointer $5, jit_r9_to_rax_size
+        lea     jit_parameter_to_local_size_table, %rbx
+        store_pointer $0, jit_rdi_to_local_size
+        store_pointer $1, jit_rsi_to_local_size
+        store_pointer $2, jit_rdx_to_local_size
+        store_pointer $3, jit_rcx_to_local_size
+        store_pointer $4, jit_r8_to_local_size
+        store_pointer $5, jit_r9_to_local_size
 
         lea     jit_syntax_jump_table, %rbx
         .irp symbol, quote, if, set, define, lambda, begin, delay, and, or
@@ -1851,19 +1851,9 @@ jit_procedure:                  # form, c-stream, environment
         dec     %ecx
         mov     %ecx, local_idx(%rsp)
 
-        mov     jit_parameter_to_rax_table(,%rcx,POINTER_SIZE), %rax
-        mov     jit_parameter_to_rax_size_table(,%rcx,POINTER_SIZE), %r11
+        mov     jit_parameter_to_local_table(,%rcx,POINTER_SIZE), %rax
+        mov     jit_parameter_to_local_size_table(,%rcx,POINTER_SIZE), %r11
         call_fn fwrite, %rax, $1, %r11, %r12
-
-        mov     local_idx(%rsp), %ecx
-        inc     %ecx
-        shl     $POINTER_SIZE_SHIFT, %ecx
-        neg     %ecx
-        mov     %ecx, local(%rsp)
-        call_fn fwrite, $jit_rax_to_local, $1, jit_rax_to_local_size, %r12
-        lea     local(%rsp), %rax
-        call_fn fwrite, %rax, $1, $INT_SIZE, %r12
-
         jmp     1b
 
 2:      call_fn jit_datum, %rbx, %r12, env(%rsp)
@@ -2277,11 +2267,11 @@ jit_pop_argument_size_table:
         .zero   NUMBER_OF_REGISTERS * POINTER_SIZE
 
         .align  16
-jit_parameter_to_rax_table:
+jit_parameter_to_local_table:
         .zero   NUMBER_OF_REGISTERS * POINTER_SIZE
 
         .align  16
-jit_parameter_to_rax_size_table:
+jit_parameter_to_local_size_table:
         .zero   NUMBER_OF_REGISTERS * POINTER_SIZE
 
         .align  16
@@ -2420,22 +2410,46 @@ jit_pop_\reg\()_size:
         .endr
 
         .align  16
-        .irp reg, rax, rdi, rsi, rdx, rcx, r8, r9
-        .align  16
-jit_push_\reg\():
-        push    %\reg
-jit_push_\reg\()_size:
-        .quad   . - jit_push_\reg
-        .endr
+jit_push_rax:
+        push    %rax
+jit_push_rax_size:
+        .quad   . - jit_push_rax
 
         .align  16
-        .irp reg, rdi, rsi, rdx, rcx, r8, r9
+jit_rdi_to_local:
+        mov     %rdi, -(1 *POINTER_SIZE)(%rbp)
+jit_rdi_to_local_size:
+        .quad   . - jit_rdi_to_local
+
         .align  16
-jit_\reg\()_to_rax:
-        mov    %\reg, %rax
-jit_\reg\()_to_rax_size:
-        .quad   . - jit_\reg\()_to_rax
-        .endr
+jit_rsi_to_local:
+        mov     %rsi, -(2 * POINTER_SIZE)(%rbp)
+jit_rsi_to_local_size:
+        .quad   . - jit_rsi_to_local
+
+        .align  16
+jit_rdx_to_local:
+        mov     %rdx, -(3 * POINTER_SIZE)(%rbp)
+jit_rdx_to_local_size:
+        .quad   . - jit_rdx_to_local
+
+        .align  16
+jit_rcx_to_local:
+        mov     %rcx, -(4 * POINTER_SIZE)(%rbp)
+jit_rcx_to_local_size:
+        .quad   . - jit_rcx_to_local
+
+        .align  16
+jit_r8_to_local:
+        mov     %r8, -(5 * POINTER_SIZE)(%rbp)
+jit_r8_to_local_size:
+        .quad   . - jit_r8_to_local
+
+        .align  16
+jit_r9_to_local:
+        mov     %r9, -(6 * POINTER_SIZE)(%rbp)
+jit_r9_to_local_size:
+        .quad   . - jit_r9_to_local
 
         .align  16
 jit_global_to_rax:
@@ -2454,12 +2468,6 @@ jit_local_to_rax:
         mov     -0x11223344(%rbp), %rax
 jit_local_to_rax_size:
         .quad   (. - jit_local_to_rax) - INT_SIZE
-
-        .align  16
-jit_rax_to_local:
-        mov     %rax, -0x11223344(%rbp)
-jit_rax_to_local_size:
-        .quad   (. - jit_rax_to_local) - INT_SIZE
 
         .align  16
 r5rs_scm:
