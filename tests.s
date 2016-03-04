@@ -789,27 +789,33 @@ main:
         call_fn close_input_port, %rbx
         call_fn unlink, $test_file_c
 
-        call_fn call_with_output_file, test_file, $print_foo
+        tag     TAG_PROCEDURE, $print_foo
+        call_fn call_with_output_file, test_file, %rax
         assert
 
-        call_fn call_with_input_file, test_file, $read_foo
+        tag     TAG_PROCEDURE, $read_foo
+        call_fn call_with_input_file, test_file, %rax
         assert
         call_fn unlink, $test_file_c
 
-        call_fn with_output_to_file, test_file, $print_foo
+        tag     TAG_PROCEDURE, $print_foo
+        call_fn with_output_to_file, test_file, %rax
         assert
 
-        call_fn with_input_from_file, test_file, $read_foo
+        tag     TAG_PROCEDURE, $read_foo
+        call_fn with_input_from_file, test_file, %rax
         assert
         call_fn unlink, $test_file_c
 
         tag     TAG_PROCEDURE, $read_foo
         assert
 
-        call_fn call_with_current_continuation, $returns_42_non_local
+        tag     TAG_PROCEDURE, $returns_42_non_local
+        call_fn call_with_current_continuation, %rax
         assert
 
-        call_fn call_with_current_continuation, $returns_42_local
+        tag     TAG_PROCEDURE, $returns_42_local
+        call_fn call_with_current_continuation, %rax
         assert
 
         call_fn cons, $NIL, $NIL
