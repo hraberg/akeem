@@ -878,24 +878,10 @@ init_runtime:                   # execution_stack_top, jit_code_debug
         store_pointer $5, jit_r9_to_rax_size
 
         lea     jit_syntax_jump_table, %rbx
-        unbox_pointer_internal quote_symbol
-        store_pointer %eax, $jit_quote
-        unbox_pointer_internal if_symbol
-        store_pointer %eax, $jit_if
-        unbox_pointer_internal set_symbol
-        store_pointer %eax, $jit_set
-        unbox_pointer_internal define_symbol
-        store_pointer %eax, $jit_define
-        unbox_pointer_internal lambda_symbol
-        store_pointer %eax, $jit_lambda
-        unbox_pointer_internal begin_symbol
-        store_pointer %eax, $jit_begin
-        unbox_pointer_internal delay_symbol
-        store_pointer %eax, $jit_delay
-        unbox_pointer_internal and_symbol
-        store_pointer %eax, $jit_and
-        unbox_pointer_internal or_symbol
-        store_pointer %eax, $jit_or
+        .irp symbol, quote, if, set, define, lambda, begin, delay, and, or
+        unbox_pointer_internal \symbol\()_symbol
+        store_pointer %eax, $jit_\symbol
+        .endr
 
         .irp name, eq, eqv, number, integer, exact, inexact
         define "\name?", $is_\name
