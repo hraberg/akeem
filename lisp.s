@@ -1304,7 +1304,7 @@ gc:
         minimal_prologue
         call_fn gc_mark
         call_fn gc_sweep
-        return
+        return  $NIL
 
         ## Printer
 vector_to_string:               # vector
