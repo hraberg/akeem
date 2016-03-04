@@ -564,6 +564,7 @@ is_output_port:                 # obj
 read:                           # port
         minimal_prologue
         default_arg TAG_PORT, stdin, %rdi
+
         unbox_pointer_internal %rdi
         call_fn read_datum, %rax
         return
