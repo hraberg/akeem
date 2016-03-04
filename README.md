@@ -70,7 +70,9 @@ and his related work on [Maru](http://piumarta.com/software/maru/).
 
 Unlike these Lisps Akeem does not generate assembly in text
 form. Akeem is inspired by Clojure in the sense that there's only a
-JIT compiler to simplify the overall implementation.
+JIT compiler to simplify the overall implementation. Also, like
+Clojure, the compiler is planned to stay close to a normal procedural
+language, with limited TCO and no CPS.
 
 Most of the implementation is in
 [`lisp.s`](https://github.com/hraberg/akeem/blob/master/lisp.s). It
