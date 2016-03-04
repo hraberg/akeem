@@ -1,3 +1,8 @@
+;;; 6.1. Equivalence predicates
+
+(define (equal? obj1 obj2)
+  (eq? obj1 obj2))
+
 ;;; 6.2.5. Numerical operations
 
 (define (zero? x)
@@ -44,6 +49,78 @@
 (define (cddr obj)
   (cdr (cdr obj)))
 
+(define (caaar obj)
+  (car (car (car obj))))
+
+(define (caadr obj)
+  (car (car (cdr obj))))
+
+(define (cadar obj)
+  (car (cdr (car obj))))
+
+(define (caddr obj)
+  (car (cdr (cdr obj))))
+
+(define (cdaar obj)
+  (cdr (car (car obj))))
+
+(define (cdadr obj)
+  (cdr (car (cdr obj))))
+
+(define (cddar obj)
+  (cdr (cdr (car obj))))
+
+(define (cdddr obj)
+  (cdr (cdr (cdr obj))))
+
+(define (caaaar obj)
+  (car (car (car (car obj)))))
+
+(define (caaadr obj)
+  (car (car (car (cdr obj)))))
+
+(define (caadar obj)
+  (car (car (cdr (car obj)))))
+
+(define (caaddr obj)
+  (car (car (cdr (cdr obj)))))
+
+(define (cadaar obj)
+  (car (cdr (car (car obj)))))
+
+(define (cadadr obj)
+  (car (cdr (car (cdr obj)))))
+
+(define (caddar obj)
+  (car (cdr (cdr (car obj)))))
+
+(define (cadddr obj)
+  (car (cdr (cdr (cdr obj)))))
+
+(define (cdaaar obj)
+  (cdr (car (car (car obj)))))
+
+(define (cdaadr obj)
+  (cdr (car (car (cdr obj)))))
+
+(define (cdadar obj)
+  (cdr (car (cdr (car obj)))))
+
+(define (cdaddr obj)
+  (cdr (car (cdr (cdr obj)))))
+
+(define (cddaar obj)
+  (cdr (cdr (car (car obj)))))
+
+(define (cddadr obj)
+  (cdr (cdr (car (cdr obj)))))
+
+(define (cdddar obj)
+  (cdr (cdr (cdr (car obj)))))
+
+(define (cddddr obj)
+  (cdr (cdr (cdr (cdr obj)))))
+
 (define (list? obj)
   (or (null? obj)
       (and (pair? obj) (list? (cdr obj)))))
@@ -60,6 +137,36 @@
 
 (define (list-ref list k)
   (car (list-tail list k)))
+
+(define (member-aux comparator obj list)
+  (if (null? list) #f
+      (if (comparator obj (car list))
+          list
+          (member-aux comparator obj (cdr list)))))
+
+(define (memq obj list)
+  (member-aux eq? obj list))
+
+(define (memv obj list)
+  (member-aux eqv? obj list))
+
+(define (member obj list)
+  (member-aux equal? obj list))
+
+(define (assoc-aux comparator obj alist)
+  (if (null? alist) #f
+      (if (comparator obj (caar alist))
+          (car alist)
+          (assoc-aux comparator obj (cdr alist)))))
+
+(define (assq obj alist)
+  (assoc-aux eq? obj alist))
+
+(define (assv obj alist)
+  (assoc-aux eqv? obj alist))
+
+(define (assoc obj alist)
+  (assoc-aux equal? obj alist))
 
 ;;; 6.3.5. Strings
 
