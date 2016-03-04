@@ -2049,10 +2049,16 @@ jit_define:                     # form, c-stream, environment
 
         call_fn cdr, %rbx
         mov     %rax, %rbx
+        call_fn car, %rbx
+
+        mov     %rax, %r11
+        has_tag TAG_SYMBOL, %rax, store=false
+        je      1f
+        mov     %r11, %rax
+
+        mov     %rax, variable_and_formals(%rsp)
         call_fn cdr, %rbx
         mov     %rax, form(%rsp)
-        call_fn car, %rbx
-        mov     %rax, variable_and_formals(%rsp)
 
         call_fn car, variable_and_formals(%rsp)
         mov     %rax, variable(%rsp)
@@ -2067,6 +2073,10 @@ jit_define:                     # form, c-stream, environment
         call_fn cons, set_symbol, %rax
 
         call_fn jit_datum, %rax, %r12, env(%rsp)
+        return
+
+1:      call_fn cons, set_symbol, %rbx
+        call_fn jit_set, %rax, %r12, env(%rsp)
         return
 
 jit_set:                        # form, c-stream, environment
