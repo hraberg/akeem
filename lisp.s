@@ -1253,7 +1253,7 @@ gc_mark_queue_constant_pool:
 1:      cmp     %rbx, stack_top_offset + constant_pool
         je      2f
 
-        mov     stack_bottom + object_space, %rax
+        mov     stack_bottom + constant_pool, %rax
         mov     (%rax,%rbx), %r11
         call_fn gc_maybe_mark, %rdi
 
