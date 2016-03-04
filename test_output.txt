@@ -233,4 +233,5 @@ foo
 #f
 1
 1
+3.141590
 ;;; test suite end

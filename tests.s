@@ -1117,6 +1117,26 @@ main:
         call_fn eval, %rax
         assert  write=true
 
+
+        string_literal "x"
+        call_fn string_to_symbol, %rax
+        call_fn cons, %rax, $NIL
+        mov     %rax, %rbx
+        string_literal "x"
+        call_fn string_to_symbol, %rax
+        call_fn cons, %rax, $NIL
+        call_fn cons, %rax, %rbx
+        mov     %rax, %rbx
+        string_literal "lambda"
+        call_fn string_to_symbol, %rax
+        call_fn cons, %rax, %rbx
+        call_fn eval, %rax
+
+        unbox_pointer_internal %rax
+        call_fn *%rax, PI
+
+        assert  write=true
+
         test_case "test suite end"
 
         return  $0
