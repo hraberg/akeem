@@ -99,7 +99,9 @@ can be inspected using `objdump` via:
 make jit-dissassmble
 ```
 
-Too simplify debugging you can wrap the tests using `catchsegv`:
+Too simplify debugging you can wrap the tests using `catchsegv` which
+will give you a register dump when Akeem crashes and occasionally even
+a stack trace:
 
 ``` bash
 make run-tests-catchsegv
