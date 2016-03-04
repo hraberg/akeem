@@ -4,10 +4,6 @@
 
 double_format:
         .string "%f"
-true_string_c:
-        .string "#t"
-false_string_c:
-        .string "#f"
 test_case_prefix:
         .string ";;; "
 
@@ -898,12 +894,12 @@ main:
         call_fn read, %rax
         assert  write=true
 
-        call_fn box_string, $true_string_c
+        string_literal "#t"
         call_fn open_input_string, %rax
         call_fn read, %rax
         assert  write=true
 
-        call_fn box_string, $false_string_c
+        string_literal "#f"
         call_fn open_input_string, %rax
         call_fn read, %rax
         assert  write=true
