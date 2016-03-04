@@ -48,15 +48,80 @@
   (or (null? obj)
       (and (pair? obj) (list? (cdr obj)))))
 
+(define (append list1 list2)
+  (if (null? list1)
+      list2
+      (cons (car list1) (append (cdr list1) list2))))
+
 (define (list-tail list k)
   (if (zero? k)
       list
       (list-tail (cdr list) (- k 1))))
 
 (define (list-ref list k)
-  (if (zero? k)
-      (car list)
-      (list-ref (cdr list) (- k 1))))
+  (car (list-tail list k)))
+
+;;; 6.3.5. Strings
+
+(define (string->list-aux string list idx)
+  (if (negative? idx)
+      list
+      (string->list-aux
+       string (cons (string-ref string idx) list) (- idx 1))))
+
+(define (string->list string)
+  (string->list-aux
+   string '() (- (string-length string) 1)))
+
+(define (substring-aux string copy idx start end)
+  (if (= idx end)
+      copy
+      (substring-aux
+       string
+       (begin
+         (string-set! copy (- idx start) (string-ref string idx))
+         copy)
+       (+ idx 1)
+       start
+       end)))
+
+(define (substring string start end)
+  (substring-aux
+   string (make-string (- end start)) start start end))
+
+(define (string-append string1 string2)
+  (list->string (append (string->list string1) (string->list string2))))
+
+(define (list->string-aux string list idx)
+  (if (null? list)
+      string
+      (list->string-aux
+       (begin
+         (string-set! string idx (car list))
+         string)
+       (cdr list)
+       (+ 1 idx))))
+
+(define (list->string list)
+  (list->string-aux
+   (make-string (length list)) list 0))
+
+(define (string-copy string)
+  (list->string (string->list string)))
+
+(define (string-fill!-aux string fill idx)
+  (if (negative? idx)
+      string
+      (string-fill!-aux
+       (begin
+         (string-set! string idx fill)
+         string)
+       fill
+       (- idx 1))))
+
+(define (string-fill! string fill)
+  (string-fill!-aux
+   string fill (- (string-length string) 1)))
 
 ;;; 6.3.6. Vectors
 
@@ -69,6 +134,20 @@
 (define (vector->list vector)
   (vector->list-aux
    vector '() (- (vector-length vector) 1)))
+
+(define (vector-fill!-aux vector fill idx)
+  (if (negative? idx)
+      vector
+      (vector-fill!-aux
+       (begin
+         (vector-set! vector idx fill)
+         vector)
+       fill
+       (- idx 1))))
+
+(define (vector-fill! vector fill)
+  (vector-fill!-aux
+   vector fill (- (vector-length vector) 1)))
 
 ;;; 6.4. Control features
 
