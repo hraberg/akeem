@@ -1,8 +1,8 @@
 ;;; 6.4. Control features
 
-(define (map f coll)
-  (if (null? coll) '()
-      (cons (f (car coll)) (map f (cdr coll)))))
+(define (map proc list)
+  (if (null? list) '()
+      (cons (proc (car list)) (map proc (cdr list)))))
 
 (define force
   (lambda (object)

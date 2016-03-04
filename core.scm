@@ -1,8 +1,11 @@
-(define (filter f coll)
-  (if (null? coll) '()
-      (if (f (car coll)) (cons (car coll) (filter f (cdr coll)))
-          (filter f (cdr coll)))))
+;;; SRFI 1: List Library
 
-(define (reduce f init coll)
-  (if (null? coll) init
-      (reduce f (f init (car coll)) (cdr coll))))
+(define (filter pred list)
+  (if (null? list) '()
+      (if (pred (car list))
+          (cons (car list) (filter pred (cdr list)))
+          (filter pred (cdr list)))))
+
+(define (reduce f ridentity list)
+  (if (null? list) ridentity
+      (reduce f (f ridentity (car list)) (cdr list))))
