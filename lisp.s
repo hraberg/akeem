@@ -2424,6 +2424,7 @@ r5rs_scm:
         .incbin "r5rs.scm"
         .byte   0
 
+        .align  16
 core_scm:
         .incbin "core.scm"
         .byte   0
