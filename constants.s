@@ -69,6 +69,8 @@
         .equ BINARY_OP_SHIFT, 4
         .equ BINARY_OP_MASK, 4 - 1
 
+        .equ APPLY_JUMP_ALIGNMENT, 2
+
         .equ GC_MARK_BIT, 0
 
         .equ NUMBER_OF_REGISTERS, 16

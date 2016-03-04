@@ -438,9 +438,12 @@ apply:                          # proc, args
         mov     %rax, %r12
         jmp     1b
 
-2:      cmp     $MAX_REGISTER_ARGS, %rbx
+2:      mov     $MAX_REGISTER_ARGS, %eax
+        cmp     %eax, %ebx
         jg      apply_6
-        jmp     *apply_jump_table(,%ebx,POINTER_SIZE)
+        sub     %ebx, %eax
+        lea     apply_6(,%eax,APPLY_JUMP_ALIGNMENT), %rax
+        jmp     *%rax
 
         .align  16
 apply_6:
@@ -449,14 +452,19 @@ apply_5:
         pop      %r8
 apply_4:
         pop      %rcx
+        nop
 apply_3:
         pop      %rdx
+        nop
 apply_2:
         pop      %rsi
+        nop
 apply_1:
         pop      %rdi
+        nop
 apply_0:
         pop     %rax
+        nop
         call    *%rax
         return
 
@@ -886,11 +894,6 @@ init_runtime:                   # execution_stack_top, argc, argv, jit_code_debu
         .irp symbol, quote, if, set, define, lambda, begin, delay, and, or
         unbox_pointer_internal \symbol\()_symbol
         store_pointer %eax, $jit_\symbol
-        .endr
-
-        lea     apply_jump_table, %rbx
-        .irp arity, 0, 1, 2, 3, 4, 5, 6
-        store_pointer $\arity, $apply_\arity
         .endr
 
         .irp name, eq, eqv, number, integer, exact, inexact
@@ -2236,10 +2239,6 @@ unescape_char_table:
         .align  16
 boolean_string_table:
         .zero   2 * POINTER_SIZE
-
-        .align  16
-apply_jump_table:
-        .zero   NUMBER_OF_REGISTERS * POINTER_SIZE
 
         .align  16
 to_string_jump_table:
