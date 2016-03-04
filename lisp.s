@@ -475,7 +475,9 @@ apply:                          # proc, args
         mov     %rax, %r12
         jmp     1b
 
-2:      jmp     apply_jump_table(,%ebx,POINTER_SIZE)
+2:      cmp     $MAX_REGISTER_ARGS, %rbx
+        jg      apply_6
+        jmp     apply_jump_table(,%ebx,POINTER_SIZE)
 
         .align  16
 apply_6:

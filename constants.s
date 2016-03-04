@@ -72,6 +72,7 @@
         .equ GC_MARK_BIT, 0
 
         .equ NUMBER_OF_REGISTERS, 16
+        .equ MAX_REGISTER_ARGS, 6
 
         .struct 0
 header_object_mark:
