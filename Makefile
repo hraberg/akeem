@@ -34,16 +34,16 @@ retest: /usr/bin/entr
 	while true; do find . -name '*.s' -o -name Makefile -o -name test_output.txt | \
 		$< -r $(MAKE) -s run-tests ; done
 
-jit_dissassmble:
+jit-dissassmble:
 	objdump -b binary -D -mi386:x86-64 jit_code/jit_code_*.bin
 
-jit_clean:
+jit-clean:
 	rm -rf jit_code
 
 release: CFLAGS += -s
 release: clean akeem
 
-clean:	jit_clean
+clean:	jit-clean
 	rm -f tests akeem *.o
 
 check: run-tests

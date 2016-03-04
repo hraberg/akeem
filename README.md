@@ -96,8 +96,15 @@ While running, the result of the JIT is logged into `jit_code`, and
 can be inspected using `objdump` via:
 
 ``` bash
-make jit_dissassmble
+make jit-dissassmble
 ```
+
+Too simplify debugging you can wrap the tests using `catchsegv`:
+
+``` bash
+make run-tests-catchsegv
+```
+
 
 
 ## References
