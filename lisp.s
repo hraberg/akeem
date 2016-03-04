@@ -450,12 +450,50 @@ list_to_vector:                 # list
 2:      return  vec(%rsp)
 
         ## 6.4. Control features
-        .globl is_procedure, call_with_current_continuation
+        .globl is_procedure, apply, call_with_current_continuation
 
 is_procedure:                   # obj
         has_tag TAG_PROCEDURE, %rdi
         box_boolean_internal
         ret
+
+apply:                          # proc, args
+        prologue
+        unbox_pointer_internal %rdi
+        push    %rax
+
+        mov     %rsi, %r12
+        call_fn length, %r12
+        mov     %eax, %ebx
+
+1:      mov     $NIL, %r11
+        cmp     %r11, %r12
+        je      2f
+        call_fn car, %r12
+        push %rax
+        call_fn cdr, %r12
+        mov     %rax, %r12
+        jmp     1b
+
+2:      jmp     apply_jump_table(,%ebx,POINTER_SIZE)
+
+        .align  16
+apply_6:
+        pop      %r9
+apply_5:
+        pop      %r8
+apply_4:
+        pop      %rcx
+apply_3:
+        pop      %rdx
+apply_2:
+        pop      %rsi
+apply_1:
+        pop      %rdi
+apply_0:
+        pop     %rax
+        call    *%rax
+        return
 
 call_with_current_continuation: # proc
         prologue
@@ -883,6 +921,11 @@ init_runtime:                   # execution_stack_top, jit_code_debug
         store_pointer %eax, $jit_\symbol
         .endr
 
+        lea     apply_jump_table, %rbx
+        .irp arity, 0, 1, 2, 3, 4, 5, 6
+        store_pointer $\arity, $apply_\arity
+        .endr
+
         .irp name, eq, eqv, number, integer, exact, inexact
         define "\name?", $is_\name
         .endr
@@ -948,6 +991,7 @@ init_runtime:                   # execution_stack_top, jit_code_debug
         define "list->vector", $list_to_vector
 
         define "procedure?", $is_procedure
+        define "apply", $apply
         define "call-with-current-continuation", $call_with_current_continuation
 
         define "eval", $eval
@@ -2200,6 +2244,10 @@ unescape_char_table:
         .align  16
 boolean_string_table:
         .zero   2 * POINTER_SIZE
+
+        .align  16
+apply_jump_table:
+        .zero   NUMBER_OF_REGISTERS * POINTER_SIZE
 
         .align  16
 to_string_jump_table:

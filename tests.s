@@ -786,6 +786,18 @@ main:
         call_fn unlink, $test_file_c
 
         tag     TAG_PROCEDURE, $print_foo
+        call_fn is_procedure, %rax
+        assert
+
+        call_fn is_procedure, PI
+        assert
+
+        call_fn cons, E, $NIL
+        call_fn cons, PI, %rax
+        call_fn apply, $plus, %rax
+        assert
+
+        tag     TAG_PROCEDURE, $print_foo
         call_fn call_with_output_file, test_file, %rax
         assert
 

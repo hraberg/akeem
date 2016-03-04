@@ -179,6 +179,9 @@ o
 #t
 #t
 #t
+#t
+#f
+5.859870
 print_foo
 f
 print_foo
