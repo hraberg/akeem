@@ -439,9 +439,8 @@ apply:                          # proc, args
         jmp     1b
 
 2:      mov     $MAX_REGISTER_ARGS, %eax
-        cmp     %eax, %ebx
-        jg      apply_6
         sub     %ebx, %eax
+        js      apply_6
         lea     apply_6(,%eax,APPLY_JUMP_ALIGNMENT), %rax
         jmp     *%rax
 
