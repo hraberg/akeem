@@ -708,6 +708,7 @@ init_runtime:                   # execution_stack_top, jit_code_debug
         intern_symbol if_symbol, "if"
         intern_symbol let_symbol, "let"
         intern_symbol define_symbol, "define"
+        intern_symbol begin_symbol, "begin"
         intern_symbol set_symbol, "set!"
 
         mov     symbol_next_id, %rax
@@ -883,6 +884,8 @@ init_runtime:                   # execution_stack_top, jit_code_debug
         store_pointer %eax, $jit_define
         unbox_pointer_internal lambda_symbol
         store_pointer %eax, $jit_lambda
+        unbox_pointer_internal begin_symbol
+        store_pointer %eax, $jit_begin
 
         .irp name, eq, eqv, number, integer, exact, inexact
         define "\name?", $is_\name
@@ -1905,6 +1908,27 @@ jit_if:                         # form, c-stream, environment
 
         return
 
+jit_begin:                     # form, c-stream, environment
+        prologue env, form
+        mov     %rdi, %rbx
+        mov     %rsi, %r12
+        mov     %rdx, env(%rsp)
+
+        call_fn cdr, %rbx
+        mov     %rax, %rbx
+
+1:      mov     $NIL, %r11
+        cmp     %r11, %rbx
+        je      2f
+
+        call_fn car, %rbx
+        call_fn jit_datum, %rax, %r12, env(%rsp)
+        call_fn cdr, %rbx
+        mov     %rax, %rbx
+        jmp     1b
+
+2:      return
+
 jit_lambda:                     # form, c-stream, environment
         prologue env, args
         mov     %rdi, %rbx
@@ -1916,7 +1940,7 @@ jit_lambda:                     # form, c-stream, environment
         call_fn car, %rbx
         mov     %rax, env(%rsp)
         call_fn cdr, %rbx
-        call_fn car, %rax
+        call_fn cons, begin_symbol, %rax
         call_fn jit_code, %rax, env(%rsp)
 
         tag     TAG_PROCEDURE, %rax
