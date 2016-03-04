@@ -61,7 +61,7 @@ main:
 
         test_case "test suite start"
 
-        call_fn init_runtime, %rsp, $C_TRUE
+        call_fn init_runtime, %rsp, $0, $NULL, $C_TRUE
 
         intern_double PI, 3.14159
         intern_double E, 2.71828

@@ -681,10 +681,12 @@ error:                          # reason
 
         .globl init_runtime
 
-init_runtime:                   # execution_stack_top, jit_code_debug
-        prologue
+init_runtime:                   # execution_stack_top, argc, argv, jit_code_debug
+        prologue argc, argv
         mov     %rdi, execution_stack_top
-        mov     %rsi, jit_code_debug
+        mov     %rsi, argc(%rsp)
+        mov     %rdx, argv(%rsp)
+        mov     %rcx, jit_code_debug
 
         call_fn init_pointer_stack, $object_space, $OBJECT_SPACE_INITIAL_SIZE
         call_fn init_pointer_stack, $gc_mark_stack, $OBJECT_SPACE_INITIAL_SIZE
@@ -997,8 +999,10 @@ init_runtime:                   # execution_stack_top, jit_code_debug
         mov     %rax, max_scheme_report_environment_symbol
 
         define "open-input-string", $open_input_string
-        define "read-all", $read_all
         define "error", $error
+
+        define "current-command-line-arguments", $current_command_line_arguments
+        define "read-all", $read_all
         define "gc", $gc
         define "object-space-count", $object_space_size
         define "class-of", $class_of
@@ -1007,11 +1011,39 @@ init_runtime:                   # execution_stack_top, jit_code_debug
         call_fn box_string, $core_scm
         call_fn open_input_string, %rax
         call_fn read_all, %rax
+
+        call_fn init_command_line, argc(%rsp), argv(%rsp)
         return
+
+init_command_line:              # argc, argv
+        prologue
+        mov     %rdi, %rbx
+        mov     %rsi, %r12
+
+        call_fn box_int, %rbx
+        call_fn make_vector, %rax
+        mov     %rax, command_line_arguments_vector
+        call_fn vector_length, %rax
+        mov     %eax, %ebx
+
+1:      test    %ebx, %ebx
+        jz      2f
+        dec     %ebx
+
+        mov     (%r12,%rbx,POINTER_SIZE), %rax
+        call_fn box_string, %rax
+        call_fn vector_set, command_line_arguments_vector, %rbx, %rax
+        jmp     1b
+2:      return
+
 
         ## Public API
         .globl set, lookup_global_symbol, object_space_size, class_of
-        .globl box_boolean, box_int, box_string, unbox
+        .globl box_boolean, box_int, box_string, unbox, current_command_line_arguments
+
+current_command_line_arguments:
+        mov     command_line_arguments_vector, %rax
+        ret
 
 set:                            # variable, expression
         unbox_pointer_internal %rdi
@@ -1056,7 +1088,7 @@ box_int:                        # c-int
 
 box_string:                     # c-string
         prologue str, size
-        mov     %edi, %ebx
+        mov     %rdi, %rbx
         open_string_buffer str(%rsp), size(%rsp), %r12
         xor     %al, %al
         call_fn fprintf, %r12, $string_format, %rbx
@@ -2291,6 +2323,9 @@ jump_buffer:
 jit_code_file_counter:
         .quad   0
 jit_code_debug:
+        .quad   0
+
+command_line_arguments_vector:
         .quad   0
 
         .align  16
