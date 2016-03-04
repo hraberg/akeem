@@ -2255,10 +2255,6 @@ jit_constant_pool_jump_table:
         .zero   TAG_MASK * POINTER_SIZE
 
         .align  16
-jit_syntax_jump_table:
-        .zero   MAX_NUMBER_OF_SYMBOLS * POINTER_SIZE
-
-        .align  16
 jit_pop_argument_table:
         .zero   NUMBER_OF_REGISTERS * POINTER_SIZE
 
@@ -2273,6 +2269,10 @@ jit_parameter_to_local_table:
         .align  16
 jit_parameter_to_local_size_table:
         .zero   NUMBER_OF_REGISTERS * POINTER_SIZE
+
+        .align  16
+jit_syntax_jump_table:
+        .zero   MAX_NUMBER_OF_SYMBOLS * POINTER_SIZE
 
         .align  16
 symbol_table_values:
