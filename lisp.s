@@ -743,7 +743,7 @@ init_runtime:                   # execution_stack_top, argc, argv, jit_code_debu
         intern_string return_char, "#\\return"
         intern_string space_char, "#\\space"
 
-        lea     char_table, %rbx
+        lea     char_to_string_table, %rbx
         store_pointer $'\b, backspace_char
         store_pointer $'\t, tab_char
         store_pointer $'\n, newline_char
@@ -1431,7 +1431,7 @@ char_to_machine_readable_string: # char
         mov     %edi, %ebx
         cmp     $(SPACE_CHAR & INT_MASK), %bx
         jg      1f
-        mov     char_table(,%ebx,POINTER_SIZE), %rax
+        mov     char_to_string_table(,%ebx,POINTER_SIZE), %rax
         test    %eax, %eax
         jz      1f
         return
@@ -1674,7 +1674,7 @@ read_character:                 # c-stream, c-char
 1:      test    %ebx, %ebx
         jz      2f
         dec     %ebx
-        mov     char_table(,%rbx,POINTER_SIZE), %rax
+        mov     char_to_string_table(,%rbx,POINTER_SIZE), %rax
         unbox_pointer_internal %rax
 
         test    %eax, %eax
@@ -2227,7 +2227,7 @@ integer_to_string_format_table:
         .zero   16 * POINTER_SIZE
 
         .align  16
-char_table:
+char_to_string_table:
         .zero   CHAR_TABLE_SIZE * POINTER_SIZE
 
         .align  16
