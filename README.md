@@ -63,10 +63,16 @@ Unlike these Lisps Akeem does not generate assembly in text
 form. Akeem is inspired by Clojure in the sense that there's only a
 JIT compiler to simplify the overall implementation.
 
-Most of the implementation is in [`lisp.s`]. It relies heavily on
-[`macros.s`] to make the code less verbose.. The [`tests.s`] are
-compared to [`test_output.txt`] for simple unit testing. To run and
-keep watching the tests (uses [entr](http://entrproject.org/)):
+Most of the implementation is in
+[`lisp.s`](https://github.com/hraberg/akeem/blob/master/lisp.s). It
+relies heavily on
+[`macros.s`](https://github.com/hraberg/akeem/blob/master/macros.s) to
+make the code less verbose.. The
+[`tests.s`](https://github.com/hraberg/akeem/blob/master/tests.s) are
+compared to
+[`test_output.txt`](https://github.com/hraberg/akeem/blob/master/test_output.txt)
+for simple unit testing. To run and keep watching the tests (uses
+[entr](http://entrproject.org/)):
 
 ``` bash
 make retest
