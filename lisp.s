@@ -2231,19 +2231,19 @@ jit_syntax_jump_table:
 
         .align  16
 jit_pop_argument_table:
-        .zero   16 * POINTER_SIZE
+        .zero   NUMBER_OF_REGISTERS * POINTER_SIZE
 
         .align  16
 jit_pop_argument_size_table:
-        .zero   16 * POINTER_SIZE
+        .zero   NUMBER_OF_REGISTERS * POINTER_SIZE
 
         .align  16
 jit_parameter_to_rax_table:
-        .zero   16 * POINTER_SIZE
+        .zero   NUMBER_OF_REGISTERS * POINTER_SIZE
 
         .align  16
 jit_parameter_to_rax_size_table:
-        .zero   16 * POINTER_SIZE
+        .zero   NUMBER_OF_REGISTERS * POINTER_SIZE
 
         .align  16
 symbol_table_values:

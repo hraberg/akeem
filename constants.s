@@ -5,9 +5,6 @@
         ## setjmp.h
         .equ JMP_BUF_SIZE, 200
 
-        ## dlfcn.h
-        .equ RTLD_DEFAULT, 0
-
         ## sys/mman.h
         .equ PROT_READ, 0x1
         .equ PROT_WRITE, 0x2
@@ -73,6 +70,8 @@
         .equ BINARY_OP_MASK, 4 - 1
 
         .equ GC_MARK_BIT, 0
+
+        .equ NUMBER_OF_REGISTERS, 16
 
         .struct 0
 header_object_mark:
