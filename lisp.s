@@ -1925,6 +1925,33 @@ jit_lambda:                     # form, c-stream, environment
         return
 
 jit_define:                     # form, c-stream, environment
+        prologue env, form, variable_and_formals, variable, formals
+        mov     %rdi, %rbx
+        mov     %rsi, %r12
+        mov     %rdx, env(%rsp)
+
+        call_fn cdr, %rbx
+        mov     %rax, %rbx
+        call_fn cdr, %rbx
+        mov     %rax, form(%rsp)
+        call_fn car, %rbx
+        mov     %rax, variable_and_formals(%rsp)
+
+        call_fn car, variable_and_formals(%rsp)
+        mov     %rax, variable(%rsp)
+        call_fn cdr, variable_and_formals(%rsp)
+        mov     %rax, formals(%rsp)
+
+        call_fn cons, formals(%rsp), form(%rsp)
+        call_fn cons, lambda_symbol, %rax
+        call_fn cons, %rax, $NIL
+
+        call_fn cons, variable(%rsp), %rax
+        call_fn cons, set_symbol, %rax
+
+        call_fn jit_datum, %rax, %r12, env(%rsp)
+        return
+
 jit_set:                        # form, c-stream, environment
         prologue symbol_address, env
         mov     %rdi, %rbx

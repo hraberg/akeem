@@ -1,6 +1,5 @@
 ;;; 6.4. Control features
 
-(define map
-  (lambda (f coll)
-    (if (null? coll) '()
-        (cons (f (car coll)) (map f (cdr coll))))))
+(define (map f coll)
+  (if (null? coll) '()
+      (cons (f (car coll)) (map f (cdr coll)))))
