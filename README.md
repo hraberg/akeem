@@ -11,6 +11,7 @@ Only tested on Linux. Written in GNU Assembler using AT&T
 syntax. Akeem depends on
 [glibc](https://www.gnu.org/software/libc/manual/html_mono/libc.html).
 
+
 ## Usage
 
 ``` bash
@@ -18,112 +19,58 @@ make
 `which rlwrap` ./akeem
 ```
 
+## What Works?
 
-## Implementation Notes / Ideas
-
-Implement closures by splitting prolog (with closed over vars) from
-the body?
-
-Can you implement TCO with a setjmp/longjmp style technique? A
-recursive function checks if its on stack, at a tail call, and unwinds
-itself instead of creating a new frame.
-
-Generated functions need to use the stack. Either by calculating the
-max size, or by using pushq %rbp, movq %rsp, %rbp so we have a stable
-reference to the frame.
-
-Potentially use %rax for number of arguments, similar to the x86-64
-ABI. Have different functions with different arities with common
-wrapper. Varargs potentially marked as negative?
-
-If symbol 0 is #f and 1 #t booleans can be symbols while still handle
-logical operations.
-
-Use callee saved registers %rbx (potentially %rbp) and %r12-%r15 for
-local variables. Save used registers in prologue for functions. Save
-used registers at start of let block if they are used afterwards.
-
-Number spilled local symbols negatively, so access is -(local_id *
-8)%rbp. Potentially implement a variant of Linear Scan Register
-Allocation:
-http://web.cs.ucla.edu/~palsberg/course/cs132/linearscan.pdf
-
-For calls, push each argument, skipping constants and local variables,
-then load the argument registers in order, either from the stack or by
-local variable reference.
-
-Closures modifying a local variable requires the variable to be moved
-to the heap.
-
-Literal vectors produced by the reader in Racket are immutable, but
-lists aren't. In Emacs Lisp compiled literal vectors and lists are
-mutable, but refer to the same instance. It's easier, short-term, to
-use a literal pool than to generate the code that builds the
-structure. Java (and Clojure) generates byte code building the array,
-and only strings are constants (as they're immutable).
+* Subset of R5RS procedures.
+* JIT for if, lambda, define, set!, and, or, begin.
+* NaN-boxed 32-bit integers and 64-bit doubles
+* Function application up to 6 arguments.
+* The bootstrap Scheme code is embedded in the executable.
+* Mark and Sweep GC.
 
 
-## Road Map:
+## What doesn't work?
 
-We aim to implement a subset of R5RS.
+* Almost no error handling.
+* let, letrec, cond, case, define-syntax
+* No closures
+* No TCO.
+* Max arity is currently 6, higher requires the use of the stack.
+* No vararg support.
+* No GC for functions or their constant literals.
+* No quasiquote.
+* Not full support for Scheme numbers in the reader.
+* Limited numeric tower, see above.
+* call/cc only uses setjmp, and can't be nested.
+* A lot of needless moving and popping of data in the generated code.
+* No register allocation.
+* The JIT is static, once a function is generated its done.
+* The memory for the generated code is allocated in a very wasteful
+  way.
 
-### Milestone 1
 
-* Parser
-** integers and doubles.
-** No define-syntax
-* JIT Compiler
-** Based on piecing together snippets.
-** Mainly stack based.
-** Single arity.
-** Lambdas.
-* Runtime
-** NaN boxing.
-** [SRFI-6](http://srfi.schemers.org/srfi-6/srfi-6.html)
-* R5RS syntax / procedures
-** 4.1, 5.1, 6.1, 6.2.5, 6.2.6,
-   6.3.2, 6.3.3, 6.3.5, 6.3.6, 6.6.2, 6.6.3
-** library procedures initially in Assembler to bootstrap.
+## Implementation Notes
 
-### Milestone 2
+Akeem is a template based JIT and adheres which copies snippets of its
+own source to compile functions at runtime - code is data. It is
+somewhat inspired by Abdulaziz Ghuloum's classic paper
+[An Incremental Approach to Compiler Construction](http://scheme2006.cs.uchicago.edu/11-ghuloum.pdf)
+and Ian Piumarta's
+[PEG-based transformer provides front-, middle and back-end stages in a simple compiler](http://www.vpri.org/pdf/tr2010003_PEG.pdf)
+and his related work on [Maru](http://piumarta.com/software/maru/).
 
-* GC
-** Simple Mark & Sweep.
-* JIT Compiler
-** Multiple arities, varargs
-** Register allocation.
-** Self-call TCO.
-** Closures.
-* Runtime
-* R5RS syntax / procedures
-** 5.2, 6.3.1, 6.3.4, 6.5, 6.6.1, 6.6.4
-* R5RS library syntax / procedures
-** 4.2, 6.2.5, 6.2.6, 6.3.5, 6.3.6, 6.6.2, 6.6.3
-** [SRFI 1](http://srfi.schemers.org/srfi-1/srfi-1.html)
-** rewrite most library procedures in Scheme.
+Unlike these Lisps Akeem does not generate assembly in text
+form. Akeem is inspired by Clojure in the sense that there's only a
+JIT compiler to simplify the overall implementation.
 
-### Milestone 3
+Most of the implementation is in [`lisp.s`]. It relies heavily on
+[`macros.s`] to make the code less verbose.. The [`tests.s`] are
+compared to [`test_output.txt`] for simple unit testing. To run and
+keep watching the tests (uses [entr](http://entrproject.org/)):
 
-* Parser
-** define-syntax
-* GC
-** Generational.
-* JIT Compiler
-** Macros
-** call/cc
-** Sibling call optimization.
-* Runtime
-* R5RS
-** 4.3, 5.3, 6.4
-** [SRFI 4](http://srfi.schemers.org/srfi-4/srfi-4.html)
-** [SRFI 9](http://srfi.schemers.org/srfi-9/srfi-9.html)
-** [SRFI 23](http://srfi.schemers.org/srfi-23/srfi-23.html)
-** [SRFI 55](http://srfi.schemers.org/srfi-55/srfi-55.html)
-** [SRFI 69](http://srfi.schemers.org/srfi-69/srfi-69.html)
-
-### Milestone 4
-
-R7RS "small" language.
+``` bash
+make retest
+```
 
 
 ## References
@@ -138,6 +85,7 @@ R7RS "small" language.
 * http://www.agner.org/optimize/
 * http://www.avabodh.com/cin/cin.html
 * http://github.com/nineties/amber
+* http://lemick.sourceforge.net/papers/JIT_design.pdf
 
 ### Lisp
 
@@ -148,6 +96,7 @@ R7RS "small" language.
 * https://dspace.mit.edu/handle/1721.1/5600
 * http://www.schemers.org/Documents/Standards/R5RS/r5rs.pdf
 * http://trac.sacrideo.us/wg/raw-attachment/wiki/WikiStart/r7rs.pdf
+* http://srfi.schemers.org/final-srfis.html
 * https://github.com/kanaka/mal
 * http://shenlanguage.org/
 
