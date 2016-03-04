@@ -49,6 +49,11 @@ make
   way.
 
 
+## What's next?
+
+* Support for let bindings.
+
+
 ## Implementation Notes
 
 Akeem is a template based JIT and adheres which copies snippets of its
