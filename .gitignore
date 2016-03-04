@@ -2,4 +2,4 @@
 *.o
 akeem
 tests
-*.bin
+jit_code

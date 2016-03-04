@@ -1752,6 +1752,9 @@ jit_write_code_to_disk:         # c-code, c-size
         jz      1f
         mov     %rdi, %rbx
         mov     %rsi, %r12
+
+        call_fn mkdir, $jit_code_directory, $0777
+
         lea     filename(%rsp), %r11
         incq    jit_code_file_counter
         xor     %al, %al
@@ -2326,8 +2329,10 @@ read_mode:
         .string "r"
 write_mode:
         .string "w"
+jit_code_directory:
+        .string "jit_code"
 jit_code_file_format:
-        .string "jit_code_%04d.bin"
+        .string "jit_code/jit_code_%04d.bin"
 
         ## register numbers:
         ## rax = r0, rcx = r1, rdx = r2, rbx = r3,

@@ -35,10 +35,10 @@ retest: /usr/bin/entr
 		$< -r $(MAKE) -s run-tests ; done
 
 jit_dissassmble:
-	objdump -b binary -D -mi386:x86-64 jit_code_*.bin
+	objdump -b binary -D -mi386:x86-64 jit_code/jit_code_*.bin
 
 jit_clean:
-	rm -f *.bin
+	rm -rf jit_code
 
 release: CFLAGS += -s
 release: clean akeem
