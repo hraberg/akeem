@@ -2157,8 +2157,8 @@ jit_symbol:                    # symbol, c-stream, environment
         mov     %rdx, env(%rsp)
 
         xor     %ebx, %ebx
-        mov     $NIL, %r11
-1:      cmp     %r11, env(%rsp)
+1:      mov     $NIL, %r11
+        cmp     %r11, env(%rsp)
         je      2f
 
         call_fn car, env(%rsp)
