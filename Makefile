@@ -48,4 +48,4 @@ clean:	jit-clean
 
 check: run-tests
 
-.PHONY: run-tests run-tests-catchsegv run-repl retest jit_clean jit_dissassmble clean check release
+.PHONY: run-tests run-tests-catchsegv run-repl retest jit-clean jit-dissassmble clean check release
