@@ -2022,6 +2022,7 @@ jit_procedure:                  # form, c-stream, environment
         mov     %eax, local_idx(%rsp)
 
         locals_to_frame_size %eax
+        add     $POINTER_SIZE, %eax
         mov     %eax, frame_size(%rsp)
         lea     frame_size(%rsp), %rax
         call_fn fwrite, %rax $1, $INT_SIZE, %r12
