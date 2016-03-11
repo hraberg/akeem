@@ -48,7 +48,7 @@ make
 * No quasiquote.
 * Not full support for Scheme numbers in the reader.
 * Limited numeric tower, see above.
-* call/cc only uses setjmp, and can't be nested.
+* `call-with-current-continuation` only uses `setjmp`, and can't be nested.
 * A lot of needless moving and popping of data in the generated code.
 * No register allocation.
 * The JIT is static, once a function is generated its done.
