@@ -2617,6 +2617,7 @@ jit_epilogue:
 jit_epilogue_size:
         .quad   . - jit_epilogue
 
+        .align  16
 jit_frame_prologue:
         sub     $0x11223344, %rsp
 jit_frame_prologue_size:
