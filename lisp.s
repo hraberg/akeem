@@ -875,6 +875,7 @@ init_runtime:                   # execution_stack_top, argc, argv, jit_code_debu
         store_pointer $TAG_STRING, $jit_literal
         store_pointer $TAG_PAIR, $jit_pair
         store_pointer $TAG_VECTOR, $jit_literal
+        store_pointer $TAG_OBJECT, $jit_literal
 
         lea     jit_constant_pool_jump_table, %rbx
         store_pointer $TAG_DOUBLE, $jit_add_to_constant_pool_nop
@@ -887,6 +888,7 @@ init_runtime:                   # execution_stack_top, argc, argv, jit_code_debu
         store_pointer $TAG_STRING, $jit_add_to_constant_pool
         store_pointer $TAG_PAIR, $jit_add_to_constant_pool
         store_pointer $TAG_VECTOR, $jit_add_to_constant_pool
+        store_pointer $TAG_OBJECT, $jit_add_to_constant_pool
 
         lea     jit_pop_argument_table, %rbx
         store_pointer $0, $jit_pop_rax
@@ -1599,7 +1601,7 @@ read_comment:                   # c-stream
         jmp     1b
 
 2:      call_fn ungetc, %rax, %rbx
-3:      return  $FALSE
+3:      return
 
 read_datum:                     # c-stream
         prologue
@@ -1915,8 +1917,14 @@ jit_add_to_constant_pool_nop:   # obj
 
 jit_add_to_constant_pool:       # obj
         minimal_prologue
+        mov     $NIL, %r11
+        cmp     %rdi, %r11
+        je      1f
+        mov     $VOID, %r11
+        cmp     %rdi, %r11
+        je      1f
         call_fn push_pointer_on_stack, $constant_pool, %rdi
-        return
+1:      return
 
 jit_maybe_add_to_constant_pool: # obj
         minimal_prologue
@@ -2083,7 +2091,7 @@ jit_if:                         # form, c-stream, environment
         mov     $NIL, %r11
         cmp     %rax, %r11
         jne     1f
-        mov     $FALSE, %rax
+        mov     $VOID, %rax
         jmp     2f
 1:      call_fn car, %rax
 2:      call_fn jit_datum, %rax, %r12, env(%rsp)
@@ -2229,7 +2237,7 @@ jit_cond_expander:              # form
 
         return
 
-3:      return  $FALSE
+3:      return  $VOID
 
 jit_cond:                       # form, c-stream, environment
         macroexpand jit_cond_expander
@@ -2267,7 +2275,7 @@ jit_case_expander:              # form
 
         return
 
-1:      return  $FALSE
+1:      return  $VOID
 
 jit_case:                       # form, c-stream, environment
         prologue form, key, clauses
