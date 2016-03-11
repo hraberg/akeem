@@ -15,8 +15,6 @@
         (* n (fact (- n 1))))))
 (assert (fact 10))
 
-
-
 ;;; 4. Expressions
 
 ;;; 4.1. Primitive expression types
