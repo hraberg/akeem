@@ -2066,31 +2066,6 @@ jit_cond_expander:              # form
 jit_cond:                       # form, c-stream, environment
         macroexpand jit_cond_expander
 
-jit_let_expander:               # form
-        prologue body
-        mov     %rdi, %rbx
-        call_fn cdr, %rbx
-        mov     %rax, body(%rsp)
-        call_fn car, %rbx
-        mov     %rax, %rbx
-
-1:      mov     $NIL, %r11
-        cmp     %rbx, %r11
-        je      2f
-
-        call_fn car, %rbx
-        mov     %rax, %r12
-        call_fn cdr, %rbx
-        mov     %rax, %rbx
-
-        call_fn cons, set_symbol, %r12
-        call_fn cons %rax, body(%rsp)
-        mov     %rax, body(%rsp)
-        jmp     1b
-
-2:      call_fn cons, begin_symbol, body(%rsp)
-        return
-
 jit_let:                       # form, c-stream, environment
         prologue env, binding, variable_init
         mov     %rdi, %rbx
