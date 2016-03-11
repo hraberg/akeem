@@ -407,3 +407,15 @@ tmp_string_\@:
         .endif
         call_fn set, %rax, %rcx
         .endm
+
+        .macro macroexpand expander
+        minimal_prologue
+        mov     %rsi, %r12
+        mov     %rdx, %rbx
+
+        call_fn cdr, %rdi
+        call_fn \expander, %rax
+
+        call_fn jit_datum, %rax, %r12, %rbx
+        return
+        .endm

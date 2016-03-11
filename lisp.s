@@ -714,19 +714,20 @@ init_runtime:                   # execution_stack_top, argc, argv, jit_code_debu
         intern_symbol object_symbol, "object", id=TAG_OBJECT
 
         intern_symbol quote_symbol, "quote"
+        intern_symbol lambda_symbol, "lambda"
+        intern_symbol if_symbol, "if"
+        intern_symbol define_symbol, "define"
+        intern_symbol set_symbol, "set!"
+        intern_symbol cond_symbol, "cond"
+        intern_symbol and_symbol, "and"
+        intern_symbol or_symbol, "or"
+        intern_symbol let_symbol, "let"
+        intern_symbol begin_symbol, "begin"
+        intern_symbol delay_symbol, "delay"
+
         intern_symbol quasiquote_symbol, "quasiquote"
         intern_symbol unquote_symbol, "unquote"
         intern_symbol unquote_splicing_symbol, "unquote-splicing"
-
-        intern_symbol lambda_symbol, "lambda"
-        intern_symbol if_symbol, "if"
-        intern_symbol let_symbol, "let"
-        intern_symbol define_symbol, "define"
-        intern_symbol begin_symbol, "begin"
-        intern_symbol delay_symbol, "delay"
-        intern_symbol and_symbol, "and"
-        intern_symbol or_symbol, "or"
-        intern_symbol set_symbol, "set!"
 
         mov     symbol_next_id, %rax
         mov     %rax, max_null_environment_symbol
@@ -891,7 +892,7 @@ init_runtime:                   # execution_stack_top, argc, argv, jit_code_debu
         store_pointer $5, jit_r9_to_local_size
 
         lea     jit_syntax_jump_table, %rbx
-        .irp symbol, quote, if, set, define, lambda, begin, delay, and, or
+        .irp symbol, quote, if, set, define, lambda, begin, delay, and, or, cond
         unbox_pointer_internal \symbol\()_symbol
         store_pointer %eax, $jit_\symbol
         .endr
@@ -1982,16 +1983,7 @@ jit_and_expander:               # form
 1:      return $TRUE
 
 jit_and:                        # form, c-stream, environment
-        prologue env, form
-        mov     %rdi, %rbx
-        mov     %rsi, %r12
-        mov     %rdx, env(%rsp)
-
-        call_fn cdr, %rbx
-        call_fn jit_and_expander, %rax
-
-        call_fn jit_datum, %rax, %r12, env(%rsp)
-        return
+        macroexpand jit_and_expander
 
 jit_or_expander:                # form
         prologue
@@ -2004,11 +1996,9 @@ jit_or_expander:                # form
         call_fn car, %rbx
         mov     %rax, %r12
         call_fn cdr, %rbx
-        mov     %rax, %rbx
         call_fn jit_or_expander, %rax
-        mov     %rax, %rbx
 
-        call_fn cons, %rbx, %rax
+        call_fn cons, %rax, $NIL
         call_fn cons, $TRUE, %rax # Should be %r12 but needs let.
         call_fn cons, %r12, %rax
         call_fn cons, if_symbol, %rax
@@ -2017,29 +2007,47 @@ jit_or_expander:                # form
 1:      return $FALSE
 
 jit_or:                         # form, c-stream, environment
-        prologue env, form
+        macroexpand jit_or_expander
+
+jit_cond_expander:              # form
+        prologue
         mov     %rdi, %rbx
-        mov     %rsi, %r12
-        mov     %rdx, env(%rsp)
 
+        mov     $NIL, %r11
+        cmp     %rbx, %r11
+        je      1f
+
+        call_fn car, %rbx
+        mov     %rax, %r12
         call_fn cdr, %rbx
-        call_fn jit_or_expander, %rax
+        call_fn jit_cond_expander, %rax
 
-        call_fn jit_datum, %rax, %r12, env(%rsp)
+        call_fn cons, %rax, $NIL
+        mov     %rax, %rbx
+
+        call_fn cdr, %r12
+        call_fn cons, begin_symbol, %rax
+        call_fn cons %rax, %rbx
+        mov     %rax, %rbx
+
+        call_fn car, %r12
+        call_fn cons, %rax, %rbx
+        call_fn cons, if_symbol, %rax
+        return
+
+1:      return $FALSE
+
+jit_cond:                       # form, c-stream, environment
+        macroexpand jit_cond_expander
+
+jit_delay_expander:             # form
+        minimal_prologue
+        call_fn cons, $NIL, %rdi
+        call_fn cons, lambda_symbol, %rax
         return
 
 jit_delay:                      # form, c-stream, environment
-        prologue env, form
-        mov     %rdi, %rbx
-        mov     %rsi, %r12
-        mov     %rdx, env(%rsp)
-
-        call_fn cdr, %rbx
-        call_fn cons, $NIL, %rax
-        call_fn cons, lambda_symbol, %rax
-
-        call_fn jit_datum, %rax, %r12, env(%rsp)
-        return
+        macroexpand jit_delay_expander
 
 jit_lambda:                     # form, c-stream, environment
         prologue env, args
