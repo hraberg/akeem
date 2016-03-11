@@ -2110,7 +2110,7 @@ jit_define:                     # form, c-stream, environment
         return
 
 jit_set:                        # form, c-stream, environment
-        prologue symbol_address, env
+        prologue symbol, symbol_address, env, local, local_index
         mov     %rdi, %rbx
         mov     %rsi, %r12
         mov     %rdx, env(%rsp)
@@ -2122,12 +2122,38 @@ jit_set:                        # form, c-stream, environment
         call_fn jit_datum, %rax, %r12, env(%rsp)
 
         call_fn car, %rbx
+        mov     %rax, symbol(%rsp)
+
+        movq    $1, local_index(%rsp)
+1:      mov     $NIL, %r11
+        cmp     %r11, env(%rsp)
+        je      2f
+
+        call_fn car, env(%rsp)
+        cmp     %rax, symbol(%rsp)
+        je      3f
+
+        call_fn cdr, env(%rsp)
+        mov     %rax, env(%rsp)
+        incq    local_index(%rsp)
+        jmp     1b
+
+2:      mov     symbol(%rsp), %rax
         lea     symbol_table_values(,%eax,POINTER_SIZE), %rax
         mov     %rax, symbol_address(%rsp)
 
         call_fn fwrite, $jit_rax_to_global, $1, jit_rax_to_global_size, %r12
         lea     symbol_address(%rsp), %rax
         call_fn fwrite, %rax, $1, $POINTER_SIZE, %r12
+        return
+
+3:      mov     local_index(%rsp), %rbx
+        shl     $POINTER_SIZE_SHIFT, %ebx
+        neg     %ebx
+        mov     %ebx, local(%rsp)
+        call_fn fwrite, $jit_rax_to_local, $1, jit_rax_to_local_size, %r12
+        lea     local(%rsp), %rax
+        call_fn fwrite, %rax, $1, $INT_SIZE, %r12
         return
 
 jit_quote:                      # form, c-stream, environment
@@ -2479,6 +2505,12 @@ jit_local_to_rax:
         mov     -0x11223344(%rbp), %rax
 jit_local_to_rax_size:
         .quad   (. - jit_local_to_rax) - INT_SIZE
+
+        .align  16
+jit_rax_to_local:
+        mov     %rax, -0x11223344(%rbp)
+jit_rax_to_local_size:
+        .quad   (. - jit_rax_to_local) - INT_SIZE
 
         .align  16
 r5rs_scm:
