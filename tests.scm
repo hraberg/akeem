@@ -154,3 +154,78 @@
 (assert (first '(1 2)))
 
 ;;; 6. Standard procedures
+
+;;; 6.1. Equivalence predicates
+
+(assert (eqv? 'a 'a))
+(assert (eqv? 'a 'b))
+(assert (eqv? 2 2))
+(assert (eqv? '() '()))
+(assert (eqv? 100000000 100000000))
+(assert (eqv? (cons 1 2) (cons 1 2)))
+(assert (eqv? (lambda () 1)
+              (lambda () 2)))
+(assert (eqv? #f 'nil))
+(assert (let ((p (lambda (x) x)))
+          (eqv? p p)))
+
+(assert (eqv? "" ""))
+(assert (eqv? '#() '#()))
+(assert (eqv? (lambda (x) x)
+              (lambda (x) x)))
+(assert (eqv? (lambda (x) x)
+              (lambda (y) y)))
+
+(define gen-counter
+  (lambda ()
+    (let ((n 0))
+      (lambda () (set! n (+ n 1)) n))))
+(assert (let ((g (gen-counter)))
+          (eqv? g g)))
+;; (assert (eqv? (gen-counter) (gen-counter)))
+
+
+(define gen-loser
+  (lambda ()
+    (let ((n 0))
+      (lambda () (set! n (+ n 1)) 27))))
+(assert (let ((g (gen-loser)))
+          (eqv? g g)))
+;; (assert (eqv? (gen-loser) (gen-loser)))
+
+
+(assert (letrec ((f (lambda () (if (eqv? f g) 'both 'f)))
+                 (g (lambda () (if (eqv? f g) 'both 'g))))
+          (eqv? f g)))
+
+(assert (letrec ((f (lambda () (if (eqv? f g) 'f 'both)))
+                 (g (lambda () (if (eqv? f g) 'g 'both))))
+          (eqv? f g)))
+
+(assert (eqv? '(a) '(a)))
+(assert (eqv? "a" "a"))
+(assert (eqv? '(b) (cdr '(a b))))
+(assert (let ((x ’(a)))
+          (eqv? x x)))
+
+(assert (eq? 'a 'a))
+(assert (eq? '(a) '(a)))
+;; (assert (eq? (list 'a) (list 'a)))
+(assert (eq? "a" "a"))
+(assert (eq? "" ""))
+(assert (eq? '() '()))
+(assert (eq? 2 2))
+(assert (eq? #\A #\A))
+(assert (eq? car car))
+(assert (let ((n (+ 2 3)))
+          (eq? n n)))
+(assert (let ((x '(a)))
+          (eq? x x)))
+(assert (let ((x '#()))
+          (eq? x x)))
+(assert (let ((p (lambda (x) x)))
+          (eq? p p)))
+
+;;; 6.2. Numbers
+
+;;; 6.2.5. Numerical operations
