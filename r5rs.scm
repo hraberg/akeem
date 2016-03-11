@@ -5,6 +5,9 @@
 
 ;;; 6.2.5. Numerical operations
 
+(define complex? number?)
+(define real? number?)
+
 (define (zero? x)
   (= 0 x))
 
@@ -26,9 +29,7 @@
       x1))
 
 (define (min x1 x2)
-  (if (> x1 x2)
-      x2
-      x1))
+  (max x2 x1))
 
 (define (abs x)
   (if (negative? x)

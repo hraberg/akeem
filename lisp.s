@@ -31,6 +31,16 @@ is_number:                      # obj
         ret
 
 is_integer:                     # obj
+        movq    %rdi, %xmm0
+        has_tag TAG_INT, %rdi, store=false
+        jne     1f
+        mov     $TRUE, %rax
+        ret
+1:      maybe_round_to_int
+        has_tag TAG_INT, %rax
+        box_boolean_internal
+        ret
+
 is_exact:                       # z
         has_tag TAG_INT, %rdi
         box_boolean_internal

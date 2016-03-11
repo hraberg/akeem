@@ -229,3 +229,108 @@
 ;;; 6.2. Numbers
 
 ;;; 6.2.5. Numerical operations
+
+;; (assert (complex? 3+4i))
+(assert (complex? 3))
+(assert (real? 3))
+;; (assert (real? -2.5+0.0i))
+;; (assert (real? #e1e10))
+;; (assert (rational? 6/10))
+;; (assert (rational? 6/3))
+;; (assert (integer? 3+0i))
+(assert (integer? 3.0))
+;; (assert (integer? 8/4))
+
+(assert (max 3 4))
+;; (assert (max 3.9 4))
+
+(assert (+ 3 4))
+;; (assert (+ 3))
+;; (assert (+))
+;; (assert (* 4))
+;; (assert (*))
+
+(assert (- 3 4))
+;; (- 3 4 5)
+;; (- 3)
+;; (/ 3 4 5)
+;; (/ 3)
+
+(assert (abs -7))
+
+(assert (let ((n1 2) (n2 4))
+          (= n1 (+ (* n2 (quotient n1 n2))
+                   (remainder n1 n2)))))
+
+(assert (modulo 13 4))
+(assert (remainder 13 4))
+(assert (modulo -13 4))
+(assert (remainder -13 4))
+(assert (modulo 13 -4))
+(assert (remainder 13 -4))
+(assert (modulo -13 -4))
+(assert (remainder -13 -4))
+;; (assert (remainder -13 -4.0))
+
+;; (gcd 32 -36)
+;; (gcd)
+;; (lcm 32 -36)
+;; (lcm 32.0 -36)
+;; (lcm)
+
+;; (numerator (/ 6 4))
+;; (denominator (/ 6 4))
+;; (denominator
+;; (exact->inexact (/ 6 4)))
+
+(assert (floor -4.3))
+(assert (ceiling -4.3))
+(assert (truncate -4.3))
+(assert (round -4.3))
+(assert (floor 3.5))
+(assert (ceiling 3.5))
+(assert (truncate 3.5))
+(assert (round 3.5))
+;; (round 7/2)
+;; (assert (round 7))
+
+;; (rationalize
+;;  (inexact->exact .3) 1/10)
+;; (rationalize .3 1/10)
+
+;;; 6.2.6. Numerical input and output
+
+(assert (let ((number 20)
+              (radix 16))
+          (eqv? number
+                (string->number (number->string number
+                                                radix)
+                                radix))))
+
+(assert (string->number "100"))
+(assert (string->number "100" 16))
+(assert (string->number "1e2"))
+;; (assert (string->number "15##"))
+
+;;; 6.3. Other data types
+
+;;; 6.3.1. Booleans
+
+(assert #t)
+(assert #f)
+(assert '#f)
+
+(assert (not #t))
+(assert (not 3))
+;; (not (list 3))
+(assert (not #f))
+(assert (not '()))
+;; (not (list)) =⇒ #f
+(assert (not 'nil))
+
+(assert (boolean? #f))
+(assert (boolean? 0))
+(assert (boolean? '()))
+
+
+;;; 6.3.2. Pairs and lists
