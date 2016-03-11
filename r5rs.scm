@@ -143,13 +143,6 @@
       list2
       (cons (car list1) (append (cdr list1) list2))))
 
-(define (reverse-aux list acc)
-  (if (null? list) acc
-      (reverse-aux (cdr list) (cons (car list) acc))))
-
-(define (reverse list)
-  (reverse-aux list '()))
-
 (define (list-tail list k)
   (if (zero? k)
       list

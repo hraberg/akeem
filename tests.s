@@ -112,6 +112,9 @@ main:
         mov     %rax, %rbx
         assert
 
+        call_fn reverse, %rbx
+        assert
+
         call_fn list_to_vector, %rbx
         assert
 

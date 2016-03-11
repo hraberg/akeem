@@ -165,7 +165,7 @@ string_to_number:               # string, radix
         ## 6.3. Other data types
 
         ## 6.3.2. Pairs and lists
-        .globl is_pair, cons, car, cdr, set_car, set_cdr, length
+        .globl is_pair, cons, car, cdr, set_car, set_cdr, length, reverse
 
 is_pair:                        # obj
         mov     $NIL, %rax
@@ -227,6 +227,24 @@ length:                         # list
 
 2:      box_int_internal %ebx
         return
+
+reverse:                        # list
+        prologue
+        mov     %rdi, %rbx
+        mov     $NIL, %r12
+1:      mov     $NIL, %r11
+        cmp     %r11, %rbx
+        je      2f
+
+        calL_fn car, %rbx
+        call_fn cons, %rax, %r12
+        mov     %rax, %r12
+
+        call_fn cdr, %rbx
+        mov     %rax, %rbx
+        jmp     1b
+
+2:      return  %r12
 
         ## 6.3.3. Symbols
         .globl is_symbol, symbol_to_string, string_to_symbol
