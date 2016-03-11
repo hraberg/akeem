@@ -745,7 +745,7 @@ init_runtime:                   # execution_stack_top, argc, argv, jit_code_debu
         intern_symbol begin_symbol, "begin"
         intern_symbol delay_symbol, "delay"
 
-        intern_symbol x_symbol, "x"
+        intern_symbol temp_symbol, "__temp__"
         intern_symbol arrow_symbol, "=>"
         intern_symbol else_symbol, "else"
 
@@ -2034,15 +2034,15 @@ jit_or_expander:                # form
         call_fn jit_or_expander, %rax
 
         call_fn cons, %rax, $NIL
-        call_fn cons, x_symbol, %rax
-        call_fn cons, x_symbol, %rax
+        call_fn cons, temp_symbol, %rax
+        call_fn cons, temp_symbol, %rax
         call_fn cons, if_symbol, %rax
 
         call_fn cons, %rax, $NIL
         mov     %rax, %rbx
 
         call_fn cons, %r12, $NIL
-        call_fn cons, x_symbol, %rax
+        call_fn cons, temp_symbol, %rax
         call_fn cons, %rax, $NIL
         call_fn cons, %rax, %rbx
         call_fn cons, let_symbol, %rax
@@ -2083,11 +2083,11 @@ jit_cond_expander:              # form
 1:      call_fn cdr, expression(%rsp)
         call_fn car, %rax
         mov     %rax, %r12
-        call_fn cons, x_symbol, $NIL
+        call_fn cons, temp_symbol, $NIL
         call_fn cons, %r12, %rax
         call_fn cons, %rax, $NIL
 
-2:      call_fn cons, x_symbol, %rax
+2:      call_fn cons, temp_symbol, %rax
         call_fn cons, if_symbol, %rax
 
         call_fn cons, %rax, $NIL
@@ -2095,7 +2095,7 @@ jit_cond_expander:              # form
 
         call_fn car, test_expression(%rsp)
         call_fn cons, %rax, $NIL
-        call_fn cons, x_symbol, %rax
+        call_fn cons, temp_symbol, %rax
         call_fn cons, %rax, $NIL
         call_fn cons, %rax, %rbx
         call_fn cons, let_symbol, %rax
