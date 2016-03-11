@@ -2117,13 +2117,13 @@ jit_set:                        # form, c-stream, environment
         call_fn cdr, %rbx
         mov     %rax, %rbx
 
-        call_fn car, %rbx
-        lea     symbol_table_values(,%eax,POINTER_SIZE), %rax
-        mov     %rax, symbol_address(%rsp)
-
         call_fn cdr, %rbx
         call_fn car, %rax
         call_fn jit_datum, %rax, %r12, env(%rsp)
+
+        call_fn car, %rbx
+        lea     symbol_table_values(,%eax,POINTER_SIZE), %rax
+        mov     %rax, symbol_address(%rsp)
 
         call_fn fwrite, $jit_rax_to_global, $1, jit_rax_to_global_size, %r12
         lea     symbol_address(%rsp), %rax
