@@ -2089,13 +2089,10 @@ jit_define:                     # form, c-stream, environment
         call_fn cons, %rax, $NIL
 
         call_fn cons, variable(%rsp), %rax
-        call_fn cons, set_symbol, %rax
-
-        call_fn jit_datum, %rax, %r12, env(%rsp)
-        return
+        mov     %rax, %rbx
 
 1:      call_fn cons, set_symbol, %rbx
-        call_fn jit_set, %rax, %r12, env(%rsp)
+        call_fn jit_datum, %rax, %r12, env(%rsp)
         return
 
 jit_set:                        # form, c-stream, environment
