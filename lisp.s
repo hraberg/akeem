@@ -2110,7 +2110,7 @@ jit_define:                     # form, c-stream, environment
         return
 
 jit_set:                        # form, c-stream, environment
-        prologue symbol, symbol_address, env, local, local_index
+        prologue symbol, symbol_address, env, local
         mov     %rdi, %rbx
         mov     %rsi, %r12
         mov     %rdx, env(%rsp)
@@ -2124,18 +2124,18 @@ jit_set:                        # form, c-stream, environment
         call_fn car, %rbx
         mov     %rax, symbol(%rsp)
 
-        movq    $1, local_index(%rsp)
+        xor     %ebx, %ebx
 1:      mov     $NIL, %r11
         cmp     %r11, env(%rsp)
         je      2f
 
         call_fn car, env(%rsp)
-        cmp     %rax, symbol(%rsp)
+        cmp     symbol(%rsp), %rax
         je      3f
 
         call_fn cdr, env(%rsp)
         mov     %rax, env(%rsp)
-        incq    local_index(%rsp)
+        inc     %ebx
         jmp     1b
 
 2:      mov     symbol(%rsp), %rax
@@ -2147,7 +2147,7 @@ jit_set:                        # form, c-stream, environment
         call_fn fwrite, %rax, $1, $POINTER_SIZE, %r12
         return
 
-3:      mov     local_index(%rsp), %rbx
+3:      inc     %ebx
         shl     $POINTER_SIZE_SHIFT, %ebx
         neg     %ebx
         mov     %ebx, local(%rsp)
