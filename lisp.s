@@ -737,6 +737,7 @@ init_runtime:                   # execution_stack_top, argc, argv, jit_code_debu
         intern_symbol define_symbol, "define"
         intern_symbol set_symbol, "set!"
         intern_symbol cond_symbol, "cond"
+        intern_symbol case_symbol, "case"
         intern_symbol and_symbol, "and"
         intern_symbol or_symbol, "or"
         intern_symbol let_star_symbol, "let*"
@@ -748,6 +749,7 @@ init_runtime:                   # execution_stack_top, argc, argv, jit_code_debu
         intern_symbol temp_symbol, "__temp__"
         intern_symbol arrow_symbol, "=>"
         intern_symbol else_symbol, "else"
+        intern_symbol memv_symbol, "memv"
 
         intern_symbol quasiquote_symbol, "quasiquote"
         intern_symbol unquote_symbol, "unquote"
@@ -921,7 +923,7 @@ init_runtime:                   # execution_stack_top, argc, argv, jit_code_debu
         store_pointer $5, jit_r9_to_local_size
 
         lea     jit_syntax_jump_table, %rbx
-        .irp symbol, quote, if, set, define, lambda, begin, delay, and, or, cond, let_star, let, letrec
+        .irp symbol, quote, if, set, define, lambda, begin, delay, and, or, cond, case, let_star, let, letrec
         unbox_pointer_internal \symbol\()_symbol
         store_pointer %eax, $jit_\symbol
         .endr
@@ -2106,6 +2108,67 @@ jit_cond_expander:              # form
 
 jit_cond:                       # form, c-stream, environment
         macroexpand jit_cond_expander
+
+jit_case_expander:              # form
+        prologue clauses
+        mov     %rdi, %rbx
+
+        mov     $NIL, %r11
+        cmp     %rbx, %r11
+        je      1f
+
+        call_fn cdr, %rbx
+        call_fn jit_case_expander, %rax
+        call_fn cons, %rax, $NIL
+        mov     %rax, clauses(%rsp)
+
+        call_fn car, %rbx
+        mov     %rax, %rbx
+
+        call_fn car, %rbx
+        call_fn cons, %rax, $NIL
+        call_fn cons, quote_symbol, %rax
+        call_fn cons, %rax, $NIL
+        call_fn cons, temp_symbol, %rax
+        call_fn cons, memv_symbol, %rax
+        mov     %rax, %r12
+
+        call_fn cdr, %rbx
+        call_fn cons, begin_symbol, %rax
+
+        call_fn cons, %rax, clauses(%rsp)
+        call_fn cons, %r12, %rax
+        call_fn cons, if_symbol, %rax
+
+        return
+
+1:      return  $FALSE
+
+jit_case:                       # form, c-stream, environment
+        prologue form, key, clauses
+        mov     %rdi, form(%rsp)
+        mov     %rsi, %r12
+        mov     %rdx, %rbx
+
+        call_fn cdr, %rdi
+        call_fn cdr, %rax
+        call_fn jit_case_expander, %rax
+        call_fn cons, %rax, $NIL
+        mov     %rax, clauses(%rsp)
+
+        call_fn cdr, form(%rsp)
+        call_fn car, %rax
+        mov     %rax, key(%rsp)
+
+        call_fn cons, key(%rsp), $NIL
+        call_fn cons, temp_symbol, %rax
+        call_fn cons, %rax, $NIL
+        call_fn cons, %rax, clauses(%rsp)
+        call_fn cons, let_symbol, %rax
+
+        call_fn jit_datum, %rax, %r12, %rbx
+
+        return
 
 jit_let_star:                   # form, c-stream, environment
 jit_let:                        # form, c-stream, environment
