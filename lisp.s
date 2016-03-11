@@ -1876,7 +1876,8 @@ jit_procedure:                  # form, c-stream, environment
         call_fn fwrite, %rax, $1, %r11, %r12
         jmp     1b
 
-2:      call_fn jit_datum, %rbx, %r12, env(%rsp)
+2:      call_fn reverse, env(%rsp)
+        call_fn jit_datum, %rbx, %r12, %rax
 
         call_fn fwrite, $jit_epilogue, $1, jit_epilogue_size, %r12
         return
@@ -2091,7 +2092,37 @@ jit_let_expander:               # form
         return
 
 jit_let:                       # form, c-stream, environment
-        macroexpand jit_let_expander # Expands in wrong order, need to extend env.
+        prologue env, binding, variable_init
+        mov     %rdi, %rbx
+        mov     %rsi, %r12
+        mov     %rdx, env(%rsp)
+
+        call_fn cdr, %rbx
+        mov     %rax, %rbx
+
+        call_fn car, %rbx
+        mov     %rax, binding(%rsp)
+1:      mov     $NIL, %r11
+        cmp     binding(%rsp), %r11
+        je      2f
+        call_fn car, binding(%rsp)
+        mov     %rax, variable_init(%rsp)
+        call_fn car, %rax
+        call_fn cons, %rax, env(%rsp)
+        mov     %rax, env(%rsp)
+
+        call_fn cons, set_symbol, variable_init(%rsp)
+        call_fn jit_datum, %rax, %r12, env(%rsp)
+
+        call_fn cdr, binding(%rsp)
+        mov     %rax, binding(%rsp)
+        jmp     1b
+
+2:      call_fn cdr, %rbx
+        call_fn cons, begin_symbol, %rax
+
+        call_fn jit_datum, %rax, %r12, env(%rsp)
+        return
 
 jit_delay_expander:             # form
         minimal_prologue
@@ -2111,10 +2142,10 @@ jit_lambda:                     # form, c-stream, environment
         call_fn cdr, %rbx
         mov     %rax, %rbx
         call_fn car, %rbx
-        mov     %rax, env(%rsp)
+        mov     %rax, args(%rsp)
         call_fn cdr, %rbx
         call_fn cons, begin_symbol, %rax
-        call_fn jit_code, %rax, env(%rsp)
+        call_fn jit_code, %rax, args(%rsp)
 
         tag     TAG_PROCEDURE, %rax
         call_fn jit_datum, %rax, %r12, env(%rsp)
@@ -2157,10 +2188,12 @@ jit_define:                     # form, c-stream, environment
         return
 
 jit_set:                        # form, c-stream, environment
-        prologue env, symbol, symbol_address, local
+        prologue env, env_size, symbol, symbol_address, local
         mov     %rdi, %rbx
         mov     %rsi, %r12
         mov     %rdx, env(%rsp)
+        call_fn length, %rdx
+        mov     %rax, env_size(%rsp)
         call_fn cdr, %rbx
         mov     %rax, %rbx
 
@@ -2194,7 +2227,8 @@ jit_set:                        # form, c-stream, environment
         call_fn fwrite, %rax, $1, $POINTER_SIZE, %r12
         return
 
-3:      inc     %ebx
+3:      sub     env_size(%rsp), %ebx
+        neg     %ebx
         shl     $POINTER_SIZE_SHIFT, %ebx
         neg     %ebx
         mov     %ebx, local(%rsp)
@@ -2235,10 +2269,12 @@ jit_pair:                       # form, c-stream, environment
         return
 
 jit_symbol:                    # symbol, c-stream, environment
-        prologue env, symbol_address, symbol, local
+        prologue env, env_size, symbol_address, symbol, local
         mov     %rdi, symbol(%rsp)
         mov     %rsi, %r12
         mov     %rdx, env(%rsp)
+        call_fn length, %rdx
+        mov     %rax, env_size(%rsp)
 
         xor     %ebx, %ebx
 1:      mov     $NIL, %r11
@@ -2263,7 +2299,8 @@ jit_symbol:                    # symbol, c-stream, environment
         call_fn fwrite, %rax, $1, $POINTER_SIZE, %r12
         return
 
-3:      inc     %ebx
+3:      sub     env_size(%rsp), %ebx
+        neg     %ebx
         shl     $POINTER_SIZE_SHIFT, %ebx
         neg     %ebx
         mov     %ebx, local(%rsp)
