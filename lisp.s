@@ -1860,43 +1860,111 @@ jit_code:                       # form, environment
         call_fn jit_allocate_code, code(%rsp), %r11
         return
 
-jit_procedure:                  # form, c-stream, environment
-        prologue env, frame_size, local_idx, local
-        mov     %rdi, %rbx
-        mov     %rsi, %r12
-        mov     %rdx, env(%rsp)
-
-        call_fn fwrite, $jit_prologue, $1, jit_prologue_size, %r12
-
-        call_fn length, env(%rsp)
-        mov     %eax, local_idx(%rsp)
-
-        locals_to_frame_size %eax
-        mov     %eax, frame_size(%rsp)
-        lea     frame_size(%rsp), %rax
-        call_fn fwrite, %rax $1, $INT_SIZE, %r12
-
-1:      mov     local_idx(%rsp), %ecx
-        test    %ecx, %ecx
-        jz      2f
-        dec     %ecx
-        mov     %ecx, local_idx(%rsp)
-
-        mov     jit_parameter_to_local_table(,%rcx,POINTER_SIZE), %rax
-        mov     jit_parameter_to_local_size_table(,%rcx,POINTER_SIZE), %r11
-        call_fn fwrite, %rax, $1, %r11, %r12
-        jmp     1b
-
-2:      call_fn reverse, env(%rsp)
-        call_fn jit_datum, %rbx, %r12, %rax
-
-        call_fn fwrite, $jit_epilogue, $1, jit_epilogue_size, %r12
-        return
-
 jit_datum:                      # form, c-stream, environment
         minimal_prologue
         tagged_jump jit_jump_table
         return
+
+        ## 4.1.1. Variable references
+
+jit_symbol:                    # symbol, c-stream, environment
+        prologue env, env_size, symbol_address, symbol, local
+        mov     %rdi, symbol(%rsp)
+        mov     %rsi, %r12
+        mov     %rdx, env(%rsp)
+        call_fn length, %rdx
+        mov     %rax, env_size(%rsp)
+
+        xor     %ebx, %ebx
+1:      mov     $NIL, %r11
+        cmp     %r11, env(%rsp)
+        je      2f
+
+        call_fn car, env(%rsp)
+        cmp     symbol(%rsp), %rax
+        je      3f
+
+        call_fn cdr, env(%rsp)
+        mov     %rax, env(%rsp)
+        inc     %rbx
+        jmp     1b
+
+2:      mov     symbol(%rsp), %rdi
+        lea     symbol_table_values(,%edi,POINTER_SIZE), %rax
+        mov     %rax, symbol_address(%rsp)
+
+        call_fn fwrite, $jit_global_to_rax, $1, jit_global_to_rax_size, %r12
+        lea     symbol_address(%rsp), %rax
+        call_fn fwrite, %rax, $1, $POINTER_SIZE, %r12
+        return
+
+3:      sub     env_size(%rsp), %ebx
+        neg     %ebx
+        shl     $POINTER_SIZE_SHIFT, %ebx
+        neg     %ebx
+        mov     %ebx, local(%rsp)
+        call_fn fwrite, $jit_local_to_rax, $1, jit_local_to_rax_size, %r12
+        lea     local(%rsp), %rax
+        call_fn fwrite, %rax, $1, $INT_SIZE, %r12
+        return
+
+        ## 4.1.2. Literal expressions
+
+jit_add_to_constant_pool_nop:   # obj
+        ret
+
+jit_add_to_constant_pool:       # obj
+        minimal_prologue
+        call_fn push_pointer_on_stack, $constant_pool, %rdi
+        return
+
+jit_maybe_add_to_constant_pool: # obj
+        minimal_prologue
+        tagged_jump jit_constant_pool_jump_table
+        return
+
+jit_quote:                      # form, c-stream, environment
+        prologue env
+        mov     %rdi, %rbx
+        mov     %rsi, %r12
+        mov     %rdx, env(%rsp)
+        call_fn cdr, %rbx
+        call_fn car, %rax
+        call_fn jit_literal, %rax, %r12, env(%rsp)
+        return
+
+jit_literal:                    # literal, c-stream, environment
+        prologue literal
+        mov     %rdi, literal(%rsp)
+        mov     %rsi, %r12
+        call_fn jit_maybe_add_to_constant_pool, %rdi
+        call_fn fwrite, $jit_literal_to_rax, $1, jit_literal_to_rax_size, %r12
+        lea     literal(%rsp), %rax
+        call_fn fwrite, %rax, $1, $POINTER_SIZE, %r12
+        return
+
+jit_pair:                       # form, c-stream, environment
+        prologue env
+        mov     %rdi, %rbx
+        mov     %rsi, %r12
+        mov     %rdx, env(%rsp)
+
+        call_fn car, %rbx
+        mov     %rax, %r11
+        has_tag TAG_SYMBOL, %r11, store=false
+        jne     1f
+        unbox_pointer_internal %r11
+        mov     jit_syntax_jump_table(,%rax,8), %rax
+        test    %eax, %eax
+        jnz     2f
+
+1:      call_fn jit_procedure_call, %rbx, %r12, env(%rsp)
+        return
+
+2:      call_fn *%rax, %rbx, %r12
+        return
+
+        ## 4.1.3. Procedure calls
 
 jit_procedure_call:             # form, c-stream, environment
         prologue len, env
@@ -1931,6 +1999,62 @@ jit_procedure_call:             # form, c-stream, environment
 
 4:      call_fn fwrite, $jit_call_rax, $1, jit_call_rax_size, %r12
         return
+
+        ## 4.1.4. Procedures
+
+jit_procedure:                  # form, c-stream, environment
+        prologue env, frame_size, local_idx, local
+        mov     %rdi, %rbx
+        mov     %rsi, %r12
+        mov     %rdx, env(%rsp)
+
+        call_fn fwrite, $jit_prologue, $1, jit_prologue_size, %r12
+
+        call_fn length, env(%rsp)
+        mov     %eax, local_idx(%rsp)
+
+        locals_to_frame_size %eax
+        mov     %eax, frame_size(%rsp)
+        lea     frame_size(%rsp), %rax
+        call_fn fwrite, %rax $1, $INT_SIZE, %r12
+
+1:      mov     local_idx(%rsp), %ecx
+        test    %ecx, %ecx
+        jz      2f
+        dec     %ecx
+        mov     %ecx, local_idx(%rsp)
+
+        mov     jit_parameter_to_local_table(,%rcx,POINTER_SIZE), %rax
+        mov     jit_parameter_to_local_size_table(,%rcx,POINTER_SIZE), %r11
+        call_fn fwrite, %rax, $1, %r11, %r12
+        jmp     1b
+
+2:      call_fn reverse, env(%rsp)
+        call_fn jit_datum, %rbx, %r12, %rax
+
+        call_fn fwrite, $jit_epilogue, $1, jit_epilogue_size, %r12
+        return
+
+jit_lambda:                     # form, c-stream, environment
+        prologue env, args
+        mov     %rdi, %rbx
+        mov     %rsi, %r12
+        mov     %rdx, env(%rsp)
+
+        call_fn cdr, %rbx
+        mov     %rax, %rbx
+        call_fn car, %rbx
+        mov     %rax, args(%rsp)
+        call_fn cdr, %rbx
+        call_fn cons, begin_symbol, %rax
+        call_fn jit_code, %rax, args(%rsp)
+
+        tag     TAG_PROCEDURE, %rax
+        call_fn jit_datum, %rax, %r12, env(%rsp)
+
+        return
+
+        ## 4.1.5. Conditionals
 
 jit_if:                         # form, c-stream, environment
         prologue if_offset, else_offset, end_offset, jump_offset, env
@@ -1968,93 +2092,94 @@ jit_if:                         # form, c-stream, environment
 
         return
 
-jit_begin:                     # form, c-stream, environment
-        prologue env, form
+        ## 4.1.6. Assignments
+
+jit_define:                     # form, c-stream, environment
+        prologue env, form, variable_and_formals, variable, formals
         mov     %rdi, %rbx
         mov     %rsi, %r12
         mov     %rdx, env(%rsp)
 
         call_fn cdr, %rbx
         mov     %rax, %rbx
-
-1:      mov     $NIL, %r11
-        cmp     %r11, %rbx
-        je      2f
-
         call_fn car, %rbx
+
+        mov     %rax, %r11
+        has_tag TAG_SYMBOL, %rax, store=false
+        je      1f
+        mov     %r11, %rax
+
+        mov     %rax, variable_and_formals(%rsp)
+        call_fn cdr, %rbx
+        mov     %rax, form(%rsp)
+
+        call_fn car, variable_and_formals(%rsp)
+        mov     %rax, variable(%rsp)
+        call_fn cdr, variable_and_formals(%rsp)
+        mov     %rax, formals(%rsp)
+
+        call_fn cons, formals(%rsp), form(%rsp)
+        call_fn cons, lambda_symbol, %rax
+        call_fn cons, %rax, $NIL
+
+        call_fn cons, variable(%rsp), %rax
+        mov     %rax, %rbx
+
+1:      call_fn cons, set_symbol, %rbx
         call_fn jit_datum, %rax, %r12, env(%rsp)
+        return
+
+jit_set:                        # form, c-stream, environment
+        prologue env, env_size, symbol, symbol_address, local
+        mov     %rdi, %rbx
+        mov     %rsi, %r12
+        mov     %rdx, env(%rsp)
+        call_fn length, %rdx
+        mov     %rax, env_size(%rsp)
         call_fn cdr, %rbx
         mov     %rax, %rbx
+
+        call_fn cdr, %rbx
+        call_fn car, %rax
+        call_fn jit_datum, %rax, %r12, env(%rsp)
+
+        call_fn car, %rbx
+        mov     %rax, symbol(%rsp)
+
+        xor     %ebx, %ebx
+1:      mov     $NIL, %r11
+        cmp     %r11, env(%rsp)
+        je      2f
+
+        call_fn car, env(%rsp)
+        cmp     symbol(%rsp), %rax
+        je      3f
+
+        call_fn cdr, env(%rsp)
+        mov     %rax, env(%rsp)
+        inc     %ebx
         jmp     1b
 
-2:      return
+2:      mov     symbol(%rsp), %rax
+        lea     symbol_table_values(,%eax,POINTER_SIZE), %rax
+        mov     %rax, symbol_address(%rsp)
 
-
-jit_and_expander:               # form
-        prologue
-        mov     %rdi, %rbx
-
-        mov     $NIL, %r11
-        cmp     %rbx, %r11
-        je      1f
-
-        call_fn car, %rbx
-        mov     %rax, %r12
-
-        call_fn cdr, %rbx
-        mov     $NIL, %r11
-        cmp     %rax, %r11
-        je      2f
-
-        call_fn jit_and_expander, %rax
-        mov     %rax, %rbx
-
-        call_fn cons, $FALSE, $NIL
-        call_fn cons, %rbx, %rax
-        call_fn cons, %r12, %rax
-        call_fn cons, if_symbol, %rax
+        call_fn fwrite, $jit_rax_to_global, $1, jit_rax_to_global_size, %r12
+        lea     symbol_address(%rsp), %rax
+        call_fn fwrite, %rax, $1, $POINTER_SIZE, %r12
         return
 
-1:      return  $TRUE
-
-2:      return  %r12
-
-jit_and:                        # form, c-stream, environment
-        macroexpand jit_and_expander
-
-jit_or_expander:                # form
-        prologue
-        mov     %rdi, %rbx
-
-        mov     $NIL, %r11
-        cmp     %rbx, %r11
-        je      1f
-
-        call_fn car, %rbx
-        mov     %rax, %r12
-        call_fn cdr, %rbx
-        call_fn jit_or_expander, %rax
-
-        call_fn cons, %rax, $NIL
-        call_fn cons, temp_symbol, %rax
-        call_fn cons, temp_symbol, %rax
-        call_fn cons, if_symbol, %rax
-
-        call_fn cons, %rax, $NIL
-        mov     %rax, %rbx
-
-        call_fn cons, %r12, $NIL
-        call_fn cons, temp_symbol, %rax
-        call_fn cons, %rax, $NIL
-        call_fn cons, %rax, %rbx
-        call_fn cons, let_symbol, %rax
-
+3:      sub     env_size(%rsp), %ebx
+        neg     %ebx
+        shl     $POINTER_SIZE_SHIFT, %ebx
+        neg     %ebx
+        mov     %ebx, local(%rsp)
+        call_fn fwrite, $jit_rax_to_local, $1, jit_rax_to_local_size, %r12
+        lea     local(%rsp), %rax
+        call_fn fwrite, %rax, $1, $INT_SIZE, %r12
         return
 
-1:      return  $FALSE
-
-jit_or:                         # form, c-stream, environment
-        macroexpand jit_or_expander
+        ##  4.2.1. Conditionals
 
 jit_cond_expander:              # form
         prologue test_expression, expression
@@ -2170,6 +2295,75 @@ jit_case:                       # form, c-stream, environment
 
         return
 
+
+jit_and_expander:               # form
+        prologue
+        mov     %rdi, %rbx
+
+        mov     $NIL, %r11
+        cmp     %rbx, %r11
+        je      1f
+
+        call_fn car, %rbx
+        mov     %rax, %r12
+
+        call_fn cdr, %rbx
+        mov     $NIL, %r11
+        cmp     %rax, %r11
+        je      2f
+
+        call_fn jit_and_expander, %rax
+        mov     %rax, %rbx
+
+        call_fn cons, $FALSE, $NIL
+        call_fn cons, %rbx, %rax
+        call_fn cons, %r12, %rax
+        call_fn cons, if_symbol, %rax
+        return
+
+1:      return  $TRUE
+
+2:      return  %r12
+
+jit_and:                        # form, c-stream, environment
+        macroexpand jit_and_expander
+
+jit_or_expander:                # form
+        prologue
+        mov     %rdi, %rbx
+
+        mov     $NIL, %r11
+        cmp     %rbx, %r11
+        je      1f
+
+        call_fn car, %rbx
+        mov     %rax, %r12
+        call_fn cdr, %rbx
+        call_fn jit_or_expander, %rax
+
+        call_fn cons, %rax, $NIL
+        call_fn cons, temp_symbol, %rax
+        call_fn cons, temp_symbol, %rax
+        call_fn cons, if_symbol, %rax
+
+        call_fn cons, %rax, $NIL
+        mov     %rax, %rbx
+
+        call_fn cons, %r12, $NIL
+        call_fn cons, temp_symbol, %rax
+        call_fn cons, %rax, $NIL
+        call_fn cons, %rax, %rbx
+        call_fn cons, let_symbol, %rax
+
+        return
+
+1:      return  $FALSE
+
+jit_or:                         # form, c-stream, environment
+        macroexpand jit_or_expander
+
+        ## 4.2.2. Binding constructs
+
 jit_let_star:                   # form, c-stream, environment
 jit_let:                        # form, c-stream, environment
 jit_letrec:                     # form, c-stream, environment
@@ -2217,6 +2411,31 @@ jit_letrec:                     # form, c-stream, environment
 
         return
 
+        ## 4.2.3. Sequencing
+
+jit_begin:                     # form, c-stream, environment
+        prologue env, form
+        mov     %rdi, %rbx
+        mov     %rsi, %r12
+        mov     %rdx, env(%rsp)
+
+        call_fn cdr, %rbx
+        mov     %rax, %rbx
+
+1:      mov     $NIL, %r11
+        cmp     %r11, %rbx
+        je      2f
+
+        call_fn car, %rbx
+        call_fn jit_datum, %rax, %r12, env(%rsp)
+        call_fn cdr, %rbx
+        mov     %rax, %rbx
+        jmp     1b
+
+2:      return
+
+        ## 4.2.5. Delayed evaluation
+
 jit_delay_expander:             # form
         minimal_prologue
         call_fn cons, $NIL, %rdi
@@ -2225,205 +2444,6 @@ jit_delay_expander:             # form
 
 jit_delay:                      # form, c-stream, environment
         macroexpand jit_delay_expander
-
-jit_lambda:                     # form, c-stream, environment
-        prologue env, args
-        mov     %rdi, %rbx
-        mov     %rsi, %r12
-        mov     %rdx, env(%rsp)
-
-        call_fn cdr, %rbx
-        mov     %rax, %rbx
-        call_fn car, %rbx
-        mov     %rax, args(%rsp)
-        call_fn cdr, %rbx
-        call_fn cons, begin_symbol, %rax
-        call_fn jit_code, %rax, args(%rsp)
-
-        tag     TAG_PROCEDURE, %rax
-        call_fn jit_datum, %rax, %r12, env(%rsp)
-
-        return
-
-jit_define:                     # form, c-stream, environment
-        prologue env, form, variable_and_formals, variable, formals
-        mov     %rdi, %rbx
-        mov     %rsi, %r12
-        mov     %rdx, env(%rsp)
-
-        call_fn cdr, %rbx
-        mov     %rax, %rbx
-        call_fn car, %rbx
-
-        mov     %rax, %r11
-        has_tag TAG_SYMBOL, %rax, store=false
-        je      1f
-        mov     %r11, %rax
-
-        mov     %rax, variable_and_formals(%rsp)
-        call_fn cdr, %rbx
-        mov     %rax, form(%rsp)
-
-        call_fn car, variable_and_formals(%rsp)
-        mov     %rax, variable(%rsp)
-        call_fn cdr, variable_and_formals(%rsp)
-        mov     %rax, formals(%rsp)
-
-        call_fn cons, formals(%rsp), form(%rsp)
-        call_fn cons, lambda_symbol, %rax
-        call_fn cons, %rax, $NIL
-
-        call_fn cons, variable(%rsp), %rax
-        mov     %rax, %rbx
-
-1:      call_fn cons, set_symbol, %rbx
-        call_fn jit_datum, %rax, %r12, env(%rsp)
-        return
-
-jit_set:                        # form, c-stream, environment
-        prologue env, env_size, symbol, symbol_address, local
-        mov     %rdi, %rbx
-        mov     %rsi, %r12
-        mov     %rdx, env(%rsp)
-        call_fn length, %rdx
-        mov     %rax, env_size(%rsp)
-        call_fn cdr, %rbx
-        mov     %rax, %rbx
-
-        call_fn cdr, %rbx
-        call_fn car, %rax
-        call_fn jit_datum, %rax, %r12, env(%rsp)
-
-        call_fn car, %rbx
-        mov     %rax, symbol(%rsp)
-
-        xor     %ebx, %ebx
-1:      mov     $NIL, %r11
-        cmp     %r11, env(%rsp)
-        je      2f
-
-        call_fn car, env(%rsp)
-        cmp     symbol(%rsp), %rax
-        je      3f
-
-        call_fn cdr, env(%rsp)
-        mov     %rax, env(%rsp)
-        inc     %ebx
-        jmp     1b
-
-2:      mov     symbol(%rsp), %rax
-        lea     symbol_table_values(,%eax,POINTER_SIZE), %rax
-        mov     %rax, symbol_address(%rsp)
-
-        call_fn fwrite, $jit_rax_to_global, $1, jit_rax_to_global_size, %r12
-        lea     symbol_address(%rsp), %rax
-        call_fn fwrite, %rax, $1, $POINTER_SIZE, %r12
-        return
-
-3:      sub     env_size(%rsp), %ebx
-        neg     %ebx
-        shl     $POINTER_SIZE_SHIFT, %ebx
-        neg     %ebx
-        mov     %ebx, local(%rsp)
-        call_fn fwrite, $jit_rax_to_local, $1, jit_rax_to_local_size, %r12
-        lea     local(%rsp), %rax
-        call_fn fwrite, %rax, $1, $INT_SIZE, %r12
-        return
-
-jit_quote:                      # form, c-stream, environment
-        prologue env
-        mov     %rdi, %rbx
-        mov     %rsi, %r12
-        mov     %rdx, env(%rsp)
-        call_fn cdr, %rbx
-        call_fn car, %rax
-        call_fn jit_literal, %rax, %r12, env(%rsp)
-        return
-
-jit_pair:                       # form, c-stream, environment
-        prologue env
-        mov     %rdi, %rbx
-        mov     %rsi, %r12
-        mov     %rdx, env(%rsp)
-
-        call_fn car, %rbx
-        mov     %rax, %r11
-        has_tag TAG_SYMBOL, %r11, store=false
-        jne     1f
-        unbox_pointer_internal %r11
-        mov     jit_syntax_jump_table(,%rax,8), %rax
-        test    %eax, %eax
-        jnz     2f
-
-1:      call_fn jit_procedure_call, %rbx, %r12, env(%rsp)
-        return
-
-2:      call_fn *%rax, %rbx, %r12
-        return
-
-jit_symbol:                    # symbol, c-stream, environment
-        prologue env, env_size, symbol_address, symbol, local
-        mov     %rdi, symbol(%rsp)
-        mov     %rsi, %r12
-        mov     %rdx, env(%rsp)
-        call_fn length, %rdx
-        mov     %rax, env_size(%rsp)
-
-        xor     %ebx, %ebx
-1:      mov     $NIL, %r11
-        cmp     %r11, env(%rsp)
-        je      2f
-
-        call_fn car, env(%rsp)
-        cmp     symbol(%rsp), %rax
-        je      3f
-
-        call_fn cdr, env(%rsp)
-        mov     %rax, env(%rsp)
-        inc     %rbx
-        jmp     1b
-
-2:      mov     symbol(%rsp), %rdi
-        lea     symbol_table_values(,%edi,POINTER_SIZE), %rax
-        mov     %rax, symbol_address(%rsp)
-
-        call_fn fwrite, $jit_global_to_rax, $1, jit_global_to_rax_size, %r12
-        lea     symbol_address(%rsp), %rax
-        call_fn fwrite, %rax, $1, $POINTER_SIZE, %r12
-        return
-
-3:      sub     env_size(%rsp), %ebx
-        neg     %ebx
-        shl     $POINTER_SIZE_SHIFT, %ebx
-        neg     %ebx
-        mov     %ebx, local(%rsp)
-        call_fn fwrite, $jit_local_to_rax, $1, jit_local_to_rax_size, %r12
-        lea     local(%rsp), %rax
-        call_fn fwrite, %rax, $1, $INT_SIZE, %r12
-        return
-
-jit_literal:                    # literal, c-stream, environment
-        prologue literal
-        mov     %rdi, literal(%rsp)
-        mov     %rsi, %r12
-        call_fn jit_maybe_add_to_constant_pool, %rdi
-        call_fn fwrite, $jit_literal_to_rax, $1, jit_literal_to_rax_size, %r12
-        lea     literal(%rsp), %rax
-        call_fn fwrite, %rax, $1, $POINTER_SIZE, %r12
-        return
-
-jit_add_to_constant_pool_nop:   # obj
-        ret
-
-jit_add_to_constant_pool:       # obj
-        minimal_prologue
-        call_fn push_pointer_on_stack, $constant_pool, %rdi
-        return
-
-jit_maybe_add_to_constant_pool: # obj
-        minimal_prologue
-        tagged_jump jit_constant_pool_jump_table
-        return
 
         .data
         .align  16
