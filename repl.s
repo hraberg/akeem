@@ -24,9 +24,11 @@ main:
         call_fn write, %rax
         call_fn newline
 
+        .if REPL_DISPLAY_CLASS
         call_fn class_of, %rbx
         call_fn display, %rax
         call_fn newline
+        .endif
 
         call_fn gc
 

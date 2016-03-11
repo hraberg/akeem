@@ -77,6 +77,8 @@
         .equ NUMBER_OF_REGISTERS, 16
         .equ MAX_REGISTER_ARGS, 6
 
+        .equ REPL_DISPLAY_CLASS, C_FALSE
+
         .struct 0
 header_object_mark:
         .struct . + WORD_SIZE
