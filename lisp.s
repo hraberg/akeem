@@ -663,8 +663,7 @@ write_char:                     # char, port
         unbox_pointer_internal %rsi, %rax
         mov     %edi, %edi
         call_fn fputc, %rdi, %rax
-        tag     TAG_CHAR, %rax
-        return
+        return  $VOID
 
         ## 6.6.4. System interface
         .globl load
@@ -676,7 +675,7 @@ load:                           # filename
         call_fn read_all, %rax
         mov     %rax, %r12
         call_fn close_input_port, %rbx
-        return  $TRUE
+        return  $VOID
 
         ## Scheme Requests for Implementation
 
