@@ -1968,6 +1968,7 @@ jit_and_expander:               # form
         je      1f
 
         call_fn cdr, %rbx
+        mov     $NIL, %r11
         cmp     %rax, %r11
         je      2f
 
@@ -1984,7 +1985,7 @@ jit_and_expander:               # form
         call_fn cons, if_symbol, %rax
         return
 
-1:      return  $FALSE
+1:      return  $TRUE
 
 2:      call_fn car, %rbx
         return
