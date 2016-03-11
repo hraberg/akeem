@@ -892,7 +892,7 @@ init_runtime:                   # execution_stack_top, argc, argv, jit_code_debu
         store_pointer $5, jit_r9_to_local_size
 
         lea     jit_syntax_jump_table, %rbx
-        .irp symbol, quote, if, set, define, lambda, begin, delay, and, or, cond
+        .irp symbol, quote, if, set, define, lambda, begin, delay, and, or, cond, let
         unbox_pointer_internal \symbol\()_symbol
         store_pointer %eax, $jit_\symbol
         .endr
@@ -1841,6 +1841,7 @@ jit_procedure:                  # form, c-stream, environment
 
         shl     $POINTER_SIZE_SHIFT, %eax
         add     $POINTER_SIZE, %eax
+        add     $(MAX_LOCALS * POINTER_SIZE), %eax # Hack to allow let to work without calculating.
         and     $-(POINTER_SIZE * 2), %eax
         mov     %eax, frame_size(%rsp)
         lea     frame_size(%rsp), %rax
@@ -2045,6 +2046,34 @@ jit_cond_expander:              # form
 
 jit_cond:                       # form, c-stream, environment
         macroexpand jit_cond_expander
+
+jit_let_expander:               # form
+        prologue body
+        mov     %rdi, %rbx
+        call_fn cdr, %rbx
+        mov     %rax, body(%rsp)
+        call_fn car, %rbx
+        mov     %rax, %rbx
+
+1:      mov     $NIL, %r11
+        cmp     %rbx, %r11
+        je      2f
+
+        call_fn car, %rbx
+        mov     %rax, %r12
+        call_fn cdr, %rbx
+        mov     %rax, %rbx
+
+        call_fn cons, set_symbol, %r12
+        call_fn cons %rax, body(%rsp)
+        mov     %rax, body(%rsp)
+        jmp     1b
+
+2:      call_fn cons, begin_symbol, body(%rsp)
+        return
+
+jit_let:                       # form, c-stream, environment
+        macroexpand jit_let_expander # Expands in wrong order, need to extend env.
 
 jit_delay_expander:             # form
         minimal_prologue

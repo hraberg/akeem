@@ -408,14 +408,21 @@ tmp_string_\@:
         call_fn set, %rax, %rcx
         .endm
 
-        .macro macroexpand expander
-        minimal_prologue
+        .macro macroexpand expander, debug=false
+        prologue form
         mov     %rsi, %r12
         mov     %rdx, %rbx
 
         call_fn cdr, %rdi
         call_fn \expander, %rax
+        mov     %rax, form(%rsp)
 
-        call_fn jit_datum, %rax, %r12, %rbx
+        .ifc \debug, true
+        call_fn display, %rax
+        call_fn newline
+        .endif
+
+        call_fn jit_datum, form(%rsp), %r12, %rbx
+
         return
         .endm

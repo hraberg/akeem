@@ -76,6 +76,8 @@
         .equ NUMBER_OF_REGISTERS, 16
         .equ MAX_REGISTER_ARGS, 6
 
+        .equ MAX_LOCALS, 16
+
         .struct 0
 header_object_mark:
         .struct . + WORD_SIZE
