@@ -739,7 +739,9 @@ init_runtime:                   # execution_stack_top, argc, argv, jit_code_debu
         intern_symbol cond_symbol, "cond"
         intern_symbol and_symbol, "and"
         intern_symbol or_symbol, "or"
+        intern_symbol let_star_symbol, "let*"
         intern_symbol let_symbol, "let"
+        intern_symbol letrec_symbol, "letrec"
         intern_symbol begin_symbol, "begin"
         intern_symbol delay_symbol, "delay"
 
@@ -910,7 +912,7 @@ init_runtime:                   # execution_stack_top, argc, argv, jit_code_debu
         store_pointer $5, jit_r9_to_local_size
 
         lea     jit_syntax_jump_table, %rbx
-        .irp symbol, quote, if, set, define, lambda, begin, delay, and, or, cond, let
+        .irp symbol, quote, if, set, define, lambda, begin, delay, and, or, cond, let_star, let, letrec
         unbox_pointer_internal \symbol\()_symbol
         store_pointer %eax, $jit_\symbol
         .endr
@@ -1857,10 +1859,7 @@ jit_procedure:                  # form, c-stream, environment
         call_fn length, env(%rsp)
         mov     %eax, local_idx(%rsp)
 
-        shl     $POINTER_SIZE_SHIFT, %eax
-        add     $POINTER_SIZE, %eax
-        add     $(MAX_LOCALS * POINTER_SIZE), %eax # Hack to allow let to work without calculating.
-        and     $-(POINTER_SIZE * 2), %eax
+        locals_to_frame_size %eax
         mov     %eax, frame_size(%rsp)
         lea     frame_size(%rsp), %rax
         call_fn fwrite, %rax $1, $INT_SIZE, %r12
@@ -2066,17 +2065,26 @@ jit_cond_expander:              # form
 jit_cond:                       # form, c-stream, environment
         macroexpand jit_cond_expander
 
-jit_let:                       # form, c-stream, environment
-        prologue env, binding, variable_init
+jit_let_star:                   # form, c-stream, environment
+jit_let:                        # form, c-stream, environment
+jit_letrec:                     # form, c-stream, environment
+        prologue env, binding, variable_init, frame_size
         mov     %rdi, %rbx
         mov     %rsi, %r12
         mov     %rdx, env(%rsp)
 
         call_fn cdr, %rbx
         mov     %rax, %rbx
-
         call_fn car, %rbx
         mov     %rax, binding(%rsp)
+
+        call_fn fwrite, $jit_frame_prologue, $1, jit_frame_prologue_size, %r12
+        call_fn length, binding(%rsp)
+        locals_to_frame_size %eax
+        mov     %eax, frame_size(%rsp)
+        lea     frame_size(%rsp), %rax
+        call_fn fwrite, %rax $1, $INT_SIZE, %r12
+
 1:      mov     $NIL, %r11
         cmp     binding(%rsp), %r11
         je      2f
@@ -2097,6 +2105,11 @@ jit_let:                       # form, c-stream, environment
         call_fn cons, begin_symbol, %rax
 
         call_fn jit_datum, %rax, %r12, env(%rsp)
+
+        call_fn fwrite, $jit_frame_epilogue, $1, jit_frame_epilogue_size, %r12
+        lea     frame_size(%rsp), %rax
+        call_fn fwrite, %rax $1, $INT_SIZE, %r12
+
         return
 
 jit_delay_expander:             # form
@@ -2468,6 +2481,17 @@ jit_epilogue:
         ret
 jit_epilogue_size:
         .quad   . - jit_epilogue
+
+jit_frame_prologue:
+        sub     $0x11223344, %rsp
+jit_frame_prologue_size:
+        .quad   (. - jit_frame_prologue) - INT_SIZE
+
+        .align  16
+jit_frame_epilogue:
+        add     $0x11223344, %rsp
+jit_frame_epilogue_size:
+        .quad   (. - jit_frame_epilogue) - INT_SIZE
 
         .align  16
 jit_literal_to_rax:
