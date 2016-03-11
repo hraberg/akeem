@@ -1967,15 +1967,14 @@ jit_and_expander:               # form
         cmp     %rbx, %r11
         je      1f
 
+        call_fn car, %rbx
+        mov     %rax, %r12
+
         call_fn cdr, %rbx
         mov     $NIL, %r11
         cmp     %rax, %r11
         je      2f
 
-        call_fn car, %rbx
-        mov     %rax, %r12
-        call_fn cdr, %rbx
-        mov     %rax, %rbx
         call_fn jit_and_expander, %rax
         mov     %rax, %rbx
 
@@ -1987,8 +1986,7 @@ jit_and_expander:               # form
 
 1:      return  $TRUE
 
-2:      call_fn car, %rbx
-        return
+2:      return  %r12
 
 jit_and:                        # form, c-stream, environment
         macroexpand jit_and_expander
