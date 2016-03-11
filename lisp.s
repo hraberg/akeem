@@ -2157,7 +2157,7 @@ jit_define:                     # form, c-stream, environment
         return
 
 jit_set:                        # form, c-stream, environment
-        prologue symbol, symbol_address, env, local
+        prologue env, symbol, symbol_address, local
         mov     %rdi, %rbx
         mov     %rsi, %r12
         mov     %rdx, env(%rsp)
