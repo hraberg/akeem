@@ -2110,7 +2110,7 @@ jit_cond:                       # form, c-stream, environment
         macroexpand jit_cond_expander
 
 jit_case_expander:              # form
-        prologue clauses
+        prologue
         mov     %rdi, %rbx
 
         mov     $NIL, %r11
@@ -2120,10 +2120,15 @@ jit_case_expander:              # form
         call_fn cdr, %rbx
         call_fn jit_case_expander, %rax
         call_fn cons, %rax, $NIL
-        mov     %rax, clauses(%rsp)
+        mov     %rax, %r12
 
         call_fn car, %rbx
         mov     %rax, %rbx
+
+        call_fn cdr, %rbx
+        call_fn cons, begin_symbol, %rax
+        call_fn cons, %rax, %r12
+        mov     %rax, %r12
 
         call_fn car, %rbx
         call_fn cons, %rax, $NIL
@@ -2131,13 +2136,8 @@ jit_case_expander:              # form
         call_fn cons, %rax, $NIL
         call_fn cons, temp_symbol, %rax
         call_fn cons, memv_symbol, %rax
-        mov     %rax, %r12
 
-        call_fn cdr, %rbx
-        call_fn cons, begin_symbol, %rax
-
-        call_fn cons, %rax, clauses(%rsp)
-        call_fn cons, %r12, %rax
+        call_fn cons, %rax, %r12
         call_fn cons, if_symbol, %rax
 
         return
