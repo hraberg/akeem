@@ -745,6 +745,8 @@ init_runtime:                   # execution_stack_top, argc, argv, jit_code_debu
         intern_symbol begin_symbol, "begin"
         intern_symbol delay_symbol, "delay"
 
+        intern_symbol x_symbol, "x"
+
         intern_symbol quasiquote_symbol, "quasiquote"
         intern_symbol unquote_symbol, "unquote"
         intern_symbol unquote_splicing_symbol, "unquote-splicing"
@@ -2030,9 +2032,19 @@ jit_or_expander:                # form
         call_fn jit_or_expander, %rax
 
         call_fn cons, %rax, $NIL
-        call_fn cons, %r12, %rax # Should use let and evaluate %r12 once.
-        call_fn cons, %r12, %rax
+        call_fn cons, x_symbol, %rax
+        call_fn cons, x_symbol, %rax
         call_fn cons, if_symbol, %rax
+
+        call_fn cons, %rax, $NIL
+        mov     %rax, %rbx
+
+        call_fn cons, %r12, $NIL
+        call_fn cons, x_symbol, %rax
+        call_fn cons, %rax, $NIL
+        call_fn cons, %rax, %rbx
+        call_fn cons, let_symbol, %rax
+
         return
 
 1:      return  $FALSE
