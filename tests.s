@@ -627,22 +627,6 @@ main:
         call_fn remainder, FIVE, MINUS_TWO
         assert
 
-        call_fn string_to_symbol, foo_name
-        mov     %rax, %rbx
-        call_fn set, %rbx, PI
-
-        call_fn lookup_global_symbol, %rbx
-        assert
-
-        call_fn set, %rbx, $TRUE
-        call_fn lookup_global_symbol, %rbx
-        assert
-
-        string_literal "cons"
-        call_fn string_to_symbol, %rax
-        call_fn lookup_global_symbol, %rax
-        assert
-
         string_literal "42"
         call_fn string_to_number, %rax
         mov     %rax, %rbx

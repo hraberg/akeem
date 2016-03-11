@@ -649,7 +649,7 @@ display:                        # obj, port
         add     $header_size, %rdi
         call_fn fprintf, %rbx, %rdi
         call_fn fflush, %rbx
-        return  $NIL
+        return  $VOID
 
 newline:                        # port
         minimal_prologue
@@ -749,6 +749,8 @@ init_runtime:                   # execution_stack_top, argc, argv, jit_code_debu
         intern_symbol unquote_symbol, "unquote"
         intern_symbol unquote_splicing_symbol, "unquote-splicing"
 
+        intern_symbol void_symbol, "void"
+
         mov     symbol_next_id, %rax
         mov     %rax, max_null_environment_symbol
 
@@ -800,6 +802,7 @@ init_runtime:                   # execution_stack_top, argc, argv, jit_code_debu
         store_pointer $TAG_STRING, $string_to_string
         store_pointer $TAG_PAIR, $pair_to_string
         store_pointer $TAG_VECTOR, $vector_to_string
+        store_pointer $TAG_OBJECT, $object_to_string
 
         lea     unbox_jump_table, %rbx
         store_pointer $TAG_DOUBLE, $unbox_double
@@ -812,6 +815,7 @@ init_runtime:                   # execution_stack_top, argc, argv, jit_code_debu
         store_pointer $TAG_STRING, $unbox_string
         store_pointer $TAG_PAIR, $unbox_pair
         store_pointer $TAG_VECTOR, $unbox_vector
+        store_pointer $TAG_OBJECT, $unbox_object
 
         lea     gc_mark_jump_table, %rbx
         store_pointer $TAG_DOUBLE, $gc_mark_nop
@@ -824,6 +828,7 @@ init_runtime:                   # execution_stack_top, argc, argv, jit_code_debu
         store_pointer $TAG_STRING, $gc_mark_string
         store_pointer $TAG_PAIR, $gc_mark_object
         store_pointer $TAG_VECTOR, $gc_mark_object
+        store_pointer $TAG_OBJECT, $gc_mark_nop
 
         lea     gc_mark_queue_jump_table, %rbx
         store_pointer $TAG_PAIR, $gc_mark_queue_pair
@@ -1030,7 +1035,6 @@ init_runtime:                   # execution_stack_top, argc, argv, jit_code_debu
         define "gc", $gc
         define "object-space-count", $object_space_size
         define "class-of", $class_of
-        define "lookup-global-symbol", $lookup_global_symbol
 
         call_fn box_string, $extensions_scm
         call_fn open_input_string, %rax
@@ -1062,17 +1066,11 @@ init_command_line:              # argc, argv
 
 
         ## Public API
-        .globl set, lookup_global_symbol, object_space_size, class_of
+        .globl object_space_size, class_of
         .globl box_boolean, box_int, box_string, unbox, current_command_line_arguments
 
 current_command_line_arguments:
         mov     command_line_arguments_vector, %rax
-        ret
-
-set:                            # variable, expression
-        unbox_pointer_internal %rdi
-        mov     %rsi, symbol_table_values(,%rax,POINTER_SIZE)
-        mov     %rdi, %rax
         ret
 
 read_all:                       # port
@@ -1087,11 +1085,11 @@ read_all:                       # port
 
 class_of:                       # obj
         extract_tag
+        cmp     $TAG_OBJECT, %rax
+        je      1f
         tag     TAG_SYMBOL, %rax
         ret
-
-lookup_global_symbol:           # symbol
-        lookup_global_symbol_internal %edi
+1:      mov     void_symbol, %rax
         ret
 
 object_space_size:
@@ -1133,6 +1131,14 @@ unbox_integer:                  # int
 
 unbox_pair:                     # pair
         mov     $NIL, %rax
+        cmp     %rax, %rdi
+        jz      1f
+        unbox_pointer_internal %rdi
+        add     $header_size, %rax
+1:      ret
+
+unbox_object:                   # object
+        mov     $VOID, %rax
         cmp     %rax, %rdi
         jz      1f
         unbox_pointer_internal %rdi
@@ -1364,7 +1370,7 @@ gc:
         minimal_prologue
         call_fn gc_mark
         call_fn gc_sweep
-        return  $NIL
+        return  $VOID
 
         ## Printer
 vector_to_string:               # vector
@@ -2385,7 +2391,9 @@ jit_syntax_jump_table:
 
         .align  16
 symbol_table_values:
-        .zero   MAX_NUMBER_OF_SYMBOLS * POINTER_SIZE
+        .rept   MAX_NUMBER_OF_SYMBOLS
+        .quad   VOID
+        .endr
 
         .align  16
 symbol_table_names:

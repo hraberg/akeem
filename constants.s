@@ -54,6 +54,7 @@
         .equ TRUE, (FALSE | C_TRUE)
 
         .equ NIL, (NAN_MASK | (TAG_PAIR << TAG_SHIFT) | NULL)
+        .equ VOID, (NAN_MASK | (TAG_OBJECT << TAG_SHIFT) | NULL)
 
         .equ NEWLINE_CHAR, (NAN_MASK | (TAG_CHAR << TAG_SHIFT) | 10)
         .equ SPACE_CHAR, (NAN_MASK | (TAG_CHAR << TAG_SHIFT) | 32)

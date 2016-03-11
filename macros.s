@@ -382,7 +382,7 @@ tmp_string_\@_c:
         mov     \var, %rax
         .endm
 
-        .macro intern_symbol var, name, value=, id=
+        .macro intern_symbol var, name, id=
         intern_string \var, \name
         .ifnb \id
         mov     $\id, %r11
@@ -390,9 +390,6 @@ tmp_string_\@_c:
         .endif
         call_fn string_to_symbol, %rax
         mov     %rax, \var
-        .ifnb \value
-        call_fn set, %rax, \value
-        .endif
         .endm
 
         .macro define name, value, tag=TAG_PROCEDURE
@@ -405,7 +402,8 @@ tmp_string_\@:
         .ifnb \tag
         tag    \tag, \value, target=%rcx
         .endif
-        call_fn set, %rax, %rcx
+        unbox_pointer_internal %rax
+        mov     %rcx, symbol_table_values(,%rax,POINTER_SIZE)
         .endm
 
         .macro macroexpand expander, debug=false
