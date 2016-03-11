@@ -1967,6 +1967,10 @@ jit_and_expander:               # form
         cmp     %rbx, %r11
         je      1f
 
+        call_fn cdr, %rbx
+        cmp     %rax, %r11
+        je      2f
+
         call_fn car, %rbx
         mov     %rax, %r12
         call_fn cdr, %rbx
@@ -1980,7 +1984,10 @@ jit_and_expander:               # form
         call_fn cons, if_symbol, %rax
         return
 
-1:      return $TRUE
+1:      return  $FALSE
+
+2:      call_fn car, %rbx
+        return
 
 jit_and:                        # form, c-stream, environment
         macroexpand jit_and_expander
@@ -1999,12 +2006,12 @@ jit_or_expander:                # form
         call_fn jit_or_expander, %rax
 
         call_fn cons, %rax, $NIL
-        call_fn cons, $TRUE, %rax # Should be %r12 but needs let.
+        call_fn cons, %r12, %rax # Should use let and evaluate %r12 once.
         call_fn cons, %r12, %rax
         call_fn cons, if_symbol, %rax
         return
 
-1:      return $FALSE
+1:      return  $FALSE
 
 jit_or:                         # form, c-stream, environment
         macroexpand jit_or_expander
@@ -2035,7 +2042,7 @@ jit_cond_expander:              # form
         call_fn cons, if_symbol, %rax
         return
 
-1:      return $FALSE
+1:      return  $FALSE
 
 jit_cond:                       # form, c-stream, environment
         macroexpand jit_cond_expander
