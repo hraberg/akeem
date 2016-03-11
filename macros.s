@@ -383,7 +383,7 @@ tmp_string_\@_c:
         .endm
 
         .macro intern_symbol var, name, id=
-        intern_string \var, \name
+        intern_string \var, "\name"
         .ifnb \id
         mov     $\id, %r11
         mov     %rax, symbol_table_names(,%r11,POINTER_SIZE)

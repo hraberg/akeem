@@ -746,6 +746,8 @@ init_runtime:                   # execution_stack_top, argc, argv, jit_code_debu
         intern_symbol delay_symbol, "delay"
 
         intern_symbol x_symbol, "x"
+        intern_symbol arrow_symbol, "=>"
+        intern_symbol else_symbol, "else"
 
         intern_symbol quasiquote_symbol, "quasiquote"
         intern_symbol unquote_symbol, "unquote"
@@ -2053,32 +2055,54 @@ jit_or:                         # form, c-stream, environment
         macroexpand jit_or_expander
 
 jit_cond_expander:              # form
-        prologue
+        prologue test_expression, expression
         mov     %rdi, %rbx
 
         mov     $NIL, %r11
         cmp     %rbx, %r11
-        je      1f
+        je      3f
 
         call_fn car, %rbx
-        mov     %rax, %r12
+        mov     %rax, test_expression(%rsp)
         call_fn cdr, %rbx
         call_fn jit_cond_expander, %rax
 
         call_fn cons, %rax, $NIL
         mov     %rax, %rbx
 
-        call_fn cdr, %r12
-        call_fn cons, begin_symbol, %rax
+        call_fn cdr, test_expression(%rsp)
+        mov     %rax, expression(%rsp)
+        call_fn car, %rax
+        cmp     arrow_symbol, %rax
+        je      1f
+
+        call_fn cons, begin_symbol, expression(%rsp)
         call_fn cons %rax, %rbx
+        jmp     2f
+
+1:      call_fn cdr, expression(%rsp)
+        call_fn car, %rax
+        mov     %rax, %r12
+        call_fn cons, x_symbol, $NIL
+        call_fn cons, %r12, %rax
+        call_fn cons, %rax, $NIL
+
+2:      call_fn cons, x_symbol, %rax
+        call_fn cons, if_symbol, %rax
+
+        call_fn cons, %rax, $NIL
         mov     %rax, %rbx
 
-        call_fn car, %r12
+        call_fn car, test_expression(%rsp)
+        call_fn cons, %rax, $NIL
+        call_fn cons, x_symbol, %rax
+        call_fn cons, %rax, $NIL
         call_fn cons, %rax, %rbx
-        call_fn cons, if_symbol, %rax
+        call_fn cons, let_symbol, %rax
+
         return
 
-1:      return  $FALSE
+3:      return  $FALSE
 
 jit_cond:                       # form, c-stream, environment
         macroexpand jit_cond_expander
