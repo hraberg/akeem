@@ -1612,6 +1612,8 @@ read_datum:                     # c-stream
         je      1f
         call_fn read_comment, %rbx
         call_fn fgetc, %rbx
+        cmp     $EOF, %eax
+        je      1f
         read_byte_jump read_datum_jump_table, %rbx, %rax
 1:      return
 
@@ -2176,6 +2178,7 @@ jit_set:                        # form, c-stream, environment
         call_fn fwrite, $jit_rax_to_global, $1, jit_rax_to_global_size, %r12
         lea     symbol_address(%rsp), %rax
         call_fn fwrite, %rax, $1, $POINTER_SIZE, %r12
+        call_fn fwrite, $jit_void_to_rax, $1, jit_void_to_rax_size, %r12
         return
 
 3:      sub     env_size(%rsp), %ebx
@@ -2186,6 +2189,7 @@ jit_set:                        # form, c-stream, environment
         call_fn fwrite, $jit_rax_to_local, $1, jit_rax_to_local_size, %r12
         lea     local(%rsp), %rax
         call_fn fwrite, %rax, $1, $INT_SIZE, %r12
+        call_fn fwrite, $jit_void_to_rax, $1, jit_void_to_rax_size, %r12
         return
 
         ##  4.2.1. Conditionals
@@ -2249,7 +2253,7 @@ jit_case_expander:              # form
 
         mov     $NIL, %r11
         cmp     %rbx, %r11
-        je      1f
+        je      2f
 
         call_fn cdr, %rbx
         call_fn jit_case_expander, %rax
@@ -2265,18 +2269,20 @@ jit_case_expander:              # form
         mov     %rax, %r12
 
         call_fn car, %rbx
+        cmp     else_symbol, %rax
+        je      1f
         call_fn cons, %rax, $NIL
         call_fn cons, quote_symbol, %rax
         call_fn cons, %rax, $NIL
         call_fn cons, temp_symbol, %rax
         call_fn cons, memv_symbol, %rax
 
-        call_fn cons, %rax, %r12
+1:      call_fn cons, %rax, %r12
         call_fn cons, if_symbol, %rax
 
         return
 
-1:      return  $VOID
+2:      return  $VOID
 
 jit_case:                       # form, c-stream, environment
         prologue form, key, clauses
@@ -2671,6 +2677,12 @@ jit_push_rax:
         push    %rax
 jit_push_rax_size:
         .quad   . - jit_push_rax
+
+        .align  16
+jit_void_to_rax:
+        mov     $VOID, %rax
+jit_void_to_rax_size:
+        .quad   . - jit_void_to_rax
 
         .align  16
 jit_rdi_to_local:

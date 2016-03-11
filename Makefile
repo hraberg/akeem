@@ -3,7 +3,7 @@ LDLIBS = -lm
 
 default: akeem
 
-%.o: %.s constants.s macros.s r5rs.scm extensions.scm
+%.o: %.s constants.s macros.s r5rs.scm extensions.scm tests.scm
 	$(AS) $< $(ASFLAGS) -o $@
 
 tests: tests.o lisp.o
@@ -31,7 +31,7 @@ run-repl: akeem /usr/bin/rlwrap
 	sudo apt-get install -y entr
 
 retest: /usr/bin/entr
-	while true; do find . -name '*.s' -o -name Makefile -o -name test_output.txt | \
+	while true; do find . -name '*.s' -o -name '*.scm' -o -name Makefile -o -name test_output.txt | \
 		$< -r $(MAKE) -s run-tests ; done
 
 jit-dissassmble:

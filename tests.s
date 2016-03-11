@@ -1126,6 +1126,11 @@ main:
 
         test_case "test suite end"
 
+        test_case "tests.scm start"
+        string_literal "tests.scm"
+        call_fn load, %rax
+        test_case "tests.scm end"
+
         return  $0
 
         .globl main
