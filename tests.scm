@@ -201,7 +201,7 @@
 (assert (eqv? '(a) '(a)))
 (assert (eqv? "a" "a"))
 (assert (eqv? '(b) (cdr '(a b))))
-(assert (let ((x ’(a)))
+(assert (let ((x '(a)))
           (eqv? x x)))
 
 (assert (eq? 'a 'a))
