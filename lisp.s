@@ -2678,7 +2678,7 @@ write_mode:
 jit_code_directory:
         .string "jit_code"
 jit_code_file_format:
-        .string "jit_code/jit_code_%04d.bin"
+        .string "jit_code/jit_code_%06d.bin"
 
         ## register numbers:
         ## rax = r0, rcx = r1, rdx = r2, rbx = r3,
