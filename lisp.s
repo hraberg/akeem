@@ -1051,6 +1051,7 @@ init_runtime:                   # execution_stack_top, argc, argv, jit_code_debu
         define "error", $error
 
         define "current-command-line-arguments", $current_command_line_arguments
+        define "exit", $exit_
         define "read-all", $read_all
         define "gc", $gc
         define "object-space-count", $object_space_size
@@ -1092,6 +1093,12 @@ init_command_line:              # argc, argv
 current_command_line_arguments:
         mov     command_line_arguments_vector, %rax
         ret
+
+exit_:                          # exit-code
+        minimal_prologue
+        default_arg TAG_INT, $0, %rdi
+        call_fn exit, %rdi
+        return
 
 read_all:                       # port
         prologue
