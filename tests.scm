@@ -107,7 +107,6 @@
             (/ 3 0)))
 
 ;;; 4.2.2. Binding constructs
-
 (assert (let ((x 2) (y 3))
           (* x y)))
 ;; (assert (let ((x 2) (y 3))
@@ -146,7 +145,6 @@
 ;;; 5.2. Definitions
 
 ;;; 5.2.1. Top level definitions
-
 (define add3
   (lambda (x) (+ x 3)))
 (assert (add3 3))
@@ -156,7 +154,6 @@
 ;;; 6. Standard procedures
 
 ;;; 6.1. Equivalence predicates
-
 (assert (eqv? 'a 'a))
 (assert (eqv? 'a 'b))
 (assert (eqv? 2 2))
@@ -183,7 +180,6 @@
 (assert (let ((g (gen-counter)))
           (eqv? g g)))
 ;; (assert (eqv? (gen-counter) (gen-counter)))
-
 
 (define gen-loser
   (lambda ()
@@ -240,7 +236,6 @@
 ;;; 6.2. Numbers
 
 ;;; 6.2.5. Numerical operations
-
 ;; (assert (complex? 3+4i))
 (assert (complex? 3))
 (assert (real? 3))
@@ -310,7 +305,6 @@
 ;; (assert (rationalize .3 1/10))
 
 ;;; 6.2.6. Numerical input and output
-
 (assert (let ((number 20)
               (radix 16))
           (eqv? number
@@ -326,7 +320,6 @@
 ;;; 6.3. Other data types
 
 ;;; 6.3.1. Booleans
-
 (assert #t)
 (assert #f)
 (assert '#f)
@@ -344,7 +337,6 @@
 (assert (boolean? '()))
 
 ;;; 6.3.2. Pairs and lists
-
 (define x '(a b c)) ;; should not be constant
 (define y x)
 (assert y)
@@ -428,8 +420,7 @@
 (assert (assq 5 '((2 3) (5 7) (11 13))))
 (assert (assv 5 '((2 3) (5 7) (11 13))))
 
-;; ;;; 6.3.3. Symbols
-
+;;; 6.3.3. Symbols
 (assert (symbol? 'foo))
 (assert (symbol? (car '(a b))))
 (assert (symbol? "bar"))
@@ -453,15 +444,13 @@
 ;;                    (symbol->string
 ;;                     (string->symbol "K. Harper, M.D."))))
 
-;; ;;; 6.3.4. Characters
-
+;;; 6.3.4. Characters
 (assert (<= (char->integer #\a)
             (char->integer #\a)))
 ;; (assert (char<=? (integer->char x)
 ;;                  (integer->char y)))
 
-;; ;;; 6.3.5. Strings
-
+;;; 6.3.5. Strings
 (define (f) (make-string 3 #\*))
 ;; (define (g) "***")
 (assert (string-set! (f) 0 #\?))
@@ -470,8 +459,7 @@
 ;;                      0
 ;;                      #\?))
 
-;; ;;; 6.3.6. Vectors
-
+;;; 6.3.6. Vectors
 (assert '#(0 (2 2 2 2) "Anna"))
 
 ;; (vector 'a 'b 'c)
@@ -492,8 +480,7 @@
 (assert (vector->list '#(dah dah didah)))
 (assert (list->vector '(dididit dah)))
 
-;; ;;; 6.4. Control features
-
+;;; 6.4. Control features
 (assert (procedure? car))
 (assert (procedure? 'car))
 (assert (procedure? (lambda (x) (* x x))))
@@ -596,8 +583,7 @@
 ;;                 (c 'talk2)
 ;;                 (reverse path)))))
 
-;; ;;; 6.5. Eval
-
+;;; 6.5. Eval
 (assert (eval '(* 7 3) (scheme-report-environment 5)))
 (assert (let ((f (eval '(lambda (f x) (f x x))
                        (null-environment 5))))
