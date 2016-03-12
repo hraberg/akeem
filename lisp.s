@@ -2270,7 +2270,7 @@ jit_cond_expander:              # form
 
         mov     $NIL, %r11
         cmp     %rbx, %r11
-        je      3f
+        je      4f
 
         call_fn car, %rbx
         mov     %rax, test_expression(%rsp)
@@ -2282,22 +2282,32 @@ jit_cond_expander:              # form
 
         call_fn cdr, test_expression(%rsp)
         mov     %rax, expression(%rsp)
+
+        mov     $NIL, %r11
+        cmp     %rax, %r11
+        je      1f
+
         call_fn car, %rax
         cmp     arrow_symbol, %rax
-        je      1f
+        je      2f
 
         call_fn cons, begin_symbol, expression(%rsp)
         call_fn cons %rax, %rbx
-        jmp     2f
+        jmp     3f
 
-1:      call_fn cdr, expression(%rsp)
+1:      call_fn cons, temp_symbol, $NIL
+        call_fn cons, begin_symbol, %rax
+        call_fn cons %rax, %rbx
+        jmp     3f
+
+2:      call_fn cdr, expression(%rsp)
         call_fn car, %rax
         mov     %rax, %r12
         call_fn cons, temp_symbol, $NIL
         call_fn cons, %r12, %rax
-        call_fn cons, %rax, $NIL
+        call_fn cons, %rax, %rbx
 
-2:      call_fn cons, temp_symbol, %rax
+3:      call_fn cons, temp_symbol, %rax
         call_fn cons, if_symbol, %rax
 
         call_fn cons, %rax, $NIL
@@ -2312,7 +2322,7 @@ jit_cond_expander:              # form
 
         return
 
-3:      return  $VOID
+4:      return  $VOID
 
 jit_cond:                       # form, c-stream, environment
         macroexpand jit_cond_expander
