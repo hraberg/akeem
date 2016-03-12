@@ -1089,14 +1089,22 @@ parse_command_line_arguments:
         prologue
         call_fn vector_length, command_line_arguments_vector
         cmp     $1, %eax
-        je      1f
+        je      3f
 
-        call_fn box_int, $1
+        mov     %eax, %ebx
+        mov     $1, %r12d
+1:      cmp     %ebx, %r12d
+        je      2f
+
+        call_fn box_int, %r12
         call_fn vector_ref, command_line_arguments_vector, %rax
         call_fn load, %rax
 
-        call_fn exit, $0
-1:      return
+        inc     %r12d
+        jmp     1b
+
+2:      call_fn exit, $0
+3:      return
 
         ## Public API
         .globl object_space_size, class_of
