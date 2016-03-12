@@ -8,7 +8,7 @@
          (equal? (string->list obj1) (string->list obj2)))
         ((and (vector? obj1) (vector? obj2))
          (equal? (vector->list obj1) (vector->list obj2)))
-        (else (eq? obj1 obj2))))
+        (else (eqv? obj1 obj2))))
 
 ;;; 6.2.5. Numerical operations
 
