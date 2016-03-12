@@ -213,13 +213,13 @@ cdr:                            # pair
 set_car:                        # pair, obj
         unbox_pointer_internal %rdi
         mov     %rsi, pair_car(%rax)
-        mov     %rsi, %rax
+        mov     $VOID, %rax
         ret
 
 set_cdr:                        # pair, obj
         unbox_pointer_internal %rdi
         mov     %rsi, pair_cdr(%rax)
-        mov     %rsi, %rax
+        mov     $VOID, %rax
         ret
 
 length:                         # list
@@ -367,7 +367,7 @@ string_set:                     # string, k, char
         mov     %esi, %esi
         unbox_pointer_internal %rdi
         mov     %dl, header_size(%rax,%rsi)
-        box_int_internal %edx
+        mov     $VOID, %rax
         ret
 
         ## 6.3.6. Vectors
@@ -415,7 +415,7 @@ vector_set:                     # vector, k, obj
         unbox_pointer_internal %rdi
         mov     %esi, %esi
         mov     %rdx, header_size(%rax,%rsi,POINTER_SIZE)
-        mov     %rdx, %rax
+        mov     $VOID, %rax
         ret
 
 list_to_vector:                 # list
@@ -501,7 +501,9 @@ call_with_current_continuation: # proc
         unbox_pointer_internal %rdi, %rbx
         call_fn setjmp, $jump_buffer # https://www.gnu.org/software/libc/manual/html_mono/libc.html#System-V-contexts
         jnz 1f
-        call_fn *%rbx, $call_with_current_continuation_escape
+        mov     $call_with_current_continuation_escape, %rax
+        tag     TAG_PROCEDURE, %rax
+        call_fn *%rbx, %rax
         return
 1:      return  %xmm0
 
@@ -976,6 +978,7 @@ init_runtime:                   # execution_stack_top, argc, argv, jit_code_debu
         define "set-cdr!", $set_cdr
 
         define "length", $length
+        define "reverse", $reverse
 
         define "symbol?", $is_symbol
         define "symbol->string", $symbol_to_string

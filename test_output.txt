@@ -319,6 +319,7 @@ consonant
 #t
 #t
 #t
+#t
 4
 7
 -1
@@ -355,4 +356,86 @@ consonant
 #t
 #f
 #f
+(a b c)
+#t
+#<void>
+(a . 4)
+#t
+(a . 4)
+#f
+#<void>
+#t
+#t
+#f
+#f
+(a)
+((a) b c d)
+("a" b c)
+(a . 3)
+((a b) . c)
+a
+(a)
+1
+(b c d)
+2
+#t
+#t
+#f
+3
+3
+0
+(x y)
+(a b c d)
+(a (b) (c))
+(a b c . d)
+a
+(c b a)
+((e (f)) d (b c) a)
+c
+c
+(a b c)
+(b c)
+#f
+#f
+(101 102)
+(101 102)
+(a 1)
+(b 2)
+#f
+#f
+(5 7)
+(5 7)
+#t
+#t
+#f
+#t
+#f
+#f
+"flying-fish"
+"Malvina"
+mISSISSIppi
+#t
+#t
+#(0 (2 2 2 2) "Anna")
+8
+13
+#(0 ("Sue" "Sue") "Anna")
+(dah dah didah)
+#(dididit dah)
+#t
+#f
+#t
+#f
+#t
+7
+(b e h)
+(1 4 27 256 3125)
+3
+#<procedure>
+6
+#<procedure>
+#f
+#f
+21
+20
 ;;; tests.scm end

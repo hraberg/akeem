@@ -43,7 +43,7 @@ read_foo:
 
 returns_42_non_local:
         prologue
-        mov     %rdi, %rbx
+        unbox_pointer_internal %rdi, %rbx
         call_fn box_int, $42
         call_fn *%rbx, %rax
 

@@ -226,6 +226,17 @@
 (assert (let ((p (lambda (x) x)))
           (eq? p p)))
 
+(assert (equal? 'a 'a))
+;; (assert (equal? '(a) '(a)))
+;; (assert (equal? '(a (b) c)
+;;                 '(a (b) c)))
+;; (assert (equal? "abc" "abc"))
+;; (assert (equal? 2 2))
+;; (assert (equal? (make-vector 5 'a)
+;;                 (make-vector 5 'a)))
+;; (assert (equal? (lambda (x) x)
+;;                 (lambda (y) y)))
+
 ;;; 6.2. Numbers
 
 ;;; 6.2.5. Numerical operations
@@ -251,10 +262,10 @@
 ;; (assert (*))
 
 (assert (- 3 4))
-;; (- 3 4 5)
-;; (- 3)
-;; (/ 3 4 5)
-;; (/ 3)
+;; (assert (- 3 4 5))
+;; (assert (- 3))
+;; (assert (/ 3 4 5))
+;; (aasert (/ 3))
 
 (assert (abs -7))
 
@@ -272,16 +283,16 @@
 (assert (remainder -13 -4))
 ;; (assert (remainder -13 -4.0))
 
-;; (gcd 32 -36)
-;; (gcd)
-;; (lcm 32 -36)
-;; (lcm 32.0 -36)
-;; (lcm)
+;; (assert (gcd 32 -36))
+;; (assert (gcd))
+;; (assert (lcm 32 -36))
+;; (assert (lcm 32.0 -36))
+;; (assert (lcm))
 
-;; (numerator (/ 6 4))
-;; (denominator (/ 6 4))
-;; (denominator
-;; (exact->inexact (/ 6 4)))
+;; (assert (numerator (/ 6 4)))
+;; (assert (denominator (/ 6 4)))
+;; (assert (denominator
+;;          (exact->inexact (/ 6 4))))
 
 (assert (floor -4.3))
 (assert (ceiling -4.3))
@@ -291,12 +302,12 @@
 (assert (ceiling 3.5))
 (assert (truncate 3.5))
 (assert (round 3.5))
-;; (round 7/2)
+;; (assert (round 7/2))
 ;; (assert (round 7))
 
-;; (rationalize
-;;  (inexact->exact .3) 1/10)
-;; (rationalize .3 1/10)
+;; (assert (rationalize
+;;          (inexact->exact .3) 1/10))
+;; (assert (rationalize .3 1/10))
 
 ;;; 6.2.6. Numerical input and output
 
@@ -332,5 +343,262 @@
 (assert (boolean? 0))
 (assert (boolean? '()))
 
-
 ;;; 6.3.2. Pairs and lists
+
+(define x '(a b c)) ;; should not be constant
+(define y x)
+(assert y)
+(assert (list? y))
+(assert (set-cdr! x 4))
+(assert x)
+(assert (eqv? x y))
+(assert y)
+(assert (list? y))
+(assert (set-cdr! x x))
+;; (assert (list? x))
+
+(assert (pair? '(a . b)))
+(assert (pair? '(a b c)))
+(assert (pair? '()))
+(assert (pair? '#(a b)))
+
+(assert (cons 'a '()))
+(assert (cons '(a) '(b c d)))
+(assert (cons "a" '(b c)))
+(assert (cons 'a 3))
+(assert (cons '(a b) 'c))
+
+(assert (car '(a b c)))
+(assert (car '((a) b c d)))
+(assert (car '(1 . 2)))
+;; (assert (car '()))
+
+(assert (cdr '((a) b c d)))
+(assert (cdr '(1 . 2)))
+;; (assert (cdr '()))
+
+;; (define (f) (list 'not-a-constant-list))
+;; (define (g) '(constant-list))
+;; (assert (set-car! (f) 3))
+;; (assert (set-car! (g) 3))
+
+(assert (list? '(a b c)))
+(assert (list? '()))
+(assert (list? '(a . b)))
+;; (assert (let ((x '(a)))
+;;           (set-cdr! x x)
+;;           (list? x)))
+
+;; (assert (list 'a (+ 3 4) 'c))
+;; (assert (list))
+
+(assert (length '(a b c)))
+(assert (length '(a (b) (c d e))))
+(assert (length '()))
+
+(assert (append '(x) '(y)))
+(assert (append '(a) '(b c d)))
+(assert (append '(a (b)) '((c))))
+
+(assert (append '(a b) '(c . d)))
+(assert (append '() 'a))
+
+(assert (reverse '(a b c)))
+(assert (reverse '(a (b c) d (e (f)))))
+
+(assert (list-ref '(a b c d) 2))
+(assert (list-ref '(a b c d)
+                  (inexact->exact (round 1.8))))
+
+(assert (memq 'a '(a b c)))
+(assert (memq 'b '(a b c)))
+(assert (memq 'a '(b c d)))
+(assert (memq '(a) '(b (a) c)))
+;; (assert (member '(a)
+;;                 '(b (a) c)))
+(assert (memq 101 '(100 101 102)))
+(assert (memv 101 '(100 101 102)))
+
+(define e '((a 1) (b 2) (c 3)))
+(assert (assq 'a e))
+(assert (assq 'b e))
+(assert (assq 'd e))
+(assert (assq '(a) '(((a)) ((b)) ((c)))))
+;; (assert (assoc '(a) '(((a)) ((b)) ((c)))))
+(assert (assq 5 '((2 3) (5 7) (11 13))))
+(assert (assv 5 '((2 3) (5 7) (11 13))))
+
+;; ;;; 6.3.3. Symbols
+
+(assert (symbol? 'foo))
+(assert (symbol? (car '(a b))))
+(assert (symbol? "bar"))
+(assert (symbol? 'nil))
+(assert (symbol? '()))
+(assert (symbol? #f))
+
+(assert (symbol->string 'flying-fish))
+ ;; (assert (symbol->string 'Martin))
+(assert (symbol->string
+         (string->symbol "Malvina")))
+
+;; (assert (eq? 'mISSISSIppi 'mississippi))
+
+(assert (string->symbol "mISSISSIppi"))
+;; (assert (eq? 'bitBlt (string->symbol "bitBlt")))
+(assert (eq? 'JollyWog
+             (string->symbol
+              (symbol->string 'JollyWog))))
+;; (asseert (string=? "K. Harper, M.D."
+;;                    (symbol->string
+;;                     (string->symbol "K. Harper, M.D."))))
+
+;; ;;; 6.3.4. Characters
+
+(assert (<= (char->integer #\a)
+            (char->integer #\a)))
+;; (char<=? (integer->char x)
+;;          (integer->char y)) =⇒ #t
+
+;; ;;; 6.3.5. Strings
+
+;; (define (f) (make-string 3 #\*))
+;; (define (g) "***")
+;; (string-set! (f) 0 #\?) =⇒ unspecified
+;; (string-set! (g) 0 #\?) =⇒ error
+;; (string-set! (symbol->string 'immutable)
+;;              0
+;;              #\?) =⇒ error
+
+;; ;;; 6.3.6. Vectors
+
+(assert '#(0 (2 2 2 2) "Anna"))
+
+;; (vector 'a 'b 'c)
+
+(assert (vector-ref '#(1 1 2 3 5 8 13 21)
+                    5))
+(assert (vector-ref '#(1 1 2 3 5 8 13 21)
+                    (let ((i (round (* 2 (acos -1)))))
+                      (if (inexact? i)
+                          (inexact->exact i)
+                          i))))
+
+(assert (let ((vec '#(0 '(2 2 2 2) "Anna")))  ;; should not be constant
+          (vector-set! vec 1 '("Sue" "Sue"))
+          vec))
+;; (assert (vector-set! '#(0 1 2) 1 "doe"))
+
+(assert (vector->list '#(dah dah didah)))
+(assert (list->vector '(dididit dah)))
+
+;; ;;; 6.4. Control features
+
+(assert (procedure? car))
+(assert (procedure? 'car))
+(assert (procedure? (lambda (x) (* x x))))
+(assert (procedure? '(lambda (x) (* x x))))
+(assert (call-with-current-continuation procedure?))
+
+(assert (apply + '(3 4)))
+;; (define compose
+;;   (lambda (f g)
+;;     (lambda args
+;;       (f (apply g args)))))
+;; (assert ((compose sqrt *) 12 75))
+
+(assert (map cadr '((a b) (d e) (g h))))
+
+(assert (map (lambda (n) (expt n n))
+             '(1 2 3 4 5)))
+;; (assert (map + '(1 2 3) '(4 5 6)))
+;; (assert (let ((count 0))
+;;           (map (lambda (ignored)
+;;                  (set! count (+ count 1))
+;;                  count)
+;;                '(a b))))
+
+;; (assert (let ((v (make-vector 5)))
+;;           (for-each (lambda (i)
+;;                       (vector-set! v i (* i i)))
+;;                     '(0 1 2 3 4))
+;;           v))
+
+(assert (force (delay (+ 1 2))))
+;; (assert (let ((p (delay (+ 1 2))))
+;;           (list (force p) (force p))))
+;; (define a-stream
+;;   (letrec ((next
+;;             (lambda (n)
+;;               (cons n (delay (next (+ n 1)))))))
+;;     (next 0)))
+;; (define head car)
+;; (define tail
+;;   (lambda (stream) (force (cdr stream))))
+;; (assert (head (tail (tail a-stream))))
+
+(define count 0)
+(define p
+  (delay (begin (set! count (+ count 1))
+                (if (> count x)
+                    count
+                    (force p)))))
+(define x 5)
+(assert p)
+(assert (force p))
+(assert p)
+;; (assert (begin (set! x 10)
+;;                (force p)))
+
+(assert (eqv? (delay 1) 1))
+(assert (pair? (delay (cons 1 2))))
+
+;; (assert (+ (delay (* 3 7)) 13))
+
+;; (assert (call-with-current-continuation
+;;          (lambda (exit)
+;;            (for-each (lambda (x)
+;;                        (if (negative? x)
+;;                            (exit x)))
+;;                      '(54 0 37 -3 245 19))
+;;            #t)))
+;; (define list-length
+;;   (lambda (obj)
+;;     (call-with-current-continuation
+;;      (lambda (return)
+;;        (letrec ((r
+;;                  (lambda (obj)
+;;                    (cond ((null? obj) 0)
+;;                          ((pair? obj)
+;;                           (+ (r (cdr obj)) 1))
+;;                          (else (return #f))))))
+;;          (r obj))))))
+;; (assert (list-length '(1 2 3 4)))
+;; (assert (list-length '(a b . c)))
+
+;; (assert (call-with-values (lambda () (values 4 5))
+;;           (lambda (a b) b)))
+;; (assert (call-with-values * -))
+
+;; (assert (let ((path '())
+;;               (c #f))
+;;           (let ((add (lambda (s)
+;;                        (set! path (cons s path)))))
+;;             (dynamic-wind
+;;                 (lambda () (add 'connect))
+;;                 (lambda ()
+;;                   (add (call-with-current-continuation
+;;                         (lambda (c0)
+;;                           (set! c c0)
+;;                           'talk1))))
+;;                 (lambda () (add 'disconnect)))
+;;             (if (< (length path) 4)
+;;                 (c 'talk2)
+;;                 (reverse path)))))
+
+;; ;;; 6.5. Eval
+
+(assert (eval '(* 7 3) (scheme-report-environment 5)))
+(assert (let ((f (eval '(lambda (f x) (f x x))
+                       (null-environment 5))))
+          (f + 10)))
