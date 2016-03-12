@@ -1340,7 +1340,7 @@ gc_mark_queue_constant_pool:
         je      2f
 
         mov     stack_bottom + constant_pool, %rax
-        mov     (%rax,%rbx), %r11
+        mov     (%rax,%rbx), %rdi
         call_fn gc_maybe_mark, %rdi
 
         add     $POINTER_SIZE, %ebx
@@ -2296,8 +2296,6 @@ jit_case_expander:              # form
 
 2:      return  $VOID
 
-        ## BUG: same compiled case statement can't execute twice.
-        ##      Seems to be related to GC-ing of literals.
 jit_case:                       # form, c-stream, environment
         prologue form, key, clauses
         mov     %rdi, form(%rsp)
