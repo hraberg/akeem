@@ -424,9 +424,3 @@ tmp_string_\@:
 
         return
         .endm
-
-        .macro locals_to_frame_size value
-        shl     $POINTER_SIZE_SHIFT, \value
-        add     $(4 * POINTER_SIZE), \value
-        and     $-(2 * POINTER_SIZE), \value
-        .endm

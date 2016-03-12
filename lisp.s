@@ -2065,8 +2065,11 @@ jit_procedure:                  # form, c-stream, environment
         call_fn length, env(%rsp)
         mov     %eax, local_idx(%rsp)
 
-        locals_to_frame_size %eax
+        shl     $POINTER_SIZE_SHIFT, %eax
         add     $POINTER_SIZE, %eax
+        and     $-(2 * POINTER_SIZE), %eax
+        ## TODO: this should be calculated based on the body.
+        add     $MAX_LOCAL_SIZE, %eax
         mov     %eax, frame_size(%rsp)
         lea     frame_size(%rsp), %rax
         call_fn fwrite, %rax $1, $INT_SIZE, %r12
@@ -2420,6 +2423,7 @@ jit_or:                         # form, c-stream, environment
 
         ## 4.2.2. Binding constructs
 
+        ## TODO: need to grow the env differently for these and also deal with set!.
 jit_let_star:                   # form, c-stream, environment
 jit_let:                        # form, c-stream, environment
 jit_letrec:                     # form, c-stream, environment
@@ -2432,14 +2436,6 @@ jit_letrec:                     # form, c-stream, environment
         mov     %rax, %rbx
         call_fn car, %rbx
         mov     %rax, binding(%rsp)
-
-        ## TODO: This doesn't work as intended.
-        call_fn fwrite, $jit_frame_prologue, $1, jit_frame_prologue_size, %r12
-        call_fn length, binding(%rsp)
-        locals_to_frame_size %eax
-        mov     %eax, frame_size(%rsp)
-        lea     frame_size(%rsp), %rax
-        call_fn fwrite, %rax $1, $INT_SIZE, %r12
 
 1:      mov     $NIL, %r11
         cmp     binding(%rsp), %r11
@@ -2461,10 +2457,6 @@ jit_letrec:                     # form, c-stream, environment
         call_fn cons, begin_symbol, %rax
 
         call_fn jit_datum, %rax, %r12, env(%rsp)
-
-        call_fn fwrite, $jit_frame_epilogue, $1, jit_frame_epilogue_size, %r12
-        lea     frame_size(%rsp), %rax
-        call_fn fwrite, %rax $1, $INT_SIZE, %r12
 
         return
 
@@ -2665,18 +2657,6 @@ jit_epilogue:
         ret
 jit_epilogue_size:
         .quad   . - jit_epilogue
-
-        .align  16
-jit_frame_prologue:
-        sub     $0x11223344, %rsp
-jit_frame_prologue_size:
-        .quad   (. - jit_frame_prologue) - INT_SIZE
-
-        .align  16
-jit_frame_epilogue:
-        add     $0x11223344, %rsp
-jit_frame_epilogue_size:
-        .quad   (. - jit_frame_epilogue) - INT_SIZE
 
         .align  16
 jit_literal_to_rax:
