@@ -1,6 +1,6 @@
         .include "constants.s"
 
-        .macro mov_reg from to
+        .macro mov_reg from, to
         .ifnb \from
         .ifnc \from, \to
         movq   \from, \to
@@ -8,7 +8,7 @@
         .endif
         .endm
 
-        .macro call_fn fn arg1 arg2 arg3 arg4 arg5 arg6
+        .macro call_fn fn, arg1, arg2, arg3, arg4, arg5, arg6
         mov_reg \arg6, %r9
         mov_reg \arg5, %r8
         mov_reg \arg4, %rcx
@@ -18,7 +18,7 @@
         call \fn
         .endm
 
-        .macro local_variables local:req locals:vararg
+        .macro local_variables local:req, locals:vararg
         .equ \local, local_offset
         .equ local_offset, local_offset + POINTER_SIZE
         .ifnb \locals
@@ -46,7 +46,7 @@
         sub     $stack_frame_size, %rsp
         .endm
 
-        .macro return value1=%rax value2=%rdx
+        .macro return value1=%rax, value2=%rdx
         mov_reg \value1, %rax
         mov_reg \value2, %rdx
         .if callee_saved_size > 0
@@ -57,7 +57,7 @@
         ret
         .endm
 
-        .macro unbox_pointer_internal ptr to=%rax tmp=%r11
+        .macro unbox_pointer_internal ptr, to=%rax, tmp=%r11
         .ifc \ptr, \to
         mov     $PAYLOAD_MASK, \tmp
         and     \ptr, \tmp
@@ -68,7 +68,7 @@
         .endif
         .endm
 
-        .macro eq_internal x y store=true
+        .macro eq_internal x, y, store=true
         cmp     \x, \y
         .ifc \store, true
         sete    %al
@@ -76,7 +76,7 @@
         .endif
         .endm
 
-        .macro box_int_internal value=%eax tmp=%r11
+        .macro box_int_internal value=%eax, tmp=%r11
         mov     \value, %eax
         tag     TAG_INT, %rax, %rax, \tmp
         .endm
@@ -85,13 +85,13 @@
         tag     TAG_BOOLEAN, \value
         .endm
 
-        .macro tag tag value=%rax target=%rax tmp=%r11
+        .macro tag tag value=%rax, target=%rax, tmp=%r11
         mov_reg \value, \target
         mov     $(NAN_MASK | \tag << TAG_SHIFT), \tmp
         or      \tmp, \target
         .endm
 
-        .macro has_tag tag value=%rax store=true
+        .macro has_tag tag, value=%rax, store=true
         mov_reg \value, %rax
         shr     $TAG_SHIFT, %rax
         .if (\tag >= TAG_SYMBOL)
@@ -100,7 +100,7 @@
         eq_internal $(\tag | NAN_MASK >> TAG_SHIFT), %eax, \store
         .endm
 
-        .macro is_double_internal value tmp=%r11 store=true
+        .macro is_double_internal value, tmp=%r11, store=true
         mov     \value, \tmp
         btr     $SIGN_BIT, \tmp
         mov     $NAN_MASK, %rax
@@ -111,7 +111,7 @@
         .endif
         .endm
 
-        .macro store_pointer idx ptr=%rax at=%rbx
+        .macro store_pointer idx, ptr=%rax, at=%rbx
         mov     \idx, %ecx
         mov     \ptr, %rax
         movq    %rax, (\at,%rcx,POINTER_SIZE)
@@ -167,7 +167,7 @@
         .align  (1 << BINARY_OP_SHIFT)
         .endm
 
-        .macro binary_op name double_op integer_op
+        .macro binary_op name, double_op, integer_op
         binary_op_jump \name
 \name\()_op:
         \double_op %xmm1, %xmm0
@@ -183,7 +183,7 @@
         .endif
         .endm
 
-        .macro binary_comparsion name double_setter integer_setter
+        .macro binary_comparsion name, double_setter, integer_setter
         binary_op_jump \name
 \name\()_op:
         xor     %eax, %eax
@@ -216,7 +216,7 @@
         idiv    %esi
         .endm
 
-        .macro maybe_round_to_int from=%xmm0 tmp=%xmm1
+        .macro maybe_round_to_int from=%xmm0, tmp=%xmm1
         roundsd $ROUNDING_MODE_TRUNCATE, \from, \tmp
         ucomisd \from, \tmp
         je      .L_\@_1
@@ -228,7 +228,7 @@
 .L_\@_2:
         .endm
 
-        .macro math_library_unary_call name round=false
+        .macro math_library_unary_call name, round=false
         movq    %rdi, %xmm0
         has_tag TAG_INT, %rdi, store=false
         jne     \name\()_double
@@ -244,7 +244,7 @@
         return
         .endm
 
-        .macro math_library_binary_call name round=false
+        .macro math_library_binary_call name, round=false
         binary_op_jump \name
 \name\()_op:
         minimal_prologue
@@ -273,7 +273,7 @@
         return  %rbx
         .endm
 
-        .macro with_file_io_template name stream
+        .macro with_file_io_template name, stream
         prologue previous_port
         unbox_pointer_internal %rsi, %rbx
         mov     \stream, %rax
