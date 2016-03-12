@@ -1119,6 +1119,7 @@ object_space_size:
         ret
 
         ## Boxing from C
+
 box_boolean:                    # c-boolean
         and     $C_TRUE, %edi
         box_boolean_internal %rdi
@@ -1138,6 +1139,7 @@ box_string:                     # c-string
         return
 
         ## Unboxing to C
+
 unbox_double:                   # double
         mov     %rdi, %rax
         ret
@@ -1581,6 +1583,7 @@ to_string:                      # value
         return
 
         ## Reader
+
 read_whitespace:                # c-stream
         prologue
         mov     %rdi, %rbx
@@ -2321,7 +2324,6 @@ jit_case:                       # form, c-stream, environment
         call_fn jit_datum, %rax, %r12, %rbx
 
         return
-
 
 jit_and_expander:               # form
         prologue
