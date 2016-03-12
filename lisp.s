@@ -108,16 +108,16 @@ modulo:                         # n1, n2
         ret
 
 floor_:                         # z
-        math_library_unary_call floor
+        math_library_unary_call floor, return_int=true
 
 ceiling_:                       # z
-        math_library_unary_call ceil
+        math_library_unary_call ceil, return_int=true
 
 truncate_:                      # z
-        math_library_unary_call trunc
+        math_library_unary_call trunc, return_int=true
 
 round_:                         # z
-        math_library_unary_call round
+        math_library_unary_call round, return_int=true
 
         .irp name, exp, log, sin, cos, tan, asin, acos, atan
 \name\()_:                      # z

@@ -298,7 +298,7 @@
 (assert (truncate 3.5))
 (assert (round 3.5))
 ;; (assert (round 7/2))
-;; (assert (round 7))
+(assert (round 7))
 
 ;; (assert (rationalize
 ;;          (inexact->exact .3) 1/10))

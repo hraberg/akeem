@@ -228,12 +228,17 @@
 .L_\@_2:
         .endm
 
-        .macro math_library_unary_call name, round=false
+        .macro math_library_unary_call name, round=false, return_int=false
         movq    %rdi, %xmm0
         has_tag TAG_INT, %rdi, store=false
         jne     \name\()_double
 \name\()_int:
+        .ifc \return_int, true
+        mov     %rdi, %rax
+        ret
+        .else
         cvtsi2sd %edi, %xmm0
+        .endif
 \name\()_double:
         minimal_prologue
         call_fn \name
