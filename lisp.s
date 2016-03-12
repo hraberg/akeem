@@ -2496,17 +2496,24 @@ jit_begin:                     # form, c-stream, environment
         call_fn cdr, %rbx
         mov     %rax, %rbx
 
-1:      mov     $NIL, %r11
+        mov     $NIL, %r11
         cmp     %r11, %rbx
-        je      2f
+        jne     2f
+
+        call_fn cons, $VOID, $NIL
+        mov     %rax, %rbx
+
+2:      mov     $NIL, %r11
+        cmp     %r11, %rbx
+        je      3f
 
         call_fn car, %rbx
         call_fn jit_datum, %rax, %r12, env(%rsp)
         call_fn cdr, %rbx
         mov     %rax, %rbx
-        jmp     1b
+        jmp     2b
 
-2:      return
+3:      return
 
         ## 4.2.5. Delayed evaluation
 
