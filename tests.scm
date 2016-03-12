@@ -231,11 +231,11 @@
 ;; (assert (equal? '(a (b) c)
 ;;                 '(a (b) c)))
 ;; (assert (equal? "abc" "abc"))
-;; (assert (equal? 2 2))
+(assert (equal? 2 2))
 ;; (assert (equal? (make-vector 5 'a)
 ;;                 (make-vector 5 'a)))
-;; (assert (equal? (lambda (x) x)
-;;                 (lambda (y) y)))
+(assert (equal? (lambda (x) x)
+                (lambda (y) y)))
 
 ;;; 6.2. Numbers
 

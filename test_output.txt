@@ -318,6 +318,8 @@ consonant
 #t
 #t
 #t
+#f
+#t
 #t
 #t
 4
