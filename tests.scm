@@ -227,13 +227,13 @@
           (eq? p p)))
 
 (assert (equal? 'a 'a))
-;; (assert (equal? '(a) '(a)))
-;; (assert (equal? '(a (b) c)
-;;                 '(a (b) c)))
-;; (assert (equal? "abc" "abc"))
+(assert (equal? '(a) '(a)))
+(assert (equal? '(a (b) c)
+                '(a (b) c)))
+(assert (equal? "abc" "abc"))
 (assert (equal? 2 2))
-;; (assert (equal? (make-vector 5 'a)
-;;                 (make-vector 5 'a)))
+(assert (equal? (make-vector 5 'a)
+                (make-vector 5 'a)))
 (assert (equal? (lambda (x) x)
                 (lambda (y) y)))
 
@@ -414,8 +414,8 @@
 (assert (memq 'b '(a b c)))
 (assert (memq 'a '(b c d)))
 (assert (memq '(a) '(b (a) c)))
-;; (assert (member '(a)
-;;                 '(b (a) c)))
+(assert (member '(a)
+                '(b (a) c)))
 (assert (memq 101 '(100 101 102)))
 (assert (memv 101 '(100 101 102)))
 
@@ -424,7 +424,7 @@
 (assert (assq 'b e))
 (assert (assq 'd e))
 (assert (assq '(a) '(((a)) ((b)) ((c)))))
-;; (assert (assoc '(a) '(((a)) ((b)) ((c)))))
+(assert (assoc '(a) '(((a)) ((b)) ((c)))))
 (assert (assq 5 '((2 3) (5 7) (11 13))))
 (assert (assv 5 '((2 3) (5 7) (11 13))))
 
@@ -457,18 +457,18 @@
 
 (assert (<= (char->integer #\a)
             (char->integer #\a)))
-;; (char<=? (integer->char x)
-;;          (integer->char y)) =⇒ #t
+;; (assert (char<=? (integer->char x)
+;;                  (integer->char y)))
 
 ;; ;;; 6.3.5. Strings
 
-;; (define (f) (make-string 3 #\*))
+(define (f) (make-string 3 #\*))
 ;; (define (g) "***")
-;; (string-set! (f) 0 #\?) =⇒ unspecified
-;; (string-set! (g) 0 #\?) =⇒ error
-;; (string-set! (symbol->string 'immutable)
-;;              0
-;;              #\?) =⇒ error
+(assert (string-set! (f) 0 #\?))
+;; (assert (string-set! (g) 0 #\?))
+;; (assert (string-set! (symbol->string 'immutable)
+;;                      0
+;;                      #\?))
 
 ;; ;;; 6.3.6. Vectors
 

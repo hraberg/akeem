@@ -1,7 +1,14 @@
 ;;; 6.1. Equivalence predicates
 
 (define (equal? obj1 obj2)
-  (eq? obj1 obj2))
+  (cond ((and (pair? obj1) (pair? obj2))
+         (and (equal? (car obj1) (car obj2))
+              (equal? (cdr obj1) (cdr obj2))))
+        ((and (string? obj1) (string? obj2))
+         (equal? (string->list obj1) (string->list obj2)))
+        ((and (vector? obj1) (vector? obj2))
+         (equal? (vector->list obj1) (vector->list obj2)))
+        (else (eq? obj1 obj2))))
 
 ;;; 6.2.5. Numerical operations
 
