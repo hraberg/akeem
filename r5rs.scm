@@ -61,76 +61,76 @@
   (cdr (cdr obj)))
 
 (define (caaar obj)
-  (car (car (car obj))))
+  (car (caar obj)))
 
 (define (caadr obj)
-  (car (car (cdr obj))))
+  (car (cadr obj)))
 
 (define (cadar obj)
-  (car (cdr (car obj))))
+  (car (cdar obj)))
 
 (define (caddr obj)
-  (car (cdr (cdr obj))))
+  (car (cddr obj)))
 
 (define (cdaar obj)
-  (cdr (car (car obj))))
+  (cdr (caar obj)))
 
 (define (cdadr obj)
-  (cdr (car (cdr obj))))
+  (cdr (cadr obj)))
 
 (define (cddar obj)
-  (cdr (cdr (car obj))))
+  (cdr (cdar obj)))
 
 (define (cdddr obj)
-  (cdr (cdr (cdr obj))))
+  (cdr (cddr obj)))
 
 (define (caaaar obj)
-  (car (car (car (car obj)))))
+  (car (caaar obj)))
 
 (define (caaadr obj)
-  (car (car (car (cdr obj)))))
+  (car (caadr obj)))
 
 (define (caadar obj)
-  (car (car (cdr (car obj)))))
+  (car (cadar obj)))
 
 (define (caaddr obj)
-  (car (car (cdr (cdr obj)))))
+  (car (caddr obj)))
 
 (define (cadaar obj)
-  (car (cdr (car (car obj)))))
+  (car (cdaar obj)))
 
 (define (cadadr obj)
-  (car (cdr (car (cdr obj)))))
+  (car (cdadr obj)))
 
 (define (caddar obj)
-  (car (cdr (cdr (car obj)))))
+  (car (cddar obj)))
 
 (define (cadddr obj)
-  (car (cdr (cdr (cdr obj)))))
+  (car (cdddr obj)))
 
 (define (cdaaar obj)
-  (cdr (car (car (car obj)))))
+  (cdr (caaar obj)))
 
 (define (cdaadr obj)
-  (cdr (car (car (cdr obj)))))
+  (cdr (caadr obj)))
 
 (define (cdadar obj)
-  (cdr (car (cdr (car obj)))))
+  (cdr (cadar obj)))
 
 (define (cdaddr obj)
-  (cdr (car (cdr (cdr obj)))))
+  (cdr (caddr obj)))
 
 (define (cddaar obj)
-  (cdr (cdr (car (car obj)))))
+  (cdr (cdaar obj)))
 
 (define (cddadr obj)
-  (cdr (cdr (car (cdr obj)))))
+  (cdr (cdadr obj)))
 
 (define (cdddar obj)
-  (cdr (cdr (cdr (car obj)))))
+  (cdr (cddar obj)))
 
 (define (cddddr obj)
-  (cdr (cdr (cdr (cdr obj)))))
+  (cdr (cdddr obj)))
 
 (define (null? obj)
   (eq? '() obj))
