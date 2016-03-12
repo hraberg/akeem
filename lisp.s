@@ -716,7 +716,7 @@ error:                          # reason
 
         ## Runtime
 
-        .globl init_runtime
+        .globl init_runtime, parse_command_line_arguments
 
 init_runtime:                   # execution_stack_top, argc, argv, jit_code_debug
         prologue argc, argv
@@ -1085,6 +1085,18 @@ init_command_line:              # argc, argv
         jmp     1b
 2:      return
 
+parse_command_line_arguments:
+        prologue
+        call_fn vector_length, command_line_arguments_vector
+        cmp     $1, %eax
+        je      1f
+
+        call_fn box_int, $1
+        call_fn vector_ref, command_line_arguments_vector, %rax
+        call_fn load, %rax
+
+        call_fn exit, $0
+1:      return
 
         ## Public API
         .globl object_space_size, class_of
