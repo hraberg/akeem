@@ -10,7 +10,8 @@ main:
         call_fn init_runtime, %rsp, %rdi, %rsi, $C_TRUE
 
         call_fn current_command_line_arguments
-        call_fn vector_length, %rax
+        mov     %rax, %rbx
+        call_fn vector_length, %rbx
         cmp     $1, %eax
         jg      2f
 
@@ -39,9 +40,7 @@ main:
 
         jmp     1b
 
-2:      call_fn current_command_line_arguments
-        mov     %rax, %rbx
-        call_fn box_int, $1
+2:      call_fn box_int, $1
         call_fn vector_ref, %rbx, %rax
         call_fn load, %rax
         return  $0
