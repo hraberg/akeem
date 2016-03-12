@@ -9,6 +9,11 @@ main:
 
         call_fn init_runtime, %rsp, %rdi, %rsi, $C_TRUE
 
+        call_fn current_command_line_arguments
+        call_fn vector_length, %rax
+        cmp     $1, %eax
+        jg      2f
+
         intern_string welcome_message, "Welcome to Akeem Scheme."
         intern_string prompt, "> "
 
@@ -34,4 +39,9 @@ main:
 
         jmp     1b
 
-2:      return  $0
+2:      call_fn current_command_line_arguments
+        mov     %rax, %rbx
+        call_fn box_int, $1
+        call_fn vector_ref, %rbx, %rax
+        call_fn load, %rax
+        return  $0
