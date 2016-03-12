@@ -93,19 +93,33 @@ quotient:                       # n1, n2
         ret
 
 remainder:                      # n1, n2
+        prologue
+        extract_binary_op
+        mov     %rax, %rbx
         integer_division
+        cmp     $BINARY_OP_INT_INT, %rbx
+        jne     1f
         box_int_internal %edx
-        ret
+        return
+1:      cvtsi2sd %edx, %xmm0
+        return  %xmm0
 
 modulo:                         # n1, n2
+        prologue
+        extract_binary_op
+        mov     %rax, %rbx
         integer_division
         test    %edx, %edx
         jz      1f
         xor     %esi, %edi
         jns     1f
         add     %esi, %edx
-1:      box_int_internal %edx
-        ret
+1:      cmp     $BINARY_OP_INT_INT, %rbx
+        jne     2f
+        box_int_internal %edx
+        return
+2:      cvtsi2sd %edx, %xmm0
+        return  %xmm0
 
 floor_:                         # z
         math_library_unary_call floor, return_int=true
@@ -131,14 +145,22 @@ expt_:                          # z1, z2
         math_library_binary_call pow, round=true
 
 exact_to_inexact:               # z
+        has_tag TAG_INT, %rdi, store=false
+        jne     1f
         cvtsi2sd %edi, %xmm0
         movq    %xmm0, %rax
         ret
+1:      mov     %rdi, %rax
+        ret
 
 inexact_to_exact:               # z
-        movq     %rdi, %xmm0
+        has_tag TAG_INT, %rdi, store=false
+        je      1f
+        movq    %rdi, %xmm0
         cvtsd2si %xmm0, %rax
         box_int_internal
+        ret
+1:      mov     %rdi, %rax
         ret
 
         ## 6.2.6. Numerical input and output

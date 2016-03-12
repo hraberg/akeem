@@ -27,13 +27,20 @@
 (define (even? n)
   (zero? (modulo n 2)))
 
+(define (min-max-aux test x1 x2)
+  (if (test x1 x2)
+      (if (inexact? x1)
+          (exact->inexact x2)
+          x2)
+      (if (inexact? x2)
+          (exact->inexact x1)
+          x1)))
+
 (define (max x1 x2)
-  (if (< x1 x2)
-      x2
-      x1))
+  (min-max-aux < x1 x2))
 
 (define (min x1 x2)
-  (max x2 x1))
+  (min-max-aux > x1 x2))
 
 (define (abs x)
   (if (negative? x)

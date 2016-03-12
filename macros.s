@@ -135,7 +135,7 @@
         call    *\table(,%rax,POINTER_SIZE)
         .endm
 
-        .macro binary_op_jump name
+        .macro extract_binary_op
         has_tag TAG_INT, %rdi, store=false
         sete    %r11b
         has_tag TAG_INT, %rsi, store=false
@@ -143,6 +143,10 @@
         shl     %al
         or      %r11b, %al
         and     $BINARY_OP_MASK, %eax
+        .endm
+
+        .macro binary_op_jump name
+        extract_binary_op
         shl     $BINARY_OP_SHIFT, %al
         lea     \name\()_double_double(%eax), %rax
         jmp     *%rax

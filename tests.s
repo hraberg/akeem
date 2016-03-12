@@ -572,10 +572,6 @@ main:
         call_fn quotient, %rbx, %rax
         assert
 
-        call_fn box_int, $5
-        call_fn quotient, %rax, E
-        assert
-
         call_fn box_int, $3
         mov     %rax, %rbx
         call_fn box_int $4

@@ -248,7 +248,7 @@
 ;; (assert (integer? 8/4))
 
 (assert (max 3 4))
-;; (assert (max 3.9 4))
+(assert (max 3.9 4))
 
 (assert (+ 3 4))
 ;; (assert (+ 3))
@@ -276,7 +276,7 @@
 (assert (remainder 13 -4))
 (assert (modulo -13 -4))
 (assert (remainder -13 -4))
-;; (assert (remainder -13 -4.0))
+(assert (remainder -13 -4.0))
 
 ;; (assert (gcd 32 -36))
 ;; (assert (gcd))

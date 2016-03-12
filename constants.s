@@ -69,6 +69,7 @@
 
         .equ BINARY_OP_SHIFT, 4
         .equ BINARY_OP_MASK, 4 - 1
+        .equ BINARY_OP_INT_INT, (1 << 1 | 1)
 
         .equ APPLY_JUMP_ALIGNMENT, 2
 
