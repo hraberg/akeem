@@ -2296,6 +2296,7 @@ jit_case_expander:              # form
 
 2:      return  $VOID
 
+        ## BUG: same compiled case statement can't execute twice.
 jit_case:                       # form, c-stream, environment
         prologue form, key, clauses
         mov     %rdi, form(%rsp)
