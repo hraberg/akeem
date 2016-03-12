@@ -2404,6 +2404,7 @@ jit_letrec:                     # form, c-stream, environment
         call_fn car, %rbx
         mov     %rax, binding(%rsp)
 
+        ## TODO: This doesn't work as intended.
         call_fn fwrite, $jit_frame_prologue, $1, jit_frame_prologue_size, %r12
         call_fn length, binding(%rsp)
         locals_to_frame_size %eax
