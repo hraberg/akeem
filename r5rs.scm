@@ -12,9 +12,6 @@
 
 ;;; 6.2.5. Numerical operations
 
-(define complex? number?)
-(define real? number?)
-
 (define (zero? x)
   (= 0 x))
 

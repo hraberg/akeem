@@ -16,7 +16,7 @@ is_eqv:                         # obj1, obj2
 
         ## 6.2. Numbers
         ## 6.2.5. Numerical operations
-        .globl is_number, is_integer, is_exact, is_inexact
+        .globl is_number, is_complex, is_real, is_rational, is_integer, is_exact, is_inexact
         .globl equal, less_than, greater_than, less_than_or_equal, greater_than_or_equal
         .globl plus, minus, multiply, divide
         .globl quotient, remainder, modulo
@@ -24,6 +24,9 @@ is_eqv:                         # obj1, obj2
         .globl exact_to_inexact, inexact_to_exact
 
 is_number:                      # obj
+is_complex:                     # obj
+is_real:                        # obj
+is_rational:                    # obj
         is_double_internal %rdi
         jnz     1f
         has_tag TAG_INT, %rdi
@@ -941,7 +944,7 @@ init_runtime:                   # execution_stack_top, argc, argv, jit_code_debu
         store_pointer %eax, $jit_\symbol
         .endr
 
-        .irp name, eq, eqv, number, integer, exact, inexact
+        .irp name, eq, eqv, number, complex, real, rational, integer, exact, inexact
         define "\name?", $is_\name
         .endr
 
