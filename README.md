@@ -125,6 +125,7 @@ make run-tests-catchsegv
 * http://www.avabodh.com/cin/cin.html
 * http://github.com/nineties/amber
 * http://lemick.sourceforge.net/papers/JIT_design.pdf
+* http://piumarta.com/doc/dcg-1992.pdf
 
 ### Lisp
 
