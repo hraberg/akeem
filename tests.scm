@@ -542,13 +542,13 @@
 
 ;; (assert (+ (delay (* 3 7)) 13))
 
-;; (assert (call-with-current-continuation
-;;          (lambda (exit)
-;;            (for-each (lambda (x)
-;;                        (if (negative? x)
-;;                            (exit x)))
-;;                      '(54 0 37 -3 245 19))
-;;            #t)))
+(assert (call-with-current-continuation
+         (lambda (exit)
+           (for-each (lambda (x)
+                       (if (negative? x)
+                           (exit x)))
+                     '(54 0 37 -3 245 19))
+           #t)))
 ;; (define list-length
 ;;   (lambda (obj)
 ;;     (call-with-current-continuation

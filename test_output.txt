@@ -449,6 +449,7 @@ mISSISSIppi
 #<procedure>
 #f
 #f
+-3
 21
 20
 ;;; tests.scm end
