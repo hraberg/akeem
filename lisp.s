@@ -200,7 +200,7 @@ string_to_number:               # string, radix
         ## 6.3. Other data types
 
         ## 6.3.2. Pairs and lists
-        .globl is_pair, cons, car, cdr, set_car, set_cdr, length, reverse
+        .globl is_pair, cons, car, cdr, set_car, set_cdr, length, reverse, append
 
 is_pair:                        # obj
         is_nil_internal %rdi
@@ -260,6 +260,24 @@ length:                         # list
 
 2:      box_int_internal %ebx
         return
+
+append:                        # list1, list2
+        prologue
+        mov     %rsi, %r12
+        call_fn reverse, %rdi
+        mov     %rax, %rbx
+1:      is_nil_internal %rbx
+        je      2f
+
+        calL_fn car, %rbx
+        call_fn cons, %rax, %r12
+        mov     %rax, %r12
+
+        call_fn cdr, %rbx
+        mov     %rax, %rbx
+        jmp     1b
+
+2:      return  %r12
 
 reverse:                        # list
         prologue
@@ -536,7 +554,7 @@ eval:                           # expression, environment-specifier
 
         mov     %esi, max_global_symbol(%rsp)
 
-        call_fn jit_code, %rdi, $NIL
+        call_fn jit_code, %rdi, $NIL, $NIL
         call    *%rax
         return
 
@@ -998,6 +1016,7 @@ init_runtime:                   # execution_stack_top, argc, argv, jit_code_debu
         define "set-cdr!", $set_cdr
 
         define "length", $length
+        define "append", $append
         define "reverse", $reverse
 
         define "symbol?", $is_symbol
@@ -1905,17 +1924,18 @@ jit_allocate_code:              # c-code, c-size
         perror  je
         return  %rbx
 
-jit_code:                       # form, environment
-        prologue env, code, size
+jit_code:                       # form, environment, arguments
+        prologue env, arguments, code, size
         mov     %rdi, %r12
         mov     %rsi, env(%rsp)
+        mov     %rdx, arguments(%rsp)
         lea     code(%rsp), %rdi
         lea     size(%rsp), %rsi
         call_fn open_memstream, %rdi, %rsi
         perror
         mov     %rax, %rbx
 
-        call_fn jit_procedure, %r12, %rbx, env(%rsp)
+        call_fn jit_procedure, %r12, %rbx, env(%rsp), arguments(%rsp)
         call_fn fclose, %rbx
         perror  je
 
@@ -2075,17 +2095,18 @@ jit_procedure_call:             # form, c-stream, environment
 
         ## 4.1.4. Procedures
 
-jit_procedure:                  # form, c-stream, environment
-        prologue env, frame_size, local_idx, local, prologue_offset, end_offset
+jit_procedure:                  # form, c-stream, environment, arguments
+        prologue env, arguments, frame_size, local_idx, local, prologue_offset, end_offset
         mov     %rdi, %rbx
         mov     %rsi, %r12
         mov     %rdx, env(%rsp)
+        mov     %rcx, arguments(%rsp)
 
         call_fn fwrite, $jit_prologue, $1, jit_prologue_size, %r12
         call_fn ftell, %r12
         mov     %rax, prologue_offset(%rsp)
 
-        call_fn length, env(%rsp)
+        call_fn length, arguments(%rsp)
         mov     %eax, local_idx(%rsp)
 
 1:      mov     local_idx(%rsp), %ecx
@@ -2099,7 +2120,8 @@ jit_procedure:                  # form, c-stream, environment
         call_fn fwrite, %rax, $1, %r11, %r12
         jmp     1b
 
-2:      call_fn reverse, env(%rsp)
+2:      call_fn reverse, arguments(%rsp)
+        call_fn append, %rax, env(%rsp)
         call_fn jit_datum, %rbx, %r12, %rax
 
         shl     $POINTER_SIZE_SHIFT, %eax
@@ -2132,7 +2154,7 @@ jit_lambda:                     # form, c-stream, environment
         mov     %rax, args(%rsp)
         call_fn cdr, %rbx
         call_fn cons, begin_symbol, %rax
-        call_fn jit_code, %rax, args(%rsp)
+        call_fn jit_code, %rax, env(%rsp), args(%rsp)
 
         tag     TAG_PROCEDURE, %rax
         call_fn jit_datum, %rax, %r12, env(%rsp)
