@@ -147,18 +147,18 @@
 ;;                (sum 0 (+ sum (car x))))
 ;;               ((null? x) sum))))
 
-;; (assert (let loop ((numbers ’(3 -2 1 6 -5))
-;;                    (nonneg ’())
-;;                    (neg ’()))
-;;           (cond ((null? numbers) (list nonneg neg))
-;;                 ((>= (car numbers) 0)
-;;                  (loop (cdr numbers)
-;;                        (cons (car numbers) nonneg)
-;;                        neg))
-;;                 ((< (car numbers) 0)
-;;                  (loop (cdr numbers)
-;;                        nonneg
-;;                        (cons (car numbers) neg))))))
+(assert (let loop ((numbers '(3 -2 1 6 -5))
+                   (nonneg '())
+                   (neg '()))
+          (cond ((null? numbers) (cons nonneg (cons neg '()))) ;; should be list
+                ((>= (car numbers) 0)
+                 (loop (cdr numbers)
+                       (cons (car numbers) nonneg)
+                       neg))
+                ((< (car numbers) 0)
+                 (loop (cdr numbers)
+                       nonneg
+                       (cons (car numbers) neg))))))
 
 ;;; 5. Program structure
 

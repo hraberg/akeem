@@ -22,7 +22,7 @@ make
 ## What Works?
 
 * Subset of R5RS procedures.
-* JIT for `if`, `lambda`, `define`, `set!`, `let`, `let*` and `begin`.
+* JIT for `if`, `lambda`, `define`, `set!`, `let`, `let*`, "named `let`" and `begin`.
 * Syntax for `and`, `or`, `cond`,`case` and `delay`.
 * NaN-boxed 32-bit integers and 64-bit doubles
 * Function application up to 6 arguments.
@@ -33,7 +33,7 @@ make
 ## What doesn't work?
 
 * Almost no error handling.
-* `letrec`, `define-syntax`, "named `let`" and `do`.
+* `letrec`, `define-syntax`, and `do`.
 * `delay` isn't memoized.
 * No TCO.
 * Max arity is currently 6, higher requires the use of the stack.

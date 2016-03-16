@@ -2159,7 +2159,7 @@ jit_lambda_factory:             # lambda, argc
 1:      mov     old_rbp(%rsp), %rcx
         cmp     %rcx, old_rsp(%rsp)
         je      2f
-        call_fn jit_datum, (%rcx), %rbx, $NIL
+        call_fn jit_literal, (%rcx), %rbx, $NIL
         sub     $POINTER_SIZE, old_rbp(%rsp)
 
         incl    local_idx(%rsp)
@@ -2305,29 +2305,33 @@ jit_set:                        # form, c-stream, environment
         mov     %rax, env_size(%rsp)
         call_fn cdr, %rbx
         mov     %rax, %rbx
+        movq    $0, max_locals(%rsp)
 
         call_fn cdr, %rbx
+        ## TODO: Hack to set current %rax by omitting value.
+        is_nil_internal %rax
+        je      1f
         call_fn car, %rax
         call_fn jit_datum, %rax, %r12, env(%rsp)
         mov     %rax, max_locals(%rsp)
 
-        call_fn car, %rbx
+1:      call_fn car, %rbx
         mov     %rax, symbol(%rsp)
 
         xor     %ebx, %ebx
-1:      is_nil_internal env(%rsp)
-        je      2f
+2:      is_nil_internal env(%rsp)
+        je      3f
 
         call_fn car, env(%rsp)
         cmp     symbol(%rsp), %rax
-        je      3f
+        je      4f
 
         call_fn cdr, env(%rsp)
         mov     %rax, env(%rsp)
         inc     %ebx
-        jmp     1b
+        jmp     2b
 
-2:      mov     symbol(%rsp), %rax
+3:      mov     symbol(%rsp), %rax
         lea     symbol_table_values(,%eax,POINTER_SIZE), %rax
         mov     %rax, symbol_address(%rsp)
 
@@ -2337,7 +2341,7 @@ jit_set:                        # form, c-stream, environment
         call_fn fwrite, $jit_void_to_rax, $1, jit_void_to_rax_size, %r12
         return  max_locals(%rsp)
 
-3:      sub     env_size(%rsp), %ebx
+4:      sub     env_size(%rsp), %ebx
         neg     %ebx
         shl     $POINTER_SIZE_SHIFT, %rbx
         neg     %ebx
@@ -2570,8 +2574,88 @@ jit_or:                         # form, c-stream, environment
 
         ## 4.2.2. Binding constructs
 
+jit_named_let_syntax:           # form, c-stream, environment, target, bindings
+        prologue env, target, bindings, variable_init, max_locals
+        mov     %rsi, %r12
+        mov     %rdx, env(%rsp)
+        mov     %ecx, target(%rsp)
+        mov     %r8, bindings(%rsp)
+        movq    $0, max_locals(%rsp)
+
+        call_fn cdr, %rdi
+        mov     %rax, %rbx
+        call_fn reverse, bindings(%rsp)
+        mov     %rax, bindings(%rsp)
+
+1:      is_nil_internal %rbx
+        je      2f
+        call_fn car, %rbx
+        call_fn jit_datum, %rax, %r12, env(%rsp)
+        update_max_locals max_locals(%rsp)
+        call_fn fwrite, $jit_push_rax, $1, jit_push_rax_size, %r12
+
+        call_fn cdr, %rbx
+        mov     %rax, %rbx
+        jmp     1b
+
+2:      is_nil_internal bindings(%rsp)
+        je      3f
+
+        call_fn fwrite, $jit_pop_rax, $1, jit_pop_rax_size, %r12
+        call_fn car, bindings(%rsp)
+        call_fn car, %rax
+        call_fn cons, %rax, $NIL
+        call_fn cons, set_symbol, %rax
+
+        call_fn jit_datum, %rax, %r12, env(%rsp)
+        update_max_locals max_locals(%rsp)
+
+        call_fn cdr, bindings(%rsp)
+        mov     %rax, bindings(%rsp)
+        jmp     2b
+
+3:      call_fn ftell, %r12
+        add     jit_unconditional_jump_size, %rax
+        sub     %eax, target(%rsp)
+        call_fn fwrite, $jit_unconditional_known_jump, $1, jit_unconditional_known_jump_size, %r12
+        lea     target(%rsp), %rax
+        call_fn fwrite, %rax, $1, $INT_SIZE, %r12
+
+        return  max_locals(%rsp)
+
+jit_named_let_syntax_factory:   # target, form
+        prologue  code, size, form
+        mov     %rdi, %r12
+        mov     %rsi, form(%rsp)
+        lea     code(%rsp), %rdi
+        lea     size(%rsp), %rsi
+        call_fn open_memstream, %rdi, %rsi
+        perror
+        mov     %rax, %rbx
+
+        call_fn jit_literal, %r12, %rbx, $NIL
+        call_fn fwrite, $jit_push_rax, $1, jit_push_rax_size, %rbx
+        call_fn fwrite, $jit_pop_rcx, $1, jit_pop_rcx_size, %rbx
+
+        call_fn car, form(%rsp)
+        call_fn jit_literal, %rax, %rbx, $NIL
+        call_fn fwrite, $jit_push_rax, $1, jit_push_rax_size, %rbx
+        call_fn fwrite, $jit_pop_r8, $1, jit_pop_r8_size, %rbx
+
+        mov     $jit_named_let_syntax, %rax
+        tag     TAG_PROCEDURE, %rax
+        call_fn jit_datum, %rax, %rbx, $NIL
+        call_fn fwrite, $jit_jump_rax, $1, jit_jump_rax_size, %rbx
+
+        call_fn fclose, %rbx
+        perror  je
+
+        mov     size(%rsp), %r11d
+        call_fn jit_allocate_code, code(%rsp), %r11
+        return
+
 jit_let:                        # form, c-stream, environment
-        prologue form, env, original_env, variable_init, local, max_locals
+        prologue form, env, original_env, variable_init, local, max_locals, named_let
         mov     %rsi, %r12
         mov     %rdx, env(%rsp)
         mov     %rdx, original_env(%rsp)
@@ -2579,7 +2663,20 @@ jit_let:                        # form, c-stream, environment
         mov     %rax, form(%rsp)
         movq    $0, max_locals(%rsp)
 
-        let_template original_env(%rsp)
+        call_fn car, form(%rsp)
+        has_tag TAG_SYMBOL, %rax, store=false
+        jne     1f
+
+        call_fn car, form(%rsp)
+        mov     %rax, named_let(%rsp)
+
+        call_fn cdr, form(%rsp)
+        mov     %rax, form(%rsp)
+
+        let_template original_env(%rsp), named_let=named_let(%rsp)
+        return
+
+1:      let_template original_env(%rsp)
         return
 
 jit_let_star:                   # form, c-stream, environment
@@ -2845,6 +2942,12 @@ jit_unconditional_jump:
         jmp     0
 jit_unconditional_jump_size:
         .quad   (. - jit_unconditional_jump)
+
+        .align  16
+jit_unconditional_known_jump:
+        jmp     0
+jit_unconditional_known_jump_size:
+        .quad   (. - jit_unconditional_known_jump) - INT_SIZE
 
         .align  16
 jit_call_rax:
