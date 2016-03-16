@@ -1925,17 +1925,17 @@ jit_allocate_code:              # c-code, c-size
         return  %rbx
 
 jit_code:                       # form, environment, arguments
-        prologue env, arguments, code, size
+        prologue env, args, code, size
         mov     %rdi, %r12
         mov     %rsi, env(%rsp)
-        mov     %rdx, arguments(%rsp)
+        mov     %rdx, args(%rsp)
         lea     code(%rsp), %rdi
         lea     size(%rsp), %rsi
         call_fn open_memstream, %rdi, %rsi
         perror
         mov     %rax, %rbx
 
-        call_fn jit_procedure, %r12, %rbx, env(%rsp), arguments(%rsp)
+        call_fn jit_procedure, %r12, %rbx, env(%rsp), args(%rsp)
         call_fn fclose, %rbx
         perror  je
 
@@ -2096,17 +2096,17 @@ jit_procedure_call:             # form, c-stream, environment
         ## 4.1.4. Procedures
 
 jit_procedure:                  # form, c-stream, environment, arguments
-        prologue env, arguments, frame_size, local_idx, local, prologue_offset, end_offset
+        prologue env, args, frame_size, local_idx, local, prologue_offset, end_offset
         mov     %rdi, %rbx
         mov     %rsi, %r12
         mov     %rdx, env(%rsp)
-        mov     %rcx, arguments(%rsp)
+        mov     %rcx, args(%rsp)
 
         call_fn fwrite, $jit_prologue, $1, jit_prologue_size, %r12
         call_fn ftell, %r12
         mov     %rax, prologue_offset(%rsp)
 
-        call_fn length, arguments(%rsp)
+        call_fn length, args(%rsp)
         mov     %eax, local_idx(%rsp)
 
 1:      mov     local_idx(%rsp), %ecx
@@ -2120,7 +2120,7 @@ jit_procedure:                  # form, c-stream, environment, arguments
         call_fn fwrite, %rax, $1, %r11, %r12
         jmp     1b
 
-2:      call_fn reverse, arguments(%rsp)
+2:      call_fn reverse, args(%rsp)
         call_fn append, env(%rsp), %rax
         call_fn jit_datum, %rbx, %r12, %rax
 
@@ -2186,16 +2186,53 @@ jit_lambda_factory:             # lambda, argc
         tag     TAG_PROCEDURE, %rax
         return
 
+jit_lambda_hide_args_in_env:    # env, args
+        prologue env, args, local
+        mov     %rdi, %rbx
+        mov     %rbx, env(%rsp)
+        mov     %rsi, %r12
+        mov     %r12, args(%rsp)
+
+1:      is_nil_internal %rbx
+        je      5f
+
+        call_fn car, %rbx
+        mov     %rax, local(%rsp)
+
+        mov     args(%rsp), %r12
+2:      is_nil_internal %r12
+        je      4f
+
+        call_fn car, %r12
+        cmp     %rax, local(%rsp)
+        jne     3f
+        call_fn set_car, %rbx, $VOID
+
+3:      call_fn cdr, %r12
+        mov     %rax, %r12
+        jmp     2b
+
+4:      call_fn cdr, %rbx
+        mov     %rax, %rbx
+        jmp     1b
+
+5:      return  env(%rsp)
+
 jit_lambda:                     # form, c-stream, environment
-        prologue env, args
+        prologue env, args, body
         mov     %rdi, %rbx
         mov     %rsi, %r12
         mov     %rdx, env(%rsp)
+
 
         call_fn cdr, %rbx
         mov     %rax, %rbx
         call_fn car, %rbx
         mov     %rax, args(%rsp)
+
+        call_fn jit_lambda_hide_args_in_env, env(%rsp), args(%rsp)
+        mov     %rax, env(%rsp)
+
         call_fn cdr, %rbx
         call_fn cons, begin_symbol, %rax
 
