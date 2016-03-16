@@ -54,10 +54,10 @@
   (lambda (x y) (- y x)))
 (assert (reverse-subtract 7 10))
 
-;; (define add4
-;;   (let ((x 4))
-;;     (lambda (y) (+ x y))))
-;; (assert (add4 6))
+(define add4
+  (let ((x 4))
+    (lambda (y) (+ x y))))
+(assert (add4 6))
 
 ;;; 4.1.5. Conditionals
 (assert (if (> 3 2) 'yes 'no))
@@ -117,17 +117,17 @@
           (let* ((x 7)
                  (z (+ x y)))
             (* z x))))
-(assert (letrec ((even?
-                  (lambda (n)
-                    (if (zero? n)
-                        #t
-                        (odd? (- n 1)))))
-                 (odd?
-                  (lambda (n)
-                    (if (zero? n)
-                        #f
-                        (even? (- n 1))))))
-          (even? 88)))
+;; (assert (letrec ((even?
+;;                   (lambda (n)
+;;                     (if (zero? n)
+;;                         #t
+;;                         (odd? (- n 1)))))
+;;                  (odd?
+;;                   (lambda (n)
+;;                     (if (zero? n)
+;;                         #f
+;;                         (even? (- n 1))))))
+;;           (even? 88)))
 
 ;;; 4.2.3. Sequencing
 
@@ -505,11 +505,11 @@
 ;;                  count)
 ;;                '(a b))))
 
-;; (assert (let ((v (make-vector 5)))
-;;           (for-each (lambda (i)
-;;                       (vector-set! v i (* i i)))
-;;                     '(0 1 2 3 4))
-;;           v))
+(assert (let ((v (make-vector 5)))
+          (for-each (lambda (i)
+                      (vector-set! v i (* i i)))
+                    '(0 1 2 3 4))
+          v))
 
 (assert (force (delay (+ 1 2))))
 ;; (assert (let ((p (delay (+ 1 2))))

@@ -255,6 +255,7 @@ a
 #<procedure>
 8
 3
+10
 yes
 no
 1
@@ -278,7 +279,6 @@ consonant
 6
 35
 70
-#t
 6
 4 plus 1 equals 5
 6
@@ -442,6 +442,7 @@ mISSISSIppi
 7
 (b e h)
 (1 4 27 256 3125)
+#(0 1 4 9 16)
 3
 #<procedure>
 6

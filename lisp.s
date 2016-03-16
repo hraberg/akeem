@@ -2121,7 +2121,7 @@ jit_procedure:                  # form, c-stream, environment, arguments
         jmp     1b
 
 2:      call_fn reverse, arguments(%rsp)
-        call_fn append, %rax, env(%rsp)
+        call_fn append, env(%rsp), %rax
         call_fn jit_datum, %rbx, %r12, %rax
 
         shl     $POINTER_SIZE_SHIFT, %eax
@@ -2142,6 +2142,50 @@ jit_procedure:                  # form, c-stream, environment, arguments
         call_fn fwrite, $jit_epilogue, $1, jit_epilogue_size, %r12
         return
 
+jit_lambda_factory:             # lambda, argc
+        movq    %rbp, %xmm0
+        movq    %rsp, %xmm1
+        prologue env, code, size, old_rbp, old_rsp, local_idx, local
+        movq    %xmm0, old_rbp(%rsp)
+        movq    %xmm1, old_rsp(%rsp)
+        mov     %rdi, %r12
+        mov     %esi, local_idx(%rsp)
+        lea     code(%rsp), %rdi
+        lea     size(%rsp), %rsi
+        call_fn open_memstream, %rdi, %rsi
+        perror
+        mov     %rax, %rbx
+
+        sub     $POINTER_SIZE, old_rbp(%rsp)
+1:      mov     old_rbp(%rsp), %rcx
+        cmp     %rcx, old_rsp(%rsp)
+        je      2f
+        call_fn jit_datum, (%rcx), %rbx, $NIL
+        sub     $POINTER_SIZE, old_rbp(%rsp)
+
+        incl    local_idx(%rsp)
+        mov     local_idx(%rsp), %ecx
+        shl     $POINTER_SIZE_SHIFT, %rcx
+        add     $POINTER_SIZE, %rcx
+        neg     %ecx
+        mov     %ecx, local(%rsp)
+        call_fn fwrite, $jit_rax_to_closure, $1, jit_rax_to_closure_size, %rbx
+        lea     local(%rsp), %rax
+        call_fn fwrite, %rax, $1, $INT_SIZE, %rbx
+
+        jmp     1b
+
+2:      call_fn jit_datum, %r12, %rbx, $NIL
+        call_fn fwrite, $jit_jump_rax, $1, jit_jump_rax_size, %rbx
+
+        call_fn fclose, %rbx
+        perror  je
+
+        mov     size(%rsp), %r11d
+        call_fn jit_allocate_code, code(%rsp), %r11
+        tag     TAG_PROCEDURE, %rax
+        return
+
 jit_lambda:                     # form, c-stream, environment
         prologue env, args
         mov     %rdi, %rbx
@@ -2154,10 +2198,24 @@ jit_lambda:                     # form, c-stream, environment
         mov     %rax, args(%rsp)
         call_fn cdr, %rbx
         call_fn cons, begin_symbol, %rax
-        call_fn jit_code, %rax, env(%rsp), args(%rsp)
 
+        call_fn jit_code, %rax, env(%rsp), args(%rsp)
         tag     TAG_PROCEDURE, %rax
         call_fn jit_datum, %rax, %r12, env(%rsp)
+        call_fn fwrite, $jit_push_rax, $1, jit_push_rax_size, %r12
+        call_fn fwrite, $jit_pop_rdi, $1, jit_pop_rdi_size, %r12
+
+        call_fn length, args(%rsp)
+        call_fn jit_datum, %rax, %r12, env(%rsp)
+        call_fn fwrite, $jit_push_rax, $1, jit_push_rax_size, %r12
+        call_fn fwrite, $jit_pop_rsi, $1, jit_pop_rsi_size, %r12
+
+        mov     $jit_lambda_factory, %rax
+        tag     TAG_PROCEDURE, %rax
+        call_fn jit_datum, %rax, %r12, env(%rsp)
+        call_fn fwrite, $jit_call_rax, $1, jit_call_rax_size, %r12
+
+        call_fn length, env(%rsp)
         return
 
         ## 4.1.5. Conditionals
@@ -2760,6 +2818,14 @@ jit_call_rax:
 jit_call_rax_size:
         .quad   . - jit_call_rax
 
+        .align  16
+jit_jump_rax:
+        mov     $PAYLOAD_MASK, %r11
+        and     %r11, %rax
+        jmp     *%rax
+jit_jump_rax_size:
+        .quad   (. - jit_jump_rax)
+
         .irp reg, rax, rdi, rsi, rdx, rcx, r8, r9
         .align  16
 jit_pop_\reg\():
@@ -2839,6 +2905,12 @@ jit_rax_to_local:
         mov     %rax, -0x11223344(%rbp)
 jit_rax_to_local_size:
         .quad   (. - jit_rax_to_local) - INT_SIZE
+
+        .align  16
+jit_rax_to_closure:
+        mov     %rax, -0x11223344(%rsp)
+jit_rax_to_closure_size:
+        .quad   (. - jit_rax_to_closure) - INT_SIZE
 
         .align  16
 r5rs_scm:
