@@ -300,10 +300,10 @@
 (assert (remainder -13 -4))
 (assert (remainder -13 -4.0))
 
-;; (assert (gcd 32 -36))
+(assert (gcd 32 -36))
 ;; (assert (gcd))
-;; (assert (lcm 32 -36))
-;; (assert (lcm 32.0 -36))
+(assert (lcm 32 -36))
+(assert (lcm 32.0 -36))
 ;; (assert (lcm))
 
 ;; (assert (numerator (/ 6 4)))

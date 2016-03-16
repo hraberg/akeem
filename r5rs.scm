@@ -47,6 +47,15 @@
       (- 0 x)
       x))
 
+(define (gcd n1 n2)
+  (if (zero? n2)
+      (abs n1)
+      (gcd n2 (modulo n1 n2))))
+
+(define (lcm n1 n2)
+  (/ (abs (* n1 n2))
+     (gcd n1 n2)))
+
 ;;; 6.3.1. Booleans
 
 (define (not obj)
