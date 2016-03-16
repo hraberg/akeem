@@ -424,6 +424,36 @@ tmp_string_\@:
         call_fn fwrite, %rax, $1, $INT_SIZE, \stream
         .endm
 
+        .macro let_template active_env, form=form(%rsp), env=env(%rsp), variable_init=variable_init(%rsp), local=local(%rsp)
+        call_fn car, \form
+        mov     %rax, %rbx
+.L_\@_1:
+        mov     $NIL, %r11
+        cmp     %rbx, %r11
+        je      .L_\@_2
+        call_fn car, %rbx
+        mov     %rax, \variable_init
+        call_fn car, %rax
+        call_fn cons, %rax, \env
+        mov     %rax, \env
+
+        call_fn cdr, \variable_init
+        call_fn car, %rax
+        call_fn jit_datum, %rax, %r12, \active_env
+
+        call_fn length, \env
+        set_local %eax, \local, %r12
+
+        call_fn cdr, %rbx
+        mov     %rax, %rbx
+        jmp     .L_\@_1
+.L_\@_2:
+        call_fn cdr, \form
+        call_fn cons, begin_symbol, %rax
+
+        call_fn jit_datum, %rax, %r12, \env
+        .endm
+
         .macro macroexpand expander, debug=false
         prologue form
         mov     %rsi, %r12

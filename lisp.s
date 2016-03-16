@@ -2461,34 +2461,7 @@ jit_let:                        # form, c-stream, environment
         mov     %rdx, env(%rsp)
         mov     %rdx, original_env(%rsp)
 
-        call_fn car, form(%rsp)
-        mov     %rax, %rbx
-
-1:      mov     $NIL, %r11
-        cmp     %rbx, %r11
-        je      2f
-        call_fn car, %rbx
-        mov     %rax, variable_init(%rsp)
-        call_fn car, %rax
-        call_fn cons, %rax, env(%rsp)
-        mov     %rax, env(%rsp)
-
-        call_fn cdr, variable_init(%rsp)
-        call_fn car, %rax
-        call_fn jit_datum, %rax, %r12, original_env(%rsp)
-
-        call_fn length, env(%rsp)
-        set_local %eax, local(%rsp), %r12
-
-        call_fn cdr, %rbx
-        mov     %rax, %rbx
-        jmp     1b
-
-2:      call_fn cdr, form(%rsp)
-        call_fn cons, begin_symbol, %rax
-
-        call_fn jit_datum, %rax, %r12, env(%rsp)
-
+        let_template original_env(%rsp)
         return
 
 jit_let_star:                   # form, c-stream, environment
@@ -2498,34 +2471,7 @@ jit_let_star:                   # form, c-stream, environment
         mov     %rsi, %r12
         mov     %rdx, env(%rsp)
 
-        call_fn car, form(%rsp)
-        mov     %rax, %rbx
-
-1:      mov     $NIL, %r11
-        cmp     %rbx, %r11
-        je      2f
-        call_fn car, %rbx
-        mov     %rax, variable_init(%rsp)
-        call_fn car, %rax
-        call_fn cons, %rax, env(%rsp)
-        mov     %rax, env(%rsp)
-
-        call_fn cdr, variable_init(%rsp)
-        call_fn car, %rax
-        call_fn jit_datum, %rax, %r12, env(%rsp)
-
-        call_fn length, env(%rsp)
-        set_local %eax, local(%rsp), %r12
-
-        call_fn cdr, %rbx
-        mov     %rax, %rbx
-        jmp     1b
-
-2:      call_fn cdr, form(%rsp)
-        call_fn cons, begin_symbol, %rax
-
-        call_fn jit_datum, %rax, %r12, env(%rsp)
-
+        let_template env(%rsp)
         return
 
 jit_letrec:                     # form, c-stream, environment
@@ -2550,33 +2496,7 @@ jit_letrec:                     # form, c-stream, environment
         mov     %rax, %rbx
         jmp     1b
 
-2:      call_fn car, form(%rsp)
-        mov     %rax, %rbx
-
-3:      mov     $NIL, %r11
-        cmp     %rbx, %r11
-        je      4f
-        call_fn car, %rbx
-        mov     %rax, variable_init(%rsp)
-        call_fn car, %rax
-        call_fn cons, %rax, env(%rsp)
-        mov     %rax, env(%rsp)
-
-        call_fn cdr, variable_init(%rsp)
-        call_fn car, %rax
-        call_fn jit_datum, %rax, %r12, full_env(%rsp)
-
-        call_fn length, env(%rsp)
-        set_local %eax, local(%rsp), %r12
-
-        call_fn cdr, %rbx
-        mov     %rax, %rbx
-        jmp     3b
-
-4:      call_fn cdr, form(%rsp)
-        call_fn cons, begin_symbol, %rax
-
-        call_fn jit_datum, %rax, %r12, env(%rsp)
+2:      let_template full_env(%rsp)
 
         return
 
