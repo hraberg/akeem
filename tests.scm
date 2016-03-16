@@ -469,8 +469,8 @@
 ;;; 6.3.4. Characters
 (assert (<= (char->integer #\a)
             (char->integer #\a)))
-;; (assert (char<=? (integer->char x)
-;;                  (integer->char y)))
+(assert (char<=? (integer->char x)
+                 (integer->char y)))
 
 ;;; 6.3.5. Strings
 (define (f) (make-string 3 #\*))

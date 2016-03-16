@@ -499,3 +499,17 @@ tmp_string_\@:
         call_fn jit_datum, form(%rsp), %r12, %rbx
         return
         .endm
+
+        .macro string_comparator comparator, setter, string1=%rdi, string2=%rsi
+        minimal_prologue
+        unbox_pointer_internal \string1
+        add     $header_size, %rax
+        mov     %rax, %r11
+        unbox_pointer_internal \string2
+        add     $header_size, %rax
+
+        call_fn \comparator, %r11, %rax
+        \setter %al
+        box_boolean_internal
+        return
+        .endm

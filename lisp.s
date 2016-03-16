@@ -339,7 +339,8 @@ string_to_symbol:               # string
         return
 
         ## 6.3.4. Characters
-        .globl is_char, char_to_integer, integer_to_char
+        .globl is_char, is_char_alphapbetic, is_char_numeric, is_char_whitespace, is_char_upper_case, is_char_lower_case
+        .globl char_to_integer, integer_to_char, char_upcase, char_downcase
 
 is_char:                        # obj
         has_tag TAG_CHAR, %rdi
@@ -347,7 +348,7 @@ is_char:                        # obj
         ret
 
 char_to_integer:                # char
-        movsx   %di, %eax
+        mov    %edi, %eax
         box_int_internal
         ret
 
@@ -357,8 +358,65 @@ integer_to_char:                # n
         tag     TAG_CHAR, %rax
         ret
 
+is_char_alphabetic:             # char
+        minimal_prologue
+        mov    %edi, %edi
+        call_fn isalpha, %rdi
+        setnz   %al
+        box_boolean_internal
+        return
+
+is_char_numeric:                # char
+        minimal_prologue
+        mov    %edi, %edi
+        call_fn isdigit, %rdi
+        setnz   %al
+        box_boolean_internal
+        return
+
+is_char_whitespace:             # char
+        minimal_prologue
+        mov    %edi, %edi
+        call_fn isspace, %rdi
+        setnz   %al
+        box_boolean_internal
+        return
+
+is_char_upper_case:             # char
+        minimal_prologue
+        mov    %edi, %edi
+        call_fn isupper, %rdi
+        setnz   %al
+        box_boolean_internal
+        return
+
+is_char_lower_case:             # char
+        minimal_prologue
+        mov    %edi, %edi
+        call_fn islower, %rdi
+        setnz   %al
+        box_boolean_internal
+        return
+
+char_upcase:                    # char
+        minimal_prologue
+        mov    %edi, %edi
+        call_fn toupper, %rdi
+        tag     TAG_CHAR, %rax
+        return
+
+char_downcase:                  # char
+        minimal_prologue
+        mov    %edi, %edi
+        call_fn tolower, %rdi
+        tag     TAG_CHAR, %rax
+        return
+
         ## 6.3.5. Strings
         .globl is_string, make_string, string_length, string_ref, string_set
+        .globl is_string_equal, is_string_ci_equal
+        .globl is_string_less_than, is_string_greater_than, is_string_less_than_or_equal, is_string_greater_than_or_equal
+        .globl is_string_ci_less_than, is_string_ci_greater_than, is_string_ci_less_than_or_equal, is_string_ci_greater_than_or_equal
 
 is_string:                      # obj
         has_tag TAG_STRING, %rdi
@@ -409,6 +467,36 @@ string_set:                     # string, k, char
         mov     %dl, header_size(%rax,%rsi)
         mov     $VOID, %rax
         ret
+
+is_string_equal:                # string1, string2
+        string_comparator strcmp, sete
+
+is_string_ci_equal:             # string1, string2
+        string_comparator strcasecmp, sete
+
+is_string_less_than:            # string1, string2
+        string_comparator strcmp, setl
+
+is_string_greater_than:         # string1, string2
+        string_comparator strcmp, setg
+
+is_string_less_than_or_equal:  # string1, string2
+        string_comparator strcmp, setle
+
+is_string_greater_than_or_equal: # string1, string2
+        string_comparator strcmp, setge
+
+is_string_ci_less_than:         # string1, string2
+        string_comparator strcasecmp, setl
+
+is_string_ci_greater_than:      # string1, string2
+        string_comparator strcasecmp, setg
+
+is_string_ci_less_than_or_equal: # string1, string2
+        string_comparator strcasecmp, setle
+
+is_string_ci_greater_than_or_equal: # string1, string2
+        string_comparator strcasecmp, setge
 
         ## 6.3.6. Vectors
         .globl is_vector, make_vector, vector_length, vector_ref, vector_set, list_to_vector
@@ -686,7 +774,7 @@ write:                          # obj, port
         store_pointer $TAG_CHAR, $char_to_string
         store_pointer $TAG_STRING, $string_to_string
 
-        return
+        return  $VOID
 
 display:                        # obj, port
         prologue
@@ -1024,14 +1112,34 @@ init_runtime:                   # execution_stack_top, argc, argv, jit_code_debu
         define "string->symbol", $string_to_symbol
 
         define "char?", $is_char
+        define "char-alphabetic?", $is_char_alphabetic
+        define "char-numeric?", $is_char_numeric
+        define "char-whitespace?", $is_char_whitespace
+        define "char-upper-case?", $is_char_upper_case
+        define "char-lower-case?", $is_char_lower_case
         define "char->integer", $char_to_integer
         define "integer->char", $integer_to_char
+        define "char-upcase", $char_upcase
+        define "char-downcase", $char_downcase
 
         define "string?", $is_string
         define "make-string", $make_string
         define "string-length", $string_length
         define "string-ref", $string_ref
         define "string-set!", $string_set
+
+        define "string=?", $is_string_equal
+        define "string-ci=?", $is_string_ci_equal
+
+        define "string<?", $is_string_less_than
+        define "string>?", $is_string_greater_than
+        define "string<=?", $is_string_less_than_or_equal
+        define "string>=?", $is_string_greater_than_or_equal
+
+        define "string-ci<?", $is_string_ci_less_than
+        define "string-ci>?", $is_string_ci_greater_than
+        define "string-ci<=?", $is_string_ci_less_than_or_equal
+        define "string-ci>=?", $is_string_ci_greater_than_or_equal
 
         define "vector?", $is_vector
         define "make-vector", $make_vector

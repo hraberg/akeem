@@ -188,6 +188,38 @@
 (define (assoc obj alist)
   (assoc-aux equal? obj alist))
 
+;;; 6.3.4. Characters
+
+(define (char=? char1 char2)
+  (= (char->integer char1) (char->integer char2)))
+
+(define (char<? char1 char2)
+  (< (char->integer char1) (char->integer char2)))
+
+(define (char>? char1 char2)
+  (> (char->integer char1) (char->integer char2)))
+
+(define (char<=? char1 char2)
+  (<= (char->integer char1) (char->integer char2)))
+
+(define (char>=? char1 char2)
+  (>= (char->integer char1) (char->integer char2)))
+
+(define (char-ci=? char1 char2)
+  (= (char->integer (char-downcase char1)) (char->integer (char-downcase char2))))
+
+(define (char-ci<? char1 char2)
+  (< (char->integer (char-downcase char1)) (char->integer (char-downcase char2))))
+
+(define (char-ci>? char1 char2)
+  (> (char->integer (char-downcase char1)) (char->integer (char-downcase char2))))
+
+(define (char-ci<=? char1 char2)
+  (<= (char->integer (char-downcase char1)) (char->integer (char-downcase char2))))
+
+(define (char-ci>=? char1 char2)
+  (>= (char->integer (char-downcase char1)) (char->integer (char-downcase char2))))
+
 ;;; 6.3.5. Strings
 
 (define (string->list-aux string list idx)
