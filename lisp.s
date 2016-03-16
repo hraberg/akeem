@@ -203,8 +203,7 @@ string_to_number:               # string, radix
         .globl is_pair, cons, car, cdr, set_car, set_cdr, length, reverse
 
 is_pair:                        # obj
-        mov     $NIL, %rax
-        cmp     %rax, %rdi
+        is_nil_internal %rdi
         jne     1f
         mov     $FALSE, %rax
         ret
@@ -252,8 +251,7 @@ length:                         # list
         mov     %rdi, %rax
         xor     %ebx, %ebx
 
-        mov     $NIL, %r12
-1:      cmp     %r12, %rax
+1:      is_nil_internal %rax
         je      2f
 
         call_fn cdr, %rax
@@ -267,8 +265,7 @@ reverse:                        # list
         prologue
         mov     %rdi, %rbx
         mov     $NIL, %r12
-1:      mov     $NIL, %r11
-        cmp     %r11, %rbx
+1:      is_nil_internal %rbx
         je      2f
 
         calL_fn car, %rbx
@@ -451,8 +448,7 @@ list_to_vector:                 # list
         mov     %rax, vec(%rsp)
 
         xor     %ebx, %ebx
-1:      mov     $NIL, %r11
-        cmp     %r11, %r12
+1:      is_nil_internal %r12
         je      2f
 
         call_fn car, %r12
@@ -482,8 +478,7 @@ apply:                          # proc, args
         call_fn length, %r12
         mov     %eax, %ebx
 
-1:      mov     $NIL, %r11
-        cmp     %r11, %r12
+1:      is_nil_internal %r12
         je      2f
         call_fn car, %r12
         push %rax
@@ -1204,16 +1199,15 @@ unbox_integer:                  # int
         ret
 
 unbox_pair:                     # pair
-        mov     $NIL, %rax
-        cmp     %rax, %rdi
-        jz      1f
+        is_nil_internal %rdi
+        je      1f
         unbox_pointer_internal %rdi
         add     $header_size, %rax
-1:      ret
+1:      mov     $NULL, %rax
+        ret
 
 unbox_object:                   # object
-        mov     $VOID, %rax
-        cmp     %rax, %rdi
+        is_void_internal %rdi
         jz      1f
         unbox_pointer_internal %rdi
         add     $header_size, %rax
@@ -1318,8 +1312,7 @@ gc_mark_string:                 # string
 
 gc_mark_object:                 # pointer
         minimal_prologue
-        mov     $NIL, %rax
-        cmp     %rax, %rdi
+        is_nil_internal %rdi
         je      1f
         unbox_pointer_internal %rdi
         btsw    $GC_MARK_BIT, header_object_mark(%rax)
@@ -1484,8 +1477,8 @@ pair_to_string:                 # pair
 
         open_string_buffer str(%rsp), size(%rsp), stream(%rsp)
         call_fn fputc, $'(, stream(%rsp)
-        mov     $NIL, %rbx
-1:      cmp     %rbx, %r12
+
+1:      is_nil_internal %r12
         je      2f
 
         call_fn car, %r12
@@ -1496,7 +1489,7 @@ pair_to_string:                 # pair
 
         call_fn cdr, %r12
         mov     %rax, %r12
-        cmp     %rbx, %r12
+        is_nil_internal %r12
         je      2f
 
         call_fn fputc, $' , stream(%rsp)
@@ -1851,8 +1844,7 @@ read_list:                      # c-stream
 
         call_fn read_datum, %rbx
         call_fn cons, %rax, $NIL
-        mov     $NIL, %r11
-        cmp     %r11, %r12
+        is_nil_internal %r12
         jne     2f
         mov     %rax, %r12
         mov     %r12, head(%rsp)
@@ -1947,8 +1939,7 @@ jit_symbol:                    # symbol, c-stream, environment
         mov     %rax, env_size(%rsp)
 
         xor     %ebx, %ebx
-1:      mov     $NIL, %r11
-        cmp     %r11, env(%rsp)
+1:      is_nil_internal env(%rsp)
         je      2f
 
         call_fn car, env(%rsp)
@@ -1986,11 +1977,9 @@ jit_add_to_constant_pool_nop:   # obj
 
 jit_add_to_constant_pool:       # obj
         minimal_prologue
-        mov     $NIL, %r11
-        cmp     %rdi, %r11
+        is_nil_internal %rdi
         je      1f
-        mov     $VOID, %r11
-        cmp     %rdi, %r11
+        is_void_internal %rdi
         je      1f
         call_fn push_pointer_on_stack, $constant_pool, %rdi
 1:      return
@@ -2052,8 +2041,7 @@ jit_procedure_call:             # form, c-stream, environment
         call_fn length, %rbx
         mov     %rax, len(%rsp)
 
-1:      mov     $NIL, %r11
-        cmp     %r11, %rbx
+1:      is_nil_internal %rbx
         je      2f
 
         call_fn car, %rbx
@@ -2161,8 +2149,7 @@ jit_if:                         # form, c-stream, environment
         patch_jump %r12, else_offset(%rsp), if_offset(%rsp), jump_offset(%rsp)
 
         call_fn cdr, %rbx
-        mov     $NIL, %r11
-        cmp     %rax, %r11
+        is_nil_internal %rax
         jne     1f
         mov     $VOID, %rax
         jmp     2f
@@ -2228,8 +2215,7 @@ jit_set:                        # form, c-stream, environment
         mov     %rax, symbol(%rsp)
 
         xor     %ebx, %ebx
-1:      mov     $NIL, %r11
-        cmp     %r11, env(%rsp)
+1:      is_nil_internal env(%rsp)
         je      2f
 
         call_fn car, env(%rsp)
@@ -2269,8 +2255,7 @@ jit_cond_expander:              # form
         prologue test_expression, expression
         mov     %rdi, %rbx
 
-        mov     $NIL, %r11
-        cmp     %rbx, %r11
+        is_nil_internal %rbx
         je      4f
 
         call_fn car, %rbx
@@ -2284,8 +2269,7 @@ jit_cond_expander:              # form
         call_fn cdr, test_expression(%rsp)
         mov     %rax, expression(%rsp)
 
-        mov     $NIL, %r11
-        cmp     %rax, %r11
+        is_nil_internal %rax
         je      1f
 
         call_fn car, %rax
@@ -2332,8 +2316,7 @@ jit_case_expander:              # form
         prologue
         mov     %rdi, %rbx
 
-        mov     $NIL, %r11
-        cmp     %rbx, %r11
+        is_nil_internal %rbx
         je      2f
 
         call_fn cdr, %rbx
@@ -2395,16 +2378,14 @@ jit_and_expander:               # form
         prologue
         mov     %rdi, %rbx
 
-        mov     $NIL, %r11
-        cmp     %rbx, %r11
+        is_nil_internal %rbx
         je      1f
 
         call_fn car, %rbx
         mov     %rax, %r12
 
         call_fn cdr, %rbx
-        mov     $NIL, %r11
-        cmp     %rax, %r11
+        is_nil_internal %rax
         je      2f
 
         call_fn jit_and_expander, %rax
@@ -2427,8 +2408,7 @@ jit_or_expander:                # form
         prologue
         mov     %rdi, %rbx
 
-        mov     $NIL, %r11
-        cmp     %rbx, %r11
+        is_nil_internal %rbx
         je      1f
 
         call_fn car, %rbx
@@ -2490,8 +2470,7 @@ jit_letrec:                     # form, c-stream, environment
         call_fn car, form(%rsp)
         mov     %rax, %rbx
 
-1:      mov     $NIL, %r11
-        cmp     %rbx, %r11
+1:      is_nil_internal %rbx
         je      2f
         call_fn car, %rbx
         call_fn car, %rax
@@ -2517,15 +2496,13 @@ jit_begin:                     # form, c-stream, environment
         call_fn cdr, %rbx
         mov     %rax, %rbx
 
-        mov     $NIL, %r11
-        cmp     %r11, %rbx
+        is_nil_internal %rbx
         jne     2f
 
         call_fn cons, $VOID, $NIL
         mov     %rax, %rbx
 
-2:      mov     $NIL, %r11
-        cmp     %r11, %rbx
+2:      is_nil_internal %rbx
         je      3f
 
         call_fn car, %rbx

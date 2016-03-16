@@ -100,15 +100,25 @@
         eq_internal $(\tag | NAN_MASK >> TAG_SHIFT), %eax, \store
         .endm
 
-        .macro is_double_internal value, tmp=%r11, store=true
+        .macro is_double_internal value, tmp=%r11, tmp2=%rax, store=true
         mov     \value, \tmp
         btr     $SIGN_BIT, \tmp
-        mov     $NAN_MASK, %rax
-        cmp     %rax, \tmp
+        mov     $NAN_MASK, \tmp2
+        cmp     \tmp2, \tmp
         .ifc \store, true
         setle   %al
         and     $C_TRUE, %eax
         .endif
+        .endm
+
+        .macro is_nil_internal value, tmp=%r11
+        mov     $NIL, \tmp
+        cmp     \value, \tmp
+        .endm
+
+        .macro is_void_internal value, tmp=%r11
+        mov     $VOID, \tmp
+        cmp     \value, \tmp
         .endm
 
         .macro store_pointer idx, ptr=%rax, at=%rbx
@@ -419,8 +429,7 @@ tmp_string_\@:
         call_fn car, \form
         mov     %rax, %rbx
 .L_\@_1:
-        mov     $NIL, %r11
-        cmp     %rbx, %r11
+        is_nil_internal %rbx
         je      .L_\@_2
         call_fn car, %rbx
         mov     %rax, \variable_init
