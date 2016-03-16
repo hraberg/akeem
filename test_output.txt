@@ -276,6 +276,7 @@ consonant
 #f
 (b c)
 6
+35
 70
 #t
 6

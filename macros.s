@@ -415,6 +415,15 @@ tmp_string_\@:
         mov     %rcx, symbol_table_values(,%rax,POINTER_SIZE)
         .endm
 
+        .macro set_local idx=%ebx, local=local(%rsp), stream=%r12
+        shl     $POINTER_SIZE_SHIFT, \idx
+        neg     \idx
+        mov     \idx, \local
+        call_fn fwrite, $jit_rax_to_local, $1, jit_rax_to_local_size, \stream
+        lea     \local, %rax
+        call_fn fwrite, %rax, $1, $INT_SIZE, \stream
+        .endm
+
         .macro macroexpand expander, debug=false
         prologue form
         mov     %rsi, %r12
