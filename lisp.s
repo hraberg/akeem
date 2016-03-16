@@ -2143,11 +2143,10 @@ jit_procedure:                  # form, c-stream, environment, arguments
         return
 
 jit_lambda_factory:             # lambda, argc
-        movq    %rbp, %xmm0
-        movq    %rsp, %xmm1
+        movq    %rsp, %rax
         prologue env, code, size, old_rbp, old_rsp, local_idx, local
-        movq    %xmm0, old_rbp(%rsp)
-        movq    %xmm1, old_rsp(%rsp)
+        movq    %rbp, old_rbp(%rsp)
+        movq    %rax, old_rsp(%rsp)
         mov     %rdi, %r12
         mov     %esi, local_idx(%rsp)
         lea     code(%rsp), %rdi
