@@ -415,16 +415,7 @@ tmp_string_\@:
         mov     %rcx, symbol_table_values(,%rax,POINTER_SIZE)
         .endm
 
-        .macro set_local idx=%ebx, local=local(%rsp), stream=%r12
-        shl     $POINTER_SIZE_SHIFT, \idx
-        neg     \idx
-        mov     \idx, \local
-        call_fn fwrite, $jit_rax_to_local, $1, jit_rax_to_local_size, \stream
-        lea     \local, %rax
-        call_fn fwrite, %rax, $1, $INT_SIZE, \stream
-        .endm
-
-        .macro let_template active_env, form=form(%rsp), env=env(%rsp), variable_init=variable_init(%rsp), local=local(%rsp)
+        .macro let_template active_env, form=form(%rsp), env=env(%rsp), variable_init=variable_init(%rsp), local=local(%rsp), stream=%r12
         call_fn car, \form
         mov     %rax, %rbx
 .L_\@_1:
@@ -442,7 +433,12 @@ tmp_string_\@:
         call_fn jit_datum, %rax, %r12, \active_env
 
         call_fn length, \env
-        set_local %eax, \local, %r12
+        shl     $POINTER_SIZE_SHIFT, %rax
+        neg     %eax
+        mov     %eax, \local
+        call_fn fwrite, $jit_rax_to_local, $1, jit_rax_to_local_size, \stream
+        lea     \local, %rax
+        call_fn fwrite, %rax, $1, $INT_SIZE, \stream
 
         call_fn cdr, %rbx
         mov     %rax, %rbx

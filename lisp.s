@@ -2253,7 +2253,13 @@ jit_set:                        # form, c-stream, environment
 
 3:      sub     env_size(%rsp), %ebx
         neg     %ebx
-        set_local %ebx, local(%rsp), %r12
+        shl     $POINTER_SIZE_SHIFT, %rbx
+        neg     %ebx
+        mov     %ebx, local(%rsp)
+        call_fn fwrite, $jit_rax_to_local, $1, jit_rax_to_local_size, %r12
+        lea     local(%rsp), %rax
+        call_fn fwrite, %rax, $1, $INT_SIZE, %r12
+
         call_fn fwrite, $jit_void_to_rax, $1, jit_void_to_rax_size, %r12
         return
 
