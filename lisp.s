@@ -2296,9 +2296,13 @@ jit_lambda_factory:             # lambda, argc
 jit_lambda_hide_args_in_env:    # env, args
         prologue env, args, local
         mov     %rdi, %rbx
-        mov     %rbx, env(%rsp)
         mov     %rsi, %r12
         mov     %r12, args(%rsp)
+
+        call_fn reverse, %rbx
+        call_fn reverse, %rax
+        mov     %rax, %rbx
+        mov     %rbx, env(%rsp)
 
 1:      is_nil_internal %rbx
         je      5f
