@@ -425,7 +425,7 @@ tmp_string_\@:
         mov     %rcx, symbol_table_values(,%rax,POINTER_SIZE)
         .endm
 
-        .macro let_template active_env, form=form(%rsp), env=env(%rsp), variable_init=variable_init(%rsp), local=local(%rsp), stream=%r12
+        .macro let_template active_env, form=form(%rsp), env=env(%rsp), variable_init=variable_init(%rsp), local=local(%rsp), max_locals=max_locals(%rsp), stream=%r12
         call_fn car, \form
         mov     %rax, %rbx
 .L_\@_1:
@@ -440,6 +440,7 @@ tmp_string_\@:
         call_fn cdr, \variable_init
         call_fn car, %rax
         call_fn jit_datum, %rax, %r12, \active_env
+        update_max_locals max_locals(%rsp)
 
         call_fn length, \env
         shl     $POINTER_SIZE_SHIFT, %rax
@@ -457,6 +458,14 @@ tmp_string_\@:
         call_fn cons, begin_symbol, %rax
 
         call_fn jit_datum, %rax, %r12, \env
+        update_max_locals max_locals(%rsp)
+        .endm
+
+        .macro update_max_locals max_locals, value=%rax, tmp=%r11
+        mov     \max_locals, \tmp
+        cmp     \value, \tmp
+        cmovl   \value, \tmp
+        mov     \tmp, \max_locals
         .endm
 
         .macro macroexpand expander, debug=false
@@ -474,6 +483,5 @@ tmp_string_\@:
         .endif
 
         call_fn jit_datum, form(%rsp), %r12, %rbx
-
         return
         .endm
