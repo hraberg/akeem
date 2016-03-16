@@ -2068,24 +2068,17 @@ jit_procedure_call:             # form, c-stream, environment
         ## 4.1.4. Procedures
 
 jit_procedure:                  # form, c-stream, environment
-        prologue env, frame_size, local_idx, local
+        prologue env, frame_size, local_idx, local, prologue_offset, end_offset
         mov     %rdi, %rbx
         mov     %rsi, %r12
         mov     %rdx, env(%rsp)
 
         call_fn fwrite, $jit_prologue, $1, jit_prologue_size, %r12
+        call_fn ftell, %r12
+        mov     %rax, prologue_offset(%rsp)
 
         call_fn length, env(%rsp)
         mov     %eax, local_idx(%rsp)
-
-        shl     $POINTER_SIZE_SHIFT, %eax
-        add     $POINTER_SIZE, %eax
-        and     $-(2 * POINTER_SIZE), %eax
-        ## TODO: this should be calculated based on the body.
-        add     $MAX_LOCAL_SIZE, %eax
-        mov     %eax, frame_size(%rsp)
-        lea     frame_size(%rsp), %rax
-        call_fn fwrite, %rax $1, $INT_SIZE, %r12
 
 1:      mov     local_idx(%rsp), %ecx
         test    %ecx, %ecx
@@ -2100,6 +2093,22 @@ jit_procedure:                  # form, c-stream, environment
 
 2:      call_fn reverse, env(%rsp)
         call_fn jit_datum, %rbx, %r12, %rax
+        ## TODO: this should be calculated and returned by jit_datum.
+        mov     $MAX_LOCALS, %eax
+        shl     $POINTER_SIZE_SHIFT, %eax
+        add     $POINTER_SIZE, %eax
+        and     $-(2 * POINTER_SIZE), %eax
+        mov     %eax, frame_size(%rsp)
+
+        call_fn ftell, %r12
+        mov     %rax, end_offset(%rsp)
+        mov     prologue_offset(%rsp), %rax
+        sub     $INT_SIZE, %rax
+        call_fn fseek, %r12, %rax, $SEEK_SET
+
+        lea     frame_size(%rsp), %rax
+        call_fn fwrite, %rax, $1, $INT_SIZE, %r12
+        call_fn fseek, %r12, end_offset(%rsp), $SEEK_SET
 
         call_fn fwrite, $jit_epilogue, $1, jit_epilogue_size, %r12
         return
@@ -2678,7 +2687,7 @@ jit_prologue:
         mov     %rsp, %rbp
         sub     $0x11223344, %rsp
 jit_prologue_size:
-        .quad   (. - jit_prologue) - INT_SIZE
+        .quad   (. - jit_prologue)
 
         .align  16
 jit_epilogue:

@@ -77,7 +77,7 @@
 
         .equ NUMBER_OF_REGISTERS, 16
         .equ MAX_REGISTER_ARGS, 6
-        .equ MAX_LOCAL_SIZE, 16 * POINTER_SIZE
+        .equ MAX_LOCALS, 16
 
         .equ REPL_DISPLAY_CLASS, C_FALSE
 
