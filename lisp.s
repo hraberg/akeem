@@ -2136,8 +2136,6 @@ jit_lambda:                     # form, c-stream, environment
 
         tag     TAG_PROCEDURE, %rax
         call_fn jit_datum, %rax, %r12, env(%rsp)
-
-        call_fn length, env(%rsp)
         return
 
         ## 4.1.5. Conditionals
