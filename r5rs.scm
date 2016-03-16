@@ -5,7 +5,7 @@
          (and (equal? (car obj1) (car obj2))
               (equal? (cdr obj1) (cdr obj2))))
         ((and (string? obj1) (string? obj2))
-         (equal? (string->list obj1) (string->list obj2)))
+         (string=? obj1 obj2))
         ((and (vector? obj1) (vector? obj2))
          (equal? (vector->list obj1) (vector->list obj2)))
         (else (eqv? obj1 obj2))))
