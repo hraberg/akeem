@@ -174,8 +174,11 @@
   (eq? '() obj))
 
 (define (list? obj)
-  (or (null? obj)
-      (and (pair? obj) (list? (cdr obj)))))
+  (let loop ((obj obj))
+    (cond
+     ((null? obj) #t)
+     ((pair? obj) (loop (cdr obj)))
+     (else #f))))
 
 (define (list-tail list k)
   (do ((list list (cdr list))
@@ -186,10 +189,11 @@
   (car (list-tail list k)))
 
 (define (member-aux comparator obj list)
-  (if (null? list) #f
-      (if (comparator obj (car list))
-          list
-          (member-aux comparator obj (cdr list)))))
+  (let loop ((list list))
+    (cond
+     ((null? list) #f)
+     ((comparator obj (car list)) list)
+     (else (loop (cdr list))))))
 
 (define (memq obj list)
   (member-aux eq? obj list))
@@ -201,10 +205,11 @@
   (member-aux equal? obj list))
 
 (define (assoc-aux comparator obj alist)
-  (if (null? alist) #f
-      (if (comparator obj (caar alist))
-          (car alist)
-          (assoc-aux comparator obj (cdr alist)))))
+  (let loop ((alist alist))
+    (cond
+     ((null? alist) #f)
+     ((comparator obj (caar alist)) (car alist))
+     (else (loop (cdr alist))))))
 
 (define (assq obj alist)
   (assoc-aux eq? obj alist))
