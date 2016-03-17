@@ -2528,6 +2528,7 @@ jit_cond_expander:              # form
         is_nil_internal %rax
         je      1f
 
+        ## TODO: need to check if arrow is overridden in scope.
         call_fn car, %rax
         cmp     arrow_symbol, %rax
         je      2f

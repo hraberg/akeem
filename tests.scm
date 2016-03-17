@@ -184,6 +184,48 @@
 (assert (quasiquote (list (unquote (+ 1 2)) 4)))
 (assert '(quasiquote (list (unquote (+ 1 2)) 4)))
 
+;;; 4.3. Macros
+
+;;; 4.3.1. Binding constructs for syntactic keywords
+
+;; (assert (let-syntax ((when (syntax-rules ()
+;;                              ((when test stmt1 stmt2 ...)
+;;                               (if test
+;;                                   (begin stmt1
+;;                                          stmt2 ...))))))
+;;           (let ((if #t))
+;;             (when if (set! if ’now))
+;;             if)))
+
+;; (assert (let ((x ’outer))
+;;           (let-syntax ((m (syntax-rules () ((m) x))))
+;;             (let ((x ’inner))
+;;               (m)))))
+
+;; (assert (letrec-syntax
+;;             ((my-or (syntax-rules ()
+;;                       ((my-or) #f)
+;;                       ((my-or e) e)
+;;                       ((my-or e1 e2 ...)
+;;                        (let ((temp e1))
+;;                          (if temp
+;;                              temp
+;;                              (my-or e2 ...)))))))
+;;           (let ((x #f)
+;;                 (y 7)
+;;                 (temp 8)
+;;                 (let odd?)
+;;                 (if even?))
+;;             (my-or x
+;;                    (let temp)
+;;                    (if y)
+;;                    y))))
+
+;;; 4.3.2. Pattern language
+
+;; (assert (let ((=> #f))
+;;           (cond (#t => 'ok))))
+
 ;;; 5. Program structure
 
 ;;; 5.1. Programs
