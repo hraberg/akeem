@@ -623,15 +623,19 @@ apply_0:
         return
 
 call_with_current_continuation: # proc
-        prologue
+        prologue jmp_buffer
         unbox_pointer_internal %rdi, %rbx
-        call_fn setjmp, $jump_buffer # https://www.gnu.org/software/libc/manual/html_mono/libc.html#System-V-contexts
+        call_fn malloc, $JMP_BUF_SIZE
+        perror
+        mov     %rax, jmp_buffer(%rsp)
+        call_fn setjmp, jmp_buffer(%rsp) # https://www.gnu.org/software/libc/manual/html_mono/libc.html#System-V-contexts
         jnz 1f
-        mov     $call_with_current_continuation_escape, %rax
+        call_fn jit_call_with_current_continuation_escape_factory, jmp_buffer(%rsp)
         tag     TAG_PROCEDURE, %rax
         call_fn *%rbx, %rax
         return
-1:      return  %xmm0
+1:      call_fn free, jmp_buffer(%rsp)
+        return  %xmm0
 
         ## 6.5. Eval
         .globl eval, scheme_report_environment, null_environment, interaction_environment
@@ -1358,13 +1362,6 @@ unbox:                          # value
         return
 
         ## Runtime Internals
-
-        ## Call/CC Helper
-call_with_current_continuation_escape: # return
-        minimal_prologue
-        movq    %rdi, %xmm0
-        call_fn longjmp, $jump_buffer, $C_TRUE
-        return
 
         ## Stack ADT
 init_pointer_stack:             # a-stack, c-size
@@ -2967,6 +2964,38 @@ jit_delay_expander:             # form
 jit_delay:                      # form, c-stream, environment
         macroexpand jit_delay_expander
 
+        ## 6.4. Control features
+
+jit_call_with_current_continuation_escape: # return, jmp-buffer
+        prologue
+        movq    %rdi, %xmm0
+        mov     %rsi, %rax
+        call_fn longjmp, %rax, $C_TRUE
+        return
+
+jit_call_with_current_continuation_escape_factory: # jmp-buffer
+        prologue  code, size
+        mov     %rdi, %r12
+        lea     code(%rsp), %rdi
+        lea     size(%rsp), %rsi
+        call_fn open_memstream, %rdi, %rsi
+        perror
+        mov     %rax, %rbx
+
+        call_fn jit_literal, %r12, %rbx, $NIL
+        call_fn fwrite, $jit_push_rax, $1, jit_push_rax_size, %rbx
+        call_fn fwrite, $jit_pop_rsi, $1, jit_pop_rsi_size, %rbx
+
+        call_fn jit_literal, $jit_call_with_current_continuation_escape, %rbx, $NIL
+        call_fn fwrite, $jit_jump_rax, $1, jit_jump_rax_size, %rbx
+
+        call_fn fclose, %rbx
+        perror  je
+
+        mov     size(%rsp), %r11d
+        call_fn jit_allocate_code, code(%rsp), %r11
+        return
+
         .data
         .align  16
 integer_to_string_format_table:
@@ -3061,10 +3090,6 @@ gc_mark_stack:
         .zero   stack_size
 constant_pool:
         .zero   stack_size
-
-        .align  16
-jump_buffer:
-        .zero   JMP_BUF_SIZE
 
         .align  16
 jit_code_file_counter:
