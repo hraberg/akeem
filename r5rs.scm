@@ -1,29 +1,23 @@
 ;;; 4.2.6. Quasiquotation
 
-(define (quasiquote-aux qq-template)
-  (cond ((null? qq-template) (cons ''() '()))
-        ((vector? qq-template)
-         (cons (cons 'list->vector (quasiquote-aux (vector->list qq-template))) '()))
-        ((list? qq-template)
-         (case (car qq-template)
-           ((quasiquote)
-            (cons 'quote (cons (cons qq-template '()) '())))
-           ((unquote)
-            (cons 'cons (cons (cadr qq-template) (cons ''() '()))))
-           ((unquote-splicing)
-            (cadr qq-template))
-           (else
-            (cons (cons 'append (cons (quasiquote-aux (car qq-template))
-                                      (quasiquote-aux (cdr qq-template)))
-                        '())
-                  '()))))
-        (else (cons 'quote (cons (cons qq-template '()) '())))))
+;; Based on https://github.com/mishoo/SLip/blob/master/lisp/compiler.lisp#L25
+(define (qq x)
+  (if (pair? x)
+      (if (eq? 'unquote (car x))
+          (cadr x)
+          (if (eq? 'quasiquote (car x))
+              (qq (qq (cadr x)))
+              (if (pair? (car x))
+                  (if (eq? 'unquote-splicing (caar x))
+                      (cons 'append (cons (cadar x) (cons (qq (cdr x)) '())))
+                      (cons 'cons (cons (qq (car x)) (cons (qq (cdr x)) '()))))
+                  (cons 'cons (cons (qq (car x)) (cons (qq (cdr x)) '()))))))
+      (if (vector? x)
+          (cons 'list->vector (cons (qq (vector->list x)) '()))
+          (cons 'quote (cons x '())))))
 
 (define (quasiquote qq-template)
-  (let ((expanded (quasiquote-aux (car qq-template))))
-    (if (null? (cdr expanded))
-        (car expanded)
-        (cadr expanded))))
+  (qq (car qq-template)))
 
 ;;; 6.1. Equivalence predicates
 

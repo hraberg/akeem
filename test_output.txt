@@ -186,13 +186,13 @@ f
 #t
 #f
 #t
-99
-101
-101
-99
-101
-101
-99
+92
+94
+94
+92
+94
+94
+92
 #\a
 #t
 #f
@@ -287,7 +287,9 @@ consonant
 25
 ((6 1 3) (-5 -2))
 (list 3 4)
+(list a (quote a))
 (a 3 4 5 6 b)
+((foo 7) . cons)
 #(10 5 2 4 3 8)
 (list 3 4)
 (quasiquote (list (unquote (+ 1 2)) 4))
