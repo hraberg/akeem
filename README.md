@@ -22,8 +22,8 @@ make
 ## What Works?
 
 * Subset of R5RS procedures.
-* JIT for `if`, `lambda`, `define`, `set!`, `let`, `let*`, "named `let`" and `begin`.
-* Syntax for `and`, `or`, `cond`,`case` and `delay`.
+* JIT for `if`, `lambda`, `define`, `set!`, `let`, `let*`, "named `let`" and `begin`
+* Syntax for `and`, `or`, `cond`, `case`, `do` and `delay`.
 * NaN-boxed 32-bit integers and 64-bit doubles
 * Function application up to 6 arguments.
 * The bootstrap Scheme code is embedded in the executable.
@@ -33,7 +33,7 @@ make
 ## What doesn't work?
 
 * Almost no error handling.
-* `letrec`, `define-syntax`, and `do`.
+* `letrec` and `define-syntax`.
 * `delay` isn't memoized.
 * No TCO.
 * Max arity is currently 6, higher requires the use of the stack.
