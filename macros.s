@@ -440,7 +440,7 @@ tmp_string_\@:
         call_fn cdr, \variable_init
         call_fn car, %rax
         call_fn jit_datum, %rax, %r12, \active_env
-        update_max_locals max_locals(%rsp)
+        update_max_locals \max_locals
 
         call_fn car, \variable_init
         call_fn jit_set_with_rax_as_value, %rax, \stream, \env
@@ -479,7 +479,7 @@ tmp_string_\@:
         .macro lambda_factory_template lambda, stream=%rbx, env_size=env_size(%rsp), old_rbp=old_rbp(%rsp), local=local(%rsp), local_idx=local_idx(%rsp)
         call_fn jit_literal, \lambda, \stream, $NIL
 
-        sub     $POINTER_SIZE, old_rbp(%rsp)
+        sub     $POINTER_SIZE, \old_rbp
 .L_\@_1:
         cmp     $0, \env_size
         je      .L_\@_2
