@@ -239,6 +239,13 @@
 (define first car)
 (assert (first '(1 2)))
 
+;;;5.2.2. Internal definitions
+
+;; (assert (let ((x 5))
+;;           (define foo (lambda (y) (bar x y)))
+;;           (define bar (lambda (a b) (+ (* a b) a)))
+;;           (foo (+ x 3))))
+
 ;;; 6. Standard procedures
 
 ;;; 6.1. Equivalence predicates
