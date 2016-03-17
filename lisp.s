@@ -2261,35 +2261,40 @@ jit_lambda_factory:             # lambda, argc, env-size
         perror
         mov     %rax, %rbx
 
-        sub     $POINTER_SIZE, old_rbp(%rsp)
-1:      cmp     $0, env_size(%rsp)
-        je      2f
-        mov     old_rbp(%rsp), %rcx
-        call_fn jit_literal, (%rcx), %rbx, $NIL
-        sub     $POINTER_SIZE, old_rbp(%rsp)
-
-        decl    env_size(%rsp)
-        incl    local_idx(%rsp)
-        mov     local_idx(%rsp), %ecx
-        shl     $POINTER_SIZE_SHIFT, %rcx
-        add     $POINTER_SIZE, %rcx
-        neg     %ecx
-        mov     %ecx, local(%rsp)
-        call_fn fwrite, $jit_rax_to_closure, $1, jit_rax_to_closure_size, %rbx
-        lea     local(%rsp), %rax
-        call_fn fwrite, %rax, $1, $INT_SIZE, %rbx
-
-        jmp     1b
-
-2:      call_fn jit_literal, %r12, %rbx, $NIL
-        call_fn fwrite, $jit_jump_rax, $1, jit_jump_rax_size, %rbx
-
-        call_fn fclose, %rbx
-        perror  je
+        lambda_factory_template %r12
 
         mov     size(%rsp), %r11d
         call_fn jit_allocate_code, code(%rsp), %r11
         tag     TAG_PROCEDURE, %rax
+        return
+
+jit_lambda_patch_factory:       # lambda-factory, argc, env-size
+        prologue args, code, old_rbp, local_idx, local, env_size, lambda
+        movq    %rbp, old_rbp(%rsp)
+        unbox_pointer_internal %rdi, %r12
+        mov     %esi, local_idx(%rsp)
+        mov     %edx, env_size(%rsp)
+
+        call_fn fmemopen, %r12, $PAGE_SIZE, $read_mode
+        perror
+        mov     %rax, %rbx
+
+        call_fn fseek, %rbx, jit_literal_to_rax_size
+        lea     lambda(%rsp), %rax
+        call_fn fread, %rax, $1, $POINTER_SIZE, %rbx
+        call_fn fclose, %rbx
+        perror  je
+
+        call_fn mprotect, %r12, $PAGE_SIZE, $(PROT_READ | PROT_WRITE)
+        perror  je
+        call_fn fmemopen, %r12, $PAGE_SIZE, $write_mode
+        perror
+        mov     %rax, %rbx
+
+        lambda_factory_template lambda(%rsp)
+        call_fn mprotect, %r12, $PAGE_SIZE, $(PROT_READ | PROT_EXEC)
+        perror  je
+        tag     TAG_PROCEDURE, %r12
         return
 
 jit_lambda_hide_args_in_env:    # environment, arguments
@@ -2826,7 +2831,45 @@ jit_letrec:                     # form, c-stream, environment
         mov     %rax, %rbx
         jmp     1b
 
-2:      let_template full_env(%rsp)
+2:      let_template full_env(%rsp), body=false
+
+        call_fn car, form(%rsp)
+        mov     %rax, %rbx
+
+3:      is_nil_internal %rbx
+        je      4f
+        call_fn car, %rbx
+        call_fn car, %rax
+
+        call_fn jit_datum, %rax, %r12, full_env(%rsp)
+        call_fn fwrite, $jit_push_rax, $1, jit_push_rax_size, %r12
+        call_fn fwrite, $jit_pop_rdi, $1, jit_pop_rdi_size, %r12
+
+        call_fn car, %rbx
+        call_fn cdr, %rax
+        call_fn car, %rax
+        call_fn cdr, %rax
+        call_fn car, %rax
+
+        call_fn length, %rax
+        call_fn jit_literal, %rax, %r12, $NIL
+        call_fn fwrite, $jit_push_rax, $1, jit_push_rax_size, %r12
+        call_fn fwrite, $jit_pop_rsi, $1, jit_pop_rsi_size, %r12
+
+        call_fn length, full_env(%rsp)
+        call_fn jit_literal, %rax, %r12, $NIL
+        call_fn fwrite, $jit_push_rax, $1, jit_push_rax_size, %r12
+        call_fn fwrite, $jit_pop_rdx, $1, jit_pop_rdx_size, %r12
+
+        mov     $jit_lambda_patch_factory, %rax
+        call_fn jit_literal, %rax, %r12, $NIL
+        call_fn fwrite, $jit_call_rax, $1, jit_call_rax_size, %r12
+
+        call_fn cdr, %rbx
+        mov     %rax, %rbx
+        jmp     3b
+
+4:      let_body full_env(%rsp)
         return
 
         ## 4.2.3. Sequencing

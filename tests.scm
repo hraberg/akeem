@@ -117,17 +117,17 @@
           (let* ((x 7)
                  (z (+ x y)))
             (* z x))))
-;; (assert (letrec ((even?
-;;                   (lambda (n)
-;;                     (if (zero? n)
-;;                         #t
-;;                         (odd? (- n 1)))))
-;;                  (odd?
-;;                   (lambda (n)
-;;                     (if (zero? n)
-;;                         #f
-;;                         (even? (- n 1))))))
-;;           (even? 88)))
+(assert (letrec ((even?
+                  (lambda (n)
+                    (if (zero? n)
+                        #t
+                        (odd? (- n 1)))))
+                 (odd?
+                  (lambda (n)
+                    (if (zero? n)
+                        #f
+                        (even? (- n 1))))))
+          (even? 88)))
 
 ;;; 4.2.3. Sequencing
 
@@ -210,7 +210,6 @@
 (assert (let ((g (gen-loser)))
           (eqv? g g)))
 ;; (assert (eqv? (gen-loser) (gen-loser)))
-
 
 (assert (letrec ((f (lambda () (if (eqv? f g) 'both 'f)))
                  (g (lambda () (if (eqv? f g) 'both 'g))))
@@ -536,15 +535,15 @@
 (assert (force (delay (+ 1 2))))
 ;; (assert (let ((p (delay (+ 1 2))))
 ;;           (list (force p) (force p))))
-;; (define a-stream
-;;   (letrec ((next
-;;             (lambda (n)
-;;               (cons n (delay (next (+ n 1)))))))
-;;     (next 0)))
-;; (define head car)
-;; (define tail
-;;   (lambda (stream) (force (cdr stream))))
-;; (assert (head (tail (tail a-stream))))
+(define a-stream
+  (letrec ((next
+            (lambda (n)
+              (cons n (delay (next (+ n 1)))))))
+    (next 0)))
+(define head car)
+(define tail
+  (lambda (stream) (force (cdr stream))))
+(assert (head (tail (tail a-stream))))
 
 (define count 0)
 (define p

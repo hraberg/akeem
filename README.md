@@ -22,7 +22,8 @@ make
 ## What Works?
 
 * Subset of R5RS procedures.
-* JIT for `if`, `lambda`, `define`, `set!`, `let`, `let*`, "named `let`" and `begin`
+* JIT for `if`, `lambda`, `define`, `set!`, `let`, `let*`,
+  "named `let`", `letrec` and `begin`
 * Syntax for `and`, `or`, `cond`, `case`, `do` and `delay`.
 * NaN-boxed 32-bit integers and 64-bit doubles
 * Function application up to 6 arguments.
@@ -33,7 +34,7 @@ make
 ## What doesn't work?
 
 * Almost no error handling.
-* `letrec` and `define-syntax`.
+* `define-syntax`.
 * `delay` isn't memoized.
 * No TCO.
 * Max arity is currently 6, higher requires the use of the stack.
@@ -42,7 +43,7 @@ make
 * No quasiquote.
 * Not full support for Scheme numbers in the reader.
 * Limited numeric tower, see above.
-* `call-with-current-continuation` only uses `setjmp`, and can't be nested.
+* `call-with-current-continuation` only uses `setjmp`.
 * A lot of needless moving and popping of data in the generated code.
 * No register allocation.
 * The JIT is static, once a function is generated its done.

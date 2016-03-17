@@ -279,6 +279,7 @@ consonant
 6
 35
 70
+#t
 6
 4 plus 1 equals 5
 #(0 1 2 3 4)
@@ -451,6 +452,7 @@ mISSISSIppi
 (1 4 27 256 3125)
 #(0 1 4 9 16)
 3
+2
 #<procedure>
 6
 #<procedure>
