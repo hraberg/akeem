@@ -2334,7 +2334,6 @@ jit_lambda:                     # form, c-stream, environment
         mov     %rsi, %r12
         mov     %rdx, env(%rsp)
 
-
         call_fn cdr, %rbx
         mov     %rax, %rbx
         call_fn car, %rbx
