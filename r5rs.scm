@@ -16,7 +16,10 @@
         (else (cons 'quote (cons (cons qq-template '()) '())))))
 
 (define (quasiquote qq-template)
-  (car (quasiquote-aux (car qq-template))))
+  (let ((expanded (quasiquote-aux (car qq-template))))
+    (if (null? (cdr expanded))
+        (car expanded)
+        (cadr expanded))))
 
 ;;; 6.1. Equivalence predicates
 
