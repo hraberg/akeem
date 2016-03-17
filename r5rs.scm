@@ -331,3 +331,9 @@
 (define force
   (lambda (object)
     (object)))
+
+(define (dynamic-wind before thunk after)
+  (before)
+  (let ((return (thunk)))
+    (after)
+    return))
