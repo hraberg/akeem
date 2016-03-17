@@ -242,6 +242,12 @@
 ;;; 6. Standard procedures
 
 ;;; 6.1. Equivalence predicates
+(assert (string=? (symbol->string 'foo)
+                  (symbol->string 'foo)))
+
+(assert (string=? (symbol->string 'obj1)
+                  (symbol->string 'obj2)))
+
 (assert (eqv? 'a 'a))
 (assert (eqv? 'a 'b))
 (assert (eqv? 2 2))
