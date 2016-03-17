@@ -1,17 +1,16 @@
 ;;; 4.2.6. Quasiquotation
 
 (define (quasiquote-aux form)
-  (cond
-   ((null? form) (cons ''() '()))
-   ((list? form)
-    (case (car form)
-      ((unquote)
-       (cons 'cons (cons (cadr form) (cons ''() '()))))
-      ((unquote-splicing)
-       (cadr form))
-      (else
-       (cons (cons 'append (cons (quasiquote-aux (car form)) (quasiquote-aux (cdr form))) '()) '()))))
-   (else (cons 'quote (cons (cons form '()) '())))))
+  (cond ((null? form) (cons ''() '()))
+        ((list? form)
+         (case (car form)
+           ((unquote)
+            (cons 'cons (cons (cadr form) (cons ''() '()))))
+           ((unquote-splicing)
+            (cadr form))
+           (else
+            (cons (cons 'append (cons (quasiquote-aux (car form)) (quasiquote-aux (cdr form))) '()) '()))))
+        (else (cons 'quote (cons (cons form '()) '())))))
 
 (define (quasiquote form)
   (car (quasiquote-aux (car form))))
@@ -175,10 +174,9 @@
 
 (define (list? obj)
   (let loop ((obj obj))
-    (cond
-     ((null? obj) #t)
-     ((pair? obj) (loop (cdr obj)))
-     (else #f))))
+    (cond ((null? obj) #t)
+          ((pair? obj) (loop (cdr obj)))
+          (else #f))))
 
 (define (list-tail list k)
   (do ((list list (cdr list))
@@ -190,10 +188,9 @@
 
 (define (member-aux comparator obj list)
   (let loop ((list list))
-    (cond
-     ((null? list) #f)
-     ((comparator obj (car list)) list)
-     (else (loop (cdr list))))))
+    (cond ((null? list) #f)
+          ((comparator obj (car list)) list)
+          (else (loop (cdr list))))))
 
 (define (memq obj list)
   (member-aux eq? obj list))
@@ -206,10 +203,9 @@
 
 (define (assoc-aux comparator obj alist)
   (let loop ((alist alist))
-    (cond
-     ((null? alist) #f)
-     ((comparator obj (caar alist)) (car alist))
-     (else (loop (cdr alist))))))
+    (cond ((null? alist) #f)
+          ((comparator obj (caar alist)) (car alist))
+          (else (loop (cdr alist))))))
 
 (define (assq obj alist)
   (assoc-aux eq? obj alist))
