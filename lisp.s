@@ -2410,7 +2410,7 @@ jit_if:                         # form, c-stream, environment
 
         ## 4.1.6. Assignments
 
-jit_set_rax:                    # symbol, c-stream, environment
+jit_set_with_rax_as_value:      # symbol, c-stream, environment
         prologue env, env_size, symbol, symbol_address, local
         mov     %rdi, symbol(%rsp)
         mov     %rsi, %r12
@@ -2467,7 +2467,7 @@ jit_set:                        # form, c-stream, environment
         mov     %rax, max_locals(%rsp)
 
         call_fn car, %rbx
-        call_fn jit_set_rax, %rax, %r12, env(%rsp)
+        call_fn jit_set_with_rax_as_value, %rax, %r12, env(%rsp)
         return  max_locals(%rsp)
 
 jit_define_expander:            # form
@@ -2721,7 +2721,7 @@ jit_named_let_syntax:           # form, c-stream, environment, target, bindings
         call_fn fwrite, $jit_pop_rax, $1, jit_pop_rax_size, %r12
         call_fn car, bindings(%rsp)
         call_fn car, %rax
-        call_fn jit_set_rax, %rax, %r12, env(%rsp)
+        call_fn jit_set_with_rax_as_value, %rax, %r12, env(%rsp)
 
         call_fn cdr, bindings(%rsp)
         mov     %rax, bindings(%rsp)
