@@ -2969,8 +2969,8 @@ jit_delay:                      # form, c-stream, environment
 jit_call_with_current_continuation_escape: # return, jmp-buffer
         minimal_prologue
         movq    %rdi, %xmm0
-        mov     %rsi, %rax
-        call_fn longjmp, %rax, $C_TRUE
+        mov     %rsi, %rdi
+        call_fn longjmp, %rdi, $C_TRUE
         return
 
 jit_call_with_current_continuation_escape_factory: # jmp-buffer
