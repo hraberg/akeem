@@ -233,6 +233,7 @@ foo
 3.141590
 ;;; test suite end
 ;;; tests.scm start
+40
 3628800
 28
 a

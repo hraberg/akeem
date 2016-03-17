@@ -2,6 +2,14 @@
   (write x)
   (newline))
 
+;;; 1. Overview of Scheme
+
+;;; 1.3. Notation and terminology
+
+;;; 1.3.4. Evaluation examples
+
+(assert (* 5 8))
+
 ;;; 2. Lexical conventions
 
 ;;; 2.2. Whitespace and comments
@@ -13,7 +21,7 @@
     (if (= n 0)
         1 ;Base case: return 1
         (* n (fact (- n 1))))))
-(assert (fact 10))
+(assert (fact 10)) ;; not an actual example
 
 ;;; 4. Expressions
 
