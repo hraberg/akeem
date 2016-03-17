@@ -460,10 +460,12 @@ mISSISSIppi
 (1 4 27 256 3125)
 #(0 1 4 9 16)
 3
+(3 3)
 2
 #<procedure>
 6
 #<procedure>
+6
 #f
 #f
 -3

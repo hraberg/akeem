@@ -612,8 +612,8 @@
           v))
 
 (assert (force (delay (+ 1 2))))
-;; (assert (let ((p (delay (+ 1 2))))
-;;           (list (force p) (force p))))
+(assert (let ((p (delay (+ 1 2))))
+          (cons (force p) (cons (force p) '())))) ;; should be list
 (define a-stream
   (letrec ((next
             (lambda (n)
@@ -634,8 +634,8 @@
 (assert p)
 (assert (force p))
 (assert p)
-;; (assert (begin (set! x 10)
-;;                (force p)))
+(assert (begin (set! x 10)
+               (force p)))
 
 (assert (eqv? (delay 1) 1))
 (assert (pair? (delay (cons 1 2))))

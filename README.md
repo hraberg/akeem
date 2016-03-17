@@ -34,8 +34,7 @@ make
 ## What doesn't work?
 
 * Almost no error handling.
-* `define-syntax`.
-* `delay` isn't memoized.
+* `define-syntax`, `quasiquote`.
 * No TCO.
 * Max arity is currently 6, higher requires the use of the stack.
 * No vararg support.

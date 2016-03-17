@@ -892,6 +892,7 @@ init_runtime:                   # execution_stack_top, argc, argv, jit_code_debu
         intern_symbol arrow_symbol, "=>"
         intern_symbol else_symbol, "else"
         intern_symbol memv_symbol, "memv"
+        intern_symbol make_promise_symbol, "make-promise"
 
         intern_symbol quasiquote_symbol, "quasiquote"
         intern_symbol unquote_symbol, "unquote"
@@ -3002,6 +3003,8 @@ jit_delay_expander:             # form
         minimal_prologue
         call_fn cons, $NIL, %rdi
         call_fn cons, lambda_symbol, %rax
+        call_fn cons, %rax, $NIL
+        call_fn cons, make_promise_symbol, %rax
         return
 
 jit_delay:                      # form, c-stream, environment

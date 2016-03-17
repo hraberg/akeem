@@ -317,6 +317,19 @@
   (lambda (object)
     (object)))
 
+(define make-promise
+  (lambda (proc)
+    (let ((result (make-vector 2 #f)))
+      (lambda ()
+        (if (vector-ref result 0)
+            (vector-ref result 1)
+            (let ((x (proc)))
+              (if (vector-ref result 0)
+                  (vector-ref result 1)
+                  (begin (vector-set! result 0 #t)
+                         (vector-set! result 1 x)
+                         (vector-ref result 1)))))))))
+
 (define (dynamic-wind before thunk after)
   (before)
   (let ((return (thunk)))
