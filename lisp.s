@@ -2967,7 +2967,7 @@ jit_delay:                      # form, c-stream, environment
         ## 6.4. Control features
 
 jit_call_with_current_continuation_escape: # return, jmp-buffer
-        prologue
+        minimal_prologue
         movq    %rdi, %xmm0
         mov     %rsi, %rax
         call_fn longjmp, %rax, $C_TRUE
