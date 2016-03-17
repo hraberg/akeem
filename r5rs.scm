@@ -1,19 +1,22 @@
 ;;; 4.2.6. Quasiquotation
 
-(define (quasiquote-aux form)
-  (cond ((null? form) (cons ''() '()))
-        ((list? form)
-         (case (car form)
+(define (quasiquote-aux qq-template)
+  (cond ((null? qq-template) (cons ''() '()))
+        ((list? qq-template)
+         (case (car qq-template)
            ((unquote)
-            (cons 'cons (cons (cadr form) (cons ''() '()))))
+            (cons 'cons (cons (cadr qq-template) (cons ''() '()))))
            ((unquote-splicing)
-            (cadr form))
+            (cadr qq-template))
            (else
-            (cons (cons 'append (cons (quasiquote-aux (car form)) (quasiquote-aux (cdr form))) '()) '()))))
-        (else (cons 'quote (cons (cons form '()) '())))))
+            (cons (cons 'append (cons (quasiquote-aux (car qq-template))
+                                      (quasiquote-aux (cdr qq-template)))
+                        '())
+                  '()))))
+        (else (cons 'quote (cons (cons qq-template '()) '())))))
 
-(define (quasiquote form)
-  (car (quasiquote-aux (car form))))
+(define (quasiquote qq-template)
+  (car (quasiquote-aux (car qq-template))))
 
 ;;; 6.1. Equivalence predicates
 
