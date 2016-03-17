@@ -6,6 +6,8 @@
          (cons (cons 'list->vector (quasiquote-aux (vector->list qq-template))) '()))
         ((list? qq-template)
          (case (car qq-template)
+           ((quasiquote)
+            (cons 'quote (cons (cons qq-template '()) '())))
            ((unquote)
             (cons 'cons (cons (cadr qq-template) (cons ''() '()))))
            ((unquote-splicing)
