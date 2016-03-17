@@ -2791,10 +2791,10 @@ jit_let:                        # form, c-stream, environment
         mov     %rax, form(%rsp)
 
         let_template original_env(%rsp), named_let=named_let(%rsp)
-        return
+        return  max_locals(%rsp)
 
 1:      let_template original_env(%rsp)
-        return
+        return  max_locals(%rsp)
 
 jit_let_star:                   # form, c-stream, environment
         prologue form, env, variable_init, local, max_locals
@@ -2805,7 +2805,7 @@ jit_let_star:                   # form, c-stream, environment
         movq    $0, max_locals(%rsp)
 
         let_template env(%rsp)
-        return
+        return  max_locals(%rsp)
 
 jit_letrec:                     # form, c-stream, environment
         prologue form, env, full_env, variable_init, local, max_locals
@@ -2818,7 +2818,7 @@ jit_letrec:                     # form, c-stream, environment
         call_fn car, form(%rsp)
         mov     %rax, %rbx
 
-        mov    $NIL, %rax
+        mov    env(%rsp), %rax
         mov    %rax, full_env(%rsp)
 
 1:      is_nil_internal %rbx
@@ -2871,7 +2871,7 @@ jit_letrec:                     # form, c-stream, environment
         jmp     3b
 
 4:      let_body full_env(%rsp)
-        return
+        return  max_locals(%rsp)
 
         ## 4.2.3. Sequencing
 

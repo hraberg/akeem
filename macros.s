@@ -459,7 +459,7 @@ tmp_string_\@:
         .endif
 
         .ifc \body, true
-        let_body \env, form=\form, max_locals=\max_locals
+        let_body \env, form=\form, max_locals=\max_locals, stream=\stream
         .endif
 
         .ifnb \named_let
@@ -468,11 +468,11 @@ tmp_string_\@:
         .endif
         .endm
 
-        .macro let_body env, form=form(%rsp), max_locals=max_locals(%rsp)
+        .macro let_body env, form=form(%rsp), max_locals=max_locals(%rsp), stream=%r12
         call_fn cdr, \form
         call_fn cons, begin_symbol, %rax
 
-        call_fn jit_datum, %rax, %r12, \env
+        call_fn jit_datum, %rax, \stream, \env
         update_max_locals \max_locals
         .endm
 
