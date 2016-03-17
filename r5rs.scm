@@ -2,6 +2,8 @@
 
 (define (quasiquote-aux qq-template)
   (cond ((null? qq-template) (cons ''() '()))
+        ((vector? qq-template)
+         (cons (cons 'list->vector (quasiquote-aux (vector->list qq-template))) '()))
         ((list? qq-template)
          (case (car qq-template)
            ((unquote)
