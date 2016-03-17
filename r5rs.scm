@@ -1,3 +1,21 @@
+;;; 4.2.6. Quasiquotation
+
+(define (quasiquote-aux form)
+  (cond
+   ((null? form) (cons ''() '()))
+   ((list? form)
+    (case (car form)
+      ((unquote)
+       (cons 'cons (cons (cadr form) (cons ''() '()))))
+      ((unquote-splicing)
+       (cadr form))
+      (else
+       (cons (cons 'append (cons (quasiquote-aux (car form)) (quasiquote-aux (cdr form))) '()) '()))))
+   (else (cons 'quote (cons (cons form '()) '())))))
+
+(define (quasiquote form)
+  (car (quasiquote-aux (car form))))
+
 ;;; 6.1. Equivalence predicates
 
 (define (equal? obj1 obj2)

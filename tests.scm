@@ -168,6 +168,22 @@
                        nonneg
                        (cons (car numbers) neg))))))
 
+;;; 4.2.6. Quasiquotation
+
+(assert `(list ,(+ 1 2) 4))
+;; (assert (let ((name 'a)) `(list ,name ',name)))
+(assert `(a ,(+ 1 2) ,@(map abs '(4 -5 6)) b))
+;; (assert `(( foo ,(- 10 3)) ,@(cdr '(c)) . ,(car '(cons))))
+;; (assert `#(10 5 ,(sqrt 4) ,@(map sqrt '(16 9)) 8))
+
+;; (assert `(a `(b ,(+ 1 2) ,(foo ,(+ 1 3) d) e) f))
+;; (assert (let ((name1 'x)
+;;               (name2 'y))
+;;           `(a `(b ,,name1 ,',name2 d) e)))
+
+(assert (quasiquote (list (unquote (+ 1 2)) 4)))
+(assert '(quasiquote (list (unquote (+ 1 2)) 4)))
+
 ;;; 5. Program structure
 
 ;;; 5.1. Programs

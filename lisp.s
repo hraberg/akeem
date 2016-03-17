@@ -1067,7 +1067,7 @@ init_runtime:                   # execution_stack_top, argc, argv, jit_code_debu
         store_pointer $5, jit_r9_to_local_size
 
         lea     jit_syntax_jump_table, %rbx
-        .irp symbol, quote, if, set, define, lambda, begin, do, delay, and, or, cond, case, let_star, let, letrec
+        .irp symbol, quote, if, set, define, lambda, begin, do, delay, and, or, cond, case, let_star, let, letrec, quasiquote
         unbox_pointer_internal \symbol\()_symbol
         store_pointer %eax, $jit_\symbol
         .endr
@@ -3005,6 +3005,17 @@ jit_delay_expander:             # form
 
 jit_delay:                      # form, c-stream, environment
         macroexpand jit_delay_expander
+
+jit_quasiquote_expander:        # form, c-stream, environment
+        minimal_prologue
+        unbox_pointer_internal quasiquote_symbol
+        mov     symbol_table_values(,%eax,POINTER_SIZE), %rax
+        unbox_pointer_internal %rax
+        call    *%rax
+        return
+
+jit_quasiquote:                 # form, c-stream, environment
+        macroexpand jit_quasiquote_expander
 
         ## 6.4. Control features
 
