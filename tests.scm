@@ -649,19 +649,20 @@
                            (exit x)))
                      '(54 0 37 -3 245 19))
            #t)))
-;; (define list-length
-;;   (lambda (obj)
-;;     (call-with-current-continuation
-;;      (lambda (return)
-;;        (letrec ((r
-;;                  (lambda (obj)
-;;                    (cond ((null? obj) 0)
-;;                          ((pair? obj)
-;;                           (+ (r (cdr obj)) 1))
-;;                          (else (return #f))))))
-;;          (r obj))))))
-;; (assert (list-length '(1 2 3 4)))
-;; (assert (list-length '(a b . c)))
+
+(define list-length
+  (lambda (obj)
+    (call-with-current-continuation
+     (lambda (return)
+       (letrec ((r
+                 (lambda (obj)
+                   (cond ((null? obj) 0)
+                         ((pair? obj)
+                          (+ (r (cdr obj)) 1))
+                         (else (return #f))))))
+         (r obj))))))
+(assert (list-length '(1 2 3 4)))
+(assert (list-length '(a b . c)))
 
 ;; (assert (call-with-values (lambda () (values 4 5))
 ;;           (lambda (a b) b)))

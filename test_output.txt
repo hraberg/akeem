@@ -467,6 +467,8 @@ mISSISSIppi
 #f
 #f
 -3
+4
+#f
 21
 20
 ;;; tests.scm end
