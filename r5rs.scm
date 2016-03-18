@@ -11,7 +11,7 @@
                 (syntax-memq obj (cdr list))))))
 
 (set! syntax-pattern-variable?
-      (lambda (literals pattern env)
+      (lambda (literals pattern)
         (if (symbol? pattern)
             (if (eq? '... pattern)
                 #f

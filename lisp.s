@@ -1217,7 +1217,7 @@ init_runtime:                   # execution_stack_top, argc, argv, jit_code_debu
         define "exit", $exit_
         define "read-all", $read_all
         define "gc", $gc
-        define "object-space-count", $object_space_size
+        define "object-space-size", $object_space_size
         define "class-of", $class_of
 
         call_fn box_string, $extensions_scm
