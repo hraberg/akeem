@@ -173,34 +173,6 @@
   (lambda (qq-template)
     (qq (cadr qq-template))))
 
-;; See https://groups.google.com/d/msg/comp.lang.scheme/koHP9xzPF3Y/4Ffi9hq9bqsJ
-;; (define-syntax quasiquote
-;;   (syntax-rules (quasiquote unquote unquote-splicing quote)
-;;     ((quasiquote a)
-;;      (quasiquote "zero" a))
-;;     ((quasiquote l (quote a))
-;;      (cons 'quote (cons (quasiquote l a) '())))
-;;     ((quasiquote "zero" (unquote a))
-;;      a)
-;;     ((quasiquote "zero" b . (unquote a))
-;;      (cons b a))
-;;     ((quasiquote ("succ" . l) (unquote a))
-;;      (cons 'unquote (cons (quasiquote l a) '())))
-;;     ((quasiquote l (unquote-splicing a))
-;;      (error "unquote-splicing"))
-;;     ((quasiquote "zero" ((unquote-splicing a) . r))
-;;      (append a (quasiquote "zero" r)))
-;;     ((quasiquote ("succ" . l) ((unquote-splicing a) . r))
-;;      (cons (cons 'unquote-splicing (cons (quasiquote l a) '())) (quasiquote ("succ" . l) r)))
-;;     ((quasiquote l (quasiquote a))
-;;      (cons 'quasiquote (cons (quasiquote ("succ" . l) a) '())))
-;;     ((quasiquote l (r . r1))
-;;      (cons (quasiquote l r) (quasiquote l r1)))
-;;     ((quasiquote l #(r ...))
-;;      (list->vector (quasiquote l (r ...))))
-;;     ((quasiquote l a)
-;;      (quote a))))
-
 ;;; 6.1. Equivalence predicates
 
 (define (equal? obj1 obj2)
