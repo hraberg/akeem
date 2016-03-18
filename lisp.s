@@ -1075,7 +1075,7 @@ init_runtime:                   # execution_stack_top, argc, argv, jit_code_debu
         store_pointer $5, jit_r9_to_local_size
 
         lea     jit_syntax_jump_table, %rbx
-        .irp symbol, quote, if, set, define, lambda, begin, do, let_star, let, letrec, define_syntax
+        .irp symbol, quote, if, set, lambda, begin, do, let_star, let, letrec, define_syntax
         unbox_pointer_internal \symbol\()_symbol
         store_pointer %eax, $jit_\symbol
         .endr
@@ -2808,39 +2808,6 @@ jit_do_expander:                # form
 
 jit_do:                         # form, c-stream, environment
         macroexpand jit_do_expander
-
-        ## 5.2. Definitions
-
-jit_define_expander:            # form
-        prologue variable_and_formals, variable, formals
-        mov     %rdi, %rbx
-        call_fn car, %rbx
-
-        mov     %rax, %r11
-        has_tag TAG_SYMBOL, %rax, store=false
-        je      1f
-        mov     %r11, %rax
-
-        mov     %rax, variable_and_formals(%rsp)
-
-        call_fn car, variable_and_formals(%rsp)
-        mov     %rax, variable(%rsp)
-        call_fn cdr, variable_and_formals(%rsp)
-        mov     %rax, formals(%rsp)
-
-        call_fn cdr, %rbx
-        call_fn cons, formals(%rsp), %rax
-        call_fn cons, lambda_symbol, %rax
-        call_fn cons, %rax, $NIL
-
-        call_fn cons, variable(%rsp), %rax
-        mov     %rax, %rbx
-
-1:      call_fn cons, set_symbol, %rbx
-        return
-
-jit_define:                     # form, c-stream, environment
-        macroexpand jit_define_expander
 
         ## 5.3. Syntax definitions
 

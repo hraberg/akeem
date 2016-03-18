@@ -2,88 +2,94 @@
 
 ;;; 4.3.2. Pattern language
 
-(define (syntax-memq obj list)
-  (if (null? list)
-      #f
-      (if (eq? (car list) obj)
-          list
-          (syntax-memq obj (cdr list)))))
+(set! syntax-memq
+      (lambda (obj list)
+        (if (null? list)
+            #f
+            (if (eq? (car list) obj)
+                list
+                (syntax-memq obj (cdr list))))))
 
-(define (syntax-pattern-variable? literals pattern env)
-  (if (symbol? pattern)
-      (if (eq? '... pattern)
-          #f
-          (not (syntax-memq pattern literals)))
-      #f))
-
-(define (match-syntax-rule literals pattern form match env)
-  (if (null? pattern)
-      (if (null? form)
-          match
-          #f)
-      (let* ((first-pattern (car pattern))
-             (rest-pattern (cdr pattern)))
-        (if (pair? first-pattern)
-            (if (null? form)
+(set! syntax-pattern-variable?
+      (lambda (literals pattern env)
+        (if (symbol? pattern)
+            (if (eq? '... pattern)
                 #f
-                (if (pair? (car form))
-                    (let* ((match (match-syntax-rule literals first-pattern (car form) match env)))
-                      (if match
-                          (match-syntax-rule literals rest-pattern (cdr form) match env)
+                (not (syntax-memq pattern literals)))
+            #f)))
+
+(set! match-syntax-rule
+      (lambda (literals pattern form match env)
+        (if (null? pattern)
+            (if (null? form)
+                match
+                #f)
+            (let* ((first-pattern (car pattern))
+                   (rest-pattern (cdr pattern)))
+              (if (pair? first-pattern)
+                  (if (null? form)
+                      #f
+                      (if (pair? (car form))
+                          (let* ((match (match-syntax-rule literals first-pattern (car form) match env)))
+                            (if match
+                                (match-syntax-rule literals rest-pattern (cdr form) match env)
+                                #f))
                           #f))
-                    #f))
-            (if (syntax-pattern-variable? literals first-pattern)
-                (if (null? rest-pattern)
-                    (match-syntax-rule literals rest-pattern (cdr form)
-                                       (cons (cons (car form) first-pattern) match env))
-                    (if (eq? '... (car rest-pattern))
-                        (cons (cons form first-pattern) match)
-                        (match-syntax-rule literals rest-pattern (cdr form)
-                                           (cons (cons (car form) first-pattern) match env))))
-                (if (eq? first-pattern (car form))
-                    (if (not (syntax-memq first-pattern env))
-                        (match-syntax-rule literals rest-pattern (cdr form) match env)
-                        #f)
-                    #f))))))
+                  (if (syntax-pattern-variable? literals first-pattern)
+                      (if (null? rest-pattern)
+                          (match-syntax-rule literals rest-pattern (cdr form)
+                                             (cons (cons (car form) first-pattern) match env))
+                          (if (eq? '... (car rest-pattern))
+                              (cons (cons form first-pattern) match)
+                              (match-syntax-rule literals rest-pattern (cdr form)
+                                                 (cons (cons (car form) first-pattern) match env))))
+                      (if (eq? first-pattern (car form))
+                          (if (not (syntax-memq first-pattern env))
+                              (match-syntax-rule literals rest-pattern (cdr form) match env)
+                              #f)
+                          #f)))))))
 
-(define (syntax-transcribe match template)
-  (if (null? match)
-      template
-      (if (eq? (cdr (car match)) template)
-          (car (car match))
-          (syntax-transcribe (cdr match) template))))
+(set! syntax-transcribe
+      (lambda (match template)
+        (if (null? match)
+            template
+            (if (eq? (cdr (car match)) template)
+                (car (car match))
+                (syntax-transcribe (cdr match) template)))))
 
-(define (transcribe-syntax-rule match template)
-  (if (null? template)
-      '()
-      (let* ((first-template (car template))
-             (rest-template (cdr template)))
-        (if (pair? first-template)
-            (cons (transcribe-syntax-rule match first-template)
-                  (transcribe-syntax-rule match rest-template))
-            (let* ((transcribed (syntax-transcribe match first-template)))
-              (if (null? rest-template)
-                  (cons transcribed '())
-                  (if (eq? '...  (car rest-template))
-                      transcribed
-                      (cons transcribed (transcribe-syntax-rule match rest-template)))))))))
+(set! transcribe-syntax-rule
+      (lambda (match template)
+        (if (null? template)
+            '()
+            (let* ((first-template (car template))
+                   (rest-template (cdr template)))
+              (if (pair? first-template)
+                  (cons (transcribe-syntax-rule match first-template)
+                        (transcribe-syntax-rule match rest-template))
+                  (let* ((transcribed (syntax-transcribe match first-template)))
+                    (if (null? rest-template)
+                        (cons transcribed '())
+                        (if (eq? '...  (car rest-template))
+                            transcribed
+                            (cons transcribed (transcribe-syntax-rule match rest-template))))))))))
 
-(define (transform-syntax-rules literals syntax-rules form env)
-  (if (null? syntax-rules)
-      '(begin)
-      (let* ((syntax-rule (car syntax-rules))
-             (pattern (cdr (car syntax-rule)))
-             (template (cdr syntax-rule))
-             (match (match-syntax-rule literals pattern form '() env)))
-        (if match
-            (cons 'begin (transcribe-syntax-rule match template))
-            (transform-syntax-rules literals (cdr syntax-rules) form env)))))
+(set! transform-syntax-rules
+      (lambda (literals syntax-rules form env)
+        (if (null? syntax-rules)
+            '(begin)
+            (let* ((syntax-rule (car syntax-rules))
+                   (pattern (cdr (car syntax-rule)))
+                   (template (cdr syntax-rule))
+                   (match (match-syntax-rule literals pattern form '() env)))
+              (if match
+                  (cons 'begin (transcribe-syntax-rule match template))
+                  (transform-syntax-rules literals (cdr syntax-rules) form env))))))
 
-(define (transform-syntax transformer-spec form env)
-  (let* ((literals (car (cdr transformer-spec)))
-         (syntax-rules (cdr (cdr transformer-spec)))
-         (expansion (transform-syntax-rules literals syntax-rules (cdr form) env)))
-    expansion))
+(set! transform-syntax
+      (lambda (transformer-spec form env)
+        (let ((literals (car (cdr transformer-spec)))
+              (syntax-rules (cdr (cdr transformer-spec))))
+          (transform-syntax-rules literals syntax-rules (cdr form) env))))
 
 (define-syntax syntax-rules
   (lambda (transformer-spec)
@@ -168,23 +174,31 @@
 ;;; 4.2.6. Quasiquotation
 
 ;; Based on https://github.com/mishoo/SLip/blob/master/lisp/compiler.lisp#L25
-(define (qq x)
-  (cond ((pair? x)
-         (case (car x)
-           ((unquote) (cadr x))
-           ((quasiquote) (qq (qq (cadr x))))
-           (else
-            (if (and (pair? (car x))
-                     (eq? 'unquote-splicing (caar x)))
-                (cons 'append (cons (cadar x) (cons (qq (cdr x)) '())))
-                (cons 'cons (cons (qq (car x)) (cons (qq (cdr x)) '())))))))
-        ((vector? x)
-         (cons 'list->vector (cons (qq (vector->list x)) '())))
-        (else (cons 'quote (cons x '())))))
-
 (define-syntax quasiquote
   (lambda (qq-template)
-    (qq (cadr qq-template))))
+    (letrec ((qq (lambda (x)
+                   (cond ((pair? x)
+                          (case (car x)
+                            ((unquote) (cadr x))
+                            ((quasiquote) (qq (qq (cadr x))))
+                            (else
+                             (if (and (pair? (car x))
+                                      (eq? 'unquote-splicing (caar x)))
+                                 (cons 'append (cons (cadar x) (cons (qq (cdr x)) '())))
+                                 (cons 'cons (cons (qq (car x)) (cons (qq (cdr x)) '())))))))
+                         ((vector? x)
+                          (cons 'list->vector (cons (qq (vector->list x)) '())))
+                         (else (cons 'quote (cons x '())))))))
+      (qq (cadr qq-template)))))
+
+;;; 5.2. Definitions
+
+(define-syntax define
+  (syntax-rules ()
+    ((define (variable formals ...) body ...)
+     (define variable (lambda (formals ...) body ...)))
+    ((define variable expression)
+     (set! variable expression))))
 
 ;;; 6.1. Equivalence predicates
 
