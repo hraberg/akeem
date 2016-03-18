@@ -892,6 +892,7 @@ init_runtime:                   # execution_stack_top, argc, argv, jit_code_debu
         intern_symbol unquote_splicing_symbol, "unquote-splicing"
         intern_symbol define_syntax_symbol, "define-syntax"
 
+        intern_symbol dot_symbol, "."
         intern_symbol temp_symbol, "__temp__"
         intern_symbol arrow_symbol, "=>"
         intern_symbol else_symbol, "else"
@@ -1963,12 +1964,12 @@ read_list:                      # c-stream
         cmp     $'), %al
         je      4f
 
-        cmp     $'., %rax
-        je      3f
-
         call_fn ungetc, %rax, %rbx
 
         call_fn read_datum, %rbx
+        cmp     dot_symbol, %rax
+        je      3f
+
         call_fn cons, %rax, $NIL
         is_nil_internal %r12
         jne     2f
