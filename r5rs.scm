@@ -20,15 +20,19 @@
           match
           #f)
       (let* ((first-pattern (car pattern))
-             (first-form (car form)))
+             (rest-pattern (cdr pattern))
+             (first-form (car form))
+             (rest-form (cdr form)))
         (if (syntax-pattern-variable? first-pattern)
-            (if (eq? (cons '... '()) (cdr pattern))
-                (cons (cons first-pattern form) match)
-                (match-syntax-rule literals (cdr pattern) (cdr form)
-                                   (cons (cons first-pattern first-form) match)))
+            (if (null? rest-pattern)
+                (match-syntax-rule literals rest-pattern rest-form match)
+                (if (eq? '... (car rest-pattern))
+                    (cons (cons first-pattern form) match)
+                    (match-syntax-rule literals rest-pattern rest-form
+                                       (cons (cons first-pattern first-form) match))))
             (if (syntax-literal? first-pattern)
                 (if (eq? first-pattern first-form)
-                    (match-syntax-rule literals (cdr pattern) (cdr form) match)
+                    (match-syntax-rule literals rest-pattern rest-form match)
                     #f)
                 #f)
             #f))))
@@ -49,9 +53,11 @@
             (cons (transcribe-syntax-rule match first-template)
                   (transcribe-syntax-rule match rest-template))
             (let* ((transcribed (syntax-transcribe match first-template)))
-              (if (eq? (cons '... '()) rest-template)
-                  transcribed
-                  (cons transcribed (transcribe-syntax-rule match rest-template))))))))
+              (if (null? rest-template)
+                  (cons transcribed '())
+                  (if (eq? '...  (car rest-template))
+                      transcribed
+                      (cons transcribed (transcribe-syntax-rule match rest-template)))))))))
 
 (define (transform-syntax-rules literals syntax-rules form)
   (if (null? syntax-rules)
@@ -61,7 +67,7 @@
              (template (cdr syntax-rule))
              (match (match-syntax-rule literals pattern form '())))
         (if match
-            (transcribe-syntax-rule match template)
+            (cons 'begin (transcribe-syntax-rule match template))
             (transform-syntax-rules literals (cdr syntax-rules) form)))))
 
 (define (transform-syntax transformer-spec form)
