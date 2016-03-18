@@ -19,34 +19,34 @@
       (if (null? form)
           match
           #f)
-      (if (null? form)
-          #f
-          (let* ((first-pattern (car pattern))
-                 (rest-pattern (cdr pattern))
-                 (first-form (car form))
-                 (rest-form (cdr form)))
-            (if (pair? first-pattern)
-                (let* ((match (match-syntax-rule literals first-pattern first-form match)))
-                  (if match
-                      (match-syntax-rule literals rest-pattern rest-form match)
-                      #f))
-                (if (syntax-pattern-variable? literals first-pattern)
-                    (if (null? rest-pattern)
-                        (match-syntax-rule literals rest-pattern rest-form
-                                           (cons (cons first-pattern first-form) match))
-                        (if (eq? '... (car rest-pattern))
-                            (cons (cons first-pattern form) match)
-                            (match-syntax-rule literals rest-pattern rest-form
-                                               (cons (cons first-pattern first-form) match))))
-                    (if (eq? first-pattern first-form)
-                        (match-syntax-rule literals rest-pattern rest-form match)
-                        #f)))))))
+      (let* ((first-pattern (car pattern))
+             (rest-pattern (cdr pattern)))
+        (if (pair? first-pattern)
+            (if (null? form)
+                #f
+                (if (pair? (car form))
+                    (let* ((match (match-syntax-rule literals first-pattern (car form) match)))
+                      (if match
+                          (match-syntax-rule literals rest-pattern (cdr form) match)
+                          #f))
+                    #f))
+            (if (syntax-pattern-variable? literals first-pattern)
+                (if (null? rest-pattern)
+                    (match-syntax-rule literals rest-pattern (cdr form)
+                                       (cons (cons (car form) first-pattern) match))
+                    (if (eq? '... (car rest-pattern))
+                        (cons (cons form first-pattern) match)
+                        (match-syntax-rule literals rest-pattern (cdr form)
+                                           (cons (cons (car form) first-pattern) match))))
+                (if (eq? first-pattern (car form))
+                    (match-syntax-rule literals rest-pattern (cdr form) match)
+                    #f))))))
 
 (define (syntax-transcribe match template)
   (if (null? match)
       template
-      (if (eq? (car (car match)) template)
-          (cdr (car match))
+      (if (eq? (cdr (car match)) template)
+          (car (car match))
           (syntax-transcribe (cdr match) template))))
 
 (define (transcribe-syntax-rule match template)
@@ -91,51 +91,51 @@
 
 ;;; 7.3. Derived expression types
 
-;; (define-syntax cond
-;;   (syntax-rules (else =>)
-;;     ((cond (else result1 result2 ...))
-;;      (begin result1 result2 ...))
-;;     ((cond (test => result))
-;;      (let ((temp test))
-;;        (if temp (result temp))))
-;;     ((cond (test => result) clause1 clause2 ...)
-;;      (let ((temp test))
-;;        (if temp
-;;            (result temp)
-;;            (cond clause1 clause2 ...))))
-;;     ((cond (test)) test)
-;;     ((cond (test) clause1 clause2 ...)
-;;      (let ((temp test))
-;;        (if temp
-;;            temp
-;;            (cond clause1 clause2 ...))))
-;;     ((cond (test result1 result2 ...))
-;;      (if test (begin result1 result2 ...)))
-;;     ((cond (test result1 result2 ...)
-;;            clause1 clause2 ...)
-;;      (if test
-;;          (begin result1 result2 ...)
-;;          (cond clause1 clause2 ...)))))
+(define-syntax cond
+  (syntax-rules (else =>)
+    ((cond (else result1 result2 ...))
+     (begin result1 result2 ...))
+    ((cond (test => result))
+     (let ((temp test))
+       (if temp (result temp))))
+    ((cond (test => result) clause1 clause2 ...)
+     (let ((temp test))
+       (if temp
+           (result temp)
+           (cond clause1 clause2 ...))))
+    ((cond (test)) test)
+    ((cond (test) clause1 clause2 ...)
+     (let ((temp test))
+       (if temp
+           temp
+           (cond clause1 clause2 ...))))
+    ((cond (test result1 result2 ...))
+     (if test (begin result1 result2 ...)))
+    ((cond (test result1 result2 ...)
+           clause1 clause2 ...)
+     (if test
+         (begin result1 result2 ...)
+         (cond clause1 clause2 ...)))))
 
-;; (define-syntax case
-;;   (syntax-rules (else)
-;;     ((case (key ...)
-;;        clauses ...)
-;;      (let ((atom-key (key ...)))
-;;        (case atom-key clauses ...)))
-;;     ((case key
-;;        (else result1 result2 ...))
-;;      (begin result1 result2 ...))
-;;     ((case key
-;;        ((atoms ...) result1 result2 ...))
-;;      (if (memv key '(atoms ...))
-;;          (begin result1 result2 ...)))
-;;     ((case key
-;;        ((atoms ...) result1 result2 ...)
-;;        clause clauses ...)
-;;      (if (memv key '(atoms ...))
-;;          (begin result1 result2 ...)
-;;          (case key clause clauses ...)))))
+(define-syntax case
+  (syntax-rules (else)
+    ((case (key ...)
+       clauses ...)
+     (let ((atom-key (key ...)))
+       (case atom-key clauses ...)))
+    ((case key
+       (else result1 result2 ...))
+     (begin result1 result2 ...))
+    ((case key
+       ((atoms ...) result1 result2 ...))
+     (if (memv key '(atoms ...))
+         (begin result1 result2 ...)))
+    ((case key
+       ((atoms ...) result1 result2 ...)
+       clause clauses ...)
+     (if (memv key '(atoms ...))
+         (begin result1 result2 ...)
+         (case key clause clauses ...)))))
 
 (define-syntax and
   (syntax-rules ()

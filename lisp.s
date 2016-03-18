@@ -908,9 +908,6 @@ init_runtime:                   # execution_stack_top, argc, argv, jit_code_debu
 
         intern_symbol dot_symbol, "."
         intern_symbol temp_symbol, "__temp__"
-        intern_symbol arrow_symbol, "=>"
-        intern_symbol else_symbol, "else"
-        intern_symbol memv_symbol, "memv"
         intern_symbol make_promise_symbol, "make-promise"
 
         intern_symbol void_symbol, "void"
@@ -1083,7 +1080,7 @@ init_runtime:                   # execution_stack_top, argc, argv, jit_code_debu
         store_pointer $5, jit_r9_to_local_size
 
         lea     jit_syntax_jump_table, %rbx
-        .irp symbol, quote, if, set, define, lambda, begin, do, delay, cond, case, let_star, let, letrec, define_syntax
+        .irp symbol, quote, if, set, define, lambda, begin, do, delay, let_star, let, letrec, define_syntax
         unbox_pointer_internal \symbol\()_symbol
         store_pointer %eax, $jit_\symbol
         .endr
@@ -2514,132 +2511,6 @@ jit_set:                        # form, c-stream, environment
         call_fn car, %rbx
         call_fn jit_set_with_rax_as_value, %rax, %r12, env(%rsp)
         return  max_locals(%rsp)
-
-        ##  4.2.1. Conditionals
-
-jit_cond_expander:              # form
-        prologue test_expression, expression
-        mov     %rdi, %rbx
-
-        is_nil_internal %rbx
-        je      4f
-
-        call_fn car, %rbx
-        mov     %rax, test_expression(%rsp)
-        call_fn cdr, %rbx
-        call_fn jit_cond_expander, %rax
-
-        call_fn cons, %rax, $NIL
-        mov     %rax, %rbx
-
-        call_fn cdr, test_expression(%rsp)
-        mov     %rax, expression(%rsp)
-
-        is_nil_internal %rax
-        je      1f
-
-        ## TODO: need to check if arrow is overridden in scope.
-        call_fn car, %rax
-        cmp     arrow_symbol, %rax
-        je      2f
-
-        call_fn cons, begin_symbol, expression(%rsp)
-        call_fn cons %rax, %rbx
-        jmp     3f
-
-1:      call_fn cons, temp_symbol, $NIL
-        call_fn cons, begin_symbol, %rax
-        call_fn cons %rax, %rbx
-        jmp     3f
-
-2:      call_fn cdr, expression(%rsp)
-        call_fn car, %rax
-        mov     %rax, %r12
-        call_fn cons, temp_symbol, $NIL
-        call_fn cons, %r12, %rax
-        call_fn cons, %rax, %rbx
-
-3:      call_fn cons, temp_symbol, %rax
-        call_fn cons, if_symbol, %rax
-
-        call_fn cons, %rax, $NIL
-        mov     %rax, %rbx
-
-        call_fn car, test_expression(%rsp)
-        call_fn cons, %rax, $NIL
-        call_fn cons, temp_symbol, %rax
-        call_fn cons, %rax, $NIL
-        call_fn cons, %rax, %rbx
-        call_fn cons, let_symbol, %rax
-
-        return
-
-4:      return  $VOID
-
-jit_cond:                       # form, c-stream, environment
-        macroexpand jit_cond_expander
-
-jit_case_expander:              # form
-        prologue
-        mov     %rdi, %rbx
-
-        is_nil_internal %rbx
-        je      2f
-
-        call_fn cdr, %rbx
-        call_fn jit_case_expander, %rax
-        call_fn cons, %rax, $NIL
-        mov     %rax, %r12
-
-        call_fn car, %rbx
-        mov     %rax, %rbx
-
-        call_fn cdr, %rbx
-        call_fn cons, begin_symbol, %rax
-        call_fn cons, %rax, %r12
-        mov     %rax, %r12
-
-        call_fn car, %rbx
-        cmp     else_symbol, %rax
-        je      1f
-        call_fn cons, %rax, $NIL
-        call_fn cons, quote_symbol, %rax
-        call_fn cons, %rax, $NIL
-        call_fn cons, temp_symbol, %rax
-        call_fn cons, memv_symbol, %rax
-
-1:      call_fn cons, %rax, %r12
-        call_fn cons, if_symbol, %rax
-
-        return
-
-2:      return  $VOID
-
-jit_case:                       # form, c-stream, environment
-        prologue env, form, key, clauses
-        mov     %rdi, form(%rsp)
-        mov     %rsi, %r12
-        mov     %rdx, env(%rsp)
-
-        call_fn cdr, %rdi
-        call_fn cdr, %rax
-        call_fn jit_case_expander, %rax
-        call_fn cons, %rax, $NIL
-        mov     %rax, clauses(%rsp)
-
-        call_fn cdr, form(%rsp)
-        call_fn car, %rax
-        mov     %rax, key(%rsp)
-
-        call_fn cons, key(%rsp), $NIL
-        call_fn cons, temp_symbol, %rax
-        call_fn cons, %rax, $NIL
-        call_fn cons, %rax, clauses(%rsp)
-        call_fn cons, let_symbol, %rax
-
-        call_fn jit_datum, %rax, %r12, env(%rsp)
-
-        return
 
         ## 4.2.2. Binding constructs
 
