@@ -426,10 +426,10 @@
 
 (assert (not #t))
 (assert (not 3))
-;; (not (list 3))
+;; (assert (not (list 3)))
 (assert (not #f))
 (assert (not '()))
-;; (not (list)) =⇒ #f
+;; (assert (not (list)))
 (assert (not 'nil))
 
 (assert (boolean? #f))
