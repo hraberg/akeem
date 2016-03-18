@@ -2180,9 +2180,8 @@ jit_pair:                       # form, c-stream, environment
         call_fn *%rax, %rbx, %r12, env(%rsp)
         return
 
-5:      unbox_pointer_internal syntax(%rsp), %rcx
-        call_fn cdr, %rbx
-        call_fn *%rcx, %rax, %r12, env(%rsp)
+5:      unbox_pointer_internal syntax(%rsp), %rax
+        call_fn *%rax, %rbx, %r12, env(%rsp)
         call_fn jit_datum, %rax, %r12, env(%rsp)
         return
 

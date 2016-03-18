@@ -1,3 +1,9 @@
+;;; 4.3.2. Pattern language
+
+(define-syntax syntax-rules
+  (lambda (form)
+    (cons 'lambda (cdr form))))
+
 ;;; 4.2.6. Quasiquotation
 
 ;; Based on https://github.com/mishoo/SLip/blob/master/lisp/compiler.lisp#L25
@@ -17,7 +23,7 @@
 
 (define-syntax quasiquote
   (lambda (qq-template)
-    (qq (car qq-template))))
+    (qq (cadr qq-template))))
 
 ;;; 6.1. Equivalence predicates
 
