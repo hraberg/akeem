@@ -2143,24 +2143,37 @@ jit_literal:                    # literal, c-stream, environment
         return
 
 jit_pair:                       # form, c-stream, environment
-        prologue env
+        prologue env, env_tmp, symbol
         mov     %rdi, %rbx
         mov     %rsi, %r12
         mov     %rdx, env(%rsp)
+        mov     %rdx, env_tmp(%rsp)
 
         call_fn car, %rbx
-        mov     %rax, %r11
-        has_tag TAG_SYMBOL, %r11, store=false
-        jne     1f
-        unbox_pointer_internal %r11
+        mov     %rax, symbol(%rsp)
+        has_tag TAG_SYMBOL, symbol(%rsp), store=false
+        jne     3f
+
+1:      is_nil_internal env_tmp(%rsp)
+        je      2f
+
+        call_fn car, env_tmp(%rsp)
+        cmp     symbol(%rsp), %rax
+        je      3f
+
+        call_fn cdr, env_tmp(%rsp)
+        mov     %rax, env_tmp(%rsp)
+        jmp     1b
+
+2:      unbox_pointer_internal symbol(%rsp)
         mov     jit_syntax_jump_table(,%rax,8), %rax
         test    %eax, %eax
-        jnz     2f
+        jnz     4f
 
-1:      call_fn jit_procedure_call, %rbx, %r12, env(%rsp)
+3:      call_fn jit_procedure_call, %rbx, %r12, env(%rsp)
         return
 
-2:      call_fn *%rax, %rbx, %r12, env(%rsp)
+4:      call_fn *%rax, %rbx, %r12, env(%rsp)
         return
 
         ## 4.1.3. Procedure calls
