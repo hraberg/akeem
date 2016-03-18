@@ -1,7 +1,7 @@
 # Akeem
 
 *When you think of garbage, think of Akeem.*
--- [Prince Akeem of Zamunda](http://www.imdb.com/title/tt0094898/)
+— [Prince Akeem of Zamunda](http://www.imdb.com/title/tt0094898/)
 
 Akeem is a small JIT-ed subset of
 [R5RS Scheme](http://www.schemers.org/Documents/Standards/R5RS/)
@@ -84,7 +84,7 @@ and his related work on [Maru](http://piumarta.com/software/maru/).
 
 Unlike these Lisps Akeem does not generate assembly in text
 form. Akeem is inspired by Clojure in the sense that there's only a
-JIT compiler to simplify the overall implementation -- there's no
+JIT compiler to simplify the overall implementation — there's no
 interpreter. Also, like Clojure, the compiler is planned to stay close
 to a normal procedural language, with limited TCO and no CPS.
 
