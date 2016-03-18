@@ -433,15 +433,15 @@ tmp_string_\@:
         je      .L_\@_2
         call_fn car, %rbx
         mov     %rax, \variable_init
-        call_fn car, %rax
-        call_fn cons, %rax, \env
-        mov     %rax, \env
 
         call_fn cdr, \variable_init
         call_fn car, %rax
         call_fn jit_datum, %rax, %r12, \active_env
         update_max_locals \max_locals
 
+        call_fn car, \variable_init
+        call_fn cons, %rax, \env
+        mov     %rax, \env
         call_fn car, \variable_init
         call_fn jit_set_with_rax_as_value, %rax, \stream, \env
 
