@@ -199,8 +199,17 @@ string_to_number:               # string, radix
 
         ## 6.3. Other data types
 
+        ## 6.3.1. Booleans
+        .globl not
+
+not:                            # obj
+        mov     $FALSE, %rax
+        eq_internal %rax, %rdi
+        box_boolean_internal
+        ret
+
         ## 6.3.2. Pairs and lists
-        .globl is_pair, cons, car, cdr, set_car, set_cdr, length, reverse, append
+        .globl is_pair, cons, car, cdr, set_car, set_cdr, is_null, length, reverse, append
 
 is_pair:                        # obj
         is_nil_internal %rdi
@@ -244,6 +253,11 @@ set_cdr:                        # pair, obj
         unbox_pointer_internal %rdi
         mov     %rsi, pair_cdr(%rax)
         mov     $VOID, %rax
+        ret
+
+is_null:                        # obj
+        is_nil_internal %rdi, store=true
+        box_boolean_internal
         ret
 
 length:                         # list
@@ -1069,7 +1083,7 @@ init_runtime:                   # execution_stack_top, argc, argv, jit_code_debu
         store_pointer $5, jit_r9_to_local_size
 
         lea     jit_syntax_jump_table, %rbx
-        .irp symbol, quote, if, set, define, lambda, begin, do, delay, and, or, cond, case, let_star, let, letrec, define_syntax
+        .irp symbol, quote, if, set, define, lambda, begin, do, delay, cond, case, let_star, let, letrec, define_syntax
         unbox_pointer_internal \symbol\()_symbol
         store_pointer %eax, $jit_\symbol
         .endr
@@ -1103,6 +1117,8 @@ init_runtime:                   # execution_stack_top, argc, argv, jit_code_debu
         define "number->string", $number_to_string
         define "string->number", $string_to_number
 
+        define "not", $not
+
         define "pair?", $is_pair
         define "cons", $cons
         define "car", $car
@@ -1110,6 +1126,7 @@ init_runtime:                   # execution_stack_top, argc, argv, jit_code_debu
         define "set-car!", $set_car
         define "set-cdr!", $set_cdr
 
+        define "null?", $is_null
         define "length", $length
         define "append", $append
         define "reverse", $reverse
@@ -2623,69 +2640,6 @@ jit_case:                       # form, c-stream, environment
         call_fn jit_datum, %rax, %r12, env(%rsp)
 
         return
-
-jit_and_expander:               # form
-        prologue
-        mov     %rdi, %rbx
-
-        is_nil_internal %rbx
-        je      1f
-
-        call_fn car, %rbx
-        mov     %rax, %r12
-
-        call_fn cdr, %rbx
-        is_nil_internal %rax
-        je      2f
-
-        call_fn jit_and_expander, %rax
-        mov     %rax, %rbx
-
-        call_fn cons, $FALSE, $NIL
-        call_fn cons, %rbx, %rax
-        call_fn cons, %r12, %rax
-        call_fn cons, if_symbol, %rax
-        return
-
-1:      return  $TRUE
-
-2:      return  %r12
-
-jit_and:                        # form, c-stream, environment
-        macroexpand jit_and_expander
-
-jit_or_expander:                # form
-        prologue
-        mov     %rdi, %rbx
-
-        is_nil_internal %rbx
-        je      1f
-
-        call_fn car, %rbx
-        mov     %rax, %r12
-        call_fn cdr, %rbx
-        call_fn jit_or_expander, %rax
-
-        call_fn cons, %rax, $NIL
-        call_fn cons, temp_symbol, %rax
-        call_fn cons, temp_symbol, %rax
-        call_fn cons, if_symbol, %rax
-
-        call_fn cons, %rax, $NIL
-        mov     %rax, %rbx
-
-        call_fn cons, %r12, $NIL
-        call_fn cons, temp_symbol, %rax
-        call_fn cons, %rax, $NIL
-        call_fn cons, %rax, %rbx
-        call_fn cons, let_symbol, %rax
-
-        return
-
-1:      return  $FALSE
-
-jit_or:                         # form, c-stream, environment
-        macroexpand jit_or_expander
 
         ## 4.2.2. Binding constructs
 

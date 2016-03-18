@@ -19,26 +19,28 @@
       (if (null? form)
           match
           #f)
-      (let* ((first-pattern (car pattern))
-             (rest-pattern (cdr pattern))
-             (first-form (car form))
-             (rest-form (cdr form)))
-        (if (pair? first-pattern)
-            (let* ((match (match-syntax-rule literals first-pattern first-form match)))
-              (if match
-                  (match-syntax-rule literals rest-pattern rest-form match)
-                  #f))
-            (if (syntax-pattern-variable? literals first-pattern)
-                (if (null? rest-pattern)
-                    (match-syntax-rule literals rest-pattern rest-form
-                                       (cons (cons first-pattern first-form) match))
-                    (if (eq? '... (car rest-pattern))
-                        (cons (cons first-pattern form) match)
+      (if (null? form)
+          #f
+          (let* ((first-pattern (car pattern))
+                 (rest-pattern (cdr pattern))
+                 (first-form (car form))
+                 (rest-form (cdr form)))
+            (if (pair? first-pattern)
+                (let* ((match (match-syntax-rule literals first-pattern first-form match)))
+                  (if match
+                      (match-syntax-rule literals rest-pattern rest-form match)
+                      #f))
+                (if (syntax-pattern-variable? literals first-pattern)
+                    (if (null? rest-pattern)
                         (match-syntax-rule literals rest-pattern rest-form
-                                           (cons (cons first-pattern first-form) match))))
-                (if (eq? first-pattern first-form)
-                    (match-syntax-rule literals rest-pattern rest-form match)
-                    #f))))))
+                                           (cons (cons first-pattern first-form) match))
+                        (if (eq? '... (car rest-pattern))
+                            (cons (cons first-pattern form) match)
+                            (match-syntax-rule literals rest-pattern rest-form
+                                               (cons (cons first-pattern first-form) match))))
+                    (if (eq? first-pattern first-form)
+                        (match-syntax-rule literals rest-pattern rest-form match)
+                        #f)))))))
 
 (define (syntax-transcribe match template)
   (if (null? match)
@@ -75,8 +77,9 @@
 
 (define (transform-syntax transformer-spec form)
   (let* ((literals (car (cdr transformer-spec)))
-         (syntax-rules (cdr (cdr transformer-spec))))
-    (transform-syntax-rules literals syntax-rules (cdr form))))
+         (syntax-rules (cdr (cdr transformer-spec)))
+         (expansion (transform-syntax-rules literals syntax-rules (cdr form))))
+    expansion))
 
 (define-syntax syntax-rules
   (lambda (transformer-spec)
@@ -134,20 +137,20 @@
 ;;          (begin result1 result2 ...)
 ;;          (case key clause clauses ...)))))
 
-;; (define-syntax and
-;;   (syntax-rules ()
-;;     ((and) #t)
-;;     ((and test) test)
-;;     ((and test1 test2 ...)
-;;      (if test1 (and test2 ...) #f))))
+(define-syntax and
+  (syntax-rules ()
+    ((and) #t)
+    ((and test) test)
+    ((and test1 test2 ...)
+     (if test1 (and test2 ...) #f))))
 
-;; (define-syntax or
-;;   (syntax-rules ()
-;;     ((or) #f)
-;;     ((or test) test)
-;;     ((or test1 test2 ...)
-;;      (let ((x test1))
-;;        (if x x (or test2 ...))))))
+(define-syntax or
+  (syntax-rules ()
+    ((or) #f)
+    ((or test) test)
+    ((or test1 test2 ...)
+     (let ((x test1))
+       (if x x (or test2 ...))))))
 
 ;;; 4.2.6. Quasiquotation
 
@@ -258,11 +261,6 @@
 
 ;;; 6.3.1. Booleans
 
-(define (not obj)
-  (if (eq? obj #f)
-      #t
-      #f))
-
 (define (boolean? obj)
   (or (eq? #t obj) (eq? #f obj)))
 
@@ -351,9 +349,6 @@
 
 (define (cddddr obj)
   (cdr (cdddr obj)))
-
-(define (null? obj)
-  (eq? '() obj))
 
 (define (list? obj)
   (let loop ((obj obj))

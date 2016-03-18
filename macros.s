@@ -111,14 +111,14 @@
         .endif
         .endm
 
-        .macro is_nil_internal value, tmp=%r11
+        .macro is_nil_internal value, tmp=%r11, store=false
         mov     $NIL, \tmp
-        cmp     \value, \tmp
+        eq_internal \value, \tmp, store=\store
         .endm
 
-        .macro is_void_internal value, tmp=%r11
+        .macro is_void_internal value, tmp=%r11, store=false
         mov     $VOID, \tmp
-        cmp     \value, \tmp
+        eq_internal \value, \tmp, store=\store
         .endm
 
         .macro store_pointer idx, ptr=%rax, at=%rbx
