@@ -65,9 +65,18 @@ aiming for full R5RS compliance.
 
 ## Implementation Notes
 
-Akeem is a template based JIT and adheres which copies snippets of its
-own source to compile functions at runtime - code is data. It is
-somewhat inspired by Abdulaziz Ghuloum's classic paper
+Akeem is a template based JIT which copies snippets of its own
+assembled source to compile functions at runtime - code is data.
+
+It's worth noting that John Aycock in his
+[A Brief History of Just-In-Time](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.97.3985&rep=rep1&type=pdf)
+don't consider template based compilers to be proper JIT compilers:
+
+> As just described, template-based systems arguably do not fit our
+> description of JIT compilers, since there would appear to be no
+> nontrivial translation aspect.
+
+Akeem is somewhat inspired by Abdulaziz Ghuloum's classic paper
 [An Incremental Approach to Compiler Construction](http://scheme2006.cs.uchicago.edu/11-ghuloum.pdf)
 and Ian Piumarta's
 [PEG-based transformer provides front-, middle and back-end stages in a simple compiler](http://www.vpri.org/pdf/tr2010003_PEG.pdf)
@@ -75,17 +84,18 @@ and his related work on [Maru](http://piumarta.com/software/maru/).
 
 Unlike these Lisps Akeem does not generate assembly in text
 form. Akeem is inspired by Clojure in the sense that there's only a
-JIT compiler to simplify the overall implementation. Also, like
-Clojure, the compiler is planned to stay close to a normal procedural
-language, with limited TCO and no CPS.
+JIT compiler to simplify the overall implementation -- there's no
+interpreter. Also, like Clojure, the compiler is planned to stay close
+to a normal procedural language, with limited TCO and no CPS.
 
 Most of the implementation is in
 [`lisp.s`](https://github.com/hraberg/akeem/blob/master/lisp.s). It
 relies heavily on
 [`macros.s`](https://github.com/hraberg/akeem/blob/master/macros.s) to
-make the code less verbose.. The
-[`tests.s`](https://github.com/hraberg/akeem/blob/master/tests.s) are
-compared to
+make the code less verbose. The
+[`tests.s`](https://github.com/hraberg/akeem/blob/master/tests.s) and
+[`tests.scm`](https://github.com/hraberg/akeem/blob/master/tests.scm)
+are compared to
 [`test_output.txt`](https://github.com/hraberg/akeem/blob/master/test_output.txt)
 for simple unit testing. To run and keep watching the tests (uses
 [entr](http://entrproject.org/)):
@@ -96,7 +106,7 @@ make retest
 
 Part of the implementation is in
 [`r5rs.scm`](https://github.com/hraberg/akeem/blob/master/r5rs.scm)
-which gets embedded as a string during compilation and loaded at
+which gets embedded as a string during compilation and is loaded at
 startup.
 
 While running, the result of the JIT is logged into `jit_code`, and
@@ -105,6 +115,8 @@ can be inspected using `objdump` via:
 ``` bash
 make jit-dissassmble
 ```
+This can be turned off by setting `REPL_LOG_JIT` to `0` in
+[`constants.s`](https://github.com/hraberg/akeem/blob/master/constants.s).
 
 Too simplify debugging you can wrap the tests using `catchsegv` which
 will give you a register dump when Akeem crashes and occasionally even

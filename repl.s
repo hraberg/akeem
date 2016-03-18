@@ -7,7 +7,7 @@
 main:
         prologue
 
-        call_fn init_runtime, %rsp, %rdi, %rsi, $C_TRUE
+        call_fn init_runtime, %rsp, %rdi, %rsi, $REPL_LOG_JIT
         call_fn parse_command_line_arguments
 
         intern_string welcome_message, "Welcome to Akeem Scheme."
