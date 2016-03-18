@@ -1,6 +1,73 @@
 ;;; 4.3.2. Pattern language
 
-(define (transform-syntax transformer-spec form))
+(define (syntax-literal? literals pattern)
+  (if (null? literals)
+      #f
+      (if (eq? (car literals) pattern)
+          #t
+          (syntax-literal? (cdr literals) pattern))))
+
+(define (syntax-pattern-variable? literals pattern)
+  (if (symbol? pattern)
+      (if (eq? '... pattern)
+          #f
+          (not (syntax-literal? literals pattern)))
+      #f))
+
+(define (match-syntax-rule literals pattern form match)
+  (if (null? pattern)
+      (if (null? form)
+          match
+          #f)
+      (let* ((first-pattern (car pattern))
+             (first-form (car form)))
+        (if (syntax-pattern-variable? first-pattern)
+            (if (eq? (cons '... '()) (cdr pattern))
+                (cons (cons first-pattern form) match)
+                (match-syntax-rule literals (cdr pattern) (cdr form)
+                                   (cons (cons first-pattern first-form) match)))
+            (if (syntax-literal? first-pattern)
+                (if (eq? first-pattern first-form)
+                    (match-syntax-rule literals (cdr pattern) (cdr form) match)
+                    #f)
+                #f)
+            #f))))
+
+(define (syntax-transcribe match template)
+  (if (null? match)
+      template
+      (if (eq? (car (car match)) template)
+          (cdr match)
+          (syntax-match? (cdr match) template))))
+
+(define (transcribe-syntax-rule match template)
+  (if (null? template)
+      '()
+      (let* ((first-template (car template))
+             (rest-template (cdr template)))
+        (if (pair? first-template)
+            (cons (transcribe-syntax-rule match first-template)
+                  (transcribe-syntax-rule match rest-template))
+            (let* ((transcribed (syntax-transcribe match first-template)))
+              (if (eq? (cons '... '()) rest-template)
+                  transcribed
+                  (cons transcribed (transcribe-syntax-rule match rest-template))))))))
+
+(define (transform-syntax-rules literals syntax-rules form)
+  (if (null? syntax-rules)
+      '()
+      (let* ((syntax-rule (car syntax-rules))
+             (pattern (cdr (car syntax-rule)))
+             (template (cdr syntax-rule))
+             (match (match-syntax-rule literals pattern form '())))
+        (if match
+            (transcribe-syntax-rule match template)
+            (transform-syntax-rules literals (cdr syntax-rules) form)))))
+
+(define (transform-syntax transformer-spec form)
+  (let* ((literals (car (cdr transformer-spec)))
+         (syntax-rules (cdr (cdr transformer-spec))))
+    (transform-syntax-rules literals syntax-rules (cdr form))))
 
 (define-syntax syntax-rules
   (lambda (transformer-spec)
