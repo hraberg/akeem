@@ -1075,7 +1075,7 @@ init_runtime:                   # execution_stack_top, argc, argv, jit_code_debu
         store_pointer $5, jit_r9_to_local_size
 
         lea     jit_syntax_jump_table, %rbx
-        .irp symbol, quote, if, set, lambda, begin, do, let_star, let, letrec, define_syntax
+        .irp symbol, quote, if, set, lambda, begin, let_star, let, letrec, define_syntax
         unbox_pointer_internal \symbol\()_symbol
         store_pointer %eax, $jit_\symbol
         .endr
@@ -2715,99 +2715,6 @@ jit_begin:                     # form, c-stream, environment
         jmp     2b
 
 3:      return  max_locals(%rsp)
-
-jit_do_expander:                # form
-        prologue form, body, variable_init, bindings, loop_var, steps
-        mov     %rdi, form(%rsp)
-        call_fn car, %rdi
-        mov     %rax, %rbx
-        mov     $NIL, %r12
-
-1:      is_nil_internal %rbx
-        je      2f
-
-        call_fn car, %rbx
-        mov     %rax, variable_init(%rsp)
-        call_fn cdr, variable_init(%rsp)
-        call_fn car, %rax
-        call_fn cons, %rax, $NIL
-        mov     %rax, loop_var(%rsp)
-
-        call_fn car, variable_init(%rsp)
-        call_fn cons, %rax, loop_var(%rsp)
-        call_fn cons, %rax, %r12
-        mov     %rax, %r12
-
-        call_fn cdr, %rbx
-        mov     %rax, %rbx
-        jmp     1b
-
-2:      mov     %r12, bindings(%rsp)
-
-        mov     form(%rsp), %rbx
-        call_fn car, %rbx
-        mov     %rax, %rbx
-        mov     $NIL, %rax
-        mov     %rax, steps(%rsp)
-
-3:      is_nil_internal %rbx
-        je      6f
-
-        call_fn car, %rbx
-        mov     %rax, variable_init(%rsp)
-        call_fn cdr, variable_init(%rsp)
-        call_fn cdr, %rax
-        is_nil_internal %rax
-        je      4f
-        call_fn cdr, variable_init(%rsp)
-        call_fn cdr, %rax
-        call_fn car, %rax
-        jmp     5f
-
-4:      call_fn car, variable_init(%rsp)
-
-5:      call_fn cons, %rax, steps(%rsp)
-        mov     %rax, steps(%rsp)
-
-        call_fn cdr, %rbx
-        mov     %rax, %rbx
-        jmp     3b
-
-6:      call_fn cdr, form(%rsp)
-        call_fn cdr, %rax
-        mov     %rax, %r12
-
-        call_fn reverse, steps(%rsp)
-        call_fn cons, temp_symbol, %rax
-        call_fn cons, %rax, $NIL
-        call_fn append, %r12, %rax
-        call_fn cons, begin_symbol, %rax
-        call_fn cons, %rax, $NIL
-        mov     %rax, body(%rsp)
-
-        call_fn cdr, form(%rsp)
-        call_fn car, %rax
-        mov     %rax, %rbx
-
-        call_fn cdr, %rbx
-        call_fn cons, begin_symbol, %rax
-        call_fn cons, %rax, body(%rsp)
-        mov     %rax, %r12
-        call_fn car, %rbx
-        call_fn cons, %rax, %r12
-
-        call_fn cons, if_symbol, %rax
-        call_fn cons, %rax, $NIL
-        mov     %rax, %r12
-
-        call_fn reverse, bindings(%rsp)
-        call_fn cons, %rax, %r12
-        call_fn cons, temp_symbol, %rax
-        call_fn cons, let_symbol, %rax
-        return
-
-jit_do:                         # form, c-stream, environment
-        macroexpand jit_do_expander
 
         ## 5.3. Syntax definitions
 
