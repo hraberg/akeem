@@ -223,8 +223,8 @@
 
 ;;; 4.3.2. Pattern language
 
-;; (assert (let ((=> #f))
-;;           (cond (#t => 'ok))))
+(assert (let ((=> #f))
+          (cond (#t => 'ok))))
 
 ;;; 5. Program structure
 

@@ -293,6 +293,7 @@ consonant
 #(10 5 2 4 3 8)
 (list 3 4)
 (quasiquote (list (unquote (+ 1 2)) 4))
+ok
 6
 1
 #t

@@ -2,21 +2,21 @@
 
 ;;; 4.3.2. Pattern language
 
-(define (syntax-literal? literals pattern)
-  (if (null? literals)
+(define (syntax-memq obj list)
+  (if (null? list)
       #f
-      (if (eq? (car literals) pattern)
-          #t
-          (syntax-literal? (cdr literals) pattern))))
+      (if (eq? (car list) obj)
+          list
+          (syntax-memq obj (cdr list)))))
 
-(define (syntax-pattern-variable? literals pattern)
+(define (syntax-pattern-variable? literals pattern env)
   (if (symbol? pattern)
       (if (eq? '... pattern)
           #f
-          (not (syntax-literal? literals pattern)))
+          (not (syntax-memq pattern literals)))
       #f))
 
-(define (match-syntax-rule literals pattern form match)
+(define (match-syntax-rule literals pattern form match env)
   (if (null? pattern)
       (if (null? form)
           match
@@ -27,21 +27,23 @@
             (if (null? form)
                 #f
                 (if (pair? (car form))
-                    (let* ((match (match-syntax-rule literals first-pattern (car form) match)))
+                    (let* ((match (match-syntax-rule literals first-pattern (car form) match env)))
                       (if match
-                          (match-syntax-rule literals rest-pattern (cdr form) match)
+                          (match-syntax-rule literals rest-pattern (cdr form) match env)
                           #f))
                     #f))
             (if (syntax-pattern-variable? literals first-pattern)
                 (if (null? rest-pattern)
                     (match-syntax-rule literals rest-pattern (cdr form)
-                                       (cons (cons (car form) first-pattern) match))
+                                       (cons (cons (car form) first-pattern) match env))
                     (if (eq? '... (car rest-pattern))
                         (cons (cons form first-pattern) match)
                         (match-syntax-rule literals rest-pattern (cdr form)
-                                           (cons (cons (car form) first-pattern) match))))
+                                           (cons (cons (car form) first-pattern) match env))))
                 (if (eq? first-pattern (car form))
-                    (match-syntax-rule literals rest-pattern (cdr form) match)
+                    (if (not (syntax-memq first-pattern env))
+                        (match-syntax-rule literals rest-pattern (cdr form) match env)
+                        #f)
                     #f))))))
 
 (define (syntax-transcribe match template)
@@ -66,21 +68,21 @@
                       transcribed
                       (cons transcribed (transcribe-syntax-rule match rest-template)))))))))
 
-(define (transform-syntax-rules literals syntax-rules form)
+(define (transform-syntax-rules literals syntax-rules form env)
   (if (null? syntax-rules)
       '(begin)
       (let* ((syntax-rule (car syntax-rules))
              (pattern (cdr (car syntax-rule)))
              (template (cdr syntax-rule))
-             (match (match-syntax-rule literals pattern form '())))
+             (match (match-syntax-rule literals pattern form '() env)))
         (if match
             (cons 'begin (transcribe-syntax-rule match template))
-            (transform-syntax-rules literals (cdr syntax-rules) form)))))
+            (transform-syntax-rules literals (cdr syntax-rules) form env)))))
 
 (define (transform-syntax transformer-spec form env)
   (let* ((literals (car (cdr transformer-spec)))
          (syntax-rules (cdr (cdr transformer-spec)))
-         (expansion (transform-syntax-rules literals syntax-rules (cdr form))))
+         (expansion (transform-syntax-rules literals syntax-rules (cdr form) env)))
     expansion))
 
 (define-syntax syntax-rules
