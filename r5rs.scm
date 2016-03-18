@@ -36,18 +36,16 @@
                         (cons (cons first-pattern form) match)
                         (match-syntax-rule literals rest-pattern rest-form
                                            (cons (cons first-pattern first-form) match))))
-                (if (syntax-literal? literals first-pattern)
-                    (if (eq? first-pattern first-form)
-                        (match-syntax-rule literals rest-pattern rest-form match)
-                        #f)
+                (if (eq? first-pattern first-form)
+                    (match-syntax-rule literals rest-pattern rest-form match)
                     #f))))))
 
 (define (syntax-transcribe match template)
   (if (null? match)
       template
       (if (eq? (car (car match)) template)
-          (cdr match)
-          (syntax-match? (cdr match) template))))
+          (cdr (car match))
+          (syntax-transcribe (cdr match) template))))
 
 (define (transcribe-syntax-rule match template)
   (if (null? template)
