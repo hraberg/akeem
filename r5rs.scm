@@ -1,8 +1,14 @@
 ;;; 4.3.2. Pattern language
 
+(define (transform-syntax transformer-spec form))
+
 (define-syntax syntax-rules
-  (lambda (form)
-    (cons 'lambda (cdr form))))
+  (lambda (transformer-spec)
+    (cons 'lambda (cons (cons 'form '())
+                        (cons (cons 'transform-syntax
+                                    (cons (cons 'quote (cons transformer-spec '()))
+                                          (cons 'form '())))
+                              '())))))
 
 ;;; 7.3. Derived expression types
 
