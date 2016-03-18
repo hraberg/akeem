@@ -1,3 +1,5 @@
+;;; 4.3. Macros
+
 ;;; 4.3.2. Pattern language
 
 (define (syntax-literal? literals pattern)
@@ -75,7 +77,7 @@
             (cons 'begin (transcribe-syntax-rule match template))
             (transform-syntax-rules literals (cdr syntax-rules) form)))))
 
-(define (transform-syntax transformer-spec form)
+(define (transform-syntax transformer-spec form env)
   (let* ((literals (car (cdr transformer-spec)))
          (syntax-rules (cdr (cdr transformer-spec)))
          (expansion (transform-syntax-rules literals syntax-rules (cdr form))))
@@ -83,13 +85,15 @@
 
 (define-syntax syntax-rules
   (lambda (transformer-spec)
-    (cons 'lambda (cons (cons 'form '())
+    (cons 'lambda (cons (cons 'form (cons 'env '()))
                         (cons (cons 'transform-syntax
                                     (cons (cons 'quote (cons transformer-spec '()))
-                                          (cons 'form '())))
+                                          (cons 'form (cons 'env '()))))
                               '())))))
 
-;;; 7.3. Derived expression types
+;;; 4.2. Derived expression types
+
+;;; 4.2.1. Conditionals
 
 (define-syntax cond
   (syntax-rules (else =>)

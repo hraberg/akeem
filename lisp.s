@@ -2196,7 +2196,7 @@ jit_pair:                       # form, c-stream, environment
         return
 
 5:      unbox_pointer_internal syntax(%rsp), %rax
-        call_fn *%rax, %rbx, %r12, env(%rsp)
+        call_fn *%rax, %rbx, env(%rsp)
         call_fn jit_datum, %rax, %r12, env(%rsp)
         return
 
