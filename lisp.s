@@ -887,16 +887,16 @@ init_runtime:                   # execution_stack_top, argc, argv, jit_code_debu
         intern_symbol begin_symbol, "begin"
         intern_symbol do_symbol, "do"
         intern_symbol delay_symbol, "delay"
+        intern_symbol quasiquote_symbol, "quasiquote"
+        intern_symbol unquote_symbol, "unquote"
+        intern_symbol unquote_splicing_symbol, "unquote-splicing"
+        intern_symbol define_syntax_symbol, "define-syntax"
 
         intern_symbol temp_symbol, "__temp__"
         intern_symbol arrow_symbol, "=>"
         intern_symbol else_symbol, "else"
         intern_symbol memv_symbol, "memv"
         intern_symbol make_promise_symbol, "make-promise"
-
-        intern_symbol quasiquote_symbol, "quasiquote"
-        intern_symbol unquote_symbol, "unquote"
-        intern_symbol unquote_splicing_symbol, "unquote-splicing"
 
         intern_symbol void_symbol, "void"
 
@@ -1068,7 +1068,7 @@ init_runtime:                   # execution_stack_top, argc, argv, jit_code_debu
         store_pointer $5, jit_r9_to_local_size
 
         lea     jit_syntax_jump_table, %rbx
-        .irp symbol, quote, if, set, define, lambda, begin, do, delay, and, or, cond, case, let_star, let, letrec, quasiquote
+        .irp symbol, quote, if, set, define, lambda, begin, do, delay, and, or, cond, case, let_star, let, letrec, define_syntax
         unbox_pointer_internal \symbol\()_symbol
         store_pointer %eax, $jit_\symbol
         .endr
@@ -2143,7 +2143,7 @@ jit_literal:                    # literal, c-stream, environment
         return
 
 jit_pair:                       # form, c-stream, environment
-        prologue env, env_tmp, symbol
+        prologue env, env_tmp, symbol, syntax
         mov     %rdi, %rbx
         mov     %rsi, %r12
         mov     %rdx, env(%rsp)
@@ -2173,7 +2173,17 @@ jit_pair:                       # form, c-stream, environment
 3:      call_fn jit_procedure_call, %rbx, %r12, env(%rsp)
         return
 
-4:      call_fn *%rax, %rbx, %r12, env(%rsp)
+4:      mov     %rax, syntax(%rsp)
+        has_tag TAG_PROCEDURE, %rax, store=false
+        je      5f
+        unbox_pointer_internal syntax(%rsp)
+        call_fn *%rax, %rbx, %r12, env(%rsp)
+        return
+
+5:      unbox_pointer_internal syntax(%rsp), %rcx
+        call_fn cdr, %rbx
+        call_fn *%rcx, %rax, %r12, env(%rsp)
+        call_fn jit_datum, %rax, %r12, env(%rsp)
         return
 
         ## 4.1.3. Procedure calls
@@ -2487,37 +2497,6 @@ jit_set:                        # form, c-stream, environment
         call_fn car, %rbx
         call_fn jit_set_with_rax_as_value, %rax, %r12, env(%rsp)
         return  max_locals(%rsp)
-
-jit_define_expander:            # form
-        prologue variable_and_formals, variable, formals
-        mov     %rdi, %rbx
-        call_fn car, %rbx
-
-        mov     %rax, %r11
-        has_tag TAG_SYMBOL, %rax, store=false
-        je      1f
-        mov     %r11, %rax
-
-        mov     %rax, variable_and_formals(%rsp)
-
-        call_fn car, variable_and_formals(%rsp)
-        mov     %rax, variable(%rsp)
-        call_fn cdr, variable_and_formals(%rsp)
-        mov     %rax, formals(%rsp)
-
-        call_fn cdr, %rbx
-        call_fn cons, formals(%rsp), %rax
-        call_fn cons, lambda_symbol, %rax
-        call_fn cons, %rax, $NIL
-
-        call_fn cons, variable(%rsp), %rax
-        mov     %rax, %rbx
-
-1:      call_fn cons, set_symbol, %rbx
-        return
-
-jit_define:                     # form, c-stream, environment
-        macroexpand jit_define_expander
 
         ##  4.2.1. Conditionals
 
@@ -3023,16 +3002,65 @@ jit_delay_expander:             # form
 jit_delay:                      # form, c-stream, environment
         macroexpand jit_delay_expander
 
-jit_quasiquote_expander:        # form, c-stream, environment
-        minimal_prologue
-        unbox_pointer_internal quasiquote_symbol
-        mov     symbol_table_values(,%eax,POINTER_SIZE), %rax
-        unbox_pointer_internal %rax
-        call    *%rax
+        ## 5.2. Definitions
+
+jit_define_expander:            # form
+        prologue variable_and_formals, variable, formals
+        mov     %rdi, %rbx
+        call_fn car, %rbx
+
+        mov     %rax, %r11
+        has_tag TAG_SYMBOL, %rax, store=false
+        je      1f
+        mov     %r11, %rax
+
+        mov     %rax, variable_and_formals(%rsp)
+
+        call_fn car, variable_and_formals(%rsp)
+        mov     %rax, variable(%rsp)
+        call_fn cdr, variable_and_formals(%rsp)
+        mov     %rax, formals(%rsp)
+
+        call_fn cdr, %rbx
+        call_fn cons, formals(%rsp), %rax
+        call_fn cons, lambda_symbol, %rax
+        call_fn cons, %rax, $NIL
+
+        call_fn cons, variable(%rsp), %rax
+        mov     %rax, %rbx
+
+1:      call_fn cons, set_symbol, %rbx
         return
 
-jit_quasiquote:                 # form, c-stream, environment
-        macroexpand jit_quasiquote_expander
+jit_define:                     # form, c-stream, environment
+        macroexpand jit_define_expander
+
+        ## 5.3. Syntax definitions
+
+jit_define_syntax:              # form, c-stream, environment
+        prologue env, max_locals, syntax_address
+        mov     %rdi, %rbx
+        mov     %rsi, %r12
+        mov     %rdx, env(%rsp)
+        movq    $0, max_locals(%rsp)
+
+        call_fn cdr, %rbx
+        mov     %rax, %rbx
+
+        call_fn cdr, %rbx
+        call_fn car, %rax
+        call_fn jit_datum, %rax, %r12, env(%rsp)
+        update_max_locals max_locals(%rsp)
+
+        call_fn car, %rbx
+        lea     jit_syntax_jump_table(,%eax,POINTER_SIZE), %rax
+        mov     %rax, syntax_address(%rsp)
+
+        call_fn fwrite, $jit_rax_to_syntax, $1, jit_rax_to_syntax_size, %r12
+        lea     syntax_address(%rsp), %rax
+        call_fn fwrite, %rax, $1, $POINTER_SIZE, %r12
+        call_fn fwrite, $jit_void_to_rax, $1, jit_void_to_rax_size, %r12
+        return  max_locals(%rsp)
 
         ## 6.4. Control features
 
@@ -3350,6 +3378,12 @@ jit_rax_to_local:
         mov     %rax, -0x11223344(%rbp)
 jit_rax_to_local_size:
         .quad   (. - jit_rax_to_local) - INT_SIZE
+
+        .align  16
+jit_rax_to_syntax:
+        mov     %rax, 0x1122334455667788
+jit_rax_to_syntax_size:
+        .quad   (. - jit_rax_to_syntax) - POINTER_SIZE
 
         .align  16
 jit_rax_to_closure:

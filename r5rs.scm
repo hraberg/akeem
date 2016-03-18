@@ -15,8 +15,9 @@
          (cons 'list->vector (cons (qq (vector->list x)) '())))
         (else (cons 'quote (cons x '())))))
 
-(define (quasiquote qq-template)
-  (qq (car qq-template)))
+(define-syntax quasiquote
+  (lambda (qq-template)
+    (qq (car qq-template))))
 
 ;;; 6.1. Equivalence predicates
 
