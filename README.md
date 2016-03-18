@@ -19,6 +19,15 @@ make
 `which rlwrap` ./akeem # or make run-repl
 ```
 
+In Emacs:
+
+``` el
+(setq scheme-program-name "/path/to/akeem")
+(run-scheme)
+```
+See [this tutorial](http://community.schemewiki.org/?emacs-tutorial).
+
+
 ## What Works?
 
 * Subset of R5RS procedures.
