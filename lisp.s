@@ -891,16 +891,11 @@ init_runtime:                   # execution_stack_top, argc, argv, jit_code_debu
         intern_symbol if_symbol, "if"
         intern_symbol define_symbol, "define"
         intern_symbol set_symbol, "set!"
-        intern_symbol cond_symbol, "cond"
-        intern_symbol case_symbol, "case"
-        intern_symbol and_symbol, "and"
-        intern_symbol or_symbol, "or"
         intern_symbol let_star_symbol, "let*"
         intern_symbol let_symbol, "let"
         intern_symbol letrec_symbol, "letrec"
         intern_symbol begin_symbol, "begin"
         intern_symbol do_symbol, "do"
-        intern_symbol delay_symbol, "delay"
         intern_symbol quasiquote_symbol, "quasiquote"
         intern_symbol unquote_symbol, "unquote"
         intern_symbol unquote_splicing_symbol, "unquote-splicing"
@@ -1080,7 +1075,7 @@ init_runtime:                   # execution_stack_top, argc, argv, jit_code_debu
         store_pointer $5, jit_r9_to_local_size
 
         lea     jit_syntax_jump_table, %rbx
-        .irp symbol, quote, if, set, define, lambda, begin, do, delay, let_star, let, letrec, define_syntax
+        .irp symbol, quote, if, set, define, lambda, begin, do, let_star, let, letrec, define_syntax
         unbox_pointer_internal \symbol\()_symbol
         store_pointer %eax, $jit_\symbol
         .endr
@@ -2813,19 +2808,6 @@ jit_do_expander:                # form
 
 jit_do:                         # form, c-stream, environment
         macroexpand jit_do_expander
-
-        ## 4.2.5. Delayed evaluation
-
-jit_delay_expander:             # form
-        minimal_prologue
-        call_fn cons, $NIL, %rdi
-        call_fn cons, lambda_symbol, %rax
-        call_fn cons, %rax, $NIL
-        call_fn cons, make_promise_symbol, %rax
-        return
-
-jit_delay:                      # form, c-stream, environment
-        macroexpand jit_delay_expander
 
         ## 5.2. Definitions
 

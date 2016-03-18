@@ -158,6 +158,13 @@
      (let ((x test1))
        (if x x (or test2 ...))))))
 
+;;; 4.2.5. Delayed evaluation
+
+(define-syntax delay
+  (syntax-rules ()
+    ((delay expression)
+     (make-promise (lambda () expression)))))
+
 ;;; 4.2.6. Quasiquotation
 
 ;; Based on https://github.com/mishoo/SLip/blob/master/lisp/compiler.lisp#L25
