@@ -24,13 +24,13 @@
             (if (null? form)
                 match
                 #f)
-            (let* ((first-pattern (car pattern))
-                   (rest-pattern (cdr pattern)))
+            (let ((first-pattern (car pattern))
+                  (rest-pattern (cdr pattern)))
               (if (pair? first-pattern)
                   (if (null? form)
                       #f
                       (if (pair? (car form))
-                          (let* ((match (match-syntax-rule literals first-pattern (car form) match env)))
+                          (let ((match (match-syntax-rule literals first-pattern (car form) match env)))
                             (if match
                                 (match-syntax-rule literals rest-pattern (cdr form) match env)
                                 #f))
@@ -44,9 +44,9 @@
                               (match-syntax-rule literals rest-pattern (cdr form)
                                                  (cons (cons (car form) first-pattern) match env))))
                       (if (eq? first-pattern (car form))
-                          (if (not (syntax-memv first-pattern env))
-                              (match-syntax-rule literals rest-pattern (cdr form) match env)
-                              #f)
+                          (if (syntax-memv first-pattern env)
+                              #f
+                              (match-syntax-rule literals rest-pattern (cdr form) match env))
                           #f)))))))
 
 (set! syntax-transcribe
@@ -61,12 +61,12 @@
       (lambda (match template)
         (if (null? template)
             '()
-            (let* ((first-template (car template))
-                   (rest-template (cdr template)))
+            (let ((first-template (car template))
+                  (rest-template (cdr template)))
               (if (pair? first-template)
                   (cons (transcribe-syntax-rule match first-template)
                         (transcribe-syntax-rule match rest-template))
-                  (let* ((transcribed (syntax-transcribe match first-template)))
+                  (let ((transcribed (syntax-transcribe match first-template)))
                     (if (null? rest-template)
                         (cons transcribed '())
                         (if (eq? '...  (car rest-template))
@@ -170,54 +170,6 @@
   (syntax-rules ()
     ((delay expression)
      (make-promise (lambda () expression)))))
-
-;;; 4.2.6. Quasiquotation
-
-;; Based on https://github.com/mishoo/SLip/blob/master/lisp/compiler.lisp#L25
-(define-syntax quasiquote
-  (lambda (qq-template)
-    (letrec ((qq (lambda (x)
-                   (cond ((pair? x)
-                          (case (car x)
-                            ((unquote) (car (cdr x)))
-                            ((quasiquote) (qq (qq (car (cdr x)))))
-                            (else
-                             (if (and (pair? (car x))
-                                      (eq? 'unquote-splicing (car (car x))))
-                                 (cons 'append (cons (car (cdr (car x))) (cons (qq (cdr x)) '())))
-                                 (cons 'cons (cons (qq (car x)) (cons (qq (cdr x)) '())))))))
-                         ((vector? x)
-                          (cons 'list->vector (cons (qq (vector->list x)) '())))
-                         (else (cons 'quote (cons x '())))))))
-      (qq (car (cdr qq-template))))))
-
-;;; 4.2.4. Iteration
-
-(define-syntax do
-  (lambda (form)
-    (letrec ((build-inits (lambda (inits)
-                            (if (null? inits)
-                                '()
-                                (let ((init (car inits)))
-                                  `((,(car init) ,(car (cdr init)))
-                                    ,@(build-inits (cdr inits)))))))
-             (build-steps (lambda (steps)
-                            (if (null? steps)
-                                '()
-                                (let ((step (cdr (cdr (car steps)))))
-                                  `(,(if (null? step)
-                                         (car (car steps))
-                                         (car step))
-                                    ,@(build-steps (cdr steps))))))))
-      (let* ((form (cdr form))
-             (var-init-step (car form))
-             (test-expr (car (cdr form)))
-             (command (cdr (cdr form))))
-        `(let loop ,(build-inits var-init-step)
-           (if ,(car test-expr)
-               (begin ,@(cdr test-expr))
-               (begin ,@command
-                      (loop ,@(build-steps var-init-step)))))))))
 
 ;;; 5.2. Definitions
 
@@ -384,9 +336,11 @@
           (else #f))))
 
 (define (list-tail list k)
-  (do ((list list (cdr list))
-       (k k (- k 1)))
-      ((zero? k) list)))
+  (let loop ((list list)
+             (k k))
+    (if (zero? k)
+        list
+        (loop (cdr list) (- k 1)))))
 
 (define (list-ref list k)
   (car (list-tail list k)))
@@ -452,6 +406,54 @@
 
 (define (char-ci>=? char1 char2)
   (>= (char->integer (char-downcase char1)) (char->integer (char-downcase char2))))
+
+;;; 4.2.6. Quasiquotation
+
+;; Based on https://github.com/mishoo/SLip/blob/master/lisp/compiler.lisp#L25
+(define-syntax quasiquote
+  (lambda (qq-template)
+    (letrec ((qq (lambda (x)
+                   (cond ((pair? x)
+                          (case (car x)
+                            ((unquote) (cadr x))
+                            ((quasiquote) (qq (qq (cadr x))))
+                            (else
+                             (if (and (pair? (car x))
+                                      (eq? 'unquote-splicing (caar x)))
+                                 (cons 'append (cons (cadar x) (cons (qq (cdr x)) '())))
+                                 (cons 'cons (cons (qq (car x)) (cons (qq (cdr x)) '())))))))
+                         ((vector? x)
+                          (cons 'list->vector (cons (qq (vector->list x)) '())))
+                         (else (cons 'quote (cons x '())))))))
+      (qq (cadr qq-template)))))
+
+;;; 4.2.4. Iteration
+
+(define-syntax do
+  (lambda (form)
+    (letrec ((build-inits (lambda (inits)
+                            (if (null? inits)
+                                '()
+                                (let ((init (car inits)))
+                                  `((,(car init) ,(cadr init))
+                                    ,@(build-inits (cdr inits)))))))
+             (build-steps (lambda (steps)
+                            (if (null? steps)
+                                '()
+                                (let ((step (cddar steps)))
+                                  `(,(if (null? step)
+                                         (caar steps)
+                                         (car step))
+                                    ,@(build-steps (cdr steps))))))))
+      (let* ((form (cdr form))
+             (var-init-step (car form))
+             (test-expr (cadr form))
+             (command (cddr form)))
+        `(let loop ,(build-inits var-init-step)
+           (if ,(car test-expr)
+               (begin ,@(cdr test-expr))
+               (begin ,@command
+                      (loop ,@(build-steps var-init-step)))))))))
 
 ;;; 6.3.5. Strings
 
