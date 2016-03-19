@@ -90,6 +90,8 @@ JIT compiler to simplify the overall implementation — there's no
 interpreter. Also, like Clojure, the compiler is planned to stay close
 to a normal procedural language, with limited TCO and no CPS.
 
+### Development
+
 Most of the implementation is in
 [`lisp.s`](https://github.com/hraberg/akeem/blob/master/lisp.s). It
 relies heavily on
@@ -127,6 +129,17 @@ a stack trace:
 ``` bash
 make run-tests-catchsegv
 ```
+
+### Benchmarks
+
+You can run a small set of the Racket benchmarks using:
+
+``` bash
+RACKET_HOME=/path/to/racket make benchmarks
+```
+The `racket` executable itself is assumed to be on the path. Akeem can
+currently run about 10% of the benchmarks, and is about 3 times slower
+than Racket.
 
 
 ## References
