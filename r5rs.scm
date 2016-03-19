@@ -64,14 +64,16 @@
                           (match-syntax-rule literals rest-pattern (cdr form)
                                              (cons (cons (car form) (cons first-pattern idxs)) match) idxs env)
                           (if (eq? '... (car rest-pattern))
-                              (let loop ((form form)
-                                         (match match)
-                                         (idx 0))
-                                (if (null? form)
-                                    match
-                                    (loop (cdr form)
-                                          (cons (cons (car form) (cons first-pattern (cons idx idxs))) match)
-                                          (+ 1 idx))))
+                              (if (null? form)
+                                  (cons (cons 'transcribe-failure (cons first-pattern (cons 0 idxs))) match)
+                                  (let loop ((form form)
+                                             (match match)
+                                             (idx 0))
+                                    (if (null? form)
+                                        match
+                                        (loop (cdr form)
+                                              (cons (cons (car form) (cons first-pattern (cons idx idxs))) match)
+                                              (+ 1 idx)))))
                               (match-syntax-rule literals rest-pattern (cdr form)
                                                  (cons (cons (car form) (cons first-pattern idxs)) match) idxs env)))
                       (if (equal? first-pattern (car form))
@@ -80,51 +82,52 @@
                               (match-syntax-rule literals rest-pattern (cdr form) match idxs env))
                           #f)))))))
 
+(set! syntax-template-pattern-variable?
+      (lambda (match template)
+        (if (null? match)
+            #f
+            (if (eqv? (car (cdr (car match))) template)
+                #t
+                (syntax-template-pattern-variable? (cdr match) template)))))
+
 (set! transcribe-syntax-template
-      (lambda (match template idxs)
+      (lambda (match template-idxs)
         (if (null? match)
             'transcribe-failure
-            (if (equal? (cdr (car match)) (cons template idxs))
+            (if (equal? (cdr (car match)) template-idxs)
                 (car (car match))
-                (transcribe-syntax-template (cdr match) template idxs)))))
+                (transcribe-syntax-template (cdr match) template-idxs)))))
 
 (set! transcribe-syntax-rule
-      (lambda (match template idxs ellipsis?)
-        (if (null? template)
-            '()
-            (if (not (pair? template))
-                (let ((new-transcribed (transcribe-syntax-template match template idxs)))
-                  (if (eq? 'transcribe-failure new-transcribed)
-                      (if ellipsis?
-                          'transcribe-failure
-                          template)
-                      new-transcribed))
-                (let* ((first-template (car template))
-                       (rest-template (cdr template))
-                       (default-transcribe
-                         (lambda ()
-                           (let ((first-new-transcribed (transcribe-syntax-rule match first-template idxs ellipsis?))
-                                 (rest-new-transcribed (transcribe-syntax-rule match rest-template idxs ellipsis?)))
-                             (if ellipsis?
-                                 (if (eq? 'transcribe-failure first-new-transcribed)
-                                     'transcribe-failure
-                                     (if (eq? 'transcribe-failure rest-new-transcribed)
-                                         'transcribe-failure
-                                         (cons first-new-transcribed rest-new-transcribed)))
-                                 (cons first-new-transcribed rest-new-transcribed))))))
-                  (if (null? rest-template)
-                      (default-transcribe)
-                      (if (eq? '...  (car rest-template))
-                          (append
-                           (let loop ((transcribed '())
-                                      (new-idx 0))
-                             (let ((new-transcribed (transcribe-syntax-rule match first-template (cons new-idx idxs) #t)))
-                               (if (eq? 'transcribe-failure new-transcribed)
-                                   transcribed
-                                   (loop (append transcribed (cons new-transcribed '()))
-                                         (+ new-idx 1)))))
-                           (transcribe-syntax-rule match (cdr rest-template) idxs ellipsis?))
-                          (default-transcribe))))))))
+      (lambda (match template idxs)
+        (if (not (pair? template))
+            (if (syntax-template-pattern-variable? match template)
+                (transcribe-syntax-template match (cons template idxs))
+                template)
+            (let* ((first-template (car template))
+                   (rest-template (cdr template))
+                   (default-transcribe
+                     (lambda ()
+                       (let ((first-new-transcribed (transcribe-syntax-rule match first-template idxs))
+                             (rest-new-transcribed (transcribe-syntax-rule match rest-template idxs)))
+                         (if (eq? 'transcribe-failure first-new-transcribed)
+                             'transcribe-failure
+                             (if (eq? 'transcribe-failure rest-new-transcribed)
+                                 'transcribe-failure
+                                 (cons first-new-transcribed rest-new-transcribed)))))))
+              (if (null? rest-template)
+                  (default-transcribe)
+                  (if (eq? '...  (car rest-template))
+                      (append
+                       (let loop ((transcribed '())
+                                  (new-idx 0))
+                         (let ((new-transcribed (transcribe-syntax-rule match first-template (cons new-idx idxs))))
+                           (if (eq? 'transcribe-failure new-transcribed)
+                               transcribed
+                               (loop (append transcribed (cons new-transcribed '()))
+                                     (+ new-idx 1)))))
+                       (transcribe-syntax-rule match (cdr rest-template) idxs))
+                      (default-transcribe)))))))
 
 (set! transform-syntax-rules
       (lambda (literals syntax-rules form env)
@@ -135,7 +138,7 @@
                    (template (cdr syntax-rule))
                    (match (match-syntax-rule literals pattern form '() '() env)))
               (if match
-                  (cons 'begin (transcribe-syntax-rule (reverse match) template '() #f))
+                  (cons 'begin (transcribe-syntax-rule (reverse match) template '()))
                   (transform-syntax-rules literals (cdr syntax-rules) form env))))))
 
 (set! transform-syntax
@@ -217,12 +220,54 @@
      (let ((x test1))
        (if x x (or test2 ...))))))
 
+;;; 4.2.4. Iteration
+
+(define-syntax do
+  (syntax-rules ()
+    ((do ((var init step ...) ...)
+         (test expr ...)
+       command ...)
+     (let loop ((var init) ...)
+       (if test
+           (begin
+             (if #f #f)
+             expr ...)
+           (begin
+             command
+             ...
+             (loop (do "step" var step ...)
+                   ...)))))
+    ((do "step" x)
+     x)
+    ((do "step" x y)
+     y)))
+
 ;;; 4.2.5. Delayed evaluation
 
 (define-syntax delay
   (syntax-rules ()
     ((delay expression)
      (make-promise (lambda () expression)))))
+
+;;; 4.2.6. Quasiquotation
+
+;; Based on https://github.com/mishoo/SLip/blob/master/lisp/compiler.lisp#L25
+(define-syntax quasiquote
+  (lambda (qq-template)
+    (letrec ((qq (lambda (x)
+                   (cond ((pair? x)
+                          (case (car x)
+                            ((unquote) (cadr x))
+                            ((quasiquote) (qq (qq (cadr x))))
+                            (else
+                             (if (and (pair? (car x))
+                                      (eq? 'unquote-splicing (caar x)))
+                                 (cons 'append (cons (cadar x) (cons (qq (cdr x)) '())))
+                                 (cons 'cons (cons (qq (car x)) (cons (qq (cdr x)) '())))))))
+                         ((vector? x)
+                          (cons 'list->vector (cons (qq (vector->list x)) '())))
+                         (else (cons 'quote (cons x '())))))))
+      (qq (cadr qq-template)))))
 
 ;;; 5.2. Definitions
 
@@ -459,75 +504,6 @@
 
 (define (char-ci>=? char1 char2)
   (>= (char->integer (char-downcase char1)) (char->integer (char-downcase char2))))
-
-;;; 4.2.6. Quasiquotation
-
-;; Based on https://github.com/mishoo/SLip/blob/master/lisp/compiler.lisp#L25
-(define-syntax quasiquote
-  (lambda (qq-template)
-    (letrec ((qq (lambda (x)
-                   (cond ((pair? x)
-                          (case (car x)
-                            ((unquote) (cadr x))
-                            ((quasiquote) (qq (qq (cadr x))))
-                            (else
-                             (if (and (pair? (car x))
-                                      (eq? 'unquote-splicing (caar x)))
-                                 (cons 'append (cons (cadar x) (cons (qq (cdr x)) '())))
-                                 (cons 'cons (cons (qq (car x)) (cons (qq (cdr x)) '())))))))
-                         ((vector? x)
-                          (cons 'list->vector (cons (qq (vector->list x)) '())))
-                         (else (cons 'quote (cons x '())))))))
-      (qq (cadr qq-template)))))
-
-;;; 4.2.4. Iteration
-
-(define-syntax do
-  (lambda (form)
-    (letrec ((build-inits (lambda (var-init-steps)
-                            (if (null? var-init-steps)
-                                '()
-                                (let ((var-init (car var-init-steps)))
-                                  `((,(car var-init) ,(cadr var-init))
-                                    ,@(build-inits (cdr var-init-steps)))))))
-             (build-steps (lambda (var-init-steps)
-                            (if (null? var-init-steps)
-                                '()
-                                (let ((step (cddar var-init-steps)))
-                                  `(,(if (null? step)
-                                         (caar var-init-steps)
-                                         (car step))
-                                    ,@(build-steps (cdr var-init-steps))))))))
-      (let* ((form (cdr form))
-             (var-init-steps (car form))
-             (test (caadr form))
-             (expr (cdadr form))
-             (command (cddr form)))
-        `(let loop ,(build-inits var-init-steps)
-           (if ,test
-               (begin ,@expr)
-               (begin ,@command
-                      (loop ,@(build-steps var-init-steps)))))))))
-
-;; (define-syntax do
-;;   (syntax-rules ()
-;;     ((do ((var init step ...) ...)
-;;          (test expr ...)
-;;        command ...)
-;;      (let loop ((var init) ...)
-;;        (if test
-;;            (begin
-;;              (if #f #f)
-;;              expr ...)
-;;            (begin
-;;              command
-;;              ...
-;;              (loop (do "step" var step ...)
-;;                    ...)))))
-;;     ((do "step" x)
-;;      x)
-;;     ((do "step" x y)
-;;      y)))
 
 ;;; 6.3.5. Strings
 
