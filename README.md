@@ -34,6 +34,7 @@ See [this tutorial](http://community.schemewiki.org/?emacs-tutorial).
 * JIT for `if`, `lambda`, `define`, `set!`, `let`, `let*`,
   "named `let`", `letrec` and `begin`
 * Syntax for `and`, `or`, `cond`, `case`, `do` and `delay`.
+* Basic support for `define-syntax` / `syntax-rules` and `quasiquote`.
 * NaN-boxed 32-bit integers and 64-bit doubles
 * Function application up to 6 arguments.
 * The bootstrap Scheme code is embedded in the executable.
@@ -43,12 +44,13 @@ See [this tutorial](http://community.schemewiki.org/?emacs-tutorial).
 ## What doesn't work?
 
 * Almost no error handling.
-* `define-syntax`, `quasiquote`.
+* No full support for `syntax-rules` patterns.
+* No `let-syntax` and `letrec-syntax`.
+* No mutation of closed over variables (needs array boxing).
 * No TCO.
 * Max arity is currently 6, higher requires the use of the stack.
 * No vararg support.
 * No GC for functions or their constant literals.
-* No quasiquote.
 * Not full support for Scheme numbers in the reader.
 * Limited numeric tower, see above.
 * `call-with-current-continuation` only uses `setjmp`.
