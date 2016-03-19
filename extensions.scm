@@ -1,3 +1,9 @@
+x(define-syntax time
+  (syntax-rules ()
+    ((time body ...)
+     (let ((result (begin body ...)))
+       result))))
+
 ;;; SRFI 1: List Library
 
 (define (filter pred list)
