@@ -40,11 +40,11 @@
                   (if (syntax-pattern-variable? literals first-pattern)
                       (if (null? rest-pattern)
                           (match-syntax-rule literals rest-pattern (cdr form)
-                                             (cons (cons (car form) first-pattern) match env))
+                                             (cons (cons (car form) first-pattern) match) env)
                           (if (eq? '... (car rest-pattern))
                               (cons (cons form first-pattern) match)
                               (match-syntax-rule literals rest-pattern (cdr form)
-                                                 (cons (cons (car form) first-pattern) match env))))
+                                                 (cons (cons (car form) first-pattern) match) env)))
                       (if (equal? first-pattern (car form))
                           (if (syntax-memv first-pattern env)
                               #f
