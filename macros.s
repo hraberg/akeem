@@ -452,7 +452,7 @@ tmp_string_\@:
         .ifnb \named_let
         call_fn ftell, \stream
         box_int_internal
-        call_fn jit_named_let_syntax_factory, %rax, \form
+        call_fn jit_named_let_syntax_factory, %rax, \form, \env
         mov     \named_let, %rcx
         mov     jit_syntax_jump_table(,%ecx,POINTER_SIZE), %rbx
         mov     %rax, jit_syntax_jump_table(,%ecx,POINTER_SIZE)

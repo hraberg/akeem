@@ -2519,12 +2519,13 @@ jit_set:                        # form, c-stream, environment
 
         ## 4.2.2. Binding constructs
 
-jit_named_let_syntax:           # form, c-stream, environment, target, bindings
-        prologue env, target, bindings, variable_init, max_locals
+jit_named_let_syntax:           # form, c-stream, environment, target, bindings, original-env
+        prologue env, target, bindings, original_env, variable_init, max_locals
         mov     %rsi, %r12
         mov     %rdx, env(%rsp)
         mov     %ecx, target(%rsp)
         mov     %r8, bindings(%rsp)
+        mov     %r9, original_env(%rsp)
         movq    $0, max_locals(%rsp)
 
         call_fn cdr, %rdi
@@ -2549,7 +2550,7 @@ jit_named_let_syntax:           # form, c-stream, environment, target, bindings
         call_fn fwrite, $jit_pop_rax, $1, jit_pop_rax_size, %r12
         call_fn car, bindings(%rsp)
         call_fn car, %rax
-        call_fn jit_set_with_rax_as_value, %rax, %r12, env(%rsp)
+        call_fn jit_set_with_rax_as_value, %rax, %r12, original_env(%rsp)
 
         call_fn cdr, bindings(%rsp)
         mov     %rax, bindings(%rsp)
@@ -2564,10 +2565,11 @@ jit_named_let_syntax:           # form, c-stream, environment, target, bindings
 
         return  max_locals(%rsp)
 
-jit_named_let_syntax_factory:   # target, form
-        prologue  code, size, form
+jit_named_let_syntax_factory:   # target, form, original-env
+        prologue  code, size, form, original_env
         mov     %rdi, %r12
         mov     %rsi, form(%rsp)
+        mov     %rdx, original_env(%rsp)
         lea     code(%rsp), %rdi
         lea     size(%rsp), %rsi
         call_fn open_memstream, %rdi, %rsi
@@ -2582,6 +2584,10 @@ jit_named_let_syntax_factory:   # target, form
         call_fn jit_literal, %rax, %rbx, $NIL
         call_fn fwrite, $jit_push_rax, $1, jit_push_rax_size, %rbx
         call_fn fwrite, $jit_pop_r8, $1, jit_pop_r8_size, %rbx
+
+        call_fn jit_literal, original_env(%rsp), %rbx, $NIL
+        call_fn fwrite, $jit_push_rax, $1, jit_push_rax_size, %rbx
+        call_fn fwrite, $jit_pop_r9, $1, jit_pop_r9_size, %rbx
 
         mov     $jit_named_let_syntax, %rax
         call_fn jit_literal, %rax, %rbx, $NIL
