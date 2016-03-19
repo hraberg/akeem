@@ -463,7 +463,7 @@
 ;;     ((do ((var init step ...) ...)
 ;;          (test expr ...)
 ;;        command ...)
-;;      (let loop ((var init))
+;;      (let loop ((var init) ...)
 ;;        (if test
 ;;            (begin expr ...)
 ;;            (begin command ...
