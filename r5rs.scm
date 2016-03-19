@@ -32,10 +32,24 @@
                   (if (null? form)
                       #f
                       (if (pair? (car form))
-                          (let ((match (match-syntax-rule literals first-pattern (car form) match env)))
-                            (if match
-                                (match-syntax-rule literals rest-pattern (cdr form) match env)
-                                #f))
+                          (let ((default-match
+                                  (lambda ()
+                                    (let ((match (match-syntax-rule literals first-pattern (car form) match env)))
+                                      (if match
+                                          (match-syntax-rule literals rest-pattern (cdr form) match env)
+                                          #f)))))
+                            (if (null? rest-pattern)
+                                (default-match)
+                                (if (eq? '... (car rest-pattern))
+                                    (let loop ((form form)
+                                               (match match))
+                                      (if (null? form)
+                                          match
+                                          (let ((match (match-syntax-rule literals first-pattern (car form) match env)))
+                                            (if match
+                                                (loop (cdr form) match)
+                                                #f))))
+                                    (default-match))))
                           #f))
                   (if (syntax-pattern-variable? literals first-pattern)
                       (if (null? rest-pattern)
