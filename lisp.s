@@ -889,22 +889,17 @@ init_runtime:                   # execution_stack_top, argc, argv, jit_code_debu
         intern_symbol quote_symbol, "quote"
         intern_symbol lambda_symbol, "lambda"
         intern_symbol if_symbol, "if"
-        intern_symbol define_symbol, "define"
         intern_symbol set_symbol, "set!"
         intern_symbol let_star_symbol, "let*"
         intern_symbol let_symbol, "let"
         intern_symbol letrec_symbol, "letrec"
         intern_symbol begin_symbol, "begin"
-        intern_symbol do_symbol, "do"
         intern_symbol quasiquote_symbol, "quasiquote"
         intern_symbol unquote_symbol, "unquote"
         intern_symbol unquote_splicing_symbol, "unquote-splicing"
         intern_symbol define_syntax_symbol, "define-syntax"
 
         intern_symbol dot_symbol, "."
-        intern_symbol temp_symbol, "__temp__"
-        intern_symbol make_promise_symbol, "make-promise"
-
         intern_symbol void_symbol, "void"
 
         mov     symbol_next_id, %rax
