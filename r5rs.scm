@@ -50,22 +50,11 @@
                                           (cons (cons (car form) first-pattern) match))))
                               (match-syntax-rule literals rest-pattern (cdr form)
                                                  (cons (cons (car form) first-pattern) match) env)))
-                      (if (pair? first-pattern)
-                          (if (eq? '... (car rest-pattern))
-                              (let loop ((form form)
-                                         (match match))
-                                (if (null? form)
-                                    match
-                                    (if match
-                                        (loop (cdr form)
-                                              (match-syntax-rule literals first-pattern (car form) match env))
-                                        #f)))
-                              #f)
-                          (if (equal? first-pattern (car form))
-                              (if (syntax-memv first-pattern env)
-                                  #f
-                                  (match-syntax-rule literals rest-pattern (cdr form) match env))
-                              #f))))))))
+                      (if (equal? first-pattern (car form))
+                          (if (syntax-memv first-pattern env)
+                              #f
+                              (match-syntax-rule literals rest-pattern (cdr form) match env))
+                          #f)))))))
 
 (set! transcribe-syntax-template
       (lambda (match template idx)
