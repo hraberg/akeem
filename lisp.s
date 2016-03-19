@@ -1213,6 +1213,7 @@ init_runtime:                   # execution_stack_top, argc, argv, jit_code_debu
         define "gc", $gc
         define "object-space-size", $object_space_size
         define "class-of", $class_of
+        define "void", $void
 
         call_fn box_string, $extensions_scm
         call_fn open_input_string, %rax
@@ -1276,6 +1277,11 @@ exit_:                          # exit-code
         default_arg TAG_INT, $0, %rdi
         call_fn exit, %rdi
         return
+
+void:
+        mov     $VOID, %rax
+        ret
+
 
 read_all:                       # port
         prologue
