@@ -42,7 +42,12 @@
                           (match-syntax-rule literals rest-pattern (cdr form)
                                              (cons (cons (car form) first-pattern) match) env)
                           (if (eq? '... (car rest-pattern))
-                              (cons (cons form first-pattern) match)
+                              (let loop ((form form)
+                                         (match match))
+                                (if (null? form)
+                                    match
+                                    (loop (cdr form)
+                                          (cons (cons (car form) first-pattern) match))))
                               (match-syntax-rule literals rest-pattern (cdr form)
                                                  (cons (cons (car form) first-pattern) match) env)))
                       (if (pair? first-pattern)
@@ -63,28 +68,41 @@
                               #f))))))))
 
 (set! transcribe-syntax-template
-      (lambda (match template)
+      (lambda (match template idx)
         (if (null? match)
-            template
+            'transcribe-failure
             (if (eqv? (cdr (car match)) template)
-                (car (car match))
-                (transcribe-syntax-template (cdr match) template)))))
+                (if (= 0 idx)
+                    (car (car match))
+                    (transcribe-syntax-template (cdr match) template (- idx 1)))
+                (transcribe-syntax-template (cdr match) template idx)))))
 
 (set! transcribe-syntax-rule
-      (lambda (match template)
+      (lambda (match template idx)
         (if (null? template)
             '()
-            (let ((first-template (car template))
-                  (rest-template (cdr template)))
-              (if (pair? first-template)
-                  (cons (transcribe-syntax-rule match first-template)
-                        (transcribe-syntax-rule match rest-template))
-                  (let ((transcribed (transcribe-syntax-template match first-template)))
-                    (if (null? rest-template)
-                        (cons transcribed '())
-                        (if (eq? '...  (car rest-template))
-                            (append transcribed (transcribe-syntax-rule match (cdr rest-template)))
-                            (cons transcribed (transcribe-syntax-rule match rest-template))))))))))
+            (let* ((first-template (car template))
+                   (rest-template (cdr template))
+                   (default-transcribe
+                     (lambda ()
+                       (cons (if (pair? first-template)
+                                 (transcribe-syntax-rule match first-template idx)
+                                 (let ((new-transcribed (transcribe-syntax-template match first-template idx)))
+                                   (if (eq? 'transcribe-failure new-transcribed)
+                                       first-template
+                                       new-transcribed)))
+                             (transcribe-syntax-rule match rest-template idx)))))
+              (if (null? rest-template)
+                  (default-transcribe)
+                  (if (eq? '...  (car rest-template))
+                      (let loop ((transcribed '())
+                                 (new-idx idx))
+                        (let ((new-transcribed (transcribe-syntax-template match first-template new-idx)))
+                          (if (eq? 'transcribe-failure new-transcribed)
+                              transcribed
+                              (loop (append transcribed (cons new-transcribed '()))
+                                    (+ new-idx 1)))))
+                      (default-transcribe)))))))
 
 (set! transform-syntax-rules
       (lambda (literals syntax-rules form env)
@@ -95,7 +113,7 @@
                    (template (cdr syntax-rule))
                    (match (match-syntax-rule literals pattern form '() env)))
               (if match
-                  (cons 'begin (transcribe-syntax-rule match template))
+                  (cons 'begin (transcribe-syntax-rule (reverse match) template 0))
                   (transform-syntax-rules literals (cdr syntax-rules) form env))))))
 
 (set! transform-syntax
