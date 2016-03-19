@@ -11,20 +11,19 @@
                        #f)
                    (eqv? obj1 obj2))))
 
-(set! syntax-memv
+(set! memv
       (lambda (obj list)
-        (if (null? list)
-            #f
-            (if (eqv? (car list) obj)
-                list
-                (syntax-memv obj (cdr list))))))
+        (let loop ((list list))
+          (if (null? list)
+              #f
+              (if (eqv? (car list) obj)
+                  list
+                  (loop (cdr list)))))))
 
 (set! syntax-pattern-variable?
       (lambda (literals pattern)
         (if (symbol? pattern)
-            (if (eq? '... pattern)
-                #f
-                (not (syntax-memv pattern literals)))
+            (not (memv pattern (cons '... literals)))
             #f)))
 
 (set! match-syntax-rule
@@ -77,26 +76,28 @@
                               (match-syntax-rule literals rest-pattern (cdr form)
                                                  (cons (cons (car form) (cons first-pattern idxs)) match) idxs env)))
                       (if (equal? first-pattern (car form))
-                          (if (syntax-memv first-pattern env)
+                          (if (memv first-pattern env)
                               #f
                               (match-syntax-rule literals rest-pattern (cdr form) match idxs env))
                           #f)))))))
 
 (set! syntax-template-pattern-variable?
       (lambda (match template)
-        (if (null? match)
-            #f
-            (if (eqv? (car (cdr (car match))) template)
-                #t
-                (syntax-template-pattern-variable? (cdr match) template)))))
+        (let loop ((match match))
+          (if (null? match)
+              #f
+              (if (eqv? (car (cdr (car match))) template)
+                  #t
+                  (loop (cdr match)))))))
 
 (set! transcribe-syntax-template
       (lambda (match template-idxs)
-        (if (null? match)
-            'transcribe-failure
-            (if (equal? (cdr (car match)) template-idxs)
-                (car (car match))
-                (transcribe-syntax-template (cdr match) template-idxs)))))
+        (let loop ((match match))
+          (if (null? match)
+              'transcribe-failure
+              (if (equal? (cdr (car match)) template-idxs)
+                  (car (car match))
+                  (loop (cdr match)))))))
 
 (set! transcribe-syntax-rule
       (lambda (match template idxs)
@@ -196,12 +197,12 @@
      (begin result1 result2 ...))
     ((case key
        ((atoms ...) result1 result2 ...))
-     (if (syntax-memv key '(atoms ...))
+     (if (memv key '(atoms ...))
          (begin result1 result2 ...)))
     ((case key
        ((atoms ...) result1 result2 ...)
        clause clauses ...)
-     (if (syntax-memv key '(atoms ...))
+     (if (memv key '(atoms ...))
          (begin result1 result2 ...)
          (case key clause clauses ...)))))
 

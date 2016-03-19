@@ -44,7 +44,6 @@ See [this tutorial](http://community.schemewiki.org/?emacs-tutorial).
 ## What doesn't work?
 
 * Almost no error handling.
-* Not full support for `syntax-rules` patterns.
 * No hygienic macro expansion.
 * No `let-syntax` and `letrec-syntax`.
 * No mutation of closed over variables (needs array boxing).
