@@ -1833,12 +1833,27 @@ read_token:                     # c-stream
         return  %rbx
 
 read_symbol:                    # c-stream, c-char
-        prologue
+        prologue str
         mov     %rdi, %rbx
         mov     %rsi, %rdi
         call_fn ungetc, %rdi, %rbx
         call_fn read_token, %rbx
-        call_fn string_to_symbol, %rax
+        mov     %rax, str(%rsp)
+        call_fn unbox, %rax
+        mov     %rax, %rbx
+
+        xor     %r12d, %r12d
+        xor     %eax, %eax
+1:      mov     (%rbx,%r12), %al
+        test    %al, %al
+        jz      2f
+
+        call_fn tolower, %rax
+        movb    %al, (%rbx,%r12)
+        inc     %r12d
+        jmp     1b
+
+2:      call_fn string_to_symbol, str(%rsp)
         return
 
 read_number:                    # c-stream, c-char

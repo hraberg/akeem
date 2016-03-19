@@ -280,7 +280,7 @@
       (lambda () (set! n (+ n 1)) n))))
 (assert (let ((g (gen-counter)))
           (eqv? g g)))
-;; (assert (eqv? (gen-counter) (gen-counter)))
+(assert (eqv? (gen-counter) (gen-counter)))
 
 (define gen-loser
   (lambda ()
@@ -288,7 +288,7 @@
       (lambda () (set! n (+ n 1)) 27))))
 (assert (let ((g (gen-loser)))
           (eqv? g g)))
-;; (assert (eqv? (gen-loser) (gen-loser)))
+(assert (eqv? (gen-loser) (gen-loser)))
 
 (assert (letrec ((f (lambda () (if (eqv? f g) 'both 'f)))
                  (g (lambda () (if (eqv? f g) 'both 'g))))
@@ -529,20 +529,20 @@
 (assert (symbol? #f))
 
 (assert (symbol->string 'flying-fish))
- ;; (assert (symbol->string 'Martin))
+ (assert (symbol->string 'Martin))
 (assert (symbol->string
          (string->symbol "Malvina")))
 
-;; (assert (eq? 'mISSISSIppi 'mississippi))
+(assert (eq? 'mISSISSIppi 'mississippi))
 
 (assert (string->symbol "mISSISSIppi"))
-;; (assert (eq? 'bitBlt (string->symbol "bitBlt")))
+(assert (eq? 'bitBlt (string->symbol "bitBlt")))
 (assert (eq? 'JollyWog
              (string->symbol
               (symbol->string 'JollyWog))))
-;; (asseert (string=? "K. Harper, M.D."
-;;                    (symbol->string
-;;                     (string->symbol "K. Harper, M.D."))))
+(assert (string=? "K. Harper, M.D."
+                  (symbol->string
+                   (string->symbol "K. Harper, M.D."))))
 
 ;;; 6.3.4. Characters
 (assert (<= (char->integer #\a)

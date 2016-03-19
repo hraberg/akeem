@@ -299,7 +299,9 @@ ok
 #f
 #f
 #t
+#f
 #t
+#f
 #f
 #f
 #f
@@ -428,8 +430,12 @@ c
 #f
 #f
 "flying-fish"
+"martin"
 "Malvina"
+#t
 mISSISSIppi
+#f
+#t
 #t
 #t
 #t
