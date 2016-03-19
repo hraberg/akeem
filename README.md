@@ -31,9 +31,9 @@ See [this tutorial](http://community.schemewiki.org/?emacs-tutorial).
 ## What Works?
 
 * Subset of R5RS procedures.
-* JIT for `if`, `lambda`, `define`, `set!`, `let`, `let*`,
+* JIT for `if`, `lambda`, `set!`, `let`,
   "named `let`", `letrec` and `begin`
-* Syntax for `and`, `or`, `cond`, `case`, `do` and `delay`.
+* Syntax for `and`, `or`, `cond`, `case`, `let*`, `do`, `delay` and `define`.
 * Basic support for `define-syntax` / `syntax-rules` and `quasiquote`.
 * NaN-boxed 32-bit integers and 64-bit doubles
 * Function application up to 6 arguments.

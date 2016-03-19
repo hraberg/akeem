@@ -890,7 +890,6 @@ init_runtime:                   # execution_stack_top, argc, argv, jit_code_debu
         intern_symbol lambda_symbol, "lambda"
         intern_symbol if_symbol, "if"
         intern_symbol set_symbol, "set!"
-        intern_symbol let_star_symbol, "let*"
         intern_symbol let_symbol, "let"
         intern_symbol letrec_symbol, "letrec"
         intern_symbol begin_symbol, "begin"
@@ -1070,7 +1069,7 @@ init_runtime:                   # execution_stack_top, argc, argv, jit_code_debu
         store_pointer $5, jit_r9_to_local_size
 
         lea     jit_syntax_jump_table, %rbx
-        .irp symbol, quote, if, set, lambda, begin, let_star, let, letrec, define_syntax
+        .irp symbol, quote, if, set, lambda, begin, let, letrec, define_syntax
         unbox_pointer_internal \symbol\()_symbol
         store_pointer %eax, $jit_\symbol
         .endr
@@ -2623,17 +2622,6 @@ jit_let:                        # form, c-stream, environment
         return  max_locals(%rsp)
 
 1:      let_template original_env(%rsp)
-        return  max_locals(%rsp)
-
-jit_let_star:                   # form, c-stream, environment
-        prologue form, env, variable_init, local, max_locals
-        mov     %rsi, %r12
-        mov     %rdx, env(%rsp)
-        call_fn cdr, %rdi
-        mov     %rax, form(%rsp)
-        movq    $0, max_locals(%rsp)
-
-        let_template env(%rsp)
         return  max_locals(%rsp)
 
 jit_letrec:                     # form, c-stream, environment
