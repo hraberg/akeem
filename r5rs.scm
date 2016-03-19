@@ -2,20 +2,20 @@
 
 ;;; 4.3.2. Pattern language
 
-(set! syntax-memq
+(set! syntax-memv
       (lambda (obj list)
         (if (null? list)
             #f
-            (if (eq? (car list) obj)
+            (if (eqv? (car list) obj)
                 list
-                (syntax-memq obj (cdr list))))))
+                (syntax-memv obj (cdr list))))))
 
 (set! syntax-pattern-variable?
       (lambda (literals pattern)
         (if (symbol? pattern)
             (if (eq? '... pattern)
                 #f
-                (not (syntax-memq pattern literals)))
+                (not (syntax-memv pattern literals)))
             #f)))
 
 (set! match-syntax-rule
@@ -44,7 +44,7 @@
                               (match-syntax-rule literals rest-pattern (cdr form)
                                                  (cons (cons (car form) first-pattern) match env))))
                       (if (eq? first-pattern (car form))
-                          (if (not (syntax-memq first-pattern env))
+                          (if (not (syntax-memv first-pattern env))
                               (match-syntax-rule literals rest-pattern (cdr form) match env)
                               #f)
                           #f)))))))
@@ -140,12 +140,12 @@
      (begin result1 result2 ...))
     ((case key
        ((atoms ...) result1 result2 ...))
-     (if (memv key '(atoms ...))
+     (if (syntax-memv key '(atoms ...))
          (begin result1 result2 ...)))
     ((case key
        ((atoms ...) result1 result2 ...)
        clause clauses ...)
-     (if (memv key '(atoms ...))
+     (if (syntax-memv key '(atoms ...))
          (begin result1 result2 ...)
          (case key clause clauses ...)))))
 
@@ -164,38 +164,6 @@
      (let ((x test1))
        (if x x (or test2 ...))))))
 
-;;; 4.2.4. Iteration
-
-(define-syntax do
-  (lambda (form)
-    (letrec ((build-inits (lambda (inits)
-                            (if (null? inits)
-                                '()
-                                (let ((init (car inits)))
-                                  (cons (cons (car init) (cons (car (cdr init)) '()))
-                                        (build-inits (cdr inits)))))))
-             (build-steps (lambda (steps)
-                            (if (null? steps)
-                                '()
-                                (let ((step (cdr (cdr (car steps)))))
-                                  (cons (if (null? step)
-                                            (car (car steps))
-                                            (car step))
-                                        (build-steps (cdr steps))))))))
-      (let* ((form (cdr form))
-             (variable-init-step (car form))
-             (test (car (cdr form)))
-             (command (cdr (cdr form))))
-        (cons 'let (cons '__temp__
-                         (cons (build-inits variable-init-step)
-                               (cons (cons 'if (cons (car test)
-                                                     (cons (cons 'begin (cdr test))
-                                                           (cons (cons 'begin
-                                                                       (cons (cons 'begin command)
-                                                                             (cons (cons '__temp__ (build-steps variable-init-step)) '())))
-                                                                 '()))))
-                                     '()))))))))
-
 ;;; 4.2.5. Delayed evaluation
 
 (define-syntax delay
@@ -211,17 +179,45 @@
     (letrec ((qq (lambda (x)
                    (cond ((pair? x)
                           (case (car x)
-                            ((unquote) (cadr x))
-                            ((quasiquote) (qq (qq (cadr x))))
+                            ((unquote) (car (cdr x)))
+                            ((quasiquote) (qq (qq (car (cdr x)))))
                             (else
                              (if (and (pair? (car x))
-                                      (eq? 'unquote-splicing (caar x)))
-                                 (cons 'append (cons (cadar x) (cons (qq (cdr x)) '())))
+                                      (eq? 'unquote-splicing (car (car x))))
+                                 (cons 'append (cons (car (cdr (car x))) (cons (qq (cdr x)) '())))
                                  (cons 'cons (cons (qq (car x)) (cons (qq (cdr x)) '())))))))
                          ((vector? x)
                           (cons 'list->vector (cons (qq (vector->list x)) '())))
                          (else (cons 'quote (cons x '())))))))
-      (qq (cadr qq-template)))))
+      (qq (car (cdr qq-template))))))
+
+;;; 4.2.4. Iteration
+
+(define-syntax do
+  (lambda (form)
+    (letrec ((build-inits (lambda (inits)
+                            (if (null? inits)
+                                '()
+                                (let ((init (car inits)))
+                                  `((,(car init) ,(car (cdr init)))
+                                    ,@(build-inits (cdr inits)))))))
+             (build-steps (lambda (steps)
+                            (if (null? steps)
+                                '()
+                                (let ((step (cdr (cdr (car steps)))))
+                                  `(,(if (null? step)
+                                         (car (car steps))
+                                         (car step))
+                                    ,@(build-steps (cdr steps))))))))
+      (let* ((form (cdr form))
+             (var-init-step (car form))
+             (test-expr (car (cdr form)))
+             (command (cdr (cdr form))))
+        `(let loop ,(build-inits var-init-step)
+           (if ,(car test-expr)
+               (begin ,@(cdr test-expr))
+               (begin ,@command
+                      (loop ,@(build-steps var-init-step)))))))))
 
 ;;; 5.2. Definitions
 
