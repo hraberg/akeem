@@ -49,13 +49,13 @@
                               (match-syntax-rule literals rest-pattern (cdr form) match env))
                           #f)))))))
 
-(set! syntax-transcribe
+(set! transcribe-syntax-template
       (lambda (match template)
         (if (null? match)
             template
             (if (eq? (cdr (car match)) template)
                 (car (car match))
-                (syntax-transcribe (cdr match) template)))))
+                (transcribe-syntax-template (cdr match) template)))))
 
 (set! transcribe-syntax-rule
       (lambda (match template)
@@ -66,7 +66,7 @@
               (if (pair? first-template)
                   (cons (transcribe-syntax-rule match first-template)
                         (transcribe-syntax-rule match rest-template))
-                  (let ((transcribed (syntax-transcribe match first-template)))
+                  (let ((transcribed (transcribe-syntax-template match first-template)))
                     (if (null? rest-template)
                         (cons transcribed '())
                         (if (eq? '...  (car rest-template))
