@@ -107,13 +107,15 @@
                   (if (null? rest-template)
                       (default-transcribe)
                       (if (eq? '...  (car rest-template))
-                          (let loop ((transcribed '())
-                                     (new-idx idx))
-                            (let ((new-transcribed (transcribe-syntax-rule match first-template new-idx #t)))
-                              (if (eq? 'transcribe-failure new-transcribed)
-                                  transcribed
-                                  (loop (append transcribed (cons new-transcribed '()))
-                                        (+ new-idx 1)))))
+                          (append
+                           (let loop ((transcribed '())
+                                      (new-idx 0))
+                             (let ((new-transcribed (transcribe-syntax-rule match first-template new-idx #t)))
+                               (if (eq? 'transcribe-failure new-transcribed)
+                                   transcribed
+                                   (loop (append transcribed (cons new-transcribed '()))
+                                         (+ new-idx 1)))))
+                           (transcribe-syntax-rule match (cdr rest-template) idx ellipsis?))
                           (default-transcribe))))))))
 
 (set! transform-syntax-rules
@@ -506,9 +508,14 @@
 ;;        command ...)
 ;;      (let loop ((var init) ...)
 ;;        (if test
-;;            (begin expr ...)
-;;            (begin command ...
-;;                   (loop (do "step" var step ...) ...)))))
+;;            (begin
+;;              (if #f #f)
+;;              expr ...)
+;;            (begin
+;;              command
+;;              ...
+;;              (loop (do "step" var step ...)
+;;                    ...)))))
 ;;     ((do "step" x)
 ;;      x)
 ;;     ((do "step" x y)
