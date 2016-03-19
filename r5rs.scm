@@ -2,6 +2,8 @@
 
 ;;; 4.3.2. Pattern language
 
+(set! equal? eqv?)
+
 (set! syntax-memv
       (lambda (obj list)
         (if (null? list)
@@ -43,7 +45,7 @@
                               (cons (cons form first-pattern) match)
                               (match-syntax-rule literals rest-pattern (cdr form)
                                                  (cons (cons (car form) first-pattern) match env))))
-                      (if (eq? first-pattern (car form))
+                      (if (equal? first-pattern (car form))
                           (if (syntax-memv first-pattern env)
                               #f
                               (match-syntax-rule literals rest-pattern (cdr form) match env))
@@ -53,7 +55,7 @@
       (lambda (match template)
         (if (null? match)
             template
-            (if (eq? (cdr (car match)) template)
+            (if (eqv? (cdr (car match)) template)
                 (car (car match))
                 (transcribe-syntax-template (cdr match) template)))))
 
@@ -70,7 +72,7 @@
                     (if (null? rest-template)
                         (cons transcribed '())
                         (if (eq? '...  (car rest-template))
-                            transcribed
+                            (append transcribed (transcribe-syntax-rule match (cdr rest-template)))
                             (cons transcribed (transcribe-syntax-rule match rest-template))))))))))
 
 (set! transform-syntax-rules
@@ -455,6 +457,21 @@
                (begin ,@expr)
                (begin ,@command
                       (loop ,@(build-steps var-init-steps)))))))))
+
+;; (define-syntax do
+;;   (syntax-rules ()
+;;     ((do ((var init step ...) ...)
+;;          (test expr ...)
+;;        command ...)
+;;      (let loop ((var init))
+;;        (if test
+;;            (begin expr ...)
+;;            (begin command ...
+;;                   (loop (do "step" var step ...) ...)))))
+;;     ((do "step" x)
+;;      x)
+;;     ((do "step" x y)
+;;      y)))
 
 ;;; 6.3.5. Strings
 
