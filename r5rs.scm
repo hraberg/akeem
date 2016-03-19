@@ -85,9 +85,7 @@
         (if (null? match)
             'transcribe-failure
             (if (equal? (cdr (car match)) (cons template idxs))
-                (if (= 0 idx)
-                    (car (car match))
-                    (transcribe-syntax-template (cdr match) template idxs))
+                (car (car match))
                 (transcribe-syntax-template (cdr match) template idxs)))))
 
 (set! transcribe-syntax-rule
