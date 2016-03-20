@@ -47,6 +47,7 @@ See [this tutorial](http://community.schemewiki.org/?emacs-tutorial).
 * Almost no error handling.
 * No hygienic macro expansion.
 * No `let-syntax` and `letrec-syntax`.
+* "named `let`" compiles to a jump and not a procedure that returns.
 * No mutation of closed over variables (needs array boxing).
 * No TCO.
 * Max arity is currently 6, higher requires the use of the stack.
