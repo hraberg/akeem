@@ -833,10 +833,26 @@ load:                           # filename
         call_fn close_input_port, %rbx
         return  $VOID
 
-        ## Scheme Requests for Implementation
+        ## R7RS
 
-        ## SRFI 6: Basic String Ports
-        .globl open_input_string
+        ## 6. Standard procedures
+        ## 6.11. Exceptions
+        .globl error
+
+error:                          # reason
+        minimal_prologue
+        call_fn current_error_port
+        call_fn display, %rdi, %rax
+        call_fn exit, $1
+        return
+
+        ## 6.13. Input and output
+        ## 6.13.1. Ports
+        .globl current_error_port, open_input_string
+
+current_error_port:
+        tag     TAG_PORT, stderr
+        ret
 
 open_input_string:              # string
         minimal_prologue
@@ -848,19 +864,6 @@ open_input_string:              # string
         tag     TAG_PORT, %rax
         return
 
-        ## SRFI 23: Error reporting mechanism
-        .globl error
-
-error:                          # reason
-        minimal_prologue
-        tag     TAG_PORT, stderr
-        call_fn display, %rdi, %rax
-        call_fn exit, $1
-        return
-
-        ## R7RS
-
-        ## 6. Standard procedures
         ## 6.14. System interface
         .globl command_line, exit_, get_environment_variable, current_second, current_jiffy, jiffies_per_second,
 
@@ -1312,8 +1315,10 @@ init_runtime:                   # execution_stack_top, argc, argv, jit_code_debu
         mov     symbol_next_id, %rax
         mov     %rax, max_scheme_report_environment_symbol
 
-        define "open-input-string", $open_input_string
         define "error", $error
+
+        define "current-error-port", $current_error_port
+        define "open-input-string", $open_input_string
 
         define "command-line", $command_line
         define "exit", $exit_
