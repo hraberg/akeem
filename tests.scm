@@ -690,8 +690,17 @@
                        (null-environment 5))))
           (f + 10)))
 
-
 ;;; R7RS
+
+;;; 6.2. Numbers
+
+;;; 6.2.6. Numerical operations
+
+(assert (exact-integer? 32))
+(assert (exact-integer? 32.0))
+
+(assert (square 42))
+(assert (square 2.0))
 
 ;;; 6.4. Pairs and lists
 

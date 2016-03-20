@@ -1,5 +1,16 @@
 ;;; R7RS
 
+;;; 6.2.6. Numerical operations
+
+(define (exact-integer? z)
+  (and (integer? z) (exact? z)))
+
+(define (square z)
+  (* z z))
+
+(define inexact exact->inexact)
+(define exact inexact->exact)
+
 ;;; 6.4. Pairs and lists
 
 (define (make-list k fill)

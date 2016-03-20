@@ -543,7 +543,16 @@
     (string-set! copy (- idx start) (string-ref string idx))))
 
 (define (string-append string1 string2)
-  (list->string (append (string->list string1) (string->list string2))))
+  (let* ((length1 (string-length string1))
+         (length2 (string-length string2))
+         (acc (make-string (+ length1 length2))))
+    (do ((idx 0 (+ idx 1)))
+        ((= idx length1))
+      (string-set! acc idx (string-ref string1 idx)))
+    (do ((idx 0 (+ idx 1)))
+        ((= idx length2))
+      (string-set! acc (+ idx length1) (string-ref string2 idx)))
+    acc))
 
 (define (list->string list)
   (do ((list list (cdr list))
@@ -553,7 +562,11 @@
     (string-set! string idx (car list))))
 
 (define (string-copy string)
-  (list->string (string->list string)))
+  (let ((length (string-length string)))
+    (do ((acc (make-string length))
+         (idx 0 (+ idx 1)))
+        ((= idx length) acc)
+      (string-set! acc idx (string-ref string idx)))))
 
 (define (string-fill! string fill)
   (do ((idx (- (string-length string) 1) (- idx 1)))

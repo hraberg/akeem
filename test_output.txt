@@ -469,6 +469,10 @@ mISSISSIppi
 #f
 21
 20
+#t
+#f
+1764
+4.000000
 (3 3)
 (one two three)
 (3 8 2 8)
