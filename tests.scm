@@ -14,7 +14,6 @@
 (assert (* 5 8))
 
 (assert ";;; 2. Lexical conventions")
-
 (assert ";;; 2.2. Whitespace and comments")
 
 ;;; The FACT procedure computes the factorial
@@ -168,7 +167,6 @@
                        (cons (car numbers) neg))))))
 
 (spec ";;; 4.2.6. Quasiquotation")
-
 (assert `(list ,(+ 1 2) 4))
 (assert (let ((name 'a)) `(list ,name ',name)))
 (assert `(a ,(+ 1 2) ,@(map abs '(4 -5 6)) b))
@@ -185,7 +183,6 @@
 
 (spec ";;; 4.3. Macros")
 (spec ";;; 4.3.1. Binding constructs for syntactic keywords")
-
 ;; (assert (let-syntax ((when (syntax-rules ()
 ;;                              ((when test stmt1 stmt2 ...)
 ;;                               (if test
@@ -226,8 +223,6 @@
 
 (spec ";;; 5. Program structure")
 (spec ";;; 5.1. Programs")
-
-
 (spec ";;; 5.2. Definitions")
 (spec ";;; 5.2.1. Top level definitions")
 (define add3
