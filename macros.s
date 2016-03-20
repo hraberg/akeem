@@ -281,17 +281,6 @@
         jmp     \name\()_op
         .endm
 
-        .macro call_with_file_template name
-        prologue port
-        unbox_pointer_internal %rsi, %rbx
-        call_fn open_\name\()_file, %rdi
-        mov     %rax, port(%rsp)
-        call_fn *%rbx, %rax
-        mov     %rax, %rbx
-        call_fn close_\name\()_port, port(%rsp)
-        return  %rbx
-        .endm
-
         .macro with_file_io_template name, stream
         prologue previous_port
         unbox_pointer_internal %rsi, %rbx

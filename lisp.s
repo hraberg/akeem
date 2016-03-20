@@ -702,16 +702,22 @@ open_output_file:               # filename
 close_input_port:               # port
 close_output_port:              # port
         minimal_prologue
-        unbox_pointer_internal %rdi
-        call_fn fclose, %rax
-        tag     TAG_INT, %rax
+        call_fn close_port, %rdi
         return
 
 call_with_input_file:           # filename, proc
-        call_with_file_template input
+        prologue
+        mov     %rsi, %rbx
+        call_fn open_input_file, %rdi
+        call_fn call_with_port, %rax, %rbx
+        return
 
 call_with_output_file:          # filename, proc
-        call_with_file_template output
+        prologue
+        mov     %rsi, %rbx
+        call_fn open_output_file, %rdi
+        call_fn call_with_port, %rax, %rbx
+        return
 
 with_input_from_file:           # filename, thunk
         with_file_io_template input, stdin
@@ -848,11 +854,27 @@ error:                          # reason
 
         ## 6.13. Input and output
         ## 6.13.1. Ports
-        .globl current_error_port, open_input_string
+        .globl call_with_port, current_error_port, close_port, open_input_string
+
+call_with_port:                 # port, proc
+        prologue
+        unbox_pointer_internal %rsi, %rbx
+        mov     %rdi, %r12
+        call_fn *%rbx, %rax
+        mov     %rax, %rbx
+        call_fn close_port, %r12
+        return  %rbx
 
 current_error_port:
         tag     TAG_PORT, stderr
         ret
+
+close_port:                     # port
+        minimal_prologue
+        unbox_pointer_internal %rdi
+        call_fn fclose, %rax
+        tag     TAG_INT, %rax
+        return
 
 open_input_string:              # string
         minimal_prologue
@@ -1349,6 +1371,7 @@ init_runtime:                   # execution_stack_top, argc, argv, jit_code_debu
 
         define "error", $error
 
+        define "call-with-port", $call_with_port
         define "current-error-port", $current_error_port
         define "open-input-string", $open_input_string
 

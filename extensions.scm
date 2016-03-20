@@ -48,6 +48,14 @@
 (define (symbol=? symbol1 symbol2)
   (equal? (symbol->string symbol1) (symbol->string symbol2)))
 
+;;; 6.7. Strings
+
+(define (string-upcase string)
+  (string-map char-upcase string))
+
+(define (string-downcase string)
+  (string-map char-downcase string))
+
 ;;; 6.8. Vectors
 
 (define (vector-copy vector)
