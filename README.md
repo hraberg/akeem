@@ -73,7 +73,7 @@ assembled source to compile functions at runtime - code is data.
 
 It's worth noting that John Aycock in his
 [A Brief History of Just-In-Time](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.97.3985&rep=rep1&type=pdf)
-don't consider template based compilers to be proper JIT compilers:
+doesn't consider template based compilers to be proper JIT compilers:
 
 > As just described, template-based systems arguably do not fit our
 > description of JIT compilers, since there would appear to be no
