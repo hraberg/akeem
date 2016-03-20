@@ -1088,6 +1088,24 @@ init_runtime:                   # execution_stack_top, argc, argv, jit_code_debu
         store_pointer $5, jit_rax_to_r8_size
         store_pointer $6, jit_rax_to_r9_size
 
+        lea     jit_local_to_argument_table, %rbx
+        store_pointer $0, $jit_local_to_rax
+        store_pointer $1, $jit_local_to_rdi
+        store_pointer $2, $jit_local_to_rsi
+        store_pointer $3, $jit_local_to_rdx
+        store_pointer $4, $jit_local_to_rcx
+        store_pointer $5, $jit_local_to_r8
+        store_pointer $6, $jit_local_to_r9
+
+        lea     jit_local_to_argument_size_table, %rbx
+        store_pointer $0, jit_local_to_rax_size
+        store_pointer $1, jit_local_to_rdi_size
+        store_pointer $2, jit_local_to_rsi_size
+        store_pointer $3, jit_local_to_rdx_size
+        store_pointer $4, jit_local_to_rcx_size
+        store_pointer $5, jit_local_to_r8_size
+        store_pointer $6, jit_local_to_r9_size
+
         lea     jit_parameter_to_local_table, %rbx
         store_pointer $0, $jit_rdi_to_local
         store_pointer $1, $jit_rsi_to_local
@@ -2119,10 +2137,13 @@ jit_datum:                      # form, c-stream, environment
         ## 4.1.1. Variable references
 
 jit_symbol:                    # symbol, c-stream, environment
-        prologue env, env_size, symbol_address, symbol, local
+        mov     $0, %rcx
+jit_symbol_to_reg:             # symbol, c-stream, environment, target-reg
+        prologue env, env_size, symbol_address, symbol, local, target_reg
         mov     %rdi, symbol(%rsp)
         mov     %rsi, %r12
         mov     %rdx, env(%rsp)
+        mov     %rcx, target_reg(%rsp)
         call_fn length, %rdx
         mov     %rax, env_size(%rsp)
 
@@ -2146,6 +2167,10 @@ jit_symbol:                    # symbol, c-stream, environment
         call_fn fwrite, $jit_global_to_rax, $1, jit_global_to_rax_size, %r12
         lea     symbol_address(%rsp), %rax
         call_fn fwrite, %rax, $1, $POINTER_SIZE, %r12
+        mov     target_reg(%rsp), %rbx
+        mov     jit_rax_to_argument_table(,%rbx,POINTER_SIZE), %rax
+        mov     jit_rax_to_argument_size_table(,%rbx,POINTER_SIZE), %r11
+        call_fn fwrite, %rax, $1, %r11, %r12
         jmp     4f
 
 3:      sub     env_size(%rsp), %ebx
@@ -2153,7 +2178,10 @@ jit_symbol:                    # symbol, c-stream, environment
         shl     $POINTER_SIZE_SHIFT, %ebx
         neg     %ebx
         mov     %ebx, local(%rsp)
-        call_fn fwrite, $jit_local_to_rax, $1, jit_local_to_rax_size, %r12
+        mov     target_reg(%rsp), %rbx
+        mov     jit_local_to_argument_table(,%rbx,POINTER_SIZE), %rax
+        mov     jit_local_to_argument_size_table(,%rbx,POINTER_SIZE), %r11
+        call_fn fwrite, %rax, $1, %r11, %r12
         lea     local(%rsp), %rax
         call_fn fwrite, %rax, $1, $INT_SIZE, %r12
 
@@ -2293,11 +2321,8 @@ jit_procedure_call:             # form, c-stream, environment
         has_tag TAG_SYMBOL, %rax, store=false
         jne     7f
         call_fn car, form(%rsp)
-        call_fn jit_datum, %rax, %r12, env(%rsp)
+        call_fn jit_symbol_to_reg, %rax, %r12, env(%rsp), %rbx
         update_max_locals max_locals(%rsp)
-        mov     jit_rax_to_argument_table(,%rbx,POINTER_SIZE), %rax
-        mov     jit_rax_to_argument_size_table(,%rbx,POINTER_SIZE), %r11
-        call_fn fwrite, %rax, $1, %r11, %r12
 
         call_fn cdr, form(%rsp)
         mov     %rax, form(%rsp)
@@ -2928,6 +2953,14 @@ jit_literal_argument_size_table:
         .zero   NUMBER_OF_REGISTERS * POINTER_SIZE
 
         .align  16
+jit_local_to_argument_table:
+        .zero   NUMBER_OF_REGISTERS * POINTER_SIZE
+
+        .align  16
+jit_local_to_argument_size_table:
+        .zero   NUMBER_OF_REGISTERS * POINTER_SIZE
+
+        .align  16
 jit_rax_to_argument_table:
         .zero   NUMBER_OF_REGISTERS * POINTER_SIZE
 
@@ -3101,7 +3134,6 @@ jit_pop_\reg\()_size:
 
         .align  16
 jit_rax_to_rax:
-        nop
 jit_rax_to_rax_size:
         .quad   . - jit_rax_to_rax
         .irp reg, rdi, rsi, rdx, rcx, r8, r9
@@ -3172,11 +3204,13 @@ jit_rax_to_global:
 jit_rax_to_global_size:
         .quad   (. - jit_rax_to_global) - POINTER_SIZE
 
+        .irp reg, rax, rdi, rsi, rdx, rcx, r8, r9
         .align  16
-jit_local_to_rax:
-        mov     -0x11223344(%rbp), %rax
-jit_local_to_rax_size:
-        .quad   (. - jit_local_to_rax) - INT_SIZE
+jit_local_to_\reg\():
+        mov     -0x11223344(%rbp), %\reg
+jit_local_to_\reg\()_size:
+        .quad   (. - jit_local_to_\reg) - INT_SIZE
+        .endr
 
         .align  16
 jit_rax_to_local:
