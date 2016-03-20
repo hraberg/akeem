@@ -865,7 +865,24 @@ open_input_string:              # string
         return
 
         ## 6.14. System interface
-        .globl command_line, exit_, get_environment_variable, current_second, current_jiffy, jiffies_per_second,
+        .globl delete_file, is_file_exists, command_line, exit_, get_environment_variable, current_second, current_jiffy, jiffies_per_second,
+
+delete_file:                    # filename
+        minimal_prologue
+        call_fn unbox_string, %rdi
+        call_fn unlink, %rax
+        perror  jge
+        return  $VOID
+
+is_file_exists:                 # filename
+        minimal_prologue
+        call_fn unbox_string, %rdi
+        call_fn access, %rax, $F_OK
+        cmp     $-1, %rax
+        setne   %al
+        and     $C_TRUE, %rax
+        box_boolean_internal
+        return
 
 command_line:
         mov     command_line_arguments, %rax
@@ -890,6 +907,13 @@ exit_:                          # obj
         mov     %edi, %edi
 
 3:      call_fn exit, %rdi
+        return
+
+emergency_exit:                 # obj
+        minimal_prologue
+        default_arg TAG_INT, $1, %rdi
+        mov     %edi, %edi
+        call_fn exit, %rdi
         return
 
 get_environment_variable:       # name
@@ -1320,8 +1344,11 @@ init_runtime:                   # execution_stack_top, argc, argv, jit_code_debu
         define "current-error-port", $current_error_port
         define "open-input-string", $open_input_string
 
+        define "delete-file", $delete_file
+        define "file-exists?", $is_file_exists
         define "command-line", $command_line
         define "exit", $exit_
+        define "emergency-exit", $emergency_exit
         define "get-environment-variable", $get_environment_variable
         define "current-second", $current_second
         define "current-jiffy", $current_jiffy

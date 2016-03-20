@@ -31,6 +31,7 @@ See [this tutorial](http://community.schemewiki.org/?emacs-tutorial).
 ## What Works?
 
 * Subset of R5RS procedures.
+* A minimal set of R7RS procedures.
 * JIT for `if`, `lambda`, `set!`, `let`,
   "named `let`", `letrec` and `begin`
 * Syntax for `and`, `or`, `cond`, `case`, `let*`, `do`, `delay` and `define`.

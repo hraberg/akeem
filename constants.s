@@ -15,6 +15,9 @@
         ## stdio.h
         .equ SEEK_SET, 0
 
+        ## unistd.h
+        .equ F_OK, 0
+
         .equ ROUNDING_MODE_TRUNCATE, 0b11
 
         .equ POINTER_SIZE, 8
