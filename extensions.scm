@@ -1,4 +1,4 @@
-x(define-syntax time
+(define-syntax time
   (syntax-rules ()
     ((time body ...)
      (let ((result (begin body ...)))
