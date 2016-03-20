@@ -1070,6 +1070,24 @@ init_runtime:                   # execution_stack_top, argc, argv, jit_code_debu
         store_pointer $5, jit_literal_to_r8_size
         store_pointer $6, jit_literal_to_r9_size
 
+        lea     jit_rax_to_argument_table, %rbx
+        store_pointer $0, $jit_rax_to_rax
+        store_pointer $1, $jit_rax_to_rdi
+        store_pointer $2, $jit_rax_to_rsi
+        store_pointer $3, $jit_rax_to_rdx
+        store_pointer $4, $jit_rax_to_rcx
+        store_pointer $5, $jit_rax_to_r8
+        store_pointer $6, $jit_rax_to_r9
+
+        lea     jit_rax_to_argument_size_table, %rbx
+        store_pointer $0, jit_rax_to_rax_size
+        store_pointer $1, jit_rax_to_rdi_size
+        store_pointer $2, jit_rax_to_rsi_size
+        store_pointer $3, jit_rax_to_rdx_size
+        store_pointer $4, jit_rax_to_rcx_size
+        store_pointer $5, jit_rax_to_r8_size
+        store_pointer $6, jit_rax_to_r9_size
+
         lea     jit_parameter_to_local_table, %rbx
         store_pointer $0, $jit_rdi_to_local
         store_pointer $1, $jit_rsi_to_local
@@ -2248,10 +2266,6 @@ jit_procedure_call:             # form, c-stream, environment
         has_tag TAG_PAIR, %rax, store=false
         je      2f
 
-        call_fn car, %rbx
-        has_tag TAG_SYMBOL, %rax, store=false
-        je      2f
-
         jmp     3f
 
 2:      call_fn car, %rbx
@@ -2277,9 +2291,18 @@ jit_procedure_call:             # form, c-stream, environment
 
         call_fn car, form(%rsp)
         has_tag TAG_SYMBOL, %rax, store=false
-        je      6f
+        jne     7f
+        call_fn car, form(%rsp)
+        call_fn jit_datum, %rax, %r12, env(%rsp)
+        update_max_locals max_locals(%rsp)
+        mov     jit_rax_to_argument_table(,%rbx,POINTER_SIZE), %rax
+        mov     jit_rax_to_argument_size_table(,%rbx,POINTER_SIZE), %r11
+        call_fn fwrite, %rax, $1, %r11, %r12
 
-        jmp     7f
+        call_fn cdr, form(%rsp)
+        mov     %rax, form(%rsp)
+
+        jmp     5b
 
 6:      mov     jit_pop_argument_table(,%rbx,POINTER_SIZE), %rax
         mov     jit_pop_argument_size_table(,%rbx,POINTER_SIZE), %r11
@@ -2905,6 +2928,14 @@ jit_literal_argument_size_table:
         .zero   NUMBER_OF_REGISTERS * POINTER_SIZE
 
         .align  16
+jit_rax_to_argument_table:
+        .zero   NUMBER_OF_REGISTERS * POINTER_SIZE
+
+        .align  16
+jit_rax_to_argument_size_table:
+        .zero   NUMBER_OF_REGISTERS * POINTER_SIZE
+
+        .align  16
 jit_parameter_to_local_table:
         .zero   NUMBER_OF_REGISTERS * POINTER_SIZE
 
@@ -3066,6 +3097,19 @@ jit_pop_\reg\():
         pop    %\reg
 jit_pop_\reg\()_size:
         .quad   . - jit_pop_\reg
+        .endr
+
+        .align  16
+jit_rax_to_rax:
+        nop
+jit_rax_to_rax_size:
+        .quad   . - jit_rax_to_rax
+        .irp reg, rdi, rsi, rdx, rcx, r8, r9
+        .align  16
+jit_rax_to_\reg\():
+        mov     %rax, %\reg
+jit_rax_to_\reg\()_size:
+        .quad   . - jit_rax_to_\reg
         .endr
 
         .align  16
