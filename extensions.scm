@@ -1,5 +1,19 @@
 ;;; R7RS
 
+;;; 4.2.1. Conditionals
+
+(define-syntax when
+  (syntax-rules ()
+    ((when test result1 result2 ...)
+     (if test
+         (begin result1 result2 ...)))))
+
+(define-syntax unless
+  (syntax-rules ()
+    ((unless test result1 result2 ...)
+     (if (not test)
+         (begin result1 result2 ...)))))
+
 ;;; 6.2.6. Numerical operations
 
 (define (exact-integer? z)

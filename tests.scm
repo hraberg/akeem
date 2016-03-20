@@ -692,10 +692,24 @@
 
 ;;; R7RS
 
+;;; 4. Expressions
+
+;;; 4.2. Derived expression types
+
+;;; 4.2.1. Conditionals
+(assert (when (= 1 1.0)
+              (display "1")
+              (display "2")
+              (newline)))
+
+(assert (unless (= 1 1.0)
+                (display "1")
+                (display "2")
+                (newline)))
+
 ;;; 6.2. Numbers
 
 ;;; 6.2.6. Numerical operations
-
 (assert (exact-integer? 32))
 (assert (exact-integer? 32.0))
 
@@ -703,7 +717,6 @@
 (assert (square 2.0))
 
 ;;; 6.4. Pairs and lists
-
 (assert (make-list 2 3))
 
 (assert (let ((ls (cons 'one (cons 'two (cons 'five! '()))))) ;; should be list
@@ -717,7 +730,6 @@
 (assert a)
 
 ;;; 6.8. Vectors
-
 (assert (string->vector "ABC"))
 (assert (vector->string
     #(#\1 #\2 #\3)))
@@ -730,7 +742,6 @@
 (assert (vector-append #(a b c) #(d e f)))
 
 ;;; 6.10. Control features
-
 (assert (string-map
          (lambda (c) (integer->char (+ 1 (char->integer c))))
          "HAL"))

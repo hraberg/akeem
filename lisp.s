@@ -991,36 +991,46 @@ init_runtime:                   # execution_stack_top, argc, argv, jit_code_debu
         intern_string true_string, "#t"
         mov     %rax, boolean_string_table + POINTER_SIZE * C_TRUE
 
+        intern_string alarm_char, "#\\alarm"
         intern_string backspace_char, "#\\backspace"
-        intern_string tab_char, "#\\tab"
+        intern_string delete_char, "#\\delete"
+        intern_string escape_char, "#\\escape"
         intern_string newline_char, "#\\newline"
+        intern_string null_char, "#\\null"
         intern_string return_char, "#\\return"
         intern_string space_char, "#\\space"
+        intern_string tab_char, "#\\tab"
 
         lea     char_to_string_table, %rbx
+        store_pointer $7, alarm_char
         store_pointer $'\b, backspace_char
-        store_pointer $'\t, tab_char
+        store_pointer $127, delete_char
+        store_pointer $27, escape_char
         store_pointer $'\n, newline_char
+        store_pointer $0, null_char
         store_pointer $'\r, return_char
         store_pointer $'\ , space_char
+        store_pointer $'\t, tab_char
 
         lea     escape_char_table, %rbx
+        movb    $'a, 7(%rbx)
         movb    $'b, 8(%rbx)
         movb    $'t, 9(%rbx)
         movb    $'n, 10(%rbx)
         movb    $'r, 13(%rbx)
         movb    $'\", 34(%rbx)
-        movb    $'', 39(%rbx)
         movb    $'\\, 92(%rbx)
+        movb    $'|, 124(%rbx)
 
         lea     unescape_char_table, %rbx
+        movb    $'\a, 97(%rbx)
         movb    $'\b, 98(%rbx)
         movb    $'\t, 116(%rbx)
         movb    $'\n, 110(%rbx)
         movb    $'\r, 114(%rbx)
         movb    $'\", 34(%rbx)
-        movb    $'', 39(%rbx)
         movb    $'\\, 92(%rbx)
+        movb    $'|, 124(%rbx)
 
         lea     to_string_jump_table, %rbx
         store_pointer $TAG_DOUBLE, $double_to_string
@@ -1794,13 +1804,15 @@ char_to_string:                 # char
 char_to_machine_readable_string: # char
         prologue str, size
         mov     %edi, %ebx
-        cmp     $(SPACE_CHAR & INT_MASK), %bx
-        jg      1f
-        mov     char_to_string_table(,%ebx,POINTER_SIZE), %rax
-        test    %eax, %eax
-        jz      1f
+        test    %ebx, %ebx
+        jnz     1f
+        return  null_char
+
+1:      mov     char_to_string_table(,%ebx,POINTER_SIZE), %rax
+        test    %rax, %rax
+        jz      2f
         return
-1:      open_string_buffer str(%rsp), size(%rsp), %r12
+2:      open_string_buffer str(%rsp), size(%rsp), %r12
         xor     %al, %al
         call_fn fprintf, %r12, $machine_readable_char_format, %rbx
         string_buffer_to_string str(%rsp), size(%rsp), %r12
@@ -2050,7 +2062,7 @@ read_character:                 # c-stream, c-char
         mov     %rax, %r12
         call_fn string_length, %r12
         cmp     $1, %eax
-        je      3f
+        je      4f
 
         mov     $CHAR_TABLE_SIZE, %rbx
         unbox_pointer_internal %r12, %r12
@@ -2060,7 +2072,7 @@ read_character:                 # c-stream, c-char
         mov     char_to_string_table(,%rbx,POINTER_SIZE), %rax
         unbox_pointer_internal %rax
 
-        test    %eax, %eax
+        test    %rax, %rax
         jz      1b
 
         add     $header_size + CHAR_PREFIX_LENGTH, %rax
@@ -2071,10 +2083,20 @@ read_character:                 # c-stream, c-char
         tag     TAG_CHAR, %rbx
         return
 
-2:      call_fn error, read_error_string
+2:      mov     null_char, %rax
+        unbox_pointer_internal %rax
+        add     $header_size + CHAR_PREFIX_LENGTH, %rax
+        lea     header_size(%r12), %r11
+        call_fn strcmp, %r11, %rax
+        jnz     3b
+
+        tag     TAG_CHAR, $0
         return
 
-3:      call_fn string_ref, %r12, $ZERO_INT
+3:      call_fn error, read_error_string
+        return
+
+4:      call_fn string_ref, %r12, $ZERO_INT
         return
 
 read_quote:                     # c-stream

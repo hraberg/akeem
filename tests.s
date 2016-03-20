@@ -849,7 +849,7 @@ main:
         call_fn read, %rax
         assert  write=true
 
-        string_literal "\"H\\be\\\"l\\rlo\\nW\\\\o\\'rld\\t!\""
+        string_literal "\"H\\be\\\"l\\rlo\\nW\\\\o'rld\\t!\""
         call_fn open_input_string, %rax
         call_fn read, %rax
         assert  write=true

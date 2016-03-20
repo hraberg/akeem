@@ -29,7 +29,7 @@ A
 #\return
 #\space
 "foo"
-"H\be\"l\rlo\nW\\o\'rld\t!"
+"H\be\"l\rlo\nW\\o'rld\t!"
 ""
 #f
 #t
@@ -192,7 +192,7 @@ f
 foo
 ""
 "Hello World"
-"H\be\"l\rlo\nW\\o\'rld\t!"
+"H\be\"l\rlo\nW\\o'rld\t!"
 ()
 (#t . #f)
 (#t #f)
@@ -469,6 +469,9 @@ mISSISSIppi
 #f
 21
 20
+12
+#<void>
+#<void>
 #t
 #f
 1764
