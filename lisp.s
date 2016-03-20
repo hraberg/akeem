@@ -862,7 +862,11 @@ error:                          # reason
 
         ## 6. Standard procedures
         ## 6.14. System interface
-        .globl exit_, get_environment_variable, current_second, current_jiffy, jiffies_per_second,
+        .globl command_line, exit_, get_environment_variable, current_second, current_jiffy, jiffies_per_second,
+
+command_line:
+        mov     command_line_arguments, %rax
+        ret
 
 exit_:                          # obj
         minimal_prologue
@@ -1311,13 +1315,13 @@ init_runtime:                   # execution_stack_top, argc, argv, jit_code_debu
         define "open-input-string", $open_input_string
         define "error", $error
 
+        define "command-line", $command_line
         define "exit", $exit_
         define "get-environment-variable", $get_environment_variable
         define "current-second", $current_second
         define "current-jiffy", $current_jiffy
         define "jiffies-per-second", $jiffies_per_second
 
-        define "current-command-line-arguments", $current_command_line_arguments
         define "read-all", $read_all
         define "gc", $gc
         define "object-space-size", $object_space_size
@@ -1335,12 +1339,10 @@ init_command_line:              # argc, argv
         prologue
         mov     %rdi, %rbx
         mov     %rsi, %r12
+        mov     $NIL, %rax
+        mov     %rax, command_line_arguments
 
-        call_fn box_int, %rbx
-        call_fn make_vector, %rax
-        mov     %rax, command_line_arguments_vector
-        call_fn vector_length, %rax
-        mov     %eax, %ebx
+        mov     %ebx, %ebx
 
 1:      test    %ebx, %ebx
         jz      2f
@@ -1348,26 +1350,28 @@ init_command_line:              # argc, argv
 
         mov     (%r12,%rbx,POINTER_SIZE), %rax
         call_fn box_string, %rax
-        call_fn vector_set, command_line_arguments_vector, %rbx, %rax
+        call_fn cons, %rax, command_line_arguments
+        mov     %rax, command_line_arguments
         jmp     1b
 2:      return
 
 parse_command_line_arguments:
         prologue
-        call_fn vector_length, command_line_arguments_vector
-        cmp     $1, %eax
+        mov     command_line_arguments, %rbx
+        call_fn cdr, %rbx
+        mov     %rax, %rbx
+        is_nil_internal %rbx
         je      3f
 
-        mov     %eax, %ebx
-        mov     $1, %r12d
-1:      cmp     %ebx, %r12d
+1:      is_nil_internal %rbx
         je      2f
 
-        call_fn box_int, %r12
-        call_fn vector_ref, command_line_arguments_vector, %rax
+        call_fn car, %rbx
         call_fn load, %rax
 
-        inc     %r12d
+        call_fn cdr, %rbx
+        mov     %rax, %rbx
+
         jmp     1b
 
 2:      call_fn exit, $0
@@ -1375,11 +1379,7 @@ parse_command_line_arguments:
 
         ## Public API
         .globl object_space_size, class_of
-        .globl box_boolean, box_int, box_string, unbox, current_command_line_arguments
-
-current_command_line_arguments:
-        mov     command_line_arguments_vector, %rax
-        ret
+        .globl box_boolean, box_int, box_string, unbox
 
 void:
         mov     $VOID, %rax
@@ -3055,7 +3055,7 @@ jit_code_file_counter:
 jit_code_debug:
         .quad   0
 
-command_line_arguments_vector:
+command_line_arguments:
         .quad   0
 
         .align  16
