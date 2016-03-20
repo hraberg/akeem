@@ -42,7 +42,7 @@ See [this tutorial](http://community.schemewiki.org/?emacs-tutorial).
 * Mark and Sweep GC.
 
 
-## What doesn't work?
+## What Doesn't Work?
 
 * Almost no error handling.
 * No hygienic macro expansion.
