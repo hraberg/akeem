@@ -619,3 +619,18 @@
   (let ((return (thunk)))
     (after)
     return))
+
+;;; 6.6. Input and output
+
+;;; 6.6.1. Ports
+
+(define (call-with-input-file string proc)
+  (call-with-port (open-input-file string) proc))
+
+(define (call-with-output-file string proc)
+  (call-with-port (open-output-file string) proc))
+
+;;; 6.6.3. Output
+
+(define (newline port)
+  (write-char #\newline port))

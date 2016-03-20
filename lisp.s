@@ -678,7 +678,6 @@ interaction_environment:
 
         ## 6.6. Input and output
         ## 6.6.1. Ports
-        .globl call_with_input_file, call_with_output_file
         .globl is_input_port, is_output_port, current_input_port, current_output_port
         .globl with_input_from_file, with_output_to_file
         .globl open_input_file, open_output_file, close_input_port, close_output_port
@@ -703,20 +702,6 @@ close_input_port:               # port
 close_output_port:              # port
         minimal_prologue
         call_fn close_port, %rdi
-        return
-
-call_with_input_file:           # filename, proc
-        prologue
-        mov     %rsi, %rbx
-        call_fn open_input_file, %rdi
-        call_fn call_with_port, %rax, %rbx
-        return
-
-call_with_output_file:          # filename, proc
-        prologue
-        mov     %rsi, %rbx
-        call_fn open_output_file, %rdi
-        call_fn call_with_port, %rax, %rbx
         return
 
 with_input_from_file:           # filename, thunk
@@ -785,7 +770,7 @@ is_eof_object:                  # obj
         ret
 
         ## 6.6.3. Output
-        .globl write, display, newline, write_char
+        .globl write, display, write_char
 write:                          # obj, port
         prologue
 
@@ -812,11 +797,6 @@ display:                        # obj, port
         call_fn fprintf, %rbx, %rdi
         call_fn fflush, %rbx
         return  $VOID
-
-newline:                        # port
-        minimal_prologue
-        call_fn write_char, $NEWLINE_CHAR, %rdi
-        return
 
 write_char:                     # char, port
         minimal_prologue
@@ -1332,9 +1312,6 @@ init_runtime:                   # execution_stack_top, argc, argv, jit_code_debu
         define "null-environment", $null_environment
         define "interaction-environment", $interaction_environment
 
-        define "call-with-input-file", $call_with_input_file
-        define "call-with-output-file", $call_with_output_file
-
         define "input-port?", $is_input_port
         define "output-port?", $is_output_port
 
@@ -1357,7 +1334,6 @@ init_runtime:                   # execution_stack_top, argc, argv, jit_code_debu
 
         define "write", $write
         define "display", $display
-        define "newline", $newline
         define "write-char", $write_char
 
         define "load", $load

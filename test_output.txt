@@ -175,8 +175,6 @@ o
 5.859870
 print_foo
 f
-print_foo
-f
 #<procedure>
 42
 42

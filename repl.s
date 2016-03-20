@@ -14,7 +14,7 @@ main:
         intern_string prompt, "> "
 
         call_fn display, welcome_message
-        call_fn newline
+        call_fn display, $NEWLINE_CHAR
 
 1:      call_fn display, prompt
 
@@ -23,12 +23,12 @@ main:
         mov     %rax, %rbx
 
         call_fn write, %rax
-        call_fn newline
+        call_fn display, $NEWLINE_CHAR
 
         .if REPL_DISPLAY_CLASS
         call_fn class_of, %rbx
         call_fn display, %rax
-        call_fn newline
+        call_fn display, $NEWLINE_CHAR
         .endif
 
         call_fn gc

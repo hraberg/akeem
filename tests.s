@@ -25,7 +25,7 @@ tmp_string_\@:
         .else
         call_fn display, \value
         .endif
-        call_fn newline
+        call_fn display, $NEWLINE_CHAR
         .endm
 
         .text
@@ -760,15 +760,6 @@ main:
         call_fn cons, PI, %rax
         call_fn apply, $plus, %rax
         assert
-
-        tag     TAG_PROCEDURE, $print_foo
-        call_fn call_with_output_file, test_file, %rax
-        assert
-
-        tag     TAG_PROCEDURE, $read_foo
-        call_fn call_with_input_file, test_file, %rax
-        assert
-        call_fn unlink, $test_file_c
 
         tag     TAG_PROCEDURE, $print_foo
         call_fn with_output_to_file, test_file, %rax
