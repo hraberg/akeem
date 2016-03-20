@@ -2083,6 +2083,7 @@ read_character:                 # c-stream, c-char
         tag     TAG_CHAR, %rbx
         return
 
+        ## TODO: figure out why 0 (null) offset doesn't work here.
 2:      mov     null_char, %rax
         unbox_pointer_internal %rax
         add     $header_size + CHAR_PREFIX_LENGTH, %rax
