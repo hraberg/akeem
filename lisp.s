@@ -858,6 +858,56 @@ error:                          # reason
         call_fn exit, $1
         return
 
+        ## R7RS
+
+        ## 6. Standard procedures
+        ## 6.14. System interface
+        .globl exit_, get_environment_variable, current_second, current_jiffy, jiffies_per_second,
+
+exit_:                          # obj
+        minimal_prologue
+
+        mov     $TRUE, %r11
+        cmp     %r11, %rdi
+        jne     1f
+        mov     $0, %rdi
+        jmp     3f
+
+1:      mov     $FALSE, %r11
+        cmp     %r11, %rdi
+        jne     2f
+        mov     $1, %rdi
+        jmp     3f
+
+2:      default_arg TAG_INT, $0, %rdi
+        mov     %edi, %edi
+
+3:      call_fn exit, %rdi
+        return
+
+get_environment_variable:       # name
+        call_fn unbox_string, %rdi
+        call_fn getenv, %rax
+        call_fn box_string, %rax
+        ret
+
+current_second:
+        minimal_prologue
+        call_fn time, $NULL
+        box_int_internal
+        return
+
+current_jiffy:
+        minimal_prologue
+        call_fn clock
+        box_int_internal
+        return
+
+jiffies_per_second:
+        mov     $1000000, %rax
+        box_int_internal
+        ret
+
         ## Runtime
 
         .globl init_runtime, parse_command_line_arguments
@@ -1261,8 +1311,13 @@ init_runtime:                   # execution_stack_top, argc, argv, jit_code_debu
         define "open-input-string", $open_input_string
         define "error", $error
 
-        define "current-command-line-arguments", $current_command_line_arguments
         define "exit", $exit_
+        define "get-environment-variable", $get_environment_variable
+        define "current-second", $current_second
+        define "current-jiffy", $current_jiffy
+        define "jiffies-per-second", $jiffies_per_second
+
+        define "current-command-line-arguments", $current_command_line_arguments
         define "read-all", $read_all
         define "gc", $gc
         define "object-space-size", $object_space_size
@@ -1325,12 +1380,6 @@ parse_command_line_arguments:
 current_command_line_arguments:
         mov     command_line_arguments_vector, %rax
         ret
-
-exit_:                          # exit-code
-        minimal_prologue
-        default_arg TAG_INT, $0, %rdi
-        call_fn exit, %rdi
-        return
 
 void:
         mov     $VOID, %rax
