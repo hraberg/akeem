@@ -1020,7 +1020,6 @@ init_runtime:                   # execution_stack_top, argc, argv, jit_code_debu
         movb    $'r, 13(%rbx)
         movb    $'\", 34(%rbx)
         movb    $'\\, 92(%rbx)
-        movb    $'|, 124(%rbx)
 
         lea     unescape_char_table, %rbx
         movb    $'\a, 97(%rbx)
@@ -1030,7 +1029,6 @@ init_runtime:                   # execution_stack_top, argc, argv, jit_code_debu
         movb    $'\r, 114(%rbx)
         movb    $'\", 34(%rbx)
         movb    $'\\, 92(%rbx)
-        movb    $'|, 124(%rbx)
 
         lea     to_string_jump_table, %rbx
         store_pointer $TAG_DOUBLE, $double_to_string
