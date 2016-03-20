@@ -943,7 +943,51 @@ jiffies_per_second:
 
         ## Runtime
 
-        .globl init_runtime, parse_command_line_arguments
+        .globl main, init_runtime, parse_command_line_arguments
+
+main:
+        prologue
+
+        call_fn init_runtime, %rsp, %rdi, %rsi, $REPL_LOG_JIT
+        call_fn parse_command_line_arguments
+
+        intern_string welcome_message, "Welcome to Akeem Scheme."
+        intern_string prompt, "> "
+
+        call_fn display, welcome_message
+        call_fn display, $NEWLINE_CHAR
+
+1:      call_fn display, prompt
+
+        call_fn read
+        mov     %rax, %rbx
+        call_fn is_eof_object, %rax
+        mov     $TRUE, %r11
+        cmp     %r11, %rax
+        je      2f
+
+        call_fn eval, %rbx
+        mov     %rax, %rbx
+
+        .if REPL_DISPLAY_VOID == C_FALSE
+        is_void_internal %rax
+        je      1b
+        .endif
+
+        call_fn write, %rax
+        call_fn display, $NEWLINE_CHAR
+
+        .if REPL_DISPLAY_CLASS
+        call_fn class_of, %rbx
+        call_fn display, %rax
+        call_fn display, $NEWLINE_CHAR
+        .endif
+
+        call_fn gc
+
+        jmp     1b
+
+2:      return  $0
 
 init_runtime:                   # execution_stack_top, argc, argv, jit_code_debug
         prologue argc, argv

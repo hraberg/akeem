@@ -11,7 +11,7 @@ default: akeem
 %.o: %.s constants.s macros.s r5rs.scm extensions.scm tests.scm
 	$(AS) $< $(ASFLAGS) -o $@
 
-akeem: repl.o lisp.o
+akeem: lisp.o
 	$(CC) $^ $(CFLAGS) $(LDLIBS) -o $@
 
 # based on http://unix.stackexchange.com/a/79137
