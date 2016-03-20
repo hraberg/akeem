@@ -99,7 +99,6 @@ Most of the implementation is in
 relies heavily on
 [`macros.s`](https://github.com/hraberg/akeem/blob/master/macros.s) to
 make the code less verbose. The
-[`tests.s`](https://github.com/hraberg/akeem/blob/master/tests.s) and
 [`tests.scm`](https://github.com/hraberg/akeem/blob/master/tests.scm)
 are compared to
 [`test_output.txt`](https://github.com/hraberg/akeem/blob/master/test_output.txt)
