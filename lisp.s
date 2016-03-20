@@ -2218,13 +2218,20 @@ jit_quote:                      # form, c-stream, environment
         return
 
 jit_literal:                    # literal, c-stream, environment
-        prologue env, literal
+        mov     $0, %rcx
+jit_literal_to_reg:       # literal, c-stream, environment, target-reg
+        prologue env, literal, target_reg
         mov     %rdi, literal(%rsp)
         mov     %rsi, %r12
         mov     %rdx, env(%rsp)
+        mov     %rcx, target_reg(%rsp)
 
         call_fn jit_maybe_add_to_constant_pool, %rdi
-        call_fn fwrite, $jit_literal_to_rax, $1, jit_literal_to_rax_size, %r12
+
+        mov     target_reg(%rsp), %rbx
+        mov     jit_literal_argument_table(,%rbx,POINTER_SIZE), %rax
+        mov     jit_literal_argument_size_table(,%rbx,POINTER_SIZE), %r11
+        call_fn fwrite, %rax, $1, %r11, %r12
         lea     literal(%rsp), %rax
         call_fn fwrite, %rax, $1, $POINTER_SIZE, %r12
 
@@ -2507,19 +2514,13 @@ jit_lambda:                     # form, c-stream, environment
         call_fn cons, begin_symbol, %rax
 
         call_fn jit_code, %rax, env(%rsp), args(%rsp)
-        call_fn jit_literal, %rax, %r12, $NIL
-        call_fn fwrite, $jit_push_rax, $1, jit_push_rax_size, %r12
-        call_fn fwrite, $jit_pop_rdi, $1, jit_pop_rdi_size, %r12
+        call_fn jit_literal_to_reg, %rax, %r12, $NIL, $RDI
 
         call_fn length, args(%rsp)
-        call_fn jit_literal, %rax, %r12, $NIL
-        call_fn fwrite, $jit_push_rax, $1, jit_push_rax_size, %r12
-        call_fn fwrite, $jit_pop_rsi, $1, jit_pop_rsi_size, %r12
+        call_fn jit_literal_to_reg, %rax, %r12, $NIL, $RSI
 
         call_fn length, env(%rsp)
-        call_fn jit_literal, %rax, %r12, $NIL
-        call_fn fwrite, $jit_push_rax, $1, jit_push_rax_size, %r12
-        call_fn fwrite, $jit_pop_rdx, $1, jit_pop_rdx_size, %r12
+        call_fn jit_literal_to_reg, %rax, %r12, $NIL, $RDX
 
         mov     $jit_lambda_factory, %rax
         call_fn jit_literal, %rax, %r12, $NIL
@@ -2689,18 +2690,12 @@ jit_named_let_syntax_factory:   # target, form, original-env
         perror
         mov     %rax, %rbx
 
-        call_fn jit_literal, %r12, %rbx, $NIL
-        call_fn fwrite, $jit_push_rax, $1, jit_push_rax_size, %rbx
-        call_fn fwrite, $jit_pop_rcx, $1, jit_pop_rcx_size, %rbx
+        call_fn jit_literal_to_reg, %r12, %rbx, $NIL, $RCX
 
         call_fn car, form(%rsp)
-        call_fn jit_literal, %rax, %rbx, $NIL
-        call_fn fwrite, $jit_push_rax, $1, jit_push_rax_size, %rbx
-        call_fn fwrite, $jit_pop_r8, $1, jit_pop_r8_size, %rbx
+        call_fn jit_literal_to_reg, %rax, %rbx, $NIL, $R8
 
-        call_fn jit_literal, original_env(%rsp), %rbx, $NIL
-        call_fn fwrite, $jit_push_rax, $1, jit_push_rax_size, %rbx
-        call_fn fwrite, $jit_pop_r9, $1, jit_pop_r9_size, %rbx
+        call_fn jit_literal_to_reg, original_env(%rsp), %rbx, $NIL, $R9
 
         mov     $jit_named_let_syntax, %rax
         call_fn jit_literal, %rax, %rbx, $NIL
@@ -2774,8 +2769,7 @@ jit_letrec:                     # form, c-stream, environment
         call_fn car, %rax
 
         call_fn jit_datum, %rax, %r12, full_env(%rsp)
-        call_fn fwrite, $jit_push_rax, $1, jit_push_rax_size, %r12
-        call_fn fwrite, $jit_pop_rdi, $1, jit_pop_rdi_size, %r12
+        call_fn fwrite, $jit_rax_to_rdi, $1, jit_rax_to_rdi_size, %r12
 
         call_fn car, %rbx
         call_fn cdr, %rax
@@ -2784,14 +2778,10 @@ jit_letrec:                     # form, c-stream, environment
         call_fn car, %rax
 
         call_fn length, %rax
-        call_fn jit_literal, %rax, %r12, $NIL
-        call_fn fwrite, $jit_push_rax, $1, jit_push_rax_size, %r12
-        call_fn fwrite, $jit_pop_rsi, $1, jit_pop_rsi_size, %r12
+        call_fn jit_literal_to_reg, %rax, %r12, $NIL, $RSI
 
         call_fn length, full_env(%rsp)
-        call_fn jit_literal, %rax, %r12, $NIL
-        call_fn fwrite, $jit_push_rax, $1, jit_push_rax_size, %r12
-        call_fn fwrite, $jit_pop_rdx, $1, jit_pop_rdx_size, %r12
+        call_fn jit_literal_to_reg, %rax, %r12, $NIL, $RDX
 
         mov     $jit_lambda_patch_factory, %rax
         call_fn jit_literal, %rax, %r12, $NIL
@@ -2879,9 +2869,7 @@ jit_call_with_current_continuation_escape_factory: # jmp-buffer
         perror
         mov     %rax, %rbx
 
-        call_fn jit_literal, %r12, %rbx, $NIL
-        call_fn fwrite, $jit_push_rax, $1, jit_push_rax_size, %rbx
-        call_fn fwrite, $jit_pop_rsi, $1, jit_pop_rsi_size, %rbx
+        call_fn jit_literal_to_reg, %r12, %rbx, $NIL, $RSI
 
         call_fn jit_literal, $jit_call_with_current_continuation_escape, %rbx, $NIL
         call_fn fwrite, $jit_jump_rax, $1, jit_jump_rax_size, %rbx

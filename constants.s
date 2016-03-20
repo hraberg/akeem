@@ -78,6 +78,14 @@
         .equ NUMBER_OF_REGISTERS, 16
         .equ MAX_REGISTER_ARGS, 6
 
+        .equ RAX, 0
+        .equ RDI, 1
+        .equ RSI, 2
+        .equ RDX, 3
+        .equ RCX, 4
+        .equ R8, 5
+        .equ R9, 6
+
         .equ REPL_DISPLAY_CLASS, C_FALSE
         .equ REPL_LOG_JIT, C_FALSE
 
