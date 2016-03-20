@@ -689,3 +689,44 @@
 (assert (let ((f (eval '(lambda (f x) (f x x))
                        (null-environment 5))))
           (f + 10)))
+
+
+;;; R7RS
+
+;;; 6.4. Pairs and lists
+
+(assert (make-list 2 3))
+
+(assert (let ((ls (cons 'one (cons 'two (cons 'five! '()))))) ;; should be list
+          (list-set! ls 2 'three)
+          ls))
+
+(define a '(1 8 2 8))
+(define b (list-copy a))
+(set-car! b 3)
+(assert b)
+(assert a)
+
+;;; 6.8. Vectors
+
+(assert (string->vector "ABC"))
+(assert (vector->string
+    #(#\1 #\2 #\3)))
+
+(define a #(1 8 2 8))
+(define b (vector-copy a))
+(vector-set! b 0 3)
+(assert b)
+
+(assert (vector-append #(a b c) #(d e f)))
+
+;;; 6.10. Control features
+
+(assert (string-map
+         (lambda (c) (integer->char (+ 1 (char->integer c))))
+         "HAL"))
+
+(assert (vector-map cadr '#((a b) (d e) (g h))))
+
+(assert (vector-map (lambda (n) (expt n n))
+                    '#(1 2 3 4 5)))

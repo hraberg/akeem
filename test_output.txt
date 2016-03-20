@@ -469,4 +469,15 @@ mISSISSIppi
 #f
 21
 20
+(3 3)
+(one two three)
+(3 8 2 8)
+(1 8 2 8)
+#(#\A #\B #\C)
+"123"
+#(3 8 2 8)
+#(a b c d e f)
+"IBM"
+#(b e h)
+#(1 4 27 256 3125)
 ;;; tests.scm end
