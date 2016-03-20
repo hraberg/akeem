@@ -11,20 +11,17 @@ default: akeem
 %.o: %.s constants.s macros.s r5rs.scm extensions.scm tests.scm
 	$(AS) $< $(ASFLAGS) -o $@
 
-tests: tests.o lisp.o
-	$(CC) $^ $(CFLAGS) $(LDLIBS) -o $@
-
 akeem: repl.o lisp.o
 	$(CC) $^ $(CFLAGS) $(LDLIBS) -o $@
 
 # based on http://unix.stackexchange.com/a/79137
-run-tests: tests
-	./$< | diff -y -W250 test_output.txt - | expand | grep --color=always -nEC1 '^.{123} [|<>]( |$$)' \
+run-tests: akeem
+	./$<  tests.scm | diff -y -W250 test_output.txt - | expand | grep --color=always -nEC1 '^.{123} [|<>]( |$$)' \
 		&& echo Tests FAILED \
 		|| echo `cat test_output.txt | grep -v ';;;' | wc -l` Tests PASSED
 
-run-tests-catchsegv: tests
-	catchsegv ./$<
+run-tests-catchsegv: akeem
+	catchsegv ./$< tests.scm
 
 /usr/bin/rlwrap:
 	sudo apt-get install -y rlwrap
@@ -58,7 +55,7 @@ release: CFLAGS += -s
 release: clean akeem
 
 clean:	jit-clean
-	rm -f tests akeem *.o
+	rm -f akeem *.o
 
 check: run-tests
 
