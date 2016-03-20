@@ -2,17 +2,20 @@
   (write x)
   (newline))
 
-;;; 1. Overview of Scheme
+(define (spec x)
+  (display x)
+  (newline))
 
-;;; 1.3. Notation and terminology
-
-;;; 1.3.4. Evaluation examples
+(spec ";;; R5RS")
+(spec ";;; 1. Overview of Scheme")
+(spec ";;; 1.3. Notation and terminology")
+(spec ";;; 1.3.4. Evaluation examples")
 
 (assert (* 5 8))
 
-;;; 2. Lexical conventions
+(assert ";;; 2. Lexical conventions")
 
-;;; 2.2. Whitespace and comments
+(assert ";;; 2.2. Whitespace and comments")
 
 ;;; The FACT procedure computes the factorial
 ;;; of a non-negative integer.
@@ -23,15 +26,13 @@
         (* n (fact (- n 1))))))
 (assert (fact 10)) ;; not an actual example
 
-;;; 4. Expressions
-
-;;; 4.1. Primitive expression types
-
-;;; 4.1.1. Variable references
+(spec ";;; 4. Expressions")
+(spec ";;; 4.1. Primitive expression types")
+(spec ";;; 4.1.1. Variable references")
 (define x 28)
 (assert x)
 
-;;; 4.1.2. Literal expressions
+(spec ";;; 4.1.2. Literal expressions")
 (assert (quote a))
 (assert (quote #(a b c)))
 (assert (quote (+ 1 2)))
@@ -50,11 +51,11 @@
 (assert '#t)
 (assert #t)
 
-;;; 4.1.3. Procedure calls
+(spec ";;; 4.1.3. Procedure calls")
 (assert (+ 3 4))
 (assert ((if #f + *) 3 4))
 
-;;; 4.1.4. Procedures
+(spec ";;; 4.1.4. Procedures")
 (assert (lambda (x) (+ x x)))
 (assert ((lambda (x) (+ x x)) 4))
 
@@ -67,22 +68,21 @@
     (lambda (y) (+ x y))))
 (assert (add4 6))
 
-;;; 4.1.5. Conditionals
+(spec ";;; 4.1.5. Conditionals")
 (assert (if (> 3 2) 'yes 'no))
 (assert (if (> 2 3) 'yes 'no))
 (assert (if (> 3 2)
             (- 3 2)
             (+ 3 2)))
 
-;;; 4.1.6. Assignments
+(spec ";;; 4.1.6. Assignments")
 (define x 2)
 (assert (+ x 1))
 (assert (set! x 4))
 (assert (+ x 1))
 
-;;; 4.2. Derived expression types
-
-;;; 4.2.1. Conditionals
+(spec ";;; 4.2. Derived expression types")
+(spec ";;; 4.2.1. Conditionals")
 (assert (cond ((> 3 2) 'greater)
               ((< 3 2) 'less)))
 (assert (cond ((> 3 3) 'greater)
@@ -114,7 +114,7 @@
 (assert (or (memq 'b '(a b c))
             (/ 3 0)))
 
-;;; 4.2.2. Binding constructs
+(spec ";;; 4.2.2. Binding constructs")
 (assert (let ((x 2) (y 3))
           (* x y)))
 (assert (let ((x 2) (y 3))
@@ -137,8 +137,7 @@
                         (even? (- n 1))))))
           (even? 88)))
 
-;;; 4.2.3. Sequencing
-
+(spec ";;; 4.2.3. Sequencing")
 (define x 0)
 (assert (begin (set! x 5)
                (+ x 1)))
@@ -168,7 +167,7 @@
                        nonneg
                        (cons (car numbers) neg))))))
 
-;;; 4.2.6. Quasiquotation
+(spec ";;; 4.2.6. Quasiquotation")
 
 (assert `(list ,(+ 1 2) 4))
 (assert (let ((name 'a)) `(list ,name ',name)))
@@ -184,9 +183,8 @@
 (assert (quasiquote (list (unquote (+ 1 2)) 4)))
 (assert '(quasiquote (list (unquote (+ 1 2)) 4)))
 
-;;; 4.3. Macros
-
-;;; 4.3.1. Binding constructs for syntactic keywords
+(spec ";;; 4.3. Macros")
+(spec ";;; 4.3.1. Binding constructs for syntactic keywords")
 
 ;; (assert (let-syntax ((when (syntax-rules ()
 ;;                              ((when test stmt1 stmt2 ...)
@@ -221,34 +219,31 @@
 ;;                    (if y)
 ;;                    y))))
 
-;;; 4.3.2. Pattern language
+(spec ";;; 4.3.2. Pattern language")
 
 (assert (let ((=> #f))
           (cond (#t => 'ok))))
 
-;;; 5. Program structure
+(spec ";;; 5. Program structure")
+(spec ";;; 5.1. Programs")
 
-;;; 5.1. Programs
 
-;;; 5.2. Definitions
-
-;;; 5.2.1. Top level definitions
+(spec ";;; 5.2. Definitions")
+(spec ";;; 5.2.1. Top level definitions")
 (define add3
   (lambda (x) (+ x 3)))
 (assert (add3 3))
 (define first car)
 (assert (first '(1 2)))
 
-;;;5.2.2. Internal definitions
-
+;; (assert ";;;5.2.2. Internal definitions")
 ;; (assert (let ((x 5))
 ;;           (define foo (lambda (y) (bar x y)))
 ;;           (define bar (lambda (a b) (+ (* a b) a)))
 ;;           (foo (+ x 3))))
 
-;;; 6. Standard procedures
-
-;;; 6.1. Equivalence predicates
+(spec ";;; 6. Standard procedures")
+(spec ";;; 6.1. Equivalence predicates")
 (assert (string=? (symbol->string 'foo)
                   (symbol->string 'foo)))
 
@@ -333,9 +328,8 @@
 (assert (equal? (lambda (x) x)
                 (lambda (y) y)))
 
-;;; 6.2. Numbers
-
-;;; 6.2.5. Numerical operations
+(spec ";;; 6.2. Numbers")
+(spec ";;; 6.2.5. Numerical operations")
 ;; (assert (complex? 3+4i))
 (assert (complex? 3))
 (assert (real? 3))
@@ -404,7 +398,7 @@
 ;;          (inexact->exact .3) 1/10))
 ;; (assert (rationalize .3 1/10))
 
-;;; 6.2.6. Numerical input and output
+(spec ";;; 6.2.6. Numerical input and output")
 (assert (let ((number 20)
               (radix 16))
           (eqv? number
@@ -417,9 +411,8 @@
 (assert (string->number "1e2"))
 ;; (assert (string->number "15##"))
 
-;;; 6.3. Other data types
-
-;;; 6.3.1. Booleans
+(spec ";;; 6.3. Other data types")
+(spec ";;; 6.3.1. Booleans")
 (assert #t)
 (assert #f)
 (assert '#f)
@@ -436,7 +429,7 @@
 (assert (boolean? 0))
 (assert (boolean? '()))
 
-;;; 6.3.2. Pairs and lists
+(spec ";;; 6.3.2. Pairs and lists")
 (define x '(a b c)) ;; should not be constant
 (define y x)
 (assert y)
@@ -520,7 +513,7 @@
 (assert (assq 5 '((2 3) (5 7) (11 13))))
 (assert (assv 5 '((2 3) (5 7) (11 13))))
 
-;;; 6.3.3. Symbols
+(spec ";;; 6.3.3. Symbols")
 (assert (symbol? 'foo))
 (assert (symbol? (car '(a b))))
 (assert (symbol? "bar"))
@@ -544,13 +537,13 @@
                   (symbol->string
                    (string->symbol "K. Harper, M.D."))))
 
-;;; 6.3.4. Characters
+(spec ";;; 6.3.4. Characters")
 (assert (<= (char->integer #\a)
             (char->integer #\a)))
 (assert (char<=? (integer->char x)
                  (integer->char y)))
 
-;;; 6.3.5. Strings
+(spec ";;; 6.3.5. Strings")
 (define (f) (make-string 3 #\*))
 ;; (define (g) "***")
 (assert (string-set! (f) 0 #\?))
@@ -559,7 +552,7 @@
 ;;                      0
 ;;                      #\?))
 
-;;; 6.3.6. Vectors
+(spec ";;; 6.3.6. Vectors")
 (assert '#(0 (2 2 2 2) "Anna"))
 
 ;; (vector 'a 'b 'c)
@@ -580,7 +573,7 @@
 (assert (vector->list '#(dah dah didah)))
 (assert (list->vector '(dididit dah)))
 
-;;; 6.4. Control features
+(spec ";;; 6.4. Control features")
 (assert (procedure? car))
 (assert (procedure? 'car))
 (assert (procedure? (lambda (x) (* x x))))
@@ -684,19 +677,16 @@
 ;;                 (c 'talk2)
 ;;                 (reverse path)))))
 
-;;; 6.5. Eval
+(spec ";;; 6.5. Eval")
 (assert (eval '(* 7 3) (scheme-report-environment 5)))
 (assert (let ((f (eval '(lambda (f x) (f x x))
                        (null-environment 5))))
           (f + 10)))
 
-;;; R7RS
-
-;;; 4. Expressions
-
-;;; 4.2. Derived expression types
-
-;;; 4.2.1. Conditionals
+(spec ";;; R7RS")
+(spec ";;; 4. Expressions")
+(spec ";;; 4.2. Derived expression types")
+(spec ";;; 4.2.1. Conditionals")
 (assert (when (= 1 1.0)
               (display "1")
               (display "2")
@@ -707,16 +697,15 @@
                 (display "2")
                 (newline)))
 
-;;; 6.2. Numbers
-
-;;; 6.2.6. Numerical operations
+(spec ";;; 6.2. Numbers")
+(spec ";;; 6.2.6. Numerical operations")
 (assert (exact-integer? 32))
 (assert (exact-integer? 32.0))
 
 (assert (square 42))
 (assert (square 2.0))
 
-;;; 6.4. Pairs and lists
+(spec ";;; 6.4. Pairs and lists")
 (assert (make-list 2 3))
 
 (assert (let ((ls (cons 'one (cons 'two (cons 'five! '()))))) ;; should be list
@@ -729,7 +718,7 @@
 (assert b)
 (assert a)
 
-;;; 6.8. Vectors
+(spec ";;; 6.8. Vectors")
 (assert (string->vector "ABC"))
 (assert (vector->string
     #(#\1 #\2 #\3)))
@@ -741,7 +730,7 @@
 
 (assert (vector-append #(a b c) #(d e f)))
 
-;;; 6.10. Control features
+(spec ";;; 6.10. Control features")
 (assert (string-map
          (lambda (c) (integer->char (+ 1 (char->integer c))))
          "HAL"))

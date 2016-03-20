@@ -1,6 +1,16 @@
+;;; R5RS
+;;; 1. Overview of Scheme
+;;; 1.3. Notation and terminology
+;;; 1.3.4. Evaluation examples
 40
+";;; 2. Lexical conventions"
+";;; 2.2. Whitespace and comments"
 3628800
+;;; 4. Expressions
+;;; 4.1. Primitive expression types
+;;; 4.1.1. Variable references
 28
+;;; 4.1.2. Literal expressions
 a
 #(a b c)
 (+ 1 2)
@@ -16,18 +26,24 @@ a
 145932
 #t
 #t
+;;; 4.1.3. Procedure calls
 7
 12
+;;; 4.1.4. Procedures
 #<procedure>
 8
 3
 10
+;;; 4.1.5. Conditionals
 yes
 no
 1
+;;; 4.1.6. Assignments
 3
 #<void>
 5
+;;; 4.2. Derived expression types
+;;; 4.2.1. Conditionals
 greater
 equal
 2
@@ -42,15 +58,18 @@ consonant
 #t
 #f
 (b c)
+;;; 4.2.2. Binding constructs
 6
 35
 70
 #t
+;;; 4.2.3. Sequencing
 6
 4 plus 1 equals 5
 #(0 1 2 3 4)
 25
 ((6 1 3) (-5 -2))
+;;; 4.2.6. Quasiquotation
 (list 3 4)
 (list a (quote a))
 (a 3 4 5 6 b)
@@ -58,9 +77,18 @@ consonant
 #(10 5 2 4 3 8)
 (list 3 4)
 (quasiquote (list (unquote (+ 1 2)) 4))
+;;; 4.3. Macros
+;;; 4.3.1. Binding constructs for syntactic keywords
+;;; 4.3.2. Pattern language
 ok
+;;; 5. Program structure
+;;; 5.1. Programs
+;;; 5.2. Definitions
+;;; 5.2.1. Top level definitions
 6
 1
+;;; 6. Standard procedures
+;;; 6.1. Equivalence predicates
 #t
 #f
 #t
@@ -105,6 +133,8 @@ ok
 #t
 #t
 #f
+;;; 6.2. Numbers
+;;; 6.2.5. Numerical operations
 #t
 #t
 #t
@@ -135,10 +165,13 @@ ok
 3.000000
 4.000000
 7
+;;; 6.2.6. Numerical input and output
 #t
 100
 256
 100.000000
+;;; 6.3. Other data types
+;;; 6.3.1. Booleans
 #t
 #f
 #f
@@ -150,6 +183,7 @@ ok
 #t
 #f
 #f
+;;; 6.3.2. Pairs and lists
 (a b c)
 #t
 #<void>
@@ -201,6 +235,7 @@ c
 ((a))
 (5 7)
 (5 7)
+;;; 6.3.3. Symbols
 #t
 #t
 #f
@@ -215,15 +250,19 @@ mISSISSIppi
 #f
 #t
 #t
+;;; 6.3.4. Characters
 #t
 #t
+;;; 6.3.5. Strings
 #<void>
+;;; 6.3.6. Vectors
 #(0 (2 2 2 2) "Anna")
 8
 13
 #(0 ("Sue" "Sue") "Anna")
 (dah dah didah)
 #(dididit dah)
+;;; 6.4. Control features
 #t
 #f
 #t
@@ -245,23 +284,33 @@ mISSISSIppi
 -3
 4
 #f
+;;; 6.5. Eval
 21
 20
+;;; R7RS
+;;; 4. Expressions
+;;; 4.2. Derived expression types
+;;; 4.2.1. Conditionals
 12
 #<void>
 #<void>
+;;; 6.2. Numbers
+;;; 6.2.6. Numerical operations
 #t
 #f
 1764
 4.000000
+;;; 6.4. Pairs and lists
 (3 3)
 (one two three)
 (3 8 2 8)
 (1 8 2 8)
+;;; 6.8. Vectors
 #(#\A #\B #\C)
 "123"
 #(3 8 2 8)
 #(a b c d e f)
+;;; 6.10. Control features
 "IBM"
 #(b e h)
 #(1 4 27 256 3125)
