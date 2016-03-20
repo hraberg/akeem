@@ -2,6 +2,8 @@
   (syntax-rules ()
     ((time body ...)
      (let ((result (begin body ...)))
+       (display result)
+       (newline)
        result))))
 
 ;;; SRFI 1: List Library
