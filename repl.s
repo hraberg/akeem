@@ -19,8 +19,19 @@ main:
 1:      call_fn display, prompt
 
         call_fn read
-        call_fn eval, %rax
         mov     %rax, %rbx
+        call_fn is_eof_object, %rax
+        mov     $TRUE, %r11
+        cmp     %r11, %rax
+        je      2f
+
+        call_fn eval, %rbx
+        mov     %rax, %rbx
+
+        .if REPL_DISPLAY_VOID == C_FALSE
+        is_void_internal %rax
+        je      1b
+        .endif
 
         call_fn write, %rax
         call_fn display, $NEWLINE_CHAR
@@ -35,4 +46,4 @@ main:
 
         jmp     1b
 
-        return  $0
+2:      return  $0

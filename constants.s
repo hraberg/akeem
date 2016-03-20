@@ -90,6 +90,7 @@
         .equ R9, 6
 
         .equ REPL_DISPLAY_CLASS, C_FALSE
+        .equ REPL_DISPLAY_VOID, C_FALSE
         .equ REPL_LOG_JIT, C_FALSE
 
         .struct 0
