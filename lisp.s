@@ -2622,7 +2622,7 @@ jit_lambda_hide_args_in_env:    # environment, arguments
 5:      return  env(%rsp)
 
 jit_lambda:                     # form, c-stream, environment
-        prologue env, args, body
+        prologue env, args, body, lambda
         mov     %rdi, %rbx
         mov     %rsi, %r12
         mov     %rdx, env(%rsp)
@@ -2639,7 +2639,12 @@ jit_lambda:                     # form, c-stream, environment
         call_fn cons, begin_symbol, %rax
 
         call_fn jit_code, %rax, env(%rsp), args(%rsp)
-        call_fn jit_literal_to_reg, %rax, %r12, $NIL, $RDI
+        mov     %rax, lambda(%rsp)
+        call_fn length, env(%rsp)
+        test    %eax, %eax
+        jz      1f
+
+        call_fn jit_literal_to_reg, lambda(%rsp), %r12, $NIL, $RDI
 
         call_fn length, args(%rsp)
         call_fn jit_literal_to_reg, %rax, %r12, $NIL, $RSI
@@ -2651,6 +2656,11 @@ jit_lambda:                     # form, c-stream, environment
         call_fn jit_literal, %rax, %r12, $NIL
         call_fn fwrite, $jit_call_rax, $1, jit_call_rax_size, %r12
 
+        call_fn length, env(%rsp)
+        return
+
+1:      tag     TAG_PROCEDURE, lambda(%rsp)
+        call_fn jit_literal, %rax, %r12, $NIL
         call_fn length, env(%rsp)
         return
 
