@@ -9,7 +9,7 @@ RACKET_BENCHMARKS = ctak nothing nqueens puzzle tak takr
 
 default: akeem
 
-%.o: %.s constants.s macros.s r5rs.scm extensions.scm tests.scm
+%.o: %.s constants.s macros.s r5rs.scm extensions.scm
 	$(AS) $< $(ASFLAGS) -o $@
 
 akeem: lisp.o
