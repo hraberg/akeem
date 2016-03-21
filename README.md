@@ -109,9 +109,10 @@ for simple unit testing. To run and keep watching the tests (uses
 make retest
 ```
 
-Part of the implementation is in
+Part of the implementation are in
 [`r5rs.scm`](https://github.com/hraberg/akeem/blob/master/r5rs.scm)
-which gets embedded as a string during compilation and is loaded at
+and [`r7rs.scm`](https://github.com/hraberg/akeem/blob/master/r7rs.scm)
+which are embedded as strings during compilation and is loaded at
 startup.
 
 While running, the result of the JIT is logged into `jit_code`, and
