@@ -41,9 +41,9 @@ benchmark: akeem
 	cd $(RACKET_BENCHMARKS_HOME) ; \
 	for test in $(RACKET_BENCHMARKS) ; do \
 		echo $$test.rkt ; \
-		time -p `which racket` $$test.rkt 2>&1 ; \
+		time -p `which racket` $$test.rkt ; \
 		echo $$test.sch ; \
-		time -p $(AKEEM) $$test.sch 2>&1 ; \
+		time -p $(AKEEM) $$test.sch ; \
 	done
 
 jit-dissassmble:
