@@ -41,10 +41,8 @@ retest: /usr/bin/entr
 benchmark: akeem
 	cd $(RACKET_BENCHMARKS_HOME) ; \
 	for test in $(RACKET_BENCHMARKS) ; do \
-		echo $$test.rkt ; \
-		time -p $(RACKET) $$test.rkt ; \
-		echo $$test.sch ; \
-		time -p $(AKEEM) $$test.sch ; \
+		echo $$test.rkt ; time -p $(RACKET) $$test.rkt ; \
+		echo $$test.sch ; time -p $(AKEEM) $$test.sch ; \
 	done
 
 jit-dissassmble:
