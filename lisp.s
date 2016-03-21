@@ -1392,6 +1392,10 @@ init_runtime:                   # execution_stack_top, argc, argv, jit_code_debu
 
         define "load", $load
 
+        call_fn box_string, $boot_scm
+        call_fn open_input_string, %rax
+        call_fn read_all, %rax
+
         call_fn box_string, $r5rs_scm
         call_fn open_input_string, %rax
         call_fn read_all, %rax
@@ -3372,12 +3376,9 @@ jit_rax_to_closure:
 jit_rax_to_closure_size:
         .quad   (. - jit_rax_to_closure) - INT_SIZE
 
+        .irp file, boot r5rs, r7rs
         .align  16
-r5rs_scm:
-        .incbin "r5rs.scm"
+\file\()_scm:
+        .incbin "\file\().scm"
         .byte   0
-
-        .align  16
-r7rs_scm:
-        .incbin "r7rs.scm"
-        .byte   0
+        .endr

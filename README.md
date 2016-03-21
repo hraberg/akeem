@@ -109,7 +109,8 @@ for simple unit testing. To run and keep watching the tests (uses
 make retest
 ```
 
-Part of the implementation are in
+Parts of the implementation are in
+[`boot.scm`](https://github.com/hraberg/akeem/blob/master/boot.scm),
 [`r5rs.scm`](https://github.com/hraberg/akeem/blob/master/r5rs.scm)
 and [`r7rs.scm`](https://github.com/hraberg/akeem/blob/master/r7rs.scm)
 which are embedded as strings during compilation and is loaded at
