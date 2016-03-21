@@ -5,8 +5,9 @@ AKEEM = $(PWD)/akeem
 
 RACKET = `which racket`
 RACKET_HOME = ../racket
-RACKET_BENCHMARKS_HOME = $(RACKET_HOME)/pkgs/racket-benchmarks/tests/racket/benchmarks/common/
+RACKET_BENCHMARKS_HOME = $(RACKET_HOME)/pkgs/racket-benchmarks/tests/racket/benchmarks/common
 RACKET_BENCHMARKS = ctak nothing nqueens puzzle tak takr
+RUN_RACKET_BENCHMARKS = true
 
 default: akeem
 
@@ -41,9 +42,15 @@ retest: /usr/bin/entr
 benchmark: akeem
 	cd $(RACKET_BENCHMARKS_HOME) ; \
 	for test in $(RACKET_BENCHMARKS) ; do \
-		echo $$test.rkt ; time -p $(RACKET) $$test.rkt ; \
+		test -n '$(RUN_RACKET_BENCHMARKS)' && (echo $$test.rkt ; time -p $(RACKET) $$test.rkt) ; \
 		echo $$test.sch ; time -p $(AKEEM) $$test.sch ; \
 	done
+
+profile: RACKET_BENCHMARKS = nqueens
+profile: RUN_RACKET_BENCHMARKS =
+profile: CFLAGS += -pg
+profile: clean akeem benchmark
+	gprof -b $(AKEEM) $(RACKET_BENCHMARKS_HOME)/gmon.out
 
 jit-dissassmble:
 	objdump -b binary -D -mi386:x86-64 jit_code/jit_code_*.bin
@@ -55,9 +62,9 @@ release: CFLAGS += -s
 release: clean akeem
 
 clean:	jit-clean
-	rm -f akeem *.o
+	rm -f akeem *.o $(RACKET_BENCHMARKS_HOME)/gmon.out
 
 check: run-tests
 
-.PHONY: run-tests run-tests-catchsegv run-repl retest benchmark jit-clean jit-dissassmble clean check release
+.PHONY: run-tests run-tests-catchsegv run-repl retest benchmark profile jit-clean jit-dissassmble clean check release
 .SILENT: benchmark
