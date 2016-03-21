@@ -136,7 +136,7 @@ make run-tests-catchsegv
 You can run a small set of the Racket benchmarks using:
 
 ``` bash
-RACKET_HOME=/path/to/racket make benchmarks
+make RACKET_HOME=/path/to/racket benchmarks
 ```
 The `racket` executable itself is assumed to be on the path. Akeem can
 currently run about 10% of the benchmarks, and is about 3 times slower
