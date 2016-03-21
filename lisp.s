@@ -929,13 +929,18 @@ emergency_exit:                 # obj
         return
 
 get_environment_variable:       # name
+        minimal_prologue
         call_fn unbox_string, %rdi
         call_fn getenv, %rax
-        call_fn box_string, %rax
-        ret
+        test    %rax, %rax
+        jnz     1f
+        return  $FALSE
+
+1:      call_fn box_string, %rax
+        return
 
 get_environment_variables:
-        mov     environment, %rax
+        mov     environment_alist, %rax
         ret
 
 current_second:
@@ -1405,7 +1410,8 @@ main:                # argc, argv
         mov     %rax, command_line_arguments
 
         call_fn box_string_array_as_list, environ
-        mov     %rax, environment
+        call_fn build_environment_alist, %rax
+        mov     %rax, environment_alist
 
         call_fn box_string, $init_scm
         call_fn open_input_string, %rax
@@ -1413,7 +1419,7 @@ main:                # argc, argv
 
         return  $0
 
-box_string_array_as_list:       # string-array
+box_string_array_as_list:       # c-string-array
         prologue strings
         mov     %rdi, %r12
         mov     $NIL, %rax
@@ -1435,6 +1441,42 @@ box_string_array_as_list:       # string-array
 2:      call_fn reverse, strings(%rsp)
         call_fn jit_add_to_constant_pool, %rax
         return  %rax
+
+build_environment_alist:        # list
+        prologue env_var, env_var_name, save_ptr
+        mov     %rdi, %rbx
+        mov     %rdi, %r12
+1:      is_nil_internal %r12
+        je      3f
+
+        call_fn car, %r12
+        unbox_pointer_internal %rax
+        add     $header_size, %rax
+        call_fn strdup, %rax
+        mov     %rax, env_var(%rsp)
+
+        lea     save_ptr(%rsp), %rax
+        call_fn strtok_r, env_var(%rsp), $equals_sign, %rax
+        call_fn box_string, %rax
+        mov     %rax, env_var_name(%rsp)
+
+        lea     save_ptr(%rsp), %rax
+        call_fn strtok_r, $NULL, $equals_sign, %rax
+        test    %rax, %rax
+        jnz     2f
+        mov     $empty_string, %rax
+
+2:      call_fn box_string, %rax
+        call_fn cons, env_var_name(%rsp), %rax
+        call_fn set_car, %r12, %rax
+
+        call_fn free, env_var(%rsp)
+
+        call_fn cdr, %r12
+        mov     %rax, %r12
+        jmp     1b
+
+3:      return  %rbx
 
         ## Public API
         .globl object_space_size, class_of
@@ -3177,7 +3219,7 @@ jit_code_debug:
 
 command_line_arguments:
         .quad   0
-environment:
+environment_alist:
         .quad   0
 
         .align  16
@@ -3207,6 +3249,10 @@ double_format:
         .string "%f"
 object_format:
         .string "#<%s>"
+empty_string:
+        .string ""
+equals_sign:
+        .string "="
 read_mode:
         .string "r"
 write_mode:

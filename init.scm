@@ -6,7 +6,7 @@
     (display "> " (current-output-port))
     (let ((input (read)))
       (unless (eof-object? input)
-        (let ((value (eval input)))
+        (let ((value (eval input (interaction-environment))))
           (unless (eq? (void) value)
             (write value (current-output-port))
             (newline (current-output-port)))
