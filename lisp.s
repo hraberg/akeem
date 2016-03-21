@@ -1433,29 +1433,8 @@ box_string_array_as_list:       # string-array
         jmp     1b
 
 2:      call_fn reverse, strings(%rsp)
+        call_fn jit_add_to_constant_pool, %rax
         return  %rax
-
-parse_command_line_arguments:
-        prologue
-        mov     command_line_arguments, %rbx
-        call_fn cdr, %rbx
-        mov     %rax, %rbx
-        is_nil_internal %rbx
-        je      3f
-
-1:      is_nil_internal %rbx
-        je      2f
-
-        call_fn car, %rbx
-        call_fn load, %rax
-
-        call_fn cdr, %rbx
-        mov     %rax, %rbx
-
-        jmp     1b
-
-2:      call_fn exit, $0
-3:      return
 
         ## Public API
         .globl object_space_size, class_of
