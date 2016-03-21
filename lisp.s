@@ -876,7 +876,8 @@ open_input_string:              # string
         return
 
         ## 6.14. System interface
-        .globl delete_file, is_file_exists, command_line, exit_, get_environment_variable, current_second, current_jiffy, jiffies_per_second,
+        .globl delete_file, is_file_exists, command_line, exit_, get_environment_variable, get_environment_variables
+        .globl current_second, current_jiffy, jiffies_per_second,
 
 delete_file:                    # filename
         minimal_prologue
@@ -931,6 +932,10 @@ get_environment_variable:       # name
         call_fn unbox_string, %rdi
         call_fn getenv, %rax
         call_fn box_string, %rax
+        ret
+
+get_environment_variables:
+        mov     environment, %rax
         ret
 
 current_second:
@@ -1381,6 +1386,7 @@ main:                # argc, argv
         define "exit", $exit_
         define "emergency-exit", $emergency_exit
         define "get-environment-variable", $get_environment_variable
+        define "get-environment-variables", $get_environment_variables
         define "current-second", $current_second
         define "current-jiffy", $current_jiffy
         define "jiffies-per-second", $jiffies_per_second
@@ -1395,7 +1401,11 @@ main:                # argc, argv
         define "class-of", $class_of
         define "void", $void
 
-        call_fn init_command_line, argc(%rsp), argv(%rsp)
+        call_fn box_string_array_as_list, argv(%rsp)
+        mov     %rax, command_line_arguments
+
+        call_fn box_string_array_as_list, environ
+        mov     %rax, environment
 
         call_fn box_string, $init_scm
         call_fn open_input_string, %rax
@@ -1403,25 +1413,27 @@ main:                # argc, argv
 
         return  $0
 
-init_command_line:              # argc, argv
-        prologue
-        mov     %rdi, %rbx
-        mov     %rsi, %r12
+box_string_array_as_list:       # string-array
+        prologue strings
+        mov     %rdi, %r12
         mov     $NIL, %rax
-        mov     %rax, command_line_arguments
+        mov     %rax, strings(%rsp)
 
-        mov     %ebx, %ebx
+        xor     %ebx, %ebx
 
-1:      test    %ebx, %ebx
+1:      mov     (%r12,%rbx,POINTER_SIZE), %rax
+        test    %eax, %eax
         jz      2f
-        dec     %ebx
 
-        mov     (%r12,%rbx,POINTER_SIZE), %rax
         call_fn box_string, %rax
-        call_fn cons, %rax, command_line_arguments
-        mov     %rax, command_line_arguments
+        call_fn cons, %rax, strings(%rsp)
+        mov     %rax, strings(%rsp)
+
+        inc     %ebx
         jmp     1b
-2:      return
+
+2:      call_fn reverse, strings(%rsp)
+        return  %rax
 
 parse_command_line_arguments:
         prologue
@@ -3185,6 +3197,8 @@ jit_code_debug:
         .quad   0
 
 command_line_arguments:
+        .quad   0
+environment:
         .quad   0
 
         .align  16
