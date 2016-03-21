@@ -1169,91 +1169,85 @@ init_runtime:                   # execution_stack_top, argc, argv, jit_code_debu
         store_pointer $TAG_VECTOR, $jit_add_to_constant_pool
         store_pointer $TAG_OBJECT, $jit_add_to_constant_pool
 
-        lea     jit_pop_argument_table, %rbx
-        store_pointer $0, $jit_pop_rdi
-        store_pointer $1, $jit_pop_rsi
-        store_pointer $2, $jit_pop_rdx
-        store_pointer $3, $jit_pop_rcx
-        store_pointer $4, $jit_pop_r8
-        store_pointer $5, $jit_pop_r9
+        lea     jit_argument_to_register_id_table, %rbx
+        movb    $RDI, 0(%rbx)
+        movb    $RSI, 1(%rbx)
+        movb    $RDX, 2(%rbx)
+        movb    $RCX, 3(%rbx)
+        movb    $R8, 4(%rbx)
+        movb    $R9, 5(%rbx)
 
-        lea     jit_pop_argument_size_table, %rbx
-        store_pointer $0, jit_pop_rdi_size
-        store_pointer $1, jit_pop_rsi_size
-        store_pointer $2, jit_pop_rdx_size
-        store_pointer $3, jit_pop_rcx_size
-        store_pointer $4, jit_pop_r8_size
-        store_pointer $5, jit_pop_r9_size
+        lea     jit_pop_register_table, %rbx
+        store_pointer $RAX, $jit_pop_rax
+        store_pointer $RDI, $jit_pop_rdi
+        store_pointer $RSI, $jit_pop_rsi
+        store_pointer $RDX, $jit_pop_rdx
+        store_pointer $RCX, $jit_pop_rcx
+        store_pointer $R8, $jit_pop_r8
+        store_pointer $R9, $jit_pop_r9
 
-        lea     jit_literal_argument_table, %rbx
-        store_pointer $0, $jit_literal_to_rdi
-        store_pointer $1, $jit_literal_to_rsi
-        store_pointer $2, $jit_literal_to_rdx
-        store_pointer $3, $jit_literal_to_rcx
-        store_pointer $4, $jit_literal_to_r8
-        store_pointer $5, $jit_literal_to_r9
+        lea     jit_pop_register_size_table, %rbx
+        store_pointer $RAX, $jit_pop_rax_size
+        store_pointer $RDI, jit_pop_rdi_size
+        store_pointer $RSI, jit_pop_rsi_size
+        store_pointer $RDX, jit_pop_rdx_size
+        store_pointer $RCX, jit_pop_rcx_size
+        store_pointer $R8, jit_pop_r8_size
+        store_pointer $R9, jit_pop_r9_size
 
-        lea     jit_literal_argument_size_table, %rbx
-        store_pointer $0, jit_literal_to_rdi_size
-        store_pointer $1, jit_literal_to_rsi_size
-        store_pointer $2, jit_literal_to_rdx_size
-        store_pointer $3, jit_literal_to_rcx_size
-        store_pointer $4, jit_literal_to_r8_size
-        store_pointer $5, jit_literal_to_r9_size
+        lea     jit_literal_to_register_table, %rbx
+        store_pointer $RAX, $jit_literal_to_rax
+        store_pointer $RDI, $jit_literal_to_rdi
+        store_pointer $RSI, $jit_literal_to_rsi
+        store_pointer $RDX, $jit_literal_to_rdx
+        store_pointer $RCX, $jit_literal_to_rcx
+        store_pointer $R8, $jit_literal_to_r8
+        store_pointer $R9, $jit_literal_to_r9
 
-        lea     jit_literal_table, %rbx
-        store_pointer $0, $jit_literal_to_rax
-        store_pointer $1, $jit_literal_to_rdi
-        store_pointer $2, $jit_literal_to_rsi
-        store_pointer $3, $jit_literal_to_rdx
-        store_pointer $4, $jit_literal_to_rcx
-        store_pointer $5, $jit_literal_to_r8
-        store_pointer $6, $jit_literal_to_r9
+        lea     jit_literal_to_register_size_table, %rbx
+        store_pointer $RAX, jit_literal_to_rax_size
+        store_pointer $RDI, jit_literal_to_rdi_size
+        store_pointer $RSI, jit_literal_to_rsi_size
+        store_pointer $RDX, jit_literal_to_rdx_size
+        store_pointer $RCX, jit_literal_to_rcx_size
+        store_pointer $R8, jit_literal_to_r8_size
+        store_pointer $R9, jit_literal_to_r9_size
 
-        lea     jit_literal_size_table, %rbx
-        store_pointer $0, jit_literal_to_rax_size
-        store_pointer $1, jit_literal_to_rdi_size
-        store_pointer $2, jit_literal_to_rsi_size
-        store_pointer $3, jit_literal_to_rdx_size
-        store_pointer $4, jit_literal_to_rcx_size
-        store_pointer $5, jit_literal_to_r8_size
-        store_pointer $6, jit_literal_to_r9_size
+        lea     jit_rax_to_register_table, %rbx
+        store_pointer $RAX, $jit_rax_to_rax
+        store_pointer $RDI, $jit_rax_to_rdi
+        store_pointer $RSI, $jit_rax_to_rsi
+        store_pointer $RDX, $jit_rax_to_rdx
+        store_pointer $RCX, $jit_rax_to_rcx
+        store_pointer $R8, $jit_rax_to_r8
+        store_pointer $R9, $jit_rax_to_r9
 
-        lea     jit_rax_to_argument_table, %rbx
-        store_pointer $0, $jit_rax_to_rax
-        store_pointer $1, $jit_rax_to_rdi
-        store_pointer $2, $jit_rax_to_rsi
-        store_pointer $3, $jit_rax_to_rdx
-        store_pointer $4, $jit_rax_to_rcx
-        store_pointer $5, $jit_rax_to_r8
-        store_pointer $6, $jit_rax_to_r9
+        lea     jit_rax_to_register_size_table, %rbx
+        store_pointer $RAX, jit_rax_to_rax_size
+        store_pointer $RDI, jit_rax_to_rdi_size
+        store_pointer $RSI, jit_rax_to_rsi_size
+        store_pointer $RDX, jit_rax_to_rdx_size
+        store_pointer $RCX, jit_rax_to_rcx_size
+        store_pointer $R8, jit_rax_to_r8_size
+        store_pointer $R9, jit_rax_to_r9_size
 
-        lea     jit_rax_to_argument_size_table, %rbx
-        store_pointer $0, jit_rax_to_rax_size
-        store_pointer $1, jit_rax_to_rdi_size
-        store_pointer $2, jit_rax_to_rsi_size
-        store_pointer $3, jit_rax_to_rdx_size
-        store_pointer $4, jit_rax_to_rcx_size
-        store_pointer $5, jit_rax_to_r8_size
-        store_pointer $6, jit_rax_to_r9_size
+        lea     jit_local_to_register_table, %rbx
+        store_pointer $RAX, $jit_local_to_rax
+        store_pointer $RDI, $jit_local_to_rdi
+        store_pointer $RSI, $jit_local_to_rsi
+        store_pointer $RDX, $jit_local_to_rdx
+        store_pointer $RCX, $jit_local_to_rcx
+        store_pointer $R8, $jit_local_to_r8
+        store_pointer $R9, $jit_local_to_r9
 
-        lea     jit_local_to_argument_table, %rbx
-        store_pointer $0, $jit_local_to_rax
-        store_pointer $1, $jit_local_to_rdi
-        store_pointer $2, $jit_local_to_rsi
-        store_pointer $3, $jit_local_to_rdx
-        store_pointer $4, $jit_local_to_rcx
-        store_pointer $5, $jit_local_to_r8
-        store_pointer $6, $jit_local_to_r9
-
-        lea     jit_local_to_argument_size_table, %rbx
-        store_pointer $0, jit_local_to_rax_size
-        store_pointer $1, jit_local_to_rdi_size
-        store_pointer $2, jit_local_to_rsi_size
-        store_pointer $3, jit_local_to_rdx_size
-        store_pointer $4, jit_local_to_rcx_size
-        store_pointer $5, jit_local_to_r8_size
-        store_pointer $6, jit_local_to_r9_size
+        lea     jit_local_to_register_size_table, %rbx
+        store_pointer $RAX, jit_local_to_rax_size
+        store_pointer $RDI, jit_local_to_rdi_size
+        store_pointer $RSI, jit_local_to_rsi_size
+        store_pointer $RDX, jit_local_to_rdx_size
+        store_pointer $RCX, jit_local_to_rcx_size
+        store_pointer $R8, jit_local_to_r8_size
+        store_pointer $R9, jit_local_to_r9_size
 
         lea     jit_parameter_to_local_table, %rbx
         store_pointer $0, $jit_rdi_to_local
@@ -2327,8 +2321,8 @@ jit_symbol_to_reg:             # symbol, c-stream, environment, target-reg
         lea     symbol_address(%rsp), %rax
         call_fn fwrite, %rax, $1, $POINTER_SIZE, %r12
         mov     target_reg(%rsp), %rbx
-        mov     jit_rax_to_argument_table(,%rbx,POINTER_SIZE), %rax
-        mov     jit_rax_to_argument_size_table(,%rbx,POINTER_SIZE), %r11
+        mov     jit_rax_to_register_table(,%rbx,POINTER_SIZE), %rax
+        mov     jit_rax_to_register_size_table(,%rbx,POINTER_SIZE), %r11
         call_fn fwrite, %rax, $1, %r11, %r12
         jmp     4f
 
@@ -2338,8 +2332,8 @@ jit_symbol_to_reg:             # symbol, c-stream, environment, target-reg
         neg     %ebx
         mov     %ebx, local(%rsp)
         mov     target_reg(%rsp), %rbx
-        mov     jit_local_to_argument_table(,%rbx,POINTER_SIZE), %rax
-        mov     jit_local_to_argument_size_table(,%rbx,POINTER_SIZE), %r11
+        mov     jit_local_to_register_table(,%rbx,POINTER_SIZE), %rax
+        mov     jit_local_to_register_size_table(,%rbx,POINTER_SIZE), %r11
         call_fn fwrite, %rax, $1, %r11, %r12
         lea     local(%rsp), %rax
         call_fn fwrite, %rax, $1, $INT_SIZE, %r12
@@ -2388,8 +2382,8 @@ jit_literal_to_reg:       # literal, c-stream, environment, target-reg
         call_fn jit_maybe_add_to_constant_pool, %rdi
 
         mov     target_reg(%rsp), %rbx
-        mov     jit_literal_table(,%rbx,POINTER_SIZE), %rax
-        mov     jit_literal_size_table(,%rbx,POINTER_SIZE), %r11
+        mov     jit_literal_to_register_table(,%rbx,POINTER_SIZE), %rax
+        mov     jit_literal_to_register_size_table(,%rbx,POINTER_SIZE), %r11
         call_fn fwrite, %rax, $1, %r11, %r12
         lea     literal(%rsp), %rax
         call_fn fwrite, %rax, $1, $POINTER_SIZE, %r12
@@ -2493,8 +2487,8 @@ jit_procedure_call:             # form, c-stream, environment
         has_tag TAG_SYMBOL, %rax, store=false
         jne     7f
         call_fn car, form(%rsp)
-        mov     %rbx, %r11
-        inc     %r11
+        xor     %r11d, %r11d
+        mov     jit_argument_to_register_id_table(%rbx), %r11b
         call_fn jit_symbol_to_reg, %rax, %r12, env(%rsp), %r11
         update_max_locals max_locals(%rsp)
 
@@ -2503,8 +2497,10 @@ jit_procedure_call:             # form, c-stream, environment
 
         jmp     5b
 
-6:      mov     jit_pop_argument_table(,%rbx,POINTER_SIZE), %rax
-        mov     jit_pop_argument_size_table(,%rbx,POINTER_SIZE), %r11
+6:      xor     %r11d, %r11d
+        mov     jit_argument_to_register_id_table(%rbx), %r11b
+        mov     jit_pop_register_table(,%r11,POINTER_SIZE), %rax
+        mov     jit_pop_register_size_table(,%r11,POINTER_SIZE), %r11
         call_fn fwrite, %rax, $1, %r11, %r12
 
         call_fn cdr, form(%rsp)
@@ -2512,8 +2508,10 @@ jit_procedure_call:             # form, c-stream, environment
 
         jmp     5b
 
-7:      mov     jit_literal_argument_table(,%rbx,POINTER_SIZE), %rax
-        mov     jit_literal_argument_size_table(,%rbx,POINTER_SIZE), %r11
+7:      xor     %r11d, %r11d
+        mov     jit_argument_to_register_id_table(%rbx), %r11b
+        mov     jit_literal_to_register_table(,%r11,POINTER_SIZE), %rax
+        mov     jit_literal_to_register_size_table(,%r11,POINTER_SIZE), %r11
         call_fn fwrite, %rax, $1, %r11, %r12
 
         call_fn car, form(%rsp)
@@ -3104,43 +3102,39 @@ jit_constant_pool_jump_table:
         .zero   TAG_MASK * POINTER_SIZE
 
         .align  16
-jit_pop_argument_table:
+jit_argument_to_register_id_table:
+        .zero   MAX_REGISTER_ARGS
+
+        .align  16
+jit_pop_register_table:
         .zero   NUMBER_OF_REGISTERS * POINTER_SIZE
 
         .align  16
-jit_pop_argument_size_table:
+jit_pop_register_size_table:
         .zero   NUMBER_OF_REGISTERS * POINTER_SIZE
 
         .align  16
-jit_literal_argument_table:
+jit_literal_to_register_table:
         .zero   NUMBER_OF_REGISTERS * POINTER_SIZE
 
         .align  16
-jit_literal_argument_size_table:
+jit_literal_to_register_size_table:
         .zero   NUMBER_OF_REGISTERS * POINTER_SIZE
 
         .align  16
-jit_local_to_argument_table:
+jit_local_to_register_table:
         .zero   NUMBER_OF_REGISTERS * POINTER_SIZE
 
         .align  16
-jit_literal_table:
+jit_local_to_register_size_table:
         .zero   NUMBER_OF_REGISTERS * POINTER_SIZE
 
         .align  16
-jit_literal_size_table:
+jit_rax_to_register_table:
         .zero   NUMBER_OF_REGISTERS * POINTER_SIZE
 
         .align  16
-jit_local_to_argument_size_table:
-        .zero   NUMBER_OF_REGISTERS * POINTER_SIZE
-
-        .align  16
-jit_rax_to_argument_table:
-        .zero   NUMBER_OF_REGISTERS * POINTER_SIZE
-
-        .align  16
-jit_rax_to_argument_size_table:
+jit_rax_to_register_size_table:
         .zero   NUMBER_OF_REGISTERS * POINTER_SIZE
 
         .align  16
@@ -3231,10 +3225,6 @@ jit_code_directory:
         .string "jit_code"
 jit_code_file_format:
         .string "jit_code/jit_code_%06d.bin"
-
-        ## register numbers:
-        ## rax = r0, rcx = r1, rdx = r2, rbx = r3,
-        ## rsp = r4, rbp = r5, rsi = r6, rdi = r7
 
         .align  16
 jit_prologue:

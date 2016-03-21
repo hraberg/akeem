@@ -82,12 +82,16 @@
         .equ MAX_REGISTER_ARGS, 6
 
         .equ RAX, 0
-        .equ RDI, 1
-        .equ RSI, 2
-        .equ RDX, 3
-        .equ RCX, 4
-        .equ R8, 5
-        .equ R9, 6
+        .equ RCX, 1
+        .equ RDX, 2
+        .equ RBX, 3
+        .equ RSP, 4
+        .equ RBP, 5
+        .equ RSI, 6
+        .equ RDI, 7
+        .irp reg, 8, 9, 10, 11, 12, 13, 14, 15
+        .equ R\reg, \reg
+        .endr
 
         .equ REPL_DISPLAY_CLASS, C_FALSE
         .equ REPL_DISPLAY_VOID, C_FALSE
