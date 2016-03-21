@@ -4,6 +4,7 @@ LDLIBS = -lm
 AKEEM = $(PWD)/akeem
 
 RACKET_HOME = ../racket
+RACKET_BENCHMARKS_HOME = $(RACKET_HOME)/pkgs/racket-benchmarks/tests/racket/benchmarks/common/
 RACKET_BENCHMARKS = ctak nothing nqueens puzzle tak takr
 
 default: akeem
@@ -37,7 +38,7 @@ retest: /usr/bin/entr
 		$< -r $(MAKE) -s run-tests ; done
 
 benchmark: akeem
-	cd $(RACKET_HOME)/pkgs/racket-benchmarks/tests/racket/benchmarks/common/ ; \
+	cd $(RACKET_BENCHMARKS_HOME) ; \
 	for test in $(RACKET_BENCHMARKS) ; do \
 		echo $$test.rkt ; \
 		time -p `which racket` $$test.rkt 2>&1 ; \
