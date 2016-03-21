@@ -19,9 +19,9 @@ akeem: lisp.o
 
 # based on http://unix.stackexchange.com/a/79137
 run-tests: akeem
-	./$<  tests.scm | diff -y -W250 test_output.txt - | expand | grep --color=always -nEC1 '^.{123} [|<>]( |$$)' \
+	./$<  tests.scm | diff -y -W250 tests.out - | expand | grep --color=always -nEC1 '^.{123} [|<>]( |$$)' \
 		&& echo Tests FAILED \
-		|| echo `cat test_output.txt | grep -v ';;;' | wc -l` Tests PASSED
+		|| echo `cat tests.out | grep -v ';;;' | wc -l` Tests PASSED
 
 run-tests-catchsegv: akeem
 	catchsegv ./$< tests.scm
@@ -36,7 +36,7 @@ run-repl: akeem /usr/bin/rlwrap
 	sudo apt-get install -y entr
 
 retest: /usr/bin/entr
-	while true; do find . -name '*.s' -o -name '*.scm' -o -name Makefile -o -name test_output.txt | \
+	while true; do find . -name '*.s' -o -name '*.scm' -o -name Makefile -o -name tests.out | \
 		$< -r $(MAKE) -s run-tests ; done
 
 benchmark: akeem

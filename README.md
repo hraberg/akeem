@@ -101,7 +101,7 @@ relies heavily on
 make the code less verbose. The
 [`tests.scm`](https://github.com/hraberg/akeem/blob/master/tests.scm)
 are compared to
-[`test_output.txt`](https://github.com/hraberg/akeem/blob/master/test_output.txt)
+[`tests.out`](https://github.com/hraberg/akeem/blob/master/tests.out)
 for simple unit testing. To run and keep watching the tests (uses
 [entr](http://entrproject.org/)):
 
