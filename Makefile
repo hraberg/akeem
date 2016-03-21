@@ -1,7 +1,8 @@
 ASFLAGS += -g --64 -march=generic64+sse4.1
 LDLIBS = -lm
 
-AKEEM = $(PWD)/akeem
+AKEEM_HOME = $(PWD)
+AKEEM = $(AKEEM_HOME)/akeem
 
 RACKET = `which racket`
 RACKET_HOME = ../racket
@@ -43,7 +44,7 @@ benchmark: akeem
 	cd $(RACKET_BENCHMARKS_HOME) ; \
 	for test in $(RACKET_BENCHMARKS) ; do \
 		test -n '$(RUN_RACKET_BENCHMARKS)' && (echo $$test.rkt ; time -p $(RACKET) $$test.rkt) ; \
-		echo $$test.sch ; time -p $(AKEEM) $$test.sch ; \
+		echo $$test.sch ; time -p $(AKEEM) $(AKEEM_HOME)/benchmarks-prelude.scm $$test.sch ; \
 	done
 
 profile: RACKET_BENCHMARKS = nqueens
@@ -67,4 +68,4 @@ clean:	jit-clean
 check: run-tests
 
 .PHONY: run-tests run-tests-catchsegv run-repl retest benchmark profile jit-clean jit-dissassmble clean check release
-.SILENT: benchmark
+.SILENT: benchmark profile

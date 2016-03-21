@@ -1415,15 +1415,15 @@ init_runtime:                   # execution_stack_top, argc, argv, jit_code_debu
         define "current-jiffy", $current_jiffy
         define "jiffies-per-second", $jiffies_per_second
 
+        call_fn box_string, $r7rs_scm
+        call_fn open_input_string, %rax
+        call_fn read_all, %rax
+
         define "read-all", $read_all
         define "gc", $gc
         define "object-space-size", $object_space_size
         define "class-of", $class_of
         define "void", $void
-
-        call_fn box_string, $extensions_scm
-        call_fn open_input_string, %rax
-        call_fn read_all, %rax
 
         call_fn init_command_line, argc(%rsp), argv(%rsp)
         return
@@ -3378,6 +3378,6 @@ r5rs_scm:
         .byte   0
 
         .align  16
-extensions_scm:
-        .incbin "extensions.scm"
+r7rs_scm:
+        .incbin "r7rs.scm"
         .byte   0
