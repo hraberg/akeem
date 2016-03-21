@@ -111,18 +111,19 @@ make retest
 
 Parts of the implementation are in
 [`boot.scm`](https://github.com/hraberg/akeem/blob/master/boot.scm),
-[`r5rs.scm`](https://github.com/hraberg/akeem/blob/master/r5rs.scm)
-and [`r7rs.scm`](https://github.com/hraberg/akeem/blob/master/r7rs.scm)
+[`r5rs.scm`](https://github.com/hraberg/akeem/blob/master/r5rs.scm),
+[`r7rs.scm`](https://github.com/hraberg/akeem/blob/master/r7rs.scm)
+and [`init.scm`](https://github.com/hraberg/akeem/blob/master/init.scm),
 which are embedded as strings during compilation and is loaded at
-startup.
+startup in this order.
 
-While running, the result of the JIT is logged into `jit_code`, and
+While running, the result of the JIT can be logged into `jit_code` and
 can be inspected using `objdump` via:
 
 ``` bash
 make jit-dissassmble
 ```
-This can be turned off by setting `REPL_LOG_JIT` to `0` in
+This can be turned on by setting `LOG_JIT` to `1` in
 [`constants.s`](https://github.com/hraberg/akeem/blob/master/constants.s).
 
 Too simplify debugging you can wrap the tests using `catchsegv` which

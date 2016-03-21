@@ -94,7 +94,7 @@
         .equ R\reg, \reg
         .endr
 
-        .equ REPL_LOG_JIT, C_FALSE
+        .equ LOG_JIT, C_FALSE
 
         .struct 0
 header_object_mark:

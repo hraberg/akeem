@@ -959,7 +959,7 @@ main:                # argc, argv
         mov     %rdi, argc(%rsp)
         mov     %rsi, argv(%rsp)
         mov     %rsp, execution_stack_top
-        movq    $REPL_LOG_JIT, jit_code_debug
+        movq    $LOG_JIT, jit_code_debug
 
         call_fn init_pointer_stack, $object_space, $OBJECT_SPACE_INITIAL_SIZE
         call_fn init_pointer_stack, $gc_mark_stack, $OBJECT_SPACE_INITIAL_SIZE
