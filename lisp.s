@@ -1179,91 +1179,93 @@ init_runtime:                   # execution_stack_top, argc, argv, jit_code_debu
 
         lea     jit_pop_register_table, %rbx
         store_pointer $RAX, $jit_pop_rax
-        store_pointer $RDI, $jit_pop_rdi
-        store_pointer $RSI, $jit_pop_rsi
-        store_pointer $RDX, $jit_pop_rdx
         store_pointer $RCX, $jit_pop_rcx
+        store_pointer $RDX, $jit_pop_rdx
+        store_pointer $RSI, $jit_pop_rsi
+        store_pointer $RDI, $jit_pop_rdi
         store_pointer $R8, $jit_pop_r8
         store_pointer $R9, $jit_pop_r9
 
         lea     jit_pop_register_size_table, %rbx
         store_pointer $RAX, $jit_pop_rax_size
-        store_pointer $RDI, jit_pop_rdi_size
-        store_pointer $RSI, jit_pop_rsi_size
-        store_pointer $RDX, jit_pop_rdx_size
         store_pointer $RCX, jit_pop_rcx_size
+        store_pointer $RDX, jit_pop_rdx_size
+        store_pointer $RSI, jit_pop_rsi_size
+        store_pointer $RDI, jit_pop_rdi_size
         store_pointer $R8, jit_pop_r8_size
         store_pointer $R9, jit_pop_r9_size
 
         lea     jit_literal_to_register_table, %rbx
         store_pointer $RAX, $jit_literal_to_rax
-        store_pointer $RDI, $jit_literal_to_rdi
-        store_pointer $RSI, $jit_literal_to_rsi
-        store_pointer $RDX, $jit_literal_to_rdx
         store_pointer $RCX, $jit_literal_to_rcx
+        store_pointer $RDX, $jit_literal_to_rdx
+        store_pointer $RSI, $jit_literal_to_rsi
+        store_pointer $RDI, $jit_literal_to_rdi
         store_pointer $R8, $jit_literal_to_r8
         store_pointer $R9, $jit_literal_to_r9
 
         lea     jit_literal_to_register_size_table, %rbx
         store_pointer $RAX, jit_literal_to_rax_size
-        store_pointer $RDI, jit_literal_to_rdi_size
-        store_pointer $RSI, jit_literal_to_rsi_size
-        store_pointer $RDX, jit_literal_to_rdx_size
         store_pointer $RCX, jit_literal_to_rcx_size
+        store_pointer $RDX, jit_literal_to_rdx_size
+        store_pointer $RSI, jit_literal_to_rsi_size
+        store_pointer $RDI, jit_literal_to_rdi_size
         store_pointer $R8, jit_literal_to_r8_size
         store_pointer $R9, jit_literal_to_r9_size
 
         lea     jit_rax_to_register_table, %rbx
         store_pointer $RAX, $jit_rax_to_rax
-        store_pointer $RDI, $jit_rax_to_rdi
-        store_pointer $RSI, $jit_rax_to_rsi
-        store_pointer $RDX, $jit_rax_to_rdx
         store_pointer $RCX, $jit_rax_to_rcx
+        store_pointer $RDX, $jit_rax_to_rdx
+        store_pointer $RSI, $jit_rax_to_rsi
+        store_pointer $RDI, $jit_rax_to_rdi
         store_pointer $R8, $jit_rax_to_r8
         store_pointer $R9, $jit_rax_to_r9
 
         lea     jit_rax_to_register_size_table, %rbx
         store_pointer $RAX, jit_rax_to_rax_size
-        store_pointer $RDI, jit_rax_to_rdi_size
-        store_pointer $RSI, jit_rax_to_rsi_size
-        store_pointer $RDX, jit_rax_to_rdx_size
         store_pointer $RCX, jit_rax_to_rcx_size
+        store_pointer $RDX, jit_rax_to_rdx_size
+        store_pointer $RSI, jit_rax_to_rsi_size
+        store_pointer $RDI, jit_rax_to_rdi_size
         store_pointer $R8, jit_rax_to_r8_size
         store_pointer $R9, jit_rax_to_r9_size
 
         lea     jit_local_to_register_table, %rbx
         store_pointer $RAX, $jit_local_to_rax
-        store_pointer $RDI, $jit_local_to_rdi
-        store_pointer $RSI, $jit_local_to_rsi
-        store_pointer $RDX, $jit_local_to_rdx
         store_pointer $RCX, $jit_local_to_rcx
+        store_pointer $RDX, $jit_local_to_rdx
+        store_pointer $RSI, $jit_local_to_rsi
+        store_pointer $RDI, $jit_local_to_rdi
         store_pointer $R8, $jit_local_to_r8
         store_pointer $R9, $jit_local_to_r9
 
         lea     jit_local_to_register_size_table, %rbx
         store_pointer $RAX, jit_local_to_rax_size
-        store_pointer $RDI, jit_local_to_rdi_size
-        store_pointer $RSI, jit_local_to_rsi_size
-        store_pointer $RDX, jit_local_to_rdx_size
         store_pointer $RCX, jit_local_to_rcx_size
+        store_pointer $RDX, jit_local_to_rdx_size
+        store_pointer $RSI, jit_local_to_rsi_size
+        store_pointer $RDI, jit_local_to_rdi_size
         store_pointer $R8, jit_local_to_r8_size
         store_pointer $R9, jit_local_to_r9_size
 
-        lea     jit_parameter_to_local_table, %rbx
-        store_pointer $0, $jit_rdi_to_local
-        store_pointer $1, $jit_rsi_to_local
-        store_pointer $2, $jit_rdx_to_local
-        store_pointer $3, $jit_rcx_to_local
-        store_pointer $4, $jit_r8_to_local
-        store_pointer $5, $jit_r9_to_local
+        lea     jit_register_to_local_table, %rbx
+        store_pointer $RAX, $jit_rax_to_local
+        store_pointer $RCX, $jit_rcx_to_local
+        store_pointer $RDX, $jit_rdx_to_local
+        store_pointer $RSI, $jit_rsi_to_local
+        store_pointer $RDI, $jit_rdi_to_local
+        store_pointer $R8, $jit_r8_to_local
+        store_pointer $R9, $jit_r9_to_local
 
-        lea     jit_parameter_to_local_size_table, %rbx
-        store_pointer $0, jit_rdi_to_local_size
-        store_pointer $1, jit_rsi_to_local_size
-        store_pointer $2, jit_rdx_to_local_size
-        store_pointer $3, jit_rcx_to_local_size
-        store_pointer $4, jit_r8_to_local_size
-        store_pointer $5, jit_r9_to_local_size
+        lea     jit_register_to_local_size_table, %rbx
+        store_pointer $RAX, jit_rax_to_local_size
+        store_pointer $RCX, jit_rcx_to_local_size
+        store_pointer $RDX, jit_rdx_to_local_size
+        store_pointer $RSI, jit_rsi_to_local_size
+        store_pointer $RDI, jit_rdi_to_local_size
+        store_pointer $R8, jit_r8_to_local_size
+        store_pointer $R9, jit_r9_to_local_size
 
         lea     jit_syntax_jump_table, %rbx
         .irp symbol, quote, if, set, lambda, begin, let, letrec, define_syntax
@@ -2552,9 +2554,18 @@ jit_procedure:                  # form, c-stream, environment, arguments
         dec     %ecx
         mov     %ecx, local_idx(%rsp)
 
-        mov     jit_parameter_to_local_table(,%rcx,POINTER_SIZE), %rax
-        mov     jit_parameter_to_local_size_table(,%rcx,POINTER_SIZE), %r11
+        xor     %r11d, %r11d
+        mov     jit_argument_to_register_id_table(%rcx), %r11b
+        mov     jit_register_to_local_table(,%r11,POINTER_SIZE), %rax
+        mov     jit_register_to_local_size_table(,%r11,POINTER_SIZE), %r11
         call_fn fwrite, %rax, $1, %r11, %r12
+        mov     local_idx(%rsp), %eax
+        shl     $POINTER_SIZE_SHIFT, %eax
+        add     $POINTER_SIZE, %eax
+        neg     %eax
+        mov     %eax, local(%rsp)
+        lea     local(%rsp), %rax
+        call_fn fwrite, %rax, $1, $INT_SIZE, %r12
         jmp     1b
 
 2:      call_fn reverse, args(%rsp)
@@ -3138,11 +3149,11 @@ jit_rax_to_register_size_table:
         .zero   NUMBER_OF_REGISTERS * POINTER_SIZE
 
         .align  16
-jit_parameter_to_local_table:
+jit_register_to_local_table:
         .zero   NUMBER_OF_REGISTERS * POINTER_SIZE
 
         .align  16
-jit_parameter_to_local_size_table:
+jit_register_to_local_size_table:
         .zero   NUMBER_OF_REGISTERS * POINTER_SIZE
 
         .align  16
@@ -3322,42 +3333,6 @@ jit_void_to_rax_size:
         .quad   . - jit_void_to_rax
 
         .align  16
-jit_rdi_to_local:
-        mov     %rdi, -(1 *POINTER_SIZE)(%rbp)
-jit_rdi_to_local_size:
-        .quad   . - jit_rdi_to_local
-
-        .align  16
-jit_rsi_to_local:
-        mov     %rsi, -(2 * POINTER_SIZE)(%rbp)
-jit_rsi_to_local_size:
-        .quad   . - jit_rsi_to_local
-
-        .align  16
-jit_rdx_to_local:
-        mov     %rdx, -(3 * POINTER_SIZE)(%rbp)
-jit_rdx_to_local_size:
-        .quad   . - jit_rdx_to_local
-
-        .align  16
-jit_rcx_to_local:
-        mov     %rcx, -(4 * POINTER_SIZE)(%rbp)
-jit_rcx_to_local_size:
-        .quad   . - jit_rcx_to_local
-
-        .align  16
-jit_r8_to_local:
-        mov     %r8, -(5 * POINTER_SIZE)(%rbp)
-jit_r8_to_local_size:
-        .quad   . - jit_r8_to_local
-
-        .align  16
-jit_r9_to_local:
-        mov     %r9, -(6 * POINTER_SIZE)(%rbp)
-jit_r9_to_local_size:
-        .quad   . - jit_r9_to_local
-
-        .align  16
 jit_global_to_rax:
         mov     0x1122334455667788, %rax
 jit_global_to_rax_size:
@@ -3377,11 +3352,13 @@ jit_local_to_\reg\()_size:
         .quad   (. - jit_local_to_\reg) - INT_SIZE
         .endr
 
+        .irp reg, rax, rdi, rsi, rdx, rcx, r8, r9
         .align  16
-jit_rax_to_local:
-        mov     %rax, -0x11223344(%rbp)
-jit_rax_to_local_size:
-        .quad   (. - jit_rax_to_local) - INT_SIZE
+jit_\reg\()_to_local:
+        mov     %\reg, -0x11223344(%rbp)
+jit_\reg\()_to_local_size:
+        .quad   (. - jit_\reg\()_to_local) - INT_SIZE
+        .endr
 
         .align  16
 jit_rax_to_syntax:
