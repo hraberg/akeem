@@ -58,6 +58,7 @@
 
         .equ NIL, (NAN_MASK | (TAG_PAIR << TAG_SHIFT) | NULL)
         .equ VOID, (NAN_MASK | (TAG_OBJECT << TAG_SHIFT) | NULL)
+        .equ EOF_OBJECT, (NAN_MASK | (TAG_OBJECT << TAG_SHIFT) | -1)
 
         .equ NEWLINE_CHAR, (NAN_MASK | (TAG_CHAR << TAG_SHIFT) | 10)
         .equ SPACE_CHAR, (NAN_MASK | (TAG_CHAR << TAG_SHIFT) | 32)
@@ -93,8 +94,6 @@
         .equ R\reg, \reg
         .endr
 
-        .equ REPL_DISPLAY_CLASS, C_FALSE
-        .equ REPL_DISPLAY_VOID, C_FALSE
         .equ REPL_LOG_JIT, C_FALSE
 
         .struct 0

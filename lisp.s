@@ -483,10 +483,10 @@ string_set:                     # string, k, char
         ret
 
 is_string_equal:                # string1, string2
-        string_comparator strcmp, sete
+        string_comparator strcmp, setz
 
 is_string_ci_equal:             # string1, string2
-        string_comparator strcasecmp, sete
+        string_comparator strcasecmp, setz
 
 is_string_less_than:            # string1, string2
         string_comparator strcmp, setl
@@ -765,7 +765,7 @@ peek_char:                      # port
         return
 
 is_eof_object:                  # obj
-        eq_internal $EOF, %edi
+        eq_internal $EOF_OBJECT, %rdi
         box_boolean_internal
         ret
 
@@ -815,7 +815,6 @@ load:                           # filename
         call_fn open_input_file, %rdi
         mov     %rax, %rbx
         call_fn read_all, %rax
-        mov     %rax, %r12
         call_fn close_input_port, %rbx
         return  $VOID
 
@@ -857,12 +856,22 @@ close_port:                     # port
         return
 
 open_input_string:              # string
-        minimal_prologue
+        prologue empty_stream, empty_stream_size
         unbox_pointer_internal %rdi
         mov     header_object_size(%rax), %esi
         dec     %esi
+        test    %esi, %esi
+        jz      1f
         add     $header_size, %rax
         call_fn fmemopen, %rax, %rsi, $read_mode
+        perror
+        tag     TAG_PORT, %rax
+        return
+
+1:      lea     empty_stream(%rsp), %rdi
+        lea     empty_stream_size(%rsp), %rsi
+        call_fn open_memstream, %rdi, %rsi
+        perror
         tag     TAG_PORT, %rax
         return
 
@@ -943,58 +952,14 @@ jiffies_per_second:
 
         ## Runtime
 
-        .globl main, init_runtime, parse_command_line_arguments
+        .globl main
 
-main:
-        prologue
-
-        call_fn init_runtime, %rsp, %rdi, %rsi, $REPL_LOG_JIT
-        call_fn parse_command_line_arguments
-
-        intern_string welcome_message, "Welcome to Akeem Scheme."
-        intern_string prompt, "> "
-
-        call_fn display, welcome_message
-        call_fn display, $NEWLINE_CHAR
-
-1:      call_fn display, prompt
-
-        call_fn read
-        mov     %rax, %rbx
-        call_fn is_eof_object, %rax
-        mov     $TRUE, %r11
-        cmp     %r11, %rax
-        je      2f
-
-        call_fn eval, %rbx
-        mov     %rax, %rbx
-
-        .if REPL_DISPLAY_VOID == C_FALSE
-        is_void_internal %rax
-        je      1b
-        .endif
-
-        call_fn write, %rax
-        call_fn display, $NEWLINE_CHAR
-
-        .if REPL_DISPLAY_CLASS
-        call_fn class_of, %rbx
-        call_fn display, %rax
-        call_fn display, $NEWLINE_CHAR
-        .endif
-
-        call_fn gc
-
-        jmp     1b
-
-2:      return  $0
-
-init_runtime:                   # execution_stack_top, argc, argv, jit_code_debug
+main:                # argc, argv
         prologue argc, argv
-        mov     %rdi, execution_stack_top
-        mov     %rsi, argc(%rsp)
-        mov     %rdx, argv(%rsp)
-        mov     %rcx, jit_code_debug
+        mov     %rdi, argc(%rsp)
+        mov     %rsi, argv(%rsp)
+        mov     %rsp, execution_stack_top
+        movq    $REPL_LOG_JIT, jit_code_debug
 
         call_fn init_pointer_stack, $object_space, $OBJECT_SPACE_INITIAL_SIZE
         call_fn init_pointer_stack, $gc_mark_stack, $OBJECT_SPACE_INITIAL_SIZE
@@ -1027,6 +992,7 @@ init_runtime:                   # execution_stack_top, argc, argv, jit_code_debu
 
         intern_symbol dot_symbol, "."
         intern_symbol void_symbol, "void"
+        intern_symbol eof_symbol, "eof"
 
         mov     symbol_next_id, %rax
         mov     %rax, max_null_environment_symbol
@@ -1430,7 +1396,12 @@ init_runtime:                   # execution_stack_top, argc, argv, jit_code_debu
         define "void", $void
 
         call_fn init_command_line, argc(%rsp), argv(%rsp)
-        return
+
+        call_fn box_string, $init_scm
+        call_fn open_input_string, %rax
+        call_fn read_all, %rax
+
+        return  $0
 
 init_command_line:              # argc, argv
         prologue
@@ -1487,20 +1458,24 @@ read_all:                       # port
         prologue
         mov     %rdi, %rbx
 1:      call_fn read, %rbx
-        cmp     $EOF, %eax
+        cmp     $EOF_OBJECT, %rax
         je      2f
         call_fn eval, %rax
         jmp     1b
-        return  $TRUE
+2:      return  $TRUE
 
 class_of:                       # obj
+        prologue
+        mov     %rdi, %rbx
         extract_tag
         cmp     $TAG_OBJECT, %rax
         je      1f
         tag     TAG_SYMBOL, %rax
-        ret
-1:      mov     void_symbol, %rax
-        ret
+        return
+1:      cmp     $EOF_OBJECT, %rbx
+        jne     2f
+        return  eof_symbol
+2:      return  void_symbol
 
 object_space_size:
         mov     stack_top_offset + object_space, %rax
@@ -2004,6 +1979,11 @@ read_comment:                   # c-stream
 read_datum:                     # c-stream
         prologue
         mov     %rdi, %rbx
+        call_fn fgetc, %rbx
+        cmp     $EOF, %eax
+        je      1f
+        call_fn ungetc, %rax, %rbx
+
         call_fn read_comment, %rbx
         call_fn read_whitespace, %rbx
         cmp     $EOF, %eax
@@ -2013,7 +1993,9 @@ read_datum:                     # c-stream
         cmp     $EOF, %eax
         je      1f
         read_byte_jump read_datum_jump_table, %rbx, %rax
-1:      return
+        return
+
+1:      return  $EOF_OBJECT
 
 read_hash:                      # c-stream
         prologue
@@ -3376,7 +3358,7 @@ jit_rax_to_closure:
 jit_rax_to_closure_size:
         .quad   (. - jit_rax_to_closure) - INT_SIZE
 
-        .irp file, boot r5rs, r7rs
+        .irp file, boot r5rs, r7rs, init
         .align  16
 \file\()_scm:
         .incbin "\file\().scm"

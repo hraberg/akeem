@@ -504,15 +504,16 @@ tmp_string_\@:
         .endm
 
         .macro string_comparator comparator, setter, string1=%rdi, string2=%rsi
-        minimal_prologue
+        prologue
         unbox_pointer_internal \string1
         add     $header_size, %rax
-        mov     %rax, %r11
-        unbox_pointer_internal \string2
-        add     $header_size, %rax
+        mov     %rax, %rdi
+        unbox_pointer_internal \string2, %rsi
+        add     $header_size, %rsi
 
-        call_fn \comparator, %r11, %rax
-        \setter %al
-        box_boolean_internal
+        xor     %ebx, %ebx
+        call_fn \comparator, %rdi, %rsi
+        \setter %bl
+        box_boolean_internal %rbx
         return
         .endm
