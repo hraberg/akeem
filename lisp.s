@@ -2484,7 +2484,7 @@ jit_pair:                       # form, c-stream, environment
         ## 4.1.3. Procedure calls
 
 jit_procedure_call:             # form, c-stream, environment
-        prologue form, len, literal, env, max_locals
+        prologue form, len, operand, literal, env, max_locals
         mov     %rdi, %rbx
         mov     %rbx, form(%rsp)
         mov     %rsi, %r12
@@ -2495,7 +2495,10 @@ jit_procedure_call:             # form, c-stream, environment
         mov     %rax, len(%rsp)
 
         call_fn car, %rbx
-        call_fn jit_datum, %rax, %r12, env(%rsp)
+        mov     %rax, operand(%rsp)
+        has_tag TAG_PAIR, %rax, store=false
+        jne     1f
+        call_fn jit_datum, operand(%rsp), %r12, env(%rsp)
         update_max_locals max_locals(%rsp)
         call_fn fwrite, $jit_push_rax, $1, jit_push_rax_size, %r12
 
@@ -2575,8 +2578,14 @@ jit_procedure_call:             # form, c-stream, environment
 
         jmp     5b
 
-8:      call_fn fwrite, $jit_pop_rax, $1, jit_pop_rax_size, %r12
-        call_fn fwrite, $jit_unbox_rax, $1, jit_unbox_rax_size, %r12
+8:      has_tag TAG_PAIR, operand(%rsp), store=false
+        jne     9f
+        call_fn fwrite, $jit_pop_rax, $1, jit_pop_rax_size, %r12
+        jmp     10f
+
+9:      call_fn jit_datum, operand(%rsp), %r12, env(%rsp)
+
+10:     call_fn fwrite, $jit_unbox_rax, $1, jit_unbox_rax_size, %r12
         call_fn fwrite, $jit_call_rax, $1, jit_call_rax_size, %r12
         return  max_locals(%rsp)
 
