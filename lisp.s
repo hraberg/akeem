@@ -727,8 +727,11 @@ read_char:                      # port
 
         unbox_pointer_internal %rdi
         call_fn fgetc, %rax
+        cmp     $EOF, %al
+        je      1f
         tag     TAG_CHAR, %rax
         return
+1:      return  $EOF_OBJECT
 
 peek_char:                      # port
         prologue
@@ -737,8 +740,11 @@ peek_char:                      # port
         unbox_pointer_internal %rdi, %rbx
         call_fn fgetc, %rbx
         call_fn ungetc, %rax, %rbx
+        cmp     $EOF, %al
+        je      1f
         tag     TAG_CHAR, %rax
         return
+1:      return  $EOF_OBJECT
 
 is_eof_object:                  # obj
         eq_internal $EOF_OBJECT, %rdi
@@ -942,8 +948,11 @@ read_u8:                        # port
 
         unbox_pointer_internal %rdi
         call_fn fgetc, %rax
+        cmp     $EOF, %al
+        je      1f
         tag     TAG_INT, %rax
         return
+1:      return  $EOF_OBJECT
 
 peek_u8:                        # port
         prologue
@@ -952,8 +961,11 @@ peek_u8:                        # port
         unbox_pointer_internal %rdi, %rbx
         call_fn fgetc, %rbx
         call_fn ungetc, %rax, %rbx
+        cmp     $EOF, %al
+        je      1f
         tag     TAG_INT, %rax
         return
+1:      return  $EOF_OBJECT
 
         ## 6.13.3. Output
 

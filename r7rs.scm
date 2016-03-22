@@ -209,6 +209,41 @@
 
 (define call/cc call-with-current-continuation)
 
+;;; 6.13.2. Input
+
+(define (read-line port)
+  (do ((acc '() (cons char acc))
+       (char (read-char port) (read-char port)))
+      ((or (eq? #\newline char)
+           (eq? #\return char)
+           (eof-object? char)) (list->string (reverse acc)))))
+
+(define (read-string k port)
+  (utf8->string (read-bytevector k port) 0 k))
+
+(define (read-bytevector k port)
+  (let ((bytevector (make-bytevector k 0)))
+    (read-bytevector! bytevector port 0 k)
+    bytevector))
+
+(define (read-bytevector! bytevector port start end)
+  (do ((idx start (+ idx 1))
+       (byte (read-u8 port) (read-u8 port)))
+      ((or (= idx end) (eof-object? byte)) (if (= idx start)
+                                               (eof-object)
+                                               idx))
+    (bytevector-u8-set! bytevector idx byte)))
+
+;;; 6.13.3. Output
+
+(define (write-string string port start end)
+  (write-bytevector (string->utf8 string start end) port start end))
+
+(define (write-bytevector bytevector port start end)
+  (do ((idx start (+ idx 1)))
+      ((= idx end) (- end start))
+    (write-u8 (bytevector-u8-ref bytevector idx) port)))
+
 ;;; 6.14. System interface
 
 (define (get-environment-variable name)
