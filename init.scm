@@ -12,7 +12,11 @@
             (newline (current-output-port)))
           (loop))))))
 
-(let ((args (cdr (command-line))))
-  (if (or (null? args))
-      (repl)
-      (for-each load args)))
+(define (main args)
+  (gc)
+  (let ((files (cdr args)))
+    (if (null? files)
+        (repl)
+        (for-each load files))))
+
+(main (command-line))
