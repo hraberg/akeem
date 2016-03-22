@@ -40,7 +40,7 @@ retest: /usr/bin/entr
 	while true; do find . -name '*.s' -o -name '*.scm' -o -name Makefile -o -name tests.out | \
 		$< -r $(MAKE) -s run-tests ; done
 
-benchmark: akeem
+benchmark: clean akeem
 	cd $(RACKET_BENCHMARKS_HOME) ; \
 	for test in $(RACKET_BENCHMARKS) ; do \
 		test -n '$(RUN_RACKET_BENCHMARKS)' && (echo $$test.rkt ; $(RACKET) $$test.rkt) ; \
@@ -50,7 +50,7 @@ benchmark: akeem
 profile: RACKET_BENCHMARKS = nqueens
 profile: RUN_RACKET_BENCHMARKS =
 profile: CFLAGS += -pg
-profile: clean akeem benchmark
+profile: benchmark
 	gprof -b $(AKEEM) $(RACKET_BENCHMARKS_HOME)/gmon.out
 
 jit-dissassmble:

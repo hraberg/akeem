@@ -49,10 +49,35 @@
 
 ;;; 6.1. Equivalence predicates
 
+(define (pair=? pair1 pair2)
+  (let loop ((pair1 pair1)
+             (pair2 pair2))
+    (if (and (pair? pair1) (pair? pair2))
+        (and (equal? (car pair1) (car pair2))
+             (loop (cdr pair1) (cdr pair2)))
+        (equal? pair1 pair2))))
+
+(define (vector=? vector1 vector2)
+  (and (= (vector-length vector1) (vector-length vector2))
+       (let loop ((idx (- (vector-length vector1) 1)))
+         (cond ((negative? idx) #t)
+               ((equal? (vector-ref vector1 idx)
+                        (vector-ref vector2 idx))
+                (loop (- idx 1)))
+               (else #f)))))
+
+(define (bytevector=? bytevector1 bytevector2)
+  (and (= (bytevector-length bytevector1) (bytevector-length bytevector2))
+       (let loop ((idx (- (bytevector-length bytevector1) 1)))
+         (cond ((negative? idx) #t)
+               ((eq? (bytevector-u8-ref bytevector1 idx)
+                     (bytevector-u8-ref bytevector2 idx))
+                (loop (- idx 1)))
+               (else #f)))))
+
 (define (equal? obj1 obj2)
   (cond ((and (pair? obj1) (pair? obj2))
-         (and (equal? (car obj1) (car obj2))
-              (equal? (cdr obj1) (cdr obj2))))
+         (pair=? obj1 obj2))
         ((and (string? obj1) (string? obj2))
          (string=? obj1 obj2))
         ((and (vector? obj1) (vector? obj2))
@@ -125,15 +150,6 @@
 
 ;;; 6.8. Vectors
 
-(define (vector=? vector1 vector2)
-  (and (= (vector-length vector1) (vector-length vector2))
-       (let loop ((idx (- (vector-length vector1) 1)))
-         (cond ((negative? idx) #t)
-               ((equal? (vector-ref vector1 idx)
-                        (vector-ref vector2 idx))
-                (loop (- idx 1)))
-               (else #f)))))
-
 (define (vector-copy vector start end)
   (vector-copy! (make-vector (- end start) 0) 0 vector start end))
 
@@ -169,15 +185,6 @@
     acc))
 
 ;;; 6.9. Bytevectors
-
-(define (bytevector=? bytevector1 bytevector2)
-  (and (= (bytevector-length bytevector1) (bytevector-length bytevector2))
-       (let loop ((idx (- (bytevector-length bytevector1) 1)))
-         (cond ((negative? idx) #t)
-               ((eq? (bytevector-u8-ref bytevector1 idx)
-                     (bytevector-u8-ref bytevector2 idx))
-                (loop (- idx 1)))
-               (else #f)))))
 
 (define (bytevector-copy bytevector start end)
   (bytevector-copy! (make-bytevector (- end start) 0) 0 bytevector start end))
