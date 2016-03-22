@@ -43,8 +43,8 @@ retest: /usr/bin/entr
 benchmark: akeem
 	cd $(RACKET_BENCHMARKS_HOME) ; \
 	for test in $(RACKET_BENCHMARKS) ; do \
-		test -n '$(RUN_RACKET_BENCHMARKS)' && (echo $$test.rkt ; time -p $(RACKET) $$test.rkt) ; \
-		echo $$test.sch ; time -p $(AKEEM) $(AKEEM_HOME)/benchmarks-prelude.scm $$test.sch ; \
+		test -n '$(RUN_RACKET_BENCHMARKS)' && (echo $$test.rkt ; $(RACKET) $$test.rkt) ; \
+		echo $$test.sch ; $(AKEEM) $(AKEEM_HOME)/benchmarks-prelude.scm $$test.sch ; \
 	done
 
 profile: RACKET_BENCHMARKS = nqueens
