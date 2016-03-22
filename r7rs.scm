@@ -268,8 +268,8 @@
 (define textual-port? port?)
 (define binary-port? port?)
 
-(define open-binary-input-file  open-input-file)
-(define open-binary-output-file  open-output-file)
+(define open-binary-input-file open-input-file)
+(define open-binary-output-file open-output-file)
 
 ;;; 6.13.2. Input
 
