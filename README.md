@@ -7,7 +7,8 @@ Akeem is a small JIT-ed subset of
 [R5RS Scheme](http://www.schemers.org/Documents/Standards/R5RS/)
 written in x86-64 assembler as an experiment.
 
-Only tested on Linux. Written in GNU Assembler using AT&T
+Only tested on Linux. Written in
+[GNU Assembler](https://sourceware.org/binutils/docs/as/) using AT&T
 syntax. Akeem depends on
 [glibc](https://www.gnu.org/software/libc/manual/html_mono/libc.html).
 
@@ -30,8 +31,7 @@ See [this tutorial](http://community.schemewiki.org/?emacs-tutorial).
 
 ## What Works?
 
-* Subset of R5RS procedures.
-* A minimal set of R7RS procedures.
+* Subset of R5RS and R7RS "small" procedures.
 * JIT for `if`, `lambda`, `set!`, `let`,
   "named `let`", `letrec` and `begin`
 * Syntax for `and`, `or`, `cond`, `case`, `let*`, `do`, `delay` and `define`.
@@ -44,27 +44,28 @@ See [this tutorial](http://community.schemewiki.org/?emacs-tutorial).
 
 ## What Doesn't Work?
 
-* Almost no error handling.
-* No hygienic macro expansion.
-* No `let-syntax` and `letrec-syntax`.
-* "named `let`" compiles to a jump and not a procedure that returns.
-* No mutation of closed over variables (needs array boxing).
-* No TCO.
-* Max arity is currently 6, higher requires the use of the stack.
 * No vararg support.
-* No GC for functions or their constant literals.
-* Not full support for Scheme numbers in the reader.
-* Limited numeric tower, see above.
+* Max arity is currently 6, higher requires the use of the stack.
+* No `let-syntax` and `letrec-syntax`.
+* No `call-with-values` or `dynamic-wind`.
 * `call-with-current-continuation` only uses `setjmp`.
-* A lot of needless moving and popping of data in the generated code.
+* Almost no error handling.
 * No register allocation.
-* The JIT is static, once a function is generated its done.
+* No TCO.
+* No hygienic macro expansion.
 * The memory for the generated code is allocated in a very wasteful
   way.
+* No GC for functions or their constant literals.
+* The JIT is static, once a function is generated its done.
+* Not full support for Scheme numbers in the reader.
+* No support for converting internal `define` to `letrec`.
+* "named `let`" compiles to a jump and not a procedure that returns.
+* No mutation of closed over variables (needs array boxing).
+* Limited numeric tower, see above.
 
-Most of the above is intended to be solved at some point. The focus is
-slightly geared towards hacking on and exploring the JIT more than
-aiming for full R5RS compliance.
+Most of the above is intended to be solved at some point, in roughly
+the order listed. The focus is slightly geared towards hacking on and
+exploring the JIT more than aiming for full R5RS / R7RS compliance.
 
 
 ## Implementation Notes
@@ -144,6 +145,16 @@ make RACKET_HOME=/path/to/racket benchmarks
 The `racket` executable itself is assumed to be on the path. Akeem can
 currently run about 10% of the benchmarks, and is about 3 times slower
 than Racket.
+
+### Profiling
+
+You can run a single benchmark followed by
+[`gprof`](https://sourceware.org/binutils/docs/gprof/) using:
+
+``` bash
+make RACKET_BENCHMARKS=nqueens profile
+```
+Only functions written in assembler will show up.
 
 
 ## References
