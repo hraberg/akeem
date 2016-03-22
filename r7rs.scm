@@ -213,3 +213,6 @@
 (define (get-environment-variable name)
   (cond ((assoc name (get-environment-variables)) => cdr)
         (else #f)))
+
+(define (features)
+  '(r7rs exact-closed ieee-float posix gnu-linux x86-64 little-endian))
