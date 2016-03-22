@@ -29,6 +29,10 @@
   (and (number? z)
        (not (or (nan? z) (infinite? z)))))
 
+(define (exact-integer-sqrt k)
+  (let* ((s (exact (sqrt k))))
+    (cons s (exact (- k (* s s))))))
+
 ;;; 6.4. Pairs and lists
 
 (define (make-list k fill)
@@ -46,6 +50,13 @@
 
 (define (symbol=? symbol1 symbol2)
   (equal? (symbol->string symbol1) (symbol->string symbol2)))
+
+;;; 6.6. Characters
+
+(define (digit-value char)
+  (if (char-numeric? char)
+      (- (char->integer char) (char->integer #\0))
+      #f))
 
 ;;; 6.7. Strings
 

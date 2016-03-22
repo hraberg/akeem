@@ -714,6 +714,9 @@
 (assert (square 42))
 (assert (square 2.0))
 
+(assert (exact-integer-sqrt 4))
+(assert (exact-integer-sqrt 5))
+
 (spec ";;; 6.4. Pairs and lists")
 (assert (make-list 2 3))
 
@@ -726,6 +729,13 @@
 (set-car! b 3)
 (assert b)
 (assert a)
+
+(spec ";;; 6.6. Characters")
+
+(assert (digit-value #\3))
+;; (assert (digit-value #\x0664))
+;; (assert (digit-value #\x0AE6))
+(assert (digit-value #\a)) ;; should be #\x0EA6
 
 (spec ";;; 6.8. Vectors")
 (assert (string->vector "ABC"))

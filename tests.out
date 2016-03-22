@@ -307,11 +307,16 @@ mISSISSIppi
 #f
 1764
 4.000000
+(2 . 0)
+(2 . 1)
 ;;; 6.4. Pairs and lists
 (3 3)
 (one two three)
 (3 8 2 8)
 (1 8 2 8)
+;;; 6.6. Characters
+3
+#f
 ;;; 6.8. Vectors
 #(#\A #\B #\C)
 "123"
