@@ -1,6 +1,7 @@
 ;;; R7RS
 
 ;;; 4.2.1. Conditionals
+
 (define-syntax case
   (syntax-rules (else =>)
     ((case (key ...)
