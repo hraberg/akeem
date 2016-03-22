@@ -6,7 +6,6 @@
 
         ## 6. Standard procedures
         ## 6.1. Equivalence predicates
-        .globl is_eq, is_eq_v
 
 is_eq:                          # obj1, obj2
 is_eqv:                         # obj1, obj2
@@ -16,12 +15,6 @@ is_eqv:                         # obj1, obj2
 
         ## 6.2. Numbers
         ## 6.2.5. Numerical operations
-        .globl is_number, is_complex, is_real, is_rational, is_integer, is_exact, is_inexact
-        .globl equal, less_than, greater_than, less_than_or_equal, greater_than_or_equal
-        .globl plus, minus, multiply, divide
-        .globl quotient, remainder, modulo
-        .globl floor_, ceiling_, truncate_, round_, exp_, log_, sin_, cos_, tan_, asin_, acos_, atan_, sqrt_, expt_
-        .globl exact_to_inexact, inexact_to_exact
 
 is_number:                      # obj
 is_complex:                     # obj
@@ -164,7 +157,6 @@ inexact_to_exact:               # z
         ret
 
         ## 6.2.6. Numerical input and output
-        .globl number_to_string, string_to_number
 
 number_to_string:               # z, radix
         minimal_prologue
@@ -200,7 +192,6 @@ string_to_number:               # string, radix
         ## 6.3. Other data types
 
         ## 6.3.1. Booleans
-        .globl not
 
 not:                            # obj
         mov     $FALSE, %rax
@@ -209,7 +200,6 @@ not:                            # obj
         ret
 
         ## 6.3.2. Pairs and lists
-        .globl is_pair, cons, car, cdr, set_car, set_cdr, is_null, length, reverse, append
 
 is_pair:                        # obj
         is_nil_internal %rdi
@@ -311,7 +301,6 @@ reverse:                        # list
 2:      return  %r12
 
         ## 6.3.3. Symbols
-        .globl is_symbol, symbol_to_string, string_to_symbol
 
 is_symbol:                      # obj
         has_tag TAG_SYMBOL, %rdi
@@ -353,8 +342,6 @@ string_to_symbol:               # string
         return
 
         ## 6.3.4. Characters
-        .globl is_char, is_char_alphapbetic, is_char_numeric, is_char_whitespace, is_char_upper_case, is_char_lower_case
-        .globl char_to_integer, integer_to_char, char_upcase, char_downcase
 
 is_char:                        # obj
         has_tag TAG_CHAR, %rdi
@@ -427,10 +414,6 @@ char_downcase:                  # char
         return
 
         ## 6.3.5. Strings
-        .globl is_string, make_string, string_length, string_ref, string_set
-        .globl is_string_equal, is_string_ci_equal
-        .globl is_string_less_than, is_string_greater_than, is_string_less_than_or_equal, is_string_greater_than_or_equal
-        .globl is_string_ci_less_than, is_string_ci_greater_than, is_string_ci_less_than_or_equal, is_string_ci_greater_than_or_equal
 
 is_string:                      # obj
         has_tag TAG_STRING, %rdi
@@ -513,7 +496,6 @@ is_string_ci_greater_than_or_equal: # string1, string2
         string_comparator strcasecmp, setge
 
         ## 6.3.6. Vectors
-        .globl is_vector, make_vector, vector_length, vector_ref, vector_set, list_to_vector
 
 is_vector:                      # obj
         has_tag TAG_VECTOR, %rdi
@@ -582,7 +564,6 @@ list_to_vector:                 # list
 2:      return  vec(%rsp)
 
         ## 6.4. Control features
-        .globl is_procedure, apply, call_with_current_continuation
 
 is_procedure:                   # obj
         has_tag TAG_PROCEDURE, %rdi
@@ -652,7 +633,6 @@ call_with_current_continuation: # proc
         return  %xmm0
 
         ## 6.5. Eval
-        .globl eval, scheme_report_environment, null_environment, interaction_environment
 
 eval:                           # expression, environment-specifier
         prologue max_global_symbol
@@ -678,9 +658,6 @@ interaction_environment:
 
         ## 6.6. Input and output
         ## 6.6.1. Ports
-        .globl is_input_port, is_output_port, current_input_port, current_output_port
-        .globl with_input_from_file, with_output_to_file
-        .globl open_input_file, open_output_file, close_input_port, close_output_port
 
 open_input_file:                # filename
         minimal_prologue
@@ -735,7 +712,6 @@ is_output_port:                 # obj
         ret
 
         ## 6.6.2. Input
-        .globl read, read_char, peek_char, is_eof_object
 
 read:                           # port
         minimal_prologue
@@ -770,7 +746,7 @@ is_eof_object:                  # obj
         ret
 
         ## 6.6.3. Output
-        .globl write, display, write_char
+
 write:                          # obj, port
         prologue
 
@@ -808,7 +784,6 @@ write_char:                     # char, port
         return  $VOID
 
         ## 6.6.4. System interface
-        .globl load
 
 load:                           # filename
         prologue
@@ -823,7 +798,6 @@ load:                           # filename
         ## 6. Standard procedures
         ## 6.2. Numbers
         ## 6.2.6. Numerical operations
-        .globl is_infinite, is_nan
 
 is_infinite:                    # z
         minimal_prologue
@@ -848,7 +822,6 @@ is_nan:                         # z
 1:      return  $FALSE
 
         ## 6.9. Bytevectors
-        .globl is_bytevector, make_bytevector, bytevector_length, bytevector_u8_ref, bytevector_u8_set, list_to_bytevector
 
 is_bytevector:                  # obj
         minimal_prologue
@@ -920,7 +893,6 @@ list_to_bytevector:             # list
 2:      return  vec(%rsp)
 
         ## 6.11. Exceptions
-        .globl error
 
 error:                          # reason
         minimal_prologue
@@ -931,7 +903,6 @@ error:                          # reason
 
         ## 6.13. Input and output
         ## 6.13.1. Ports
-        .globl call_with_port, current_error_port, close_port, open_input_string, open_input_bytevector
 
 call_with_port:                 # port, proc
         prologue
@@ -960,7 +931,6 @@ open_input_bytevector:          # bytevector
         open_input_buffer_template $0
 
         ## 6.13.2. Input
-        .globl eof_object, read_u8, peek_u8
 
 eof_object:
         mov     $EOF_OBJECT, %rax
@@ -986,7 +956,6 @@ peek_u8:                        # port
         return
 
         ## 6.13.3. Output
-        .globl write_u8, flush_output_port
 
 write_u8:                       # byte, port
         minimal_prologue
@@ -1006,8 +975,6 @@ flush_output_port:              # port
         return  $VOID
 
         ## 6.14. System interface
-        .globl delete_file, is_file_exists, command_line, exit_, get_environment_variables
-        .globl current_second, current_jiffy, jiffies_per_second,
 
 delete_file:                    # filename
         minimal_prologue
@@ -1624,8 +1591,6 @@ build_environment_alist:        # list
 3:      return  %rbx
 
         ## Public API
-        .globl object_space_size, class_of
-        .globl box_boolean, box_int, box_string, unbox
 
 void:
         mov     $VOID, %rax
@@ -1777,7 +1742,6 @@ pop_pointer_from_stack:         # c-stack
         ret
 
         ## Garbage Collection
-        .globl gc, gc_mark, gc_sweep, gc_has_mark
 
 gc_allocate_memory:             # c-size
         prologue
