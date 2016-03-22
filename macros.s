@@ -331,6 +331,18 @@
 .L_\@_1:
         .endm
 
+        .macro read_number_template radix unget=false
+        prologue
+        mov     %rdi, %rbx
+        mov     %rsi, %rdi
+        .ifc \unget, true
+        call_fn ungetc, %rdi, %rbx
+        .endif
+        call_fn read_token, %rbx
+        call_fn string_to_number, %rax, \radix
+        return
+        .endm
+
         .macro open_string_buffer str, size, stream
         lea     \str, %rdi
         lea     \size, %rsi

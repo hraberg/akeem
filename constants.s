@@ -65,6 +65,11 @@
 
         .equ ZERO_INT, (NAN_MASK | (TAG_INT << TAG_SHIFT) | 0)
 
+        .equ BINARY_RADIX_INT, (NAN_MASK | (TAG_INT << TAG_SHIFT) | 2)
+        .equ OCTAL_RADIX_INT, (NAN_MASK | (TAG_INT << TAG_SHIFT) | 8)
+        .equ DECIMAL_RADIX_INT, (NAN_MASK | (TAG_INT << TAG_SHIFT) | 10)
+        .equ HEX_RADIX_INT, (NAN_MASK | (TAG_INT << TAG_SHIFT) | 16)
+
         .equ MAX_NUMBER_OF_SYMBOLS, 1024
         .equ OBJECT_SPACE_INITIAL_SIZE, 8 * 1024
 

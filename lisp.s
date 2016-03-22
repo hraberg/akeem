@@ -1140,6 +1140,10 @@ main:                # argc, argv
         store_pointer $'f, $read_false
         store_pointer $'\\, $read_character
         store_pointer $'(, $read_vector
+        store_pointer $'b, $read_binary_number
+        store_pointer $'o, $read_octal_number
+        store_pointer $'d, $read_decimal_number
+        store_pointer $'x, $read_hexadecimal_number
 
         lea     jit_jump_table, %rbx
         store_pointer $TAG_DOUBLE, $jit_literal
@@ -2100,13 +2104,19 @@ read_symbol:                    # c-stream, c-char
         return
 
 read_number:                    # c-stream, c-char
-        prologue
-        mov     %rdi, %rbx
-        mov     %rsi, %rdi
-        call_fn ungetc, %rdi, %rbx
-        call_fn read_token, %rbx
-        call_fn string_to_number, %rax
-        return
+        read_number_template $DECIMAL_RADIX_INT, unget=true
+
+read_binary_number:             # c-stream, c-char
+        read_number_template $BINARY_RADIX_INT
+
+read_octal_number:              # c-stream, c-char
+        read_number_template $OCTAL_RADIX_INT
+
+read_decimal_number:            # c-stream, c-char
+        read_number_template $DECIMAL_RADIX_INT
+
+read_hexadecimal_number:        # c-stream, c-char
+        read_number_template $HEX_RADIX_INT
 
 read_number_or_symbol:          # c-stream, c-char
         prologue sign
