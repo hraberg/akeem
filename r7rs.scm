@@ -120,3 +120,9 @@
       (proc (vector-ref vector idx)))))
 
 (define call/cc call-with-current-continuation)
+
+;;; 6.14. System interface
+
+(define (get-environment-variable name)
+  (cond ((assoc name (get-environment-variables)) => cdr)
+        (else #f)))

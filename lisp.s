@@ -876,7 +876,7 @@ open_input_string:              # string
         return
 
         ## 6.14. System interface
-        .globl delete_file, is_file_exists, command_line, exit_, get_environment_variable, get_environment_variables
+        .globl delete_file, is_file_exists, command_line, exit_, get_environment_variables
         .globl current_second, current_jiffy, jiffies_per_second,
 
 delete_file:                    # filename
@@ -926,17 +926,6 @@ emergency_exit:                 # obj
         default_arg TAG_INT, $1, %rdi
         mov     %edi, %edi
         call_fn exit, %rdi
-        return
-
-get_environment_variable:       # name
-        minimal_prologue
-        call_fn unbox_string, %rdi
-        call_fn getenv, %rax
-        test    %rax, %rax
-        jnz     1f
-        return  $FALSE
-
-1:      call_fn box_string, %rax
         return
 
 get_environment_variables:
@@ -1390,7 +1379,6 @@ main:                # argc, argv
         define "command-line", $command_line
         define "exit", $exit_
         define "emergency-exit", $emergency_exit
-        define "get-environment-variable", $get_environment_variable
         define "get-environment-variables", $get_environment_variables
         define "current-second", $current_second
         define "current-jiffy", $current_jiffy
@@ -1461,7 +1449,7 @@ build_environment_alist:        # list
         mov     %rax, env_var_name(%rsp)
 
         lea     save_ptr(%rsp), %rax
-        call_fn strtok_r, $NULL, $equals_sign, %rax
+        call_fn strtok_r, $NULL, $empty_string, %rax
         test    %rax, %rax
         jnz     2f
         mov     $empty_string, %rax
