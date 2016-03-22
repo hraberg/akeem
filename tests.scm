@@ -746,9 +746,12 @@
     #(#\1 #\2 #\3)))
 
 (define a #(1 8 2 8))
-(define b (vector-copy a))
+(define b (vector-copy a 0 4)) ;; should be a
 (vector-set! b 0 3)
 (assert b)
+
+(define c (vector-copy b 1 3))
+(assert c)
 
 (define a #(1 2 3 4 5)) ;; should be vector
 (define b #(10 20 30 40 50)) ;; should be vector
@@ -756,6 +759,31 @@
 (assert b)
 
 (assert (vector-append #(a b c) #(d e f)))
+
+(spec ";;; 6.9. Bytevectors")
+(assert (make-bytevector 2 12))
+
+;; (assert (bytevector 1 3 5 1 3 5))
+;; (assert (bytevector))
+
+(assert (bytevector-u8-ref '#u8(1 1 2 3 5 8 13 21) 5))
+
+(assert (let ((bv #u8(1 2 3 4))) ;; should be bytevector
+          (bytevector-u8-set! bv 1 3)
+          bv))
+
+(define a #u8(1 2 3 4 5))
+(assert (bytevector-copy a 2 4))
+
+(define a #u8(1 2 3 4 5)) ;; should be bytevector
+(define b #u8(10 20 30 40 50)) ;; should be bytevector
+(bytevector-copy! b 1 a 0 2)
+(assert b)
+
+(assert (bytevector-append #u8(0 1 2) #u8(3 4 5)))
+
+(assert (utf8->string #u8(#x41) 0 1)) ;; should be #u8(#x41)
+(assert (string->utf8 "A" 0 1)) ;; should be λ
 
 (spec ";;; 6.10. Control features")
 (assert (string-map

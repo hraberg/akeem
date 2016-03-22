@@ -110,9 +110,8 @@
 
 ;;; 6.8. Vectors
 
-(define (vector-copy vector)
-  (let ((length (vector-length vector)))
-    (vector-copy! (make-vector length) 0 vector 0 length)))
+(define (vector-copy vector start end)
+  (vector-copy! (make-vector (- end start) 0) 0 vector start end))
 
 (define (vector-copy! to at from start end)
   (do ((idx start (+ idx 1)))
@@ -144,6 +143,40 @@
         ((= idx length2))
       (vector-set! acc (+ idx length1) (vector-ref vector2 idx)))
     acc))
+
+;;; 6.9. Bytevectors
+
+(define (bytevector-copy bytevector start end)
+  (bytevector-copy! (make-bytevector (- end start) 0) 0 bytevector start end))
+
+(define (bytevector-copy! to at from start end)
+  (do ((idx start (+ idx 1)))
+      ((= idx end) to)
+    (bytevector-u8-set! to (- (+ idx at) start) (bytevector-u8-ref from idx))))
+
+(define (bytevector-append bytevector1 bytevector2)
+  (let* ((length1 (bytevector-length bytevector1))
+         (length2 (bytevector-length bytevector2))
+         (acc (make-bytevector (+ length1 length2))))
+    (do ((idx 0 (+ idx 1)))
+        ((= idx length1))
+      (bytevector-u8-set! acc idx (bytevector-u8-ref bytevector1 idx)))
+    (do ((idx 0 (+ idx 1)))
+        ((= idx length2))
+      (bytevector-u8-set! acc (+ idx length1) (bytevector-u8-ref bytevector2 idx)))
+    acc))
+
+(define (utf8->string bytevector start end)
+  (do ((acc (make-string (- end start)))
+       (idx start (+ idx 1)))
+      ((= idx end) acc)
+    (string-set! acc (- idx start) (bytevector-u8-ref bytevector idx))))
+
+(define (string->utf8 string start end)
+  (do ((acc (make-bytevector (- end start)))
+       (idx start (+ idx 1)))
+      ((= idx end) acc)
+    (bytevector-u8-set! acc (- idx start) (string-ref string idx))))
 
 ;;; 6.10. Control features
 

@@ -296,6 +296,27 @@
         return  %rbx
         .endm
 
+        .macro open_input_buffer_template size_adjust
+        prologue empty_stream, empty_stream_size
+        unbox_pointer_internal %rdi
+        mov     header_object_size(%rax), %esi
+        add     \size_adjust, %esi
+        test    %esi, %esi
+        jz      1f
+        add     $header_size, %rax
+        call_fn fmemopen, %rax, %rsi, $read_mode
+        perror
+        tag     TAG_PORT, %rax
+        return
+
+1:      lea     empty_stream(%rsp), %rdi
+        lea     empty_stream_size(%rsp), %rsi
+        call_fn open_memstream, %rdi, %rsi
+        perror
+        tag     TAG_PORT, %rax
+        return
+        .endm
+
         .macro patch_jump stream, target, origin, offset
         call_fn ftell, \stream
         mov     %rax, \target

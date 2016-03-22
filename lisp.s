@@ -847,6 +847,78 @@ is_nan:                         # z
         return
 1:      return  $FALSE
 
+        ## 6.9. Bytevectors
+        .globl is_bytevector, make_bytevector, bytevector_length, bytevector_u8_ref, bytevector_u8_set, list_to_bytevector
+
+is_bytevector:                  # obj
+        minimal_prologue
+        call_fn class_of, %rdi
+        eq_internal bytevector_symbol, %rax
+        box_boolean_internal %rax
+        return
+
+make_bytevector:                # k, byte
+        prologue
+        mov     %rsi, %r12
+        mov     %edi, %ebx
+        add     $header_size, %edi
+        call_fn gc_allocate_memory, %rdi
+        mov     bytevector_symbol, %r11w
+        mov     %r11w, header_object_type(%rax)
+        mov     %ebx, header_object_size(%rax)
+
+1:      test    %ebx, %ebx
+        jz      2f
+        dec     %ebx
+        mov     %r12b, header_size(%rax,%rbx)
+        jmp     1b
+
+2:      tag     TAG_OBJECT, %rax
+        register_for_gc
+        return
+
+bytevector_length:              # bytevector
+        unbox_pointer_internal %rdi
+        mov     header_object_size(%rax), %eax
+        box_int_internal
+        ret
+
+bytevector_u8_ref:              # bytevector, k
+        unbox_pointer_internal %rdi
+        mov     %esi, %esi
+        xor     %r11d, %r11d
+        mov     header_size(%rax,%rsi), %r11b
+        tag     TAG_INT, %r11
+        ret
+
+bytevector_u8_set:              # bytevector, k, byte
+        unbox_pointer_internal %rdi
+        mov     %esi, %esi
+        mov     %dl, header_size(%rax,%rsi)
+        mov     $VOID, %rax
+        ret
+
+list_to_bytevector:             # list
+        prologue vec
+        mov     %rdi, %r12
+        call_fn length, %r12
+        call_fn make_bytevector, %rax
+        mov     %rax, vec(%rsp)
+
+        xor     %ebx, %ebx
+1:      is_nil_internal %r12
+        je      2f
+
+        call_fn car, %r12
+        call_fn bytevector_u8_set, vec(%rsp), %rbx, %rax
+        call_fn cdr, %r12
+        mov     %rax, %r12
+
+        inc     %rbx
+        jmp     1b
+
+2:      return  vec(%rsp)
+
         ## 6.11. Exceptions
         .globl error
 
@@ -859,7 +931,7 @@ error:                          # reason
 
         ## 6.13. Input and output
         ## 6.13.1. Ports
-        .globl call_with_port, current_error_port, close_port, open_input_string
+        .globl call_with_port, current_error_port, close_port, open_input_string, open_input_bytevector
 
 call_with_port:                 # port, proc
         prologue
@@ -882,31 +954,56 @@ close_port:                     # port
         return
 
 open_input_string:              # string
-        prologue empty_stream, empty_stream_size
-        unbox_pointer_internal %rdi
-        mov     header_object_size(%rax), %esi
-        dec     %esi
-        test    %esi, %esi
-        jz      1f
-        add     $header_size, %rax
-        call_fn fmemopen, %rax, %rsi, $read_mode
-        perror
-        tag     TAG_PORT, %rax
-        return
+        open_input_buffer_template $-1
 
-1:      lea     empty_stream(%rsp), %rdi
-        lea     empty_stream_size(%rsp), %rsi
-        call_fn open_memstream, %rdi, %rsi
-        perror
-        tag     TAG_PORT, %rax
-        return
+open_input_bytevector:          # bytevector
+        open_input_buffer_template $0
 
         ## 6.13.2. Input
-        .globl eof_object
+        .globl eof_object, read_u8, peek_u8
 
 eof_object:
         mov     $EOF_OBJECT, %rax
         ret
+
+read_u8:                        # port
+        minimal_prologue
+        default_arg TAG_PORT, stdin, %rdi
+
+        unbox_pointer_internal %rdi
+        call_fn fgetc, %rax
+        tag     TAG_INT, %rax
+        return
+
+peek_u8:                        # port
+        prologue
+        default_arg TAG_PORT, stdin, %rdi
+
+        unbox_pointer_internal %rdi, %rbx
+        call_fn fgetc, %rbx
+        call_fn ungetc, %rax, %rbx
+        tag     TAG_INT, %rax
+        return
+
+        ## 6.13.3. Output
+        .globl write_u8, flush_output_port
+
+write_u8:                       # byte, port
+        minimal_prologue
+        default_arg TAG_PORT, stdout, %rsi
+
+        unbox_pointer_internal %rsi, %rax
+        mov     %edi, %edi
+        call_fn fputc, %rdi, %rax
+        return  $VOID
+
+flush_output_port:              # port
+        minimal_prologue
+        default_arg TAG_PORT, stdout, %rsi
+
+        unbox_pointer_internal %rsi
+        call_fn fflush, %rax
+        return  $VOID
 
         ## 6.14. System interface
         .globl delete_file, is_file_exists, command_line, exit_, get_environment_variables
@@ -1010,6 +1107,8 @@ main:                # argc, argv
         intern_symbol vector_symbol, "vector", id=TAG_VECTOR
         intern_symbol object_symbol, "object", id=TAG_OBJECT
 
+        intern_symbol bytevector_symbol, "bytevector"
+
         intern_symbol quote_symbol, "quote"
         intern_symbol lambda_symbol, "lambda"
         intern_symbol if_symbol, "if"
@@ -1087,6 +1186,8 @@ main:                # argc, argv
         store_pointer $TAG_VECTOR, $vector_to_string
         store_pointer $TAG_OBJECT, $object_to_string
 
+        store_pointer bytevector_symbol, $bytevector_to_string
+
         lea     unbox_jump_table, %rbx
         store_pointer $TAG_DOUBLE, $unbox_double
         store_pointer $TAG_BOOLEAN, $unbox_boolean
@@ -1144,6 +1245,7 @@ main:                # argc, argv
         store_pointer $'o, $read_octal_number
         store_pointer $'d, $read_decimal_number
         store_pointer $'x, $read_hexadecimal_number
+        store_pointer $'u, $read_bytevector
 
         lea     jit_jump_table, %rbx
         store_pointer $TAG_DOUBLE, $jit_literal
@@ -1408,13 +1510,26 @@ main:                # argc, argv
         define "infinite?", $is_infinite
         define "nan?", $is_nan
 
+        define "bytevector?", $is_bytevector
+        define "make-bytevector", $make_bytevector
+        define "bytevector-length", $bytevector_length
+        define "bytevector-u8-ref", $bytevector_u8_ref
+        define "bytevector-u8-set!", $bytevector_u8_set
+        define "list->bytevector", $list_to_bytevector
+
         define "error", $error
 
         define "call-with-port", $call_with_port
         define "current-error-port", $current_error_port
         define "open-input-string", $open_input_string
+        define "open-input-bytevector", $open_input_bytevector
 
         define "eof-object", $eof_object
+        define "read-u8", $read_u8
+        define "peek-u8", $peek_u8
+
+        define "write-u8", $write_u8
+        define "flush-output-port", $flush_output_port
 
         define "delete-file", $delete_file
         define "file-exists?", $is_file_exists
@@ -1538,7 +1653,14 @@ class_of:                       # obj
 1:      cmp     $EOF_OBJECT, %rbx
         jne     2f
         return  eof_symbol
-2:      return  void_symbol
+2:      is_void_internal  %rbx
+        jne     3f
+        return  void_symbol
+3:      xor     %eax, %eax
+        unbox_pointer_internal %rbx, %r11
+        mov     header_object_type(%r11), %ax
+        tag     TAG_SYMBOL, %rax
+        return
 
 object_space_size:
         mov     stack_top_offset + object_space, %rax
@@ -1845,6 +1967,40 @@ vector_to_string:               # vector
         register_for_gc
         return
 
+bytevector_to_string:           # bytevector
+        prologue str, stream, size
+        unbox_pointer_internal %rdi, %rbx
+
+        open_string_buffer str(%rsp), size(%rsp), stream(%rsp)
+        call_fn fputc, $'\#, stream(%rsp)
+        call_fn fputc, $'u, stream(%rsp)
+        call_fn fputc, $'8, stream(%rsp)
+        call_fn fputc, $'(, stream(%rsp)
+
+        xor     %r12d, %r12d
+1:      cmp     header_object_size(%rbx), %r12d
+        je      3f
+        test    %r12d, %r12d
+        jz      2f
+
+        call_fn fputc, $' , stream(%rsp)
+
+2:      mov     header_size(%rbx,%r12), %al
+        tag     TAG_INT, %rax
+        call_fn to_string, %rax
+        unbox_pointer_internal %rax, %rdi
+        add     $header_size, %rdi
+        call_fn fputs, %rdi, stream(%rsp)
+
+        inc     %r12
+        jmp     1b
+
+3:      call_fn fputc, $'), stream(%rsp)
+
+        string_buffer_to_string str(%rsp), size(%rsp), stream(%rsp)
+        register_for_gc
+        return
+
 pair_to_string:                 # pair
         prologue str, size, stream
         mov     %rdi, %r12
@@ -1987,15 +2143,26 @@ string_to_machine_readable_string: # string
         return
 
 object_to_string:               # obj
-        prologue str, size
+        prologue obj, str, size
+        mov     %rdi, obj(%rsp)
         call_fn class_of, %rdi
-        call_fn to_string, %rax
+        mov     %rax, %rbx
+        unbox_pointer_internal %rax, %rcx
+        mov     to_string_jump_table(,%rcx,POINTER_SIZE), %r11
+        cmp     $object_to_string, %r11
+        je      1f
+        test    %r11, %r11
+        jnz     2f
+1:      call_fn to_string, %rbx
         call_fn unbox_string, %rax
         mov     %rax, %rbx
         open_string_buffer str(%rsp), size(%rsp), %r12
         call_fn fprintf, %r12, $object_format, %rbx
         string_buffer_to_string str(%rsp), size(%rsp), %r12
         register_for_gc
+        return
+2:      mov     obj(%rsp), %rdi
+        call    *%r11
         return
 
 to_string:                      # value
@@ -2239,6 +2406,23 @@ read_vector:                    # c-stream
         prologue
         call_fn read_list, %rdi
         call_fn list_to_vector, %rax
+        return
+
+read_bytevector:                # c-stream
+        prologue
+        mov     %rdi, %rbx
+        call_fn fgetc, %rbx
+        cmp     $'8, %al
+        jne     1f
+        call_fn fgetc, %rbx
+        cmp     $'(, %al
+        jne     1f
+
+        call_fn read_list, %rbx
+        call_fn list_to_bytevector, %rax
+        return
+
+1:      call_fn error, read_error_string
         return
 
 read_list:                      # c-stream
@@ -3157,7 +3341,7 @@ boolean_string_table:
 
         .align  16
 to_string_jump_table:
-        .zero   TAG_MASK * POINTER_SIZE
+        .zero   MAX_NUMBER_OF_SYMBOLS * POINTER_SIZE
 
         .align  16
 unbox_jump_table:
