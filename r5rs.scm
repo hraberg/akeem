@@ -298,35 +298,35 @@
 (define (list-ref list k)
   (car (list-tail list k)))
 
-(define (member-aux comparator obj list)
+(define (member-aux obj list compare)
   (let loop ((list list))
     (cond ((null? list) #f)
-          ((comparator obj (car list)) list)
+          ((compare obj (car list)) list)
           (else (loop (cdr list))))))
 
 (define (memq obj list)
-  (member-aux eq? obj list))
+  (member-aux obj list eq?))
 
 (define (memv obj list)
-  (member-aux eqv? obj list))
+  (member-aux obj list eqv?))
 
 (define (member obj list)
-  (member-aux equal? obj list))
+  (member-aux obj list equal?))
 
-(define (assoc-aux comparator obj alist)
+(define (assoc-aux obj alist compare)
   (let loop ((alist alist))
     (cond ((null? alist) #f)
-          ((comparator obj (caar alist)) (car alist))
+          ((compare obj (caar alist)) (car alist))
           (else (loop (cdr alist))))))
 
 (define (assq obj alist)
-  (assoc-aux eq? obj alist))
+  (assoc-aux obj alist eq?))
 
 (define (assv obj alist)
-  (assoc-aux eqv? obj alist))
+  (assoc-aux obj alist eqv?))
 
 (define (assoc obj alist)
-  (assoc-aux equal? obj alist))
+  (assoc-aux obj alist equal?))
 
 ;;; 6.3.4. Characters
 
