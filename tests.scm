@@ -101,7 +101,6 @@
           ((w y) 'semivowel)
           (else 'consonant)))
 
-
 (assert (and (= 2 2) (> 2 1)))
 (assert (and (= 2 2) (< 2 1)))
 (assert (and 1 2 'c '(f g)))
@@ -682,6 +681,11 @@
 (spec ";;; 4. Expressions")
 (spec ";;; 4.2. Derived expression types")
 (spec ";;; 4.2.1. Conditionals")
+(assert (case (car '(c d))
+          ((a e i o u) 'vowel)
+          ((w y) 'semivowel)
+          (else => (lambda (x) x))))
+
 (assert (when (= 1 1.0)
           (display "1")
           (display "2")
@@ -731,7 +735,6 @@
 (assert a)
 
 (spec ";;; 6.6. Characters")
-
 (assert (digit-value #\3))
 ;; (assert (digit-value #\x0664))
 ;; (assert (digit-value #\x0AE6))

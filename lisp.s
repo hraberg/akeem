@@ -901,6 +901,13 @@ open_input_string:              # string
         tag     TAG_PORT, %rax
         return
 
+        ## 6.13.2. Input
+        .globl eof_object
+
+eof_object:
+        mov     $EOF_OBJECT, %rax
+        ret
+
         ## 6.14. System interface
         .globl delete_file, is_file_exists, command_line, exit_, get_environment_variables
         .globl current_second, current_jiffy, jiffies_per_second,
@@ -1402,6 +1409,8 @@ main:                # argc, argv
         define "call-with-port", $call_with_port
         define "current-error-port", $current_error_port
         define "open-input-string", $open_input_string
+
+        define "eof-object", $eof_object
 
         define "delete-file", $delete_file
         define "file-exists?", $is_file_exists
@@ -2475,20 +2484,23 @@ jit_pair:                       # form, c-stream, environment
         ## 4.1.3. Procedure calls
 
 jit_procedure_call:             # form, c-stream, environment
-        prologue form, len, operand, literal, env, max_locals
+        prologue form, len, literal, env, max_locals
         mov     %rdi, %rbx
         mov     %rbx, form(%rsp)
         mov     %rsi, %r12
         mov     %rdx, env(%rsp)
         movq    $0, max_locals(%rsp)
-        call_fn car, %rbx
-        mov     %rax, operand(%rsp)
-
-        call_fn cdr, %rbx
-        mov     %rax, %rbx
 
         call_fn length, %rbx
         mov     %rax, len(%rsp)
+
+        call_fn car, %rbx
+        call_fn jit_datum, %rax, %r12, env(%rsp)
+        update_max_locals max_locals(%rsp)
+        call_fn fwrite, $jit_push_rax, $1, jit_push_rax_size, %r12
+
+        call_fn cdr, %rbx
+        mov     %rax, %rbx
 
 1:      is_nil_internal %rbx
         je      4f
@@ -2509,6 +2521,7 @@ jit_procedure_call:             # form, c-stream, environment
         jmp     1b
 
 4:      mov     len(%rsp), %rbx
+        dec     %ebx
         call_fn cdr, form(%rsp)
         call_fn reverse, %rax
         mov     %rax, form(%rsp)
@@ -2562,8 +2575,7 @@ jit_procedure_call:             # form, c-stream, environment
 
         jmp     5b
 
-8:      call_fn jit_datum, operand(%rsp), %r12, env(%rsp)
-        update_max_locals max_locals(%rsp)
+8:      call_fn fwrite, $jit_pop_rax, $1, jit_pop_rax_size, %r12
         call_fn fwrite, $jit_unbox_rax, $1, jit_unbox_rax_size, %r12
         call_fn fwrite, $jit_call_rax, $1, jit_call_rax_size, %r12
         return  max_locals(%rsp)
