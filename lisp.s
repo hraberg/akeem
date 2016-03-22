@@ -926,7 +926,9 @@ close_port:                     # port
         minimal_prologue
         unbox_pointer_internal %rdi
         call_fn fclose, %rax
-        tag     TAG_INT, %rax
+        test    %eax, %eax
+        setz    %al
+        box_boolean_internal
         return
 
 open_input_string:              # string
@@ -1504,6 +1506,7 @@ main:                # argc, argv
 
         define "call-with-port", $call_with_port
         define "current-error-port", $current_error_port
+        define "close-port", $close_port
         define "open-input-string", $open_input_string
         define "open-input-bytevector", $open_input_bytevector
 

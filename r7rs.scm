@@ -258,6 +258,19 @@
 
 (define call/cc call-with-current-continuation)
 
+;; 6.13. Input and output
+
+;; 6.13.1. Ports
+
+(define port? (obj)
+  (or (input-port? obj) (output-port? obj)))
+
+(define textual-port? port?)
+(define binary-port? port?)
+
+(define open-binary-input-file  open-input-file)
+(define open-binary-output-file  open-output-file)
+
 ;;; 6.13.2. Input
 
 (define (read-line port)
