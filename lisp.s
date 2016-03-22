@@ -1035,7 +1035,7 @@ current_second:
         call_fn gettimeofday, %rax, $NULL
         cvtsi2sd tv_sec(%rsp), %xmm0
         cvtsi2sd tv_usec(%rsp), %xmm1
-        mov     $1000000, %rax
+        mov     $MICROSECONDS_PER_SEC, %rax
         cvtsi2sd %rax, %xmm2
         divsd   %xmm2, %xmm1
         addsd   %xmm1, %xmm0
@@ -1048,7 +1048,7 @@ current_jiffy:
         return
 
 jiffies_per_second:
-        mov     $1000000, %rax
+        mov     $CLOCKS_PER_SEC, %rax
         box_int_internal
         ret
 

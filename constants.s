@@ -15,6 +15,9 @@
         ## stdio.h
         .equ SEEK_SET, 0
 
+        ## time.h
+        .equ CLOCKS_PER_SEC, 1000000
+
         ## unistd.h
         .equ F_OK, 0
 
@@ -98,6 +101,8 @@
         .irp reg, 8, 9, 10, 11, 12, 13, 14, 15
         .equ R\reg, \reg
         .endr
+
+        .equ MICROSECONDS_PER_SEC, 1000000
 
         .equ LOG_JIT, C_FALSE
 
