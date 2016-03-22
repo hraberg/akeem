@@ -760,6 +760,10 @@
 
 (assert (vector-append #(a b c) #(d e f)))
 
+(define a #(1 2 3 4 5)) ;; should be vector
+(vector-fill! a 'smash 2 4)
+(assert a)
+
 (spec ";;; 6.9. Bytevectors")
 (assert (make-bytevector 2 12))
 

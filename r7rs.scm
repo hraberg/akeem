@@ -148,6 +148,11 @@
       ((= idx end) to)
     (string-set! to (- (+ idx at) start) (string-ref from idx))))
 
+(define (string-fill! string fill start end)
+  (do ((idx start (+ idx 1)))
+      ((= idx end) string)
+    (string-set! string idx fill)))
+
 ;;; 6.8. Vectors
 
 (define (vector-copy vector start end)
@@ -183,6 +188,11 @@
         ((= idx length2))
       (vector-set! acc (+ idx length1) (vector-ref vector2 idx)))
     acc))
+
+(define (vector-fill! vector fill start end)
+  (do ((idx start (+ idx 1)))
+      ((= idx end) vector)
+    (vector-set! vector idx fill)))
 
 ;;; 6.9. Bytevectors
 
