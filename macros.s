@@ -511,6 +511,8 @@ tmp_string_\@:
         cmp     $0, \env_size
         je      .L_\@_2
         mov     \old_rbp, %rcx
+        call_fn jit_maybe_add_to_constant_pool, (%rcx)
+        mov     \old_rbp, %rcx
         call_fn jit_literal, (%rcx), \stream, $NIL
         sub     $POINTER_SIZE, \old_rbp
 
