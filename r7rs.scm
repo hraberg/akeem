@@ -47,6 +47,38 @@
      (if (not test)
          (begin result1 result2 ...)))))
 
+;;; 6.1. Equivalence predicates
+
+(let ((vector=? (lambda (vector1 vector2)
+                  (if (= (vector-length vector1) (vector-length vector2))
+                      (let loop ((idx (- (vector-length vector1) 1)))
+                        (cond ((negative? idx) #t)
+                              ((equal? (vector-ref vector1)
+                                       (vector-ref vector2))
+                               (loop (- idx 1)))
+                              (else #f)))
+                      #f)))
+      (bytevector=? (lambda (bytevector1 bytevector2)
+                      (if (= (bytevector-length bytevector1) (bytevector-length bytevector2))
+                          (let loop ((idx (- (bytevector-length bytevector1) 1)))
+                            (cond ((negative? idx) #t)
+                                  ((equal? (bytevector-u8-ref bytevector1)
+                                           (bytevector-u8-ref bytevector2))
+                                   (loop (- idx 1)))
+                                  (else #f)))
+                          #f))))
+  (define (equal? obj1 obj2)
+    (cond ((and (pair? obj1) (pair? obj2))
+           (and (equal? (car obj1) (car obj2))
+                (equal? (cdr obj1) (cdr obj2))))
+          ((and (string? obj1) (string? obj2))
+           (string=? obj1 obj2))
+          ((and (vector? obj1) (vector? obj2))
+           (vector=? obj1 obj2))
+          ((and (bytevector? obj1) (bytevector? obj2))
+           (bytevector=? obj1 obj2))
+          (else (eqv? obj1 obj2)))))
+
 ;;; 6.2.6. Numerical operations
 
 (define (exact-integer? z)
