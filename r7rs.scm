@@ -25,6 +25,10 @@
 (define inexact exact->inexact)
 (define exact inexact->exact)
 
+(define (finite? z)
+  (and (number? z)
+       (not (or (nan? z) (infinite? z)))))
+
 ;;; 6.4. Pairs and lists
 
 (define (make-list k fill)
@@ -36,12 +40,7 @@
   (set-car! (list-tail list k) obj))
 
 (define (list-copy obj)
-  (let* ((length (length obj))
-         (acc (make-list length)))
-    (do ((from obj (cdr from))
-         (to acc (cdr to)))
-        ((null? from) acc)
-      (set-car! to (car from)))))
+  (map (lambda (x) x) obj))
 
 ;;; 6.5. Symbols
 

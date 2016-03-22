@@ -419,9 +419,12 @@
 ;;; 6.4. Control features
 
 (define (map proc list)
-  (do ((list list (cdr list))
-       (acc '() (cons (proc (car list)) acc)))
-      ((null? list) (reverse acc))))
+  (let* ((length (length list))
+         (acc (make-list length)))
+    (do ((from list (cdr from))
+         (to acc (cdr to)))
+        ((null? from) acc)
+      (set-car! to (proc (car from))))))
 
 (define (for-each proc list)
   (do ((list list (cdr list)))

@@ -298,6 +298,13 @@ mISSISSIppi
 ;;; 6.2.6. Numerical operations
 #t
 #f
+#t
+#f
+#f
+#t
+#f
+#t
+#f
 1764
 4.000000
 ;;; 6.4. Pairs and lists

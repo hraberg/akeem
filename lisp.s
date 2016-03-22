@@ -821,6 +821,32 @@ load:                           # filename
         ## R7RS
 
         ## 6. Standard procedures
+        ## 6.2. Numbers
+        ## 6.2.6. Numerical operations
+        .globl is_infinite, is_nan
+
+is_infinite:                    # z
+        minimal_prologue
+        is_double_internal %rdi
+        jz      1f
+        movq    %rdi, %xmm0
+        call    isinf
+        setnz   %al
+        box_boolean_internal
+        return
+1:      return  $FALSE
+
+is_nan:                         # z
+        minimal_prologue
+        is_double_internal %rdi
+        jz      1f
+        movq    %rdi, %xmm0
+        call    isnan
+        setnz   %al
+        box_boolean_internal
+        return
+1:      return  $FALSE
+
         ## 6.11. Exceptions
         .globl error
 
@@ -1367,6 +1393,9 @@ main:                # argc, argv
 
         mov     symbol_next_id, %rax
         mov     %rax, max_scheme_report_environment_symbol
+
+        define "infinite?", $is_infinite
+        define "nan?", $is_nan
 
         define "error", $error
 

@@ -697,6 +697,20 @@
 (assert (exact-integer? 32))
 (assert (exact-integer? 32.0))
 
+(assert (finite? 3))
+(assert (finite? (/ 1.0 0.0))) ;; should be +inf.0
+;; (assert (finite? 3.0+inf.0i))
+
+(assert (infinite? 3))
+(assert (infinite? (/ 1.0 0.0))) ;; should be +inf.0
+(assert (infinite? (/ 0.0 0.0))) ;; should be +nan.0
+;; (assert (infinite? 3.0+inf.0i))
+
+(assert (nan? (/ 0.0 0.0))) ;; should be +nan.0
+(assert (nan? 32))
+;; (assert (nan? +nan.0+5.0i))
+;; (assert (nan? 1+2i))
+
 (assert (square 42))
 (assert (square 2.0))
 
