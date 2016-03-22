@@ -34,7 +34,8 @@ See [this tutorial](http://community.schemewiki.org/?emacs-tutorial).
 * Subset of R5RS and R7RS "small" procedures.
 * JIT for `if`, `lambda`, `set!`, `let`,
   "named `let`", `letrec` and `begin`
-* Syntax for `and`, `or`, `cond`, `case`, `let*`, `do`, `delay` and `define`.
+* Syntax for `and`, `or`, `cond`, `case`, `let*`, `do`, `delay` and
+  `define` + R7RS `case`, `when` and `unless`.
 * Basic support for `define-syntax` / `syntax-rules` and `quasiquote`.
 * NaN-boxed 32-bit integers and 64-bit doubles
 * Function application up to 6 arguments.
