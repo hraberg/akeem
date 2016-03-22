@@ -747,7 +747,7 @@ peek_char:                      # port
 1:      return  $EOF_OBJECT
 
 is_eof_object:                  # obj
-        eq_internal $EOF_OBJECT, %rdi
+        is_eof_object_internal %rdi, store=true
         box_boolean_internal
         ret
 
@@ -1617,7 +1617,7 @@ read_all:                       # port
         prologue
         mov     %rdi, %rbx
 1:      call_fn read, %rbx
-        cmp     $EOF_OBJECT, %rax
+        is_eof_object_internal %rax
         je      2f
         call_fn eval, %rax
         jmp     1b
@@ -1631,7 +1631,7 @@ class_of:                       # obj
         je      1f
         tag     TAG_SYMBOL, %rax
         return
-1:      cmp     $EOF_OBJECT, %rbx
+1:      is_eof_object_internal %rbx
         jne     2f
         return  eof_symbol
 2:      is_void_internal  %rbx
@@ -1792,7 +1792,7 @@ gc_mark_object:                 # pointer
         je      1f
         is_void_internal %rdi
         je      1f
-        cmp     $EOF_OBJECT, %rdi
+        is_eof_object_internal %rdi
         je      1f
         unbox_pointer_internal %rdi
         btsw    $GC_MARK_BIT, header_object_mark(%rax)

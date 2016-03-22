@@ -121,6 +121,11 @@
         eq_internal \value, \tmp, store=\store
         .endm
 
+        .macro is_eof_object_internal value, tmp=%r11, store=false
+        mov     $EOF_OBJECT, \tmp
+        eq_internal \value, \tmp, store=\store
+        .endm
+
         .macro store_pointer idx, ptr=%rax, at=%rbx
         mov     \idx, %ecx
         mov     \ptr, %rax
