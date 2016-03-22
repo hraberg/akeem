@@ -832,7 +832,7 @@ is_nan:                         # z
 is_bytevector:                  # obj
         minimal_prologue
         call_fn class_of, %rdi
-        eq_internal bytevector_symbol, %rax
+        eq_internal $TAG_BYTEVECTOR, %eax
         box_boolean_internal %rax
         return
 
@@ -842,8 +842,7 @@ make_bytevector:                # k, byte
         mov     %edi, %ebx
         add     $header_size, %edi
         call_fn gc_allocate_memory, %rdi
-        mov     bytevector_symbol, %r11w
-        mov     %r11w, header_object_type(%rax)
+        movw    $TAG_BYTEVECTOR, header_object_type(%rax)
         mov     %ebx, header_object_size(%rax)
 
 1:      test    %ebx, %ebx
@@ -1091,8 +1090,7 @@ main:                # argc, argv
         intern_symbol pair_symbol, "pair", id=TAG_PAIR
         intern_symbol vector_symbol, "vector", id=TAG_VECTOR
         intern_symbol object_symbol, "object", id=TAG_OBJECT
-
-        intern_symbol bytevector_symbol, "bytevector"
+        intern_symbol bytevector_symbol, "bytevector", id=TAG_BYTEVECTOR
 
         intern_symbol quote_symbol, "quote"
         intern_symbol lambda_symbol, "lambda"

@@ -54,6 +54,8 @@
         .equ TAG_VECTOR, 48
         .equ TAG_OBJECT, 56
 
+        .equ TAG_BYTEVECTOR, 64
+
         .equ C_TRUE, 1
         .equ C_FALSE, 0
         .equ FALSE, (NAN_MASK | (TAG_BOOLEAN << TAG_SHIFT))
