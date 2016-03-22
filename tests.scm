@@ -747,6 +747,11 @@
 (vector-set! b 0 3)
 (assert b)
 
+(define a #(1 2 3 4 5)) ;; should be vector
+(define b #(10 20 30 40 50)) ;; should be vector
+(vector-copy! b 1 a 0 2)
+(assert b)
+
 (assert (vector-append #(a b c) #(d e f)))
 
 (spec ";;; 6.10. Control features")

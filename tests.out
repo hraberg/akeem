@@ -321,6 +321,7 @@ mISSISSIppi
 #(#\A #\B #\C)
 "123"
 #(3 8 2 8)
+#(10 1 2 40 50)
 #(a b c d e f)
 ;;; 6.10. Control features
 "IBM"

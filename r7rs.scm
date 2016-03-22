@@ -58,6 +58,8 @@
       (- (char->integer char) (char->integer #\0))
       #f))
 
+(define char-foldcase char-downcase)
+
 ;;; 6.7. Strings
 
 (define (string-upcase string)
@@ -66,14 +68,24 @@
 (define (string-downcase string)
   (string-map char-downcase string))
 
+(define (string-foldcase string)
+  (string-map char-foldcase string))
+
+(define (string-copy! to at from start end)
+  (do ((idx start (+ idx 1)))
+      ((= idx end) to)
+    (string-set! to (- (+ idx at) start) (string-ref from idx))))
+
 ;;; 6.8. Vectors
 
 (define (vector-copy vector)
   (let ((length (vector-length vector)))
-    (do ((acc (make-vector length))
-         (idx 0 (+ idx 1)))
-        ((= idx length) acc)
-      (vector-set! acc idx (vector-ref vector idx)))))
+    (vector-copy! (make-vector length) 0 vector 0 length)))
+
+(define (vector-copy! to at from start end)
+  (do ((idx start (+ idx 1)))
+      ((= idx end) to)
+    (vector-set! to (- (+ idx at) start) (vector-ref from idx))))
 
 (define (string->vector string)
   (let ((length (string-length string)))
