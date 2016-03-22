@@ -1792,6 +1792,10 @@ gc_mark_object:                 # pointer
         minimal_prologue
         is_nil_internal %rdi
         je      1f
+        is_void_internal %rdi
+        je      1f
+        cmp     $EOF_OBJECT, %rdi
+        je      1f
         unbox_pointer_internal %rdi
         btsw    $GC_MARK_BIT, header_object_mark(%rax)
         jc      1f
@@ -2572,8 +2576,6 @@ jit_add_to_constant_pool_nop:   # obj
 jit_add_to_constant_pool:       # obj
         minimal_prologue
         is_nil_internal %rdi
-        je      1f
-        is_void_internal %rdi
         je      1f
         call_fn push_pointer_on_stack, $constant_pool, %rdi
 1:      return
