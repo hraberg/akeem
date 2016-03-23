@@ -307,14 +307,15 @@
         mov     header_object_size(%rax), %esi
         add     \size_adjust, %esi
         test    %esi, %esi
-        jz      1f
+        jz      .L_\@_1
         add     $header_size, %rax
         call_fn fmemopen, %rax, %rsi, $read_mode
         perror
         tag     TAG_PORT, %rax
         return
 
-1:      lea     empty_stream(%rsp), %rdi
+.L_\@_1:
+        lea     empty_stream(%rsp), %rdi
         lea     empty_stream_size(%rsp), %rsi
         call_fn open_memstream, %rdi, %rsi
         perror
