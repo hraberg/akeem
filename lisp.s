@@ -2757,7 +2757,7 @@ jit_procedure_call:             # form, c-stream, environment, register, tail
         ## 4.1.4. Procedures
 
 jit_procedure:                  # form, c-stream, environment, arguments
-        prologue env, args, frame_size, local_idx, local, prologue_offset, end_offset
+        prologue env, args, env_size, frame_size, local_idx, local, prologue_offset, end_offset
         mov     %rdi, %rbx
         mov     %rsi, %r12
         mov     %rdx, env(%rsp)
@@ -2766,6 +2766,9 @@ jit_procedure:                  # form, c-stream, environment, arguments
         call_fn fwrite, $jit_prologue, $1, jit_prologue_size, %r12
         call_fn ftell, %r12
         mov     %rax, prologue_offset(%rsp)
+
+        call_fn length, env(%rsp)
+        mov     %eax, env_size(%rsp)
 
         call_fn length, args(%rsp)
         mov     %eax, local_idx(%rsp)
@@ -2782,6 +2785,7 @@ jit_procedure:                  # form, c-stream, environment, arguments
         mov     jit_register_to_local_size_table(,%r11,POINTER_SIZE), %r11
         call_fn fwrite, %rax, $1, %r11, %r12
         mov     local_idx(%rsp), %eax
+        add     env_size(%rsp), %eax
         shl     $POINTER_SIZE_SHIFT, %eax
         add     $POINTER_SIZE, %eax
         neg     %eax
@@ -2791,7 +2795,7 @@ jit_procedure:                  # form, c-stream, environment, arguments
         jmp     1b
 
 2:      call_fn reverse, args(%rsp)
-        call_fn append, env(%rsp), %rax
+        call_fn append, %rax, env(%rsp)
         call_fn jit_datum, %rbx, %r12, %rax, $RAX, $C_TRUE
 
         shl     $POINTER_SIZE_SHIFT, %eax
@@ -2812,24 +2816,24 @@ jit_procedure:                  # form, c-stream, environment, arguments
         call_fn fwrite, $jit_epilogue, $1, jit_epilogue_size, %r12
         return
 
-jit_lambda_factory_code:        # lambda, c-stream, old-rbp,  argc, env-size
-        prologue  old_rbp, local_idx, local, env_size
+jit_lambda_factory_code:        # lambda, c-stream, env-size
+        prologue  rbp, local_idx, local, env_size
         unbox_pointer_internal %rdi, %r12
         mov     %rsi, %rbx
-        mov     %rdx, old_rbp(%rsp)
-        mov     %ecx, local_idx(%rsp)
-        mov     %r8d, env_size(%rsp)
+        mov     %rbp, rbp(%rsp)
+        movq    $0, local_idx(%rsp)
+        mov     %edx, env_size(%rsp)
 
         call_fn jit_literal, %r12, %rbx, $NIL, $RAX
 
-        sub     $POINTER_SIZE, old_rbp(%rsp)
+        sub     $POINTER_SIZE, rbp(%rsp)
 1:      cmp     $0, env_size(%rsp)
         je      2f
-        mov     old_rbp(%rsp), %rax
+        mov     rbp(%rsp), %rax
         call_fn jit_maybe_add_to_constant_pool, (%rax)
-        mov     old_rbp(%rsp), %rax
+        mov     rbp(%rsp), %rax
         call_fn jit_literal, (%rax), %rbx, $NIL, $RAX
-        sub     $POINTER_SIZE, old_rbp(%rsp)
+        sub     $POINTER_SIZE, rbp(%rsp)
 
         decl    env_size(%rsp)
         incl    local_idx(%rsp)
@@ -2848,18 +2852,17 @@ jit_lambda_factory_code:        # lambda, c-stream, old-rbp,  argc, env-size
         call_fn fwrite, $jit_jump_rax, $1, jit_jump_rax_size, %rbx
         return
 
-jit_lambda_factory:             # lambda, argc, env-size
-        prologue code, size, argc, env_size
+jit_lambda_factory:             # lambda, env-size
+        prologue code, size, env_size
         mov     %rdi, %r12
-        mov     %esi, argc(%rsp)
-        mov     %edx, env_size(%rsp)
+        mov     %esi, env_size(%rsp)
         lea     code(%rsp), %rdi
         lea     size(%rsp), %rsi
         call_fn open_memstream, %rdi, %rsi
         perror
         mov     %rax, %rbx
 
-        call_fn jit_lambda_factory_code, %r12, %rbx, %rbp, argc(%rsp), env_size(%rsp)
+        call_fn jit_lambda_factory_code, %r12, %rbx, env_size(%rsp)
         call_fn fclose, %rbx
         perror  je
 
@@ -2868,11 +2871,9 @@ jit_lambda_factory:             # lambda, argc, env-size
         tag     TAG_PROCEDURE, %rax
         return
 
-jit_lambda_patch_factory:       # lambda-factory, argc, env-size
-        prologue code, old_rbp, local_idx, local, env_size, lambda
-        movq    %rbp, old_rbp(%rsp)
+jit_lambda_patch_factory:       # lambda-factory, env-size
+        prologue code, env_size, lambda
         unbox_pointer_internal %rdi, %r12
-        mov     %esi, argc(%rsp)
         mov     %edx, env_size(%rsp)
 
         call_fn fmemopen, %r12, $PAGE_SIZE, $read_mode
@@ -2891,7 +2892,7 @@ jit_lambda_patch_factory:       # lambda-factory, argc, env-size
         perror
         mov     %rax, %rbx
 
-        call_fn jit_lambda_factory_code, lambda(%rsp), %rbx, %rbp, argc(%rsp), env_size(%rsp)
+        call_fn jit_lambda_factory_code, lambda(%rsp), %rbx, env_size(%rsp)
         call_fn fclose, %rbx
         perror  je
 
@@ -2899,43 +2900,6 @@ jit_lambda_patch_factory:       # lambda-factory, argc, env-size
         perror  je
         tag     TAG_PROCEDURE, %r12
         return
-
-jit_lambda_hide_args_in_env:    # arguments, body, environment
-        prologue env, args, body, local
-        mov     %rdi, %r12
-        mov     %r12, args(%rsp)
-        mov     %rsi, body(%rsp)
-        mov     %rdx, %rbx
-
-        call_fn reverse, %rbx
-        call_fn reverse, %rax
-        mov     %rax, %rbx
-        mov     %rbx, env(%rsp)
-
-1:      is_nil_internal %rbx
-        je      5f
-
-        call_fn car, %rbx
-        mov     %rax, local(%rsp)
-
-        mov     args(%rsp), %r12
-2:      is_nil_internal %r12
-        je      4f
-
-        call_fn car, %r12
-        cmp     %rax, local(%rsp)
-        jne     3f
-        call_fn set_car, %rbx, $VOID
-
-3:      call_fn cdr, %r12
-        mov     %rax, %r12
-        jmp     2b
-
-4:      call_fn cdr, %rbx
-        mov     %rax, %rbx
-        jmp     1b
-
-5:      return  env(%rsp)
 
 jit_lambda:                     # form, c-stream, environment, register, tail
         prologue env, args, form, lambda, register
@@ -2954,9 +2918,6 @@ jit_lambda:                     # form, c-stream, environment, register, tail
         call_fn cons, begin_symbol, %rax
         mov     %rax, %rbx
 
-        call_fn jit_lambda_hide_args_in_env, args(%rsp), %rbx, env(%rsp)
-        mov     %rax, env(%rsp)
-
         call_fn jit_code, %rbx, env(%rsp), args(%rsp)
         mov     %rax, lambda(%rsp)
         call_fn length, env(%rsp)
@@ -2965,11 +2926,8 @@ jit_lambda:                     # form, c-stream, environment, register, tail
 
         call_fn jit_literal, lambda(%rsp), %r12, $NIL, $RDI, $C_FALSE
 
-        call_fn length, args(%rsp)
-        call_fn jit_literal, %rax, %r12, $NIL, $RSI, $C_FALSE
-
         call_fn length, env(%rsp)
-        call_fn jit_literal, %rax, %r12, $NIL, $RDX, $C_FALSE
+        call_fn jit_literal, %rax, %r12, $NIL, $RSI, $C_FALSE
 
         mov     $jit_lambda_factory, %rax
         call_fn jit_literal, %rax, %r12, $NIL, $RAX, $C_FALSE
@@ -3269,6 +3227,18 @@ jit_let:                        # form, c-stream, environment, register, tail
 
         return  max_locals(%rsp)
 
+jit_is_lambda:                  # form
+        prologue
+        mov     %rdi, %rbx
+        is_nil_internal %rbx
+        je      1f
+        has_tag TAG_PAIR, %rbx, store=false
+        jne     1f
+        call_fn car, %rbx
+        eq_internal lambda_symbol, %rax
+        return
+1:      return  $C_FALSE
+
 jit_letrec:                     # form, c-stream, environment, register, tail
         prologue form, env, full_env, variable_init, local, max_locals, register, tail
         mov     %rsi, %r12
@@ -3292,20 +3262,19 @@ jit_letrec:                     # form, c-stream, environment, register, tail
         mov     %rax, %rbx
 
 1:      is_nil_internal %rbx
-        je      2f
+        je      3f
+
         call_fn car, %rbx
+        call_fn cdr, %rax
         call_fn car, %rax
 
+        call_fn jit_is_lambda, %rax
+        cmp     $C_TRUE, %rax
+        jne     2f
+
+        call_fn car, %rbx
+        call_fn car, %rax
         call_fn jit_datum, %rax, %r12, full_env(%rsp), $RDI, $C_FALSE
-
-        call_fn car, %rbx
-        call_fn cdr, %rax
-        call_fn car, %rax
-        call_fn cdr, %rax
-        call_fn car, %rax
-
-        call_fn length, %rax
-        call_fn jit_literal, %rax, %r12, $NIL, $RSI
 
         call_fn length, full_env(%rsp)
         call_fn jit_literal, %rax, %r12, $NIL, $RDX
@@ -3314,11 +3283,11 @@ jit_letrec:                     # form, c-stream, environment, register, tail
         call_fn jit_literal, %rax, %r12, $NIL, $RAX
         call_fn fwrite, $jit_call_rax, $1, jit_call_rax_size, %r12
 
-        call_fn cdr, %rbx
+2:      call_fn cdr, %rbx
         mov     %rax, %rbx
         jmp     1b
 
-2:      call_fn cdr, form(%rsp)
+3:      call_fn cdr, form(%rsp)
         call_fn cons, begin_symbol, %rax
         call_fn jit_datum, %rax, %r12, full_env(%rsp), register(%rsp), tail(%rsp)
         update_max_locals max_locals(%rsp)
