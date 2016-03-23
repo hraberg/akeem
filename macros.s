@@ -453,41 +453,23 @@ tmp_string_\@:
         mov     %rcx, symbol_table_values(,%rax,POINTER_SIZE)
         .endm
 
-        .macro let_template active_env, form=form(%rsp), env=env(%rsp), variable_init=variable_init(%rsp), local=local(%rsp), max_locals=max_locals(%rsp), stream=%r12, named_let=, body=true
+        .macro let_template body_env, bindings_env, env, form=form(%rsp), variable_init=variable_init(%rsp), local=local(%rsp), max_locals=max_locals(%rsp), stream=%r12, named_let=, body=true
         call_fn car, \form
         mov     %rax, %rbx
-.L_\@_1:
-        is_nil_internal %rbx
-        je      .L_\@_2
-        call_fn car, %rbx
-        mov     %rax, \variable_init
-
-        call_fn cdr, \variable_init
-        call_fn car, %rax
-        call_fn jit_datum, %rax, %r12, \active_env
+        call_fn jit_let_bindings %rbx, \stream, \env, \bindings_env
         update_max_locals \max_locals
 
-        call_fn car, \variable_init
-        call_fn cons, %rax, \env
-        mov     %rax, \env
-        call_fn car, \variable_init
-        call_fn jit_set_with_rax_as_value, %rax, \stream, \env
-
-        call_fn cdr, %rbx
-        mov     %rax, %rbx
-        jmp     .L_\@_1
-.L_\@_2:
         .ifnb \named_let
         call_fn ftell, \stream
         box_int_internal
-        call_fn jit_named_let_syntax_factory, %rax, \form, \env
+        call_fn jit_named_let_syntax_factory, %rax, \form, \body_env
         mov     \named_let, %rcx
         mov     jit_syntax_jump_table(,%ecx,POINTER_SIZE), %rbx
         mov     %rax, jit_syntax_jump_table(,%ecx,POINTER_SIZE)
         .endif
 
         .ifc \body, true
-        let_body \env, form=\form, max_locals=\max_locals, stream=\stream
+        let_body \body_env, form=\form, max_locals=\max_locals, stream=\stream
         .endif
 
         .ifnb \named_let

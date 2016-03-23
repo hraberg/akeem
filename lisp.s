@@ -3175,6 +3175,36 @@ jit_named_let_syntax_factory:   # target, form, original-env
         call_fn jit_allocate_code, code(%rsp), %r11
         return
 
+jit_let_bindings:               # bindings, c-stream, environment, bindings-environment
+        prologue env, bindings_env, variable_init, max_locals
+        mov     %rdi, %rbx
+        mov     %rsi, %r12
+        mov     %rdx, env(%rsp)
+        mov     %rcx, bindings_env(%rsp)
+        movq    $0, max_locals(%rsp)
+
+1:      is_nil_internal %rbx
+        je      2f
+        call_fn car, %rbx
+        mov     %rax, variable_init(%rsp)
+
+        call_fn cdr, variable_init(%rsp)
+        call_fn car, %rax
+        call_fn jit_datum, %rax, %r12, bindings_env(%rsp)
+        update_max_locals max_locals(%rsp)
+
+        call_fn car, variable_init(%rsp)
+        call_fn cons, %rax, env(%rsp)
+        mov     %rax, env(%rsp)
+        call_fn car, variable_init(%rsp)
+        call_fn jit_set_with_rax_as_value, %rax, %r12, env(%rsp)
+
+        call_fn cdr, %rbx
+        mov     %rax, %rbx
+        jmp     1b
+
+2:      return max_locals(%rsp)
+
 jit_let:                        # form, c-stream, environment
         prologue form, env, original_env, variable_init, local, max_locals, named_let
         mov     %rsi, %r12
@@ -3194,10 +3224,20 @@ jit_let:                        # form, c-stream, environment
         call_fn cdr, form(%rsp)
         mov     %rax, form(%rsp)
 
-        let_template original_env(%rsp), named_let=named_let(%rsp)
+        call_fn car, form(%rsp)
+        call_fn jit_let_collect_bindings, %rax
+        call_fn append, %rax, env(%rsp)
+        mov    %rax, env(%rsp)
+
+        let_template env(%rsp), original_env(%rsp), original_env(%rsp), named_let=named_let(%rsp)
         return  max_locals(%rsp)
 
-1:      let_template original_env(%rsp)
+1:      call_fn car, form(%rsp)
+        call_fn jit_let_collect_bindings, %rax
+        call_fn append, %rax, env(%rsp)
+        mov    %rax, env(%rsp)
+
+        let_template env(%rsp), original_env(%rsp), original_env(%rsp)
         return  max_locals(%rsp)
 
 jit_let_collect_bindings:       # bindings
@@ -3231,7 +3271,7 @@ jit_letrec:                     # form, c-stream, environment
         call_fn append, %rax, env(%rsp)
         mov    %rax, full_env(%rsp)
 
-        let_template full_env(%rsp), body=false
+        let_template full_env(%rsp), full_env(%rsp), env(%rsp), body=false
 
         call_fn car, form(%rsp)
         mov     %rax, %rbx
