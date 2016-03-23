@@ -2803,10 +2803,10 @@ jit_procedure:                  # form, c-stream, environment, arguments
         call_fn length, args(%rsp)
         mov     %eax, local_idx(%rsp)
 
-        mov     jit_symbol_for_current_lambda, %rax
+        mov     jit_symbol_for_next_lambda, %rax
         mov     %rax, tail(%rsp)
         mov     $NIL, %rax
-        mov     %rax, jit_symbol_for_current_lambda
+        mov     %rax, jit_symbol_for_next_lambda
 
 1:      mov     local_idx(%rsp), %ecx
         test    %ecx, %ecx
@@ -3090,13 +3090,13 @@ jit_set:                        # form, c-stream, environment, register, tail
         jne     1f
 
         mov     symbol(%rsp), %rax
-        mov     %rax, jit_symbol_for_current_lambda
+        mov     %rax, jit_symbol_for_next_lambda
 
 1:      call_fn jit_datum, value(%rsp), %r12, env(%rsp), $RAX, $NIL
         mov     %rax, max_locals(%rsp)
 
         mov     $NIL, %rax
-        mov     %rax, jit_symbol_for_current_lambda
+        mov     %rax, jit_symbol_for_next_lambda
         call_fn jit_set_with_rax_as_value, symbol(%rsp), %r12, env(%rsp)
         return  max_locals(%rsp)
 
@@ -3146,17 +3146,17 @@ jit_let_bindings:               # bindings, c-stream, environment, bindings-envi
         cmp     $-1, %rax
         je      2f
 
-        mov     %rax, jit_symbol_for_current_lambda
+        mov     %rax, jit_symbol_for_next_lambda
 
         call_fn cdr, init(%rsp)
         call_fn car, %rax
         call_fn length, %rax
-        add     %eax, jit_symbol_for_current_lambda
+        add     %eax, jit_symbol_for_next_lambda
 
         call_fn jit_datum, init(%rsp), %r12, bindings_env(%rsp), $RAX, $NIL
         update_max_locals max_locals(%rsp)
         mov     $NIL, %rax
-        mov     %rax, jit_symbol_for_current_lambda
+        mov     %rax, jit_symbol_for_next_lambda
 
         jmp     3f
 
@@ -3489,7 +3489,7 @@ jit_code_file_counter:
         .quad   0
 jit_code_debug:
         .quad   0
-jit_symbol_for_current_lambda:
+jit_symbol_for_next_lambda:
         .quad   NIL
 
 command_line_arguments:
