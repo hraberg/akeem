@@ -2667,12 +2667,13 @@ jit_pair:                       # form, c-stream, environment, register, tail
         ## 4.1.3. Procedure calls
 
 jit_procedure_call:             # form, c-stream, environment, register, tail
-        prologue form, len, operand, literal, env, max_locals, register, tail
+        prologue form, len, operand, literal, env, max_locals, register, tail, recur_target
         mov     %rdi, %rbx
         mov     %rbx, form(%rsp)
         mov     %rsi, %r12
         mov     %rdx, env(%rsp)
         mov     %rcx, register(%rsp)
+        mov     %r8, tail(%rsp)
         movq    $0, max_locals(%rsp)
 
         call_fn length, %rbx
@@ -2744,13 +2745,30 @@ jit_procedure_call:             # form, c-stream, environment, register, tail
         jne     9f
 
         call_fn fwrite, $jit_pop_rax, $1, jit_pop_rax_size, %r12
-        jmp     10f
+        jmp     11f
 
-9:      call_fn jit_datum, operand(%rsp), %r12, env(%rsp), $RAX, $NIL
+9:      call_fn jit_index_of_local env(%rsp), operand(%rsp)
+        cmp     $0, %rax
+        jge     10f
 
-10:     ## TODO: if tail is true and self call, jump to prologue_size - ftell
-        ##       need to track current fn somehow via letrec and define, potentially in set!
-        call_fn fwrite, $jit_unbox_rax, $1, jit_unbox_rax_size, %r12
+        mov     operand(%rsp), %rax
+        cmp     %rax, tail(%rsp)
+        jne     10f
+
+        call_fn ftell, %r12
+        add     jit_unconditional_jump_size, %rax
+        mov     jit_prologue_size, %r11
+        sub     %rax, %r11
+        mov     %r11d, recur_target(%rsp)
+        call_fn fwrite, $jit_unconditional_known_jump, $1, jit_unconditional_known_jump_size, %r12
+        lea     recur_target(%rsp), %rax
+        call_fn fwrite, %rax, $1, $INT_SIZE, %r12
+
+        return  max_locals(%rsp)
+
+10:     call_fn jit_datum, operand(%rsp), %r12, env(%rsp), $RAX, $NIL
+
+11:     call_fn fwrite, $jit_unbox_rax, $1, jit_unbox_rax_size, %r12
         call_fn fwrite, $jit_call_rax, $1, jit_call_rax_size, %r12
         mov     register(%rsp), %rbx
         mov     jit_rax_to_register_table(,%rbx,POINTER_SIZE), %rax
@@ -3060,7 +3078,9 @@ jit_set:                        # form, c-stream, environment, register, tail
         call_fn car, %rax
         mov     %rax, value(%rsp)
         call_fn jit_is_lambda, %rax
+        cmp     $C_TRUE, %rax
         jne     1f
+
         mov     symbol(%rsp), %rax
         mov     %rax, jit_symbol_for_current_lambda
 
