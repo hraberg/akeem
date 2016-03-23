@@ -1106,7 +1106,7 @@ main:                # argc, argv
         intern_symbol unquote_splicing_symbol, "unquote-splicing"
         intern_symbol define_syntax_symbol, "define-syntax"
 
-        intern_symbol named_let_symbol, "named-let"
+        intern_symbol r5rs_let_symbol, "r5rs-let"
 
         intern_symbol dot_symbol, "."
         intern_symbol void_symbol, "void"
@@ -3193,7 +3193,7 @@ jit_let:                        # form, c-stream, environment, register, tail
         has_tag TAG_SYMBOL, %rax, store=false
         jne     1f
 
-        call_fn cons, named_let_symbol, form(%rsp)
+        call_fn cons, r5rs_let_symbol, form(%rsp)
         call_fn jit_datum, %rax, %r12, env(%rsp), register(%rsp), tail(%rsp)
         update_max_locals max_locals(%rsp)
         return

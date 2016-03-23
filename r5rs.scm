@@ -65,6 +65,16 @@
 
 ;;; 4.2.2. Binding constructs
 
+(define-syntax r5rs-let
+  (syntax-rules ()
+    ((let ((name val) ...) body1 body2 ...)
+     ((lambda (name ...) body1 body2 ...)
+      val ...))
+    ((let tag ((name val) ...) body1 body2 ...)
+     ((letrec ((tag (lambda (name ...)
+                      body1 body2 ...)))
+        tag) val ...))))
+
 (define-syntax let*
   (syntax-rules ()
     ((let* () body1 body2 ...)
@@ -76,13 +86,6 @@
          body1 body2 ...)))))
 
 ;;; 4.2.4. Iteration
-
-(define-syntax named-let
-  (syntax-rules ()
-    ((named-let tag ((name val) ...) body1 body2 ...)
-     ((letrec ((tag (lambda (name ...)
-                      body1 body2 ...)))
-        tag) val ...))))
 
 (define-syntax do
   (syntax-rules ()
