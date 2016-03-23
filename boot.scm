@@ -2,28 +2,33 @@
 
 ;;; 4.3.2. Pattern language
 
-(set! equal? (lambda (obj1 obj2)
-               (if (pair? obj1)
-                   (if (pair? obj2)
-                       (if (equal? (car obj1) (car obj2))
-                           (equal? (cdr obj1) (cdr obj2))
-                           #f)
-                       #f)
-                   (eqv? obj1 obj2))))
+(define-syntax and
+  (lambda (form)
+    (append (cons 'if (cdr form)) '(#f))))
+
+(define-syntax or
+  (lambda (form)
+    (let ((form (cdr form)))
+      (cons 'if (cons (car form) (cons #t (cdr form)))))))
+
+(set! equal?
+      (lambda (obj1 obj2)
+        (if (and (pair? obj1) (pair? obj2))
+            (and (equal? (car obj1) (car obj2))
+                 (equal? (cdr obj1) (cdr obj2)))
+            (eqv? obj1 obj2))))
 
 (set! memv
       (lambda (obj list)
-        (if (null? list)
-            #f
-            (if (eqv? (car list) obj)
-                list
-                (memv obj (cdr list))))))
+        (and (pair? list)
+             (if (eqv? (car list) obj)
+                 list
+                 (memv obj (cdr list))))))
 
 (set! syntax-pattern-variable?
       (lambda (literals pattern)
-        (if (symbol? pattern)
-            (not (memv pattern (cons '... literals)))
-            #f)))
+        (and (symbol? pattern)
+             (not (memv pattern (cons '... literals))))))
 
 (set! collect-syntax-variables
       (lambda (literals pattern match idxs)
@@ -45,65 +50,43 @@
                   (rest-pattern (cdr pattern)))
               (if (pair? first-pattern)
                   (if (null? form)
-                      (begin
-                        (if (not (null? rest-pattern))
-                            (if (eq? '... (car rest-pattern))
-                                (collect-syntax-variables literals first-pattern match idxs)
-                                #f)
-                            #f))
-                      (letrec ((default-match
-                                     (lambda ()
-                                       (let ((match (match-syntax-rule literals first-pattern (car form) match idxs env)))
-                                         (if match
-                                             (match-syntax-rule literals rest-pattern (cdr form) match idxs env)
-                                             #f)))))
-                        (let ((pair-or-null-match
-                               (lambda ()
-                                 (if (null? rest-pattern)
-                                     (default-match)
-                                     (if (eq? '... (car rest-pattern))
-                                         (letrec ((loop
-                                                   (lambda (form match idx)
-                                                     (if (null? form)
-                                                         match
-                                                         (let ((match (match-syntax-rule literals first-pattern (car form) match (cons idx idxs) env)))
-                                                           (if match
-                                                               (loop (cdr form) match (+ 1 idx))
-                                                               #f))))))
-                                           (loop form match 0))
-                                         (default-match))))))
-                          (if (pair? (car form))
-                              (pair-or-null-match)
-                              (if (null? (car form))
-                                  (pair-or-null-match)
-                                  #f)))))
+                      (and (not (null? rest-pattern))
+                           (and (eq? '... (car rest-pattern))
+                                (collect-syntax-variables literals first-pattern match idxs)))
+                      (and (or (pair? (car form))
+                               (null? (car form)))
+                           (if (and (pair? rest-pattern)
+                                    (eq? '... (car rest-pattern)))
+                               (letrec ((loop
+                                         (lambda (form match idx _)
+                                           (if (null? form)
+                                               match
+                                               (let ((match (match-syntax-rule literals first-pattern (car form) match (cons idx idxs) env)))
+                                                 (and match (loop (cdr form) match (+ 1 idx))))))))
+                                 (loop form match 0))
+                               (let ((match (match-syntax-rule literals first-pattern (car form) match idxs env)))
+                                 (and match (match-syntax-rule literals rest-pattern (cdr form) match idxs env))))))
                   (if (syntax-pattern-variable? literals first-pattern)
-                      (if (null? rest-pattern)
+                      (if (and (pair? rest-pattern)
+                               (eq? '... (car rest-pattern)))
+                          (letrec ((loop (lambda (form match idx)
+                                           (if (null? form)
+                                               (cons (cons 'transcribe-failure (cons first-pattern (cons idx idxs))) match)
+                                               (loop (cdr form)
+                                                     (cons (cons (car form) (cons first-pattern (cons idx idxs))) match)
+                                                     (+ 1 idx))))))
+                            (loop form match 0))
                           (match-syntax-rule literals rest-pattern (cdr form)
-                                             (cons (cons (car form) (cons first-pattern idxs)) match) idxs env)
-                          (if (eq? '... (car rest-pattern))
-                              (letrec ((loop (lambda (form match idx)
-                                               (if (null? form)
-                                                   (cons (cons 'transcribe-failure (cons first-pattern (cons idx idxs))) match)
-                                                   (loop (cdr form)
-                                                         (cons (cons (car form) (cons first-pattern (cons idx idxs))) match)
-                                                         (+ 1 idx))))))
-                                (loop form match 0))
-                              (match-syntax-rule literals rest-pattern (cdr form)
-                                                 (cons (cons (car form) (cons first-pattern idxs)) match) idxs env)))
-                      (if (equal? first-pattern (car form))
-                          (if (memv first-pattern env)
-                              #f
-                              (match-syntax-rule literals rest-pattern (cdr form) match idxs env))
-                          #f)))))))
+                                             (cons (cons (car form) (cons first-pattern idxs)) match) idxs env))
+                      (and (equal? first-pattern (car form))
+                           (and (not (memv first-pattern env))
+                                (match-syntax-rule literals rest-pattern (cdr form) match idxs env)))))))))
 
 (set! syntax-template-pattern-variable?
       (lambda (match template)
-        (if (null? match)
-            #f
-            (if (eqv? (car (cdr (car match))) template)
-                #t
-                (syntax-template-pattern-variable? (cdr match) template)))))
+        (and (pair? match)
+             (or (eqv? (car (cdr (car match))) template)
+                 (syntax-template-pattern-variable? (cdr match) template)))))
 
 (set! transcribe-syntax-template
       (lambda (match template-idxs)
@@ -121,28 +104,23 @@
                 template)
             (let ((first-template (car template))
                   (rest-template (cdr template)))
-              (letrec ((default-transcribe
-                         (lambda ()
-                           (let ((first-new-transcribed (transcribe-syntax-rule match first-template idxs))
-                                 (rest-new-transcribed (transcribe-syntax-rule match rest-template idxs)))
-                             (if (eq? 'transcribe-failure first-new-transcribed)
-                                 'transcribe-failure
-                                 (if (eq? 'transcribe-failure rest-new-transcribed)
-                                     'transcribe-failure
-                                     (cons first-new-transcribed rest-new-transcribed)))))))
-                (if (null? rest-template)
-                    (default-transcribe)
-                    (if (eq? '...  (car rest-template))
-                        (append
-                         (letrec ((loop (lambda (transcribed new-idx)
-                                          (let ((new-transcribed (transcribe-syntax-rule match first-template (cons new-idx idxs))))
-                                            (if (eq? 'transcribe-failure new-transcribed)
-                                                transcribed
-                                                (loop (append transcribed (cons new-transcribed '()))
-                                                      (+ new-idx 1)))))))
-                           (loop '() 0))
-                         (transcribe-syntax-rule match (cdr rest-template) idxs))
-                        (default-transcribe))))))))
+              (if (and (pair? rest-template)
+                       (eq? '...  (car rest-template)))
+                  (append
+                   (letrec ((loop (lambda (transcribed new-idx)
+                                    (let ((new-transcribed (transcribe-syntax-rule match first-template (cons new-idx idxs))))
+                                      (if (eq? 'transcribe-failure new-transcribed)
+                                          transcribed
+                                          (loop (append transcribed (cons new-transcribed '()))
+                                                (+ new-idx 1)))))))
+                     (loop '() 0))
+                   (transcribe-syntax-rule match (cdr rest-template) idxs))
+                  (let ((first-new-transcribed (transcribe-syntax-rule match first-template idxs))
+                        (rest-new-transcribed (transcribe-syntax-rule match rest-template idxs)))
+                    (if (or (eq? 'transcribe-failure first-new-transcribed)
+                            (eq? 'transcribe-failure rest-new-transcribed))
+                        'transcribe-failure
+                        (cons first-new-transcribed rest-new-transcribed))))))))
 
 (set! transform-syntax-rules
       (lambda (literals syntax-rules form env)
