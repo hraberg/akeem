@@ -2826,11 +2826,46 @@ jit_procedure:                  # form, c-stream, environment, arguments
         call_fn fwrite, $jit_epilogue, $1, jit_epilogue_size, %r12
         return
 
+jit_lambda_factory_code:        # lambda, c-stream, old-rbp,  argc, env-size
+        prologue  old_rbp, local_idx, local, env_size
+        unbox_pointer_internal %rdi, %r12
+        mov     %rsi, %rbx
+        movq    %rdx, old_rbp(%rsp)
+        mov     %ecx, local_idx(%rsp)
+        mov     %r8d, env_size(%rsp)
+
+        call_fn jit_literal, %r12, %rbx, $NIL
+
+        sub     $POINTER_SIZE, old_rbp(%rsp)
+1:      cmp     $0, env_size(%rsp)
+        je      2f
+        mov     old_rbp(%rsp), %rcx
+        call_fn jit_maybe_add_to_constant_pool, (%rcx)
+        mov     old_rbp(%rsp), %rcx
+        call_fn jit_literal, (%rcx), %rbx, $NIL
+        sub     $POINTER_SIZE, old_rbp(%rsp)
+
+        decl    env_size(%rsp)
+        incl    local_idx(%rsp)
+        mov     local_idx(%rsp), %ecx
+        shl     $POINTER_SIZE_SHIFT, %rcx
+        add     $POINTER_SIZE, %rcx
+        neg     %ecx
+        mov     %ecx, local(%rsp)
+        call_fn fwrite, $jit_rax_to_closure, $1, jit_rax_to_closure_size, %rbx
+        lea     local(%rsp), %rax
+        call_fn fwrite, %rax, $1, $INT_SIZE, %rbx
+
+        jmp     1b
+
+2:      call_fn jit_literal, %r12, %rbx, $NIL
+        call_fn fwrite, $jit_jump_rax, $1, jit_jump_rax_size, %rbx
+        return
+
 jit_lambda_factory:             # lambda, argc, env-size
-        prologue code, size, old_rbp, local_idx, local, env_size
-        movq    %rbp, old_rbp(%rsp)
+        prologue code, size, argc, env_size
         mov     %rdi, %r12
-        mov     %esi, local_idx(%rsp)
+        mov     %esi, argc(%rsp)
         mov     %edx, env_size(%rsp)
         lea     code(%rsp), %rdi
         lea     size(%rsp), %rsi
@@ -2838,7 +2873,9 @@ jit_lambda_factory:             # lambda, argc, env-size
         perror
         mov     %rax, %rbx
 
-        lambda_factory_template %r12
+        call_fn jit_lambda_factory_code, %r12, %rbx, %rbp, argc(%rsp), env_size(%rsp)
+        call_fn fclose, %rbx
+        perror  je
 
         mov     size(%rsp), %r11d
         call_fn jit_allocate_code, code(%rsp), %r11
@@ -2849,7 +2886,7 @@ jit_lambda_patch_factory:       # lambda-factory, argc, env-size
         prologue code, old_rbp, local_idx, local, env_size, lambda
         movq    %rbp, old_rbp(%rsp)
         unbox_pointer_internal %rdi, %r12
-        mov     %esi, local_idx(%rsp)
+        mov     %esi, argc(%rsp)
         mov     %edx, env_size(%rsp)
 
         call_fn fmemopen, %r12, $PAGE_SIZE, $read_mode
@@ -2868,7 +2905,10 @@ jit_lambda_patch_factory:       # lambda-factory, argc, env-size
         perror
         mov     %rax, %rbx
 
-        lambda_factory_template lambda(%rsp)
+        call_fn jit_lambda_factory_code, lambda(%rsp), %rbx, %rbp, argc(%rsp), env_size(%rsp)
+        call_fn fclose, %rbx
+        perror  je
+
         call_fn mprotect, %r12, $PAGE_SIZE, $(PROT_READ | PROT_EXEC)
         perror  je
         tag     TAG_PROCEDURE, %r12

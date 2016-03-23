@@ -504,39 +504,6 @@ tmp_string_\@:
         update_max_locals \max_locals
         .endm
 
-        .macro lambda_factory_template lambda, stream=%rbx, env_size=env_size(%rsp), old_rbp=old_rbp(%rsp), local=local(%rsp), local_idx=local_idx(%rsp)
-        call_fn jit_literal, \lambda, \stream, $NIL
-
-        sub     $POINTER_SIZE, \old_rbp
-.L_\@_1:
-        cmp     $0, \env_size
-        je      .L_\@_2
-        mov     \old_rbp, %rcx
-        call_fn jit_maybe_add_to_constant_pool, (%rcx)
-        mov     \old_rbp, %rcx
-        call_fn jit_literal, (%rcx), \stream, $NIL
-        sub     $POINTER_SIZE, \old_rbp
-
-        decl    \env_size
-        incl    \local_idx
-        mov     \local_idx, %ecx
-        shl     $POINTER_SIZE_SHIFT, %rcx
-        add     $POINTER_SIZE, %rcx
-        neg     %ecx
-        mov     %ecx, \local
-        call_fn fwrite, $jit_rax_to_closure, $1, jit_rax_to_closure_size, \stream
-        lea     \local, %rax
-        call_fn fwrite, %rax, $1, $INT_SIZE, \stream
-
-        jmp     .L_\@_1
-
-.L_\@_2:
-        call_fn jit_literal, \lambda, %rbx, $NIL
-        call_fn fwrite, $jit_jump_rax, $1, jit_jump_rax_size, \stream
-        call_fn fclose, \stream
-        perror  je
-        .endm
-
         .macro update_max_locals max_locals, value=%rax, tmp=%r11
         mov     \max_locals, \tmp
         cmp     \value, \tmp
