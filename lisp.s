@@ -3200,6 +3200,24 @@ jit_let:                        # form, c-stream, environment
 1:      let_template original_env(%rsp)
         return  max_locals(%rsp)
 
+jit_let_collect_bindings:       # bindings
+        prologue
+        mov     %rdi, %rbx
+        mov     $NIL, %r12
+
+1:      is_nil_internal %rbx
+        je      2f
+        call_fn car, %rbx
+        call_fn car, %rax
+        call_fn cons, %rax, %r12
+        mov     %rax, %r12
+
+        call_fn cdr, %rbx
+        mov     %rax, %rbx
+        jmp     1b
+
+2:      return  %r12
+
 jit_letrec:                     # form, c-stream, environment
         prologue form, env, full_env, variable_init, local, max_locals
         mov     %rsi, %r12
@@ -3209,29 +3227,17 @@ jit_letrec:                     # form, c-stream, environment
         movq    $0, max_locals(%rsp)
 
         call_fn car, form(%rsp)
-        mov     %rax, %rbx
-
-        mov    env(%rsp), %rax
+        call_fn jit_let_collect_bindings, %rax
+        call_fn append, %rax, env(%rsp)
         mov    %rax, full_env(%rsp)
 
-1:      is_nil_internal %rbx
-        je      2f
-        call_fn car, %rbx
-        call_fn car, %rax
-        call_fn cons, %rax, full_env(%rsp)
-        mov     %rax, full_env(%rsp)
-
-        call_fn cdr, %rbx
-        mov     %rax, %rbx
-        jmp     1b
-
-2:      let_template full_env(%rsp), body=false
+        let_template full_env(%rsp), body=false
 
         call_fn car, form(%rsp)
         mov     %rax, %rbx
 
-3:      is_nil_internal %rbx
-        je      4f
+1:      is_nil_internal %rbx
+        je      2f
         call_fn car, %rbx
         call_fn car, %rax
 
@@ -3256,9 +3262,9 @@ jit_letrec:                     # form, c-stream, environment
 
         call_fn cdr, %rbx
         mov     %rax, %rbx
-        jmp     3b
+        jmp     1b
 
-4:      let_body full_env(%rsp)
+2:      let_body full_env(%rsp)
         return  max_locals(%rsp)
 
         ## 4.2.3. Sequencing
