@@ -139,10 +139,10 @@
         shr     $TAG_SHIFT, %rax
         and     $TAG_MASK, %eax
         mov     $POINTER_TAG_MASK, %r11b
-        mov     $TAG_MASK, %cl
+        mov     $TAG_MASK, %r9b
         test    %r11b, %al
-        cmovnz  %r11w, %cx
-        and     %cl, %al
+        cmovnz  %r11w, %r9w
+        and     %r9b, %al
         .endm
 
         .macro tagged_jump table
