@@ -40,25 +40,26 @@
                 (cons (cons 'transcribe-failure (cons pattern (cons 0 idxs))) match)
                 match))))
 
+(set! syntax-ellipsis?
+      (lambda (pattern)
+        (and (pair? pattern)
+             (eq? '... (car pattern)))))
+
 (set! match-syntax-rule
       (lambda (literals pattern form match idxs env)
         (if (null? pattern)
-            (if (null? form)
-                match
-                #f)
+            (and (null? form) match)
             (let ((first-pattern (car pattern))
                   (rest-pattern (cdr pattern)))
               (if (pair? first-pattern)
                   (if (null? form)
-                      (and (not (null? rest-pattern))
-                           (and (eq? '... (car rest-pattern))
-                                (collect-syntax-variables literals first-pattern match idxs)))
+                      (and (syntax-ellipsis? rest-pattern)
+                           (collect-syntax-variables literals first-pattern match idxs))
                       (and (or (pair? (car form))
                                (null? (car form)))
-                           (if (and (pair? rest-pattern)
-                                    (eq? '... (car rest-pattern)))
+                           (if (syntax-ellipsis? rest-pattern)
                                (letrec ((loop
-                                         (lambda (form match idx _)
+                                         (lambda (form match idx)
                                            (if (null? form)
                                                match
                                                (let ((match (match-syntax-rule literals first-pattern (car form) match (cons idx idxs) env)))
@@ -67,8 +68,7 @@
                                (let ((match (match-syntax-rule literals first-pattern (car form) match idxs env)))
                                  (and match (match-syntax-rule literals rest-pattern (cdr form) match idxs env))))))
                   (if (syntax-pattern-variable? literals first-pattern)
-                      (if (and (pair? rest-pattern)
-                               (eq? '... (car rest-pattern)))
+                      (if (syntax-ellipsis? rest-pattern)
                           (letrec ((loop (lambda (form match idx)
                                            (if (null? form)
                                                (cons (cons 'transcribe-failure (cons first-pattern (cons idx idxs))) match)
@@ -104,8 +104,7 @@
                 template)
             (let ((first-template (car template))
                   (rest-template (cdr template)))
-              (if (and (pair? rest-template)
-                       (eq? '...  (car rest-template)))
+              (if (syntax-ellipsis? rest-template)
                   (append
                    (letrec ((loop (lambda (transcribed new-idx)
                                     (let ((new-transcribed (transcribe-syntax-rule match first-template (cons new-idx idxs))))
