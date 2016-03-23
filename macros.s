@@ -453,39 +453,6 @@ tmp_string_\@:
         mov     %rcx, symbol_table_values(,%rax,POINTER_SIZE)
         .endm
 
-        .macro let_template body_env, bindings_env, env, form=form(%rsp), variable_init=variable_init(%rsp), local=local(%rsp), max_locals=max_locals(%rsp), stream=%r12, named_let=, body=true
-        call_fn car, \form
-        mov     %rax, %rbx
-        call_fn jit_let_bindings %rbx, \stream, \env, \bindings_env
-        update_max_locals \max_locals
-
-        .ifnb \named_let
-        call_fn ftell, \stream
-        box_int_internal
-        call_fn jit_named_let_syntax_factory, %rax, \form, \body_env
-        mov     \named_let, %rcx
-        mov     jit_syntax_jump_table(,%ecx,POINTER_SIZE), %rbx
-        mov     %rax, jit_syntax_jump_table(,%ecx,POINTER_SIZE)
-        .endif
-
-        .ifc \body, true
-        let_body \body_env, form=\form, max_locals=\max_locals, stream=\stream
-        .endif
-
-        .ifnb \named_let
-        mov     \named_let, %rcx
-        mov     %rbx, jit_syntax_jump_table(,%ecx,POINTER_SIZE)
-        .endif
-        .endm
-
-        .macro let_body env, form=form(%rsp), max_locals=max_locals(%rsp), stream=%r12
-        call_fn cdr, \form
-        call_fn cons, begin_symbol, %rax
-
-        call_fn jit_datum, %rax, \stream, \env
-        update_max_locals \max_locals
-        .endm
-
         .macro update_max_locals max_locals, value=%rax, tmp=%r11
         mov     \max_locals, \tmp
         cmp     \value, \tmp

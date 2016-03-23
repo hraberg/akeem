@@ -3225,19 +3225,46 @@ jit_let:                        # form, c-stream, environment
         mov     %rax, form(%rsp)
 
         call_fn car, form(%rsp)
+        mov     %rax, %rbx
+        call_fn jit_let_bindings %rbx, %r12, env(%rsp), env(%rsp)
+        update_max_locals max_locals(%rsp)
+
+        call_fn car, form(%rsp)
         call_fn jit_let_collect_bindings, %rax
         call_fn append, %rax, env(%rsp)
         mov    %rax, env(%rsp)
 
-        let_template env(%rsp), original_env(%rsp), original_env(%rsp), named_let=named_let(%rsp)
+        call_fn ftell, %r12
+        box_int_internal
+        call_fn jit_named_let_syntax_factory, %rax, form(%rsp), env(%rsp)
+        mov     named_let(%rsp), %rcx
+        mov     jit_syntax_jump_table(,%ecx,POINTER_SIZE), %rbx
+        mov     %rax, jit_syntax_jump_table(,%ecx,POINTER_SIZE)
+
+        call_fn cdr, form(%rsp)
+        call_fn cons, begin_symbol, %rax
+        call_fn jit_datum, %rax, %r12, env(%rsp)
+        update_max_locals max_locals(%rsp)
+
+        mov     named_let(%rsp), %rcx
+        mov     %rbx, jit_syntax_jump_table(,%ecx,POINTER_SIZE)
+
         return  max_locals(%rsp)
 
 1:      call_fn car, form(%rsp)
+        mov     %rax, %rbx
+        call_fn jit_let_bindings %rbx, %r12, env(%rsp), env(%rsp)
+        update_max_locals max_locals(%rsp)
+
+        call_fn car, form(%rsp)
         call_fn jit_let_collect_bindings, %rax
         call_fn append, %rax, env(%rsp)
         mov    %rax, env(%rsp)
 
-        let_template env(%rsp), original_env(%rsp), original_env(%rsp)
+        call_fn cdr, form(%rsp)
+        call_fn cons, begin_symbol, %rax
+        call_fn jit_datum, %rax, %r12, env(%rsp)
+        update_max_locals max_locals(%rsp)
         return  max_locals(%rsp)
 
 jit_let_collect_bindings:       # bindings
@@ -3271,7 +3298,10 @@ jit_letrec:                     # form, c-stream, environment
         call_fn append, %rax, env(%rsp)
         mov    %rax, full_env(%rsp)
 
-        let_template full_env(%rsp), full_env(%rsp), env(%rsp), body=false
+        call_fn car, form(%rsp)
+        mov     %rax, %rbx
+        call_fn jit_let_bindings %rbx, %r12, env(%rsp), full_env(%rsp)
+        update_max_locals max_locals(%rsp)
 
         call_fn car, form(%rsp)
         mov     %rax, %rbx
@@ -3304,7 +3334,10 @@ jit_letrec:                     # form, c-stream, environment
         mov     %rax, %rbx
         jmp     1b
 
-2:      let_body full_env(%rsp)
+2:      call_fn cdr, form(%rsp)
+        call_fn cons, begin_symbol, %rax
+        call_fn jit_datum, %rax, %r12, full_env(%rsp)
+        update_max_locals max_locals(%rsp)
         return  max_locals(%rsp)
 
         ## 4.2.3. Sequencing
