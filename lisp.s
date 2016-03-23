@@ -1975,11 +1975,7 @@ bytevector_to_string:           # bytevector
         call_fn fputc, $' , stream(%rsp)
 
 2:      mov     header_size(%rbx,%r12), %al
-        tag     TAG_INT, %rax
-        call_fn to_string, %rax
-        unbox_pointer_internal %rax, %rdi
-        add     $header_size, %rdi
-        call_fn fputs, %rdi, stream(%rsp)
+        call_fn fprintf, stream(%rsp), $int_format, %rax
 
         inc     %r12
         jmp     1b
