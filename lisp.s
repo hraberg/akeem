@@ -2716,18 +2716,12 @@ jit_procedure_call:             # form, c-stream, environment, register
         je      6f
 
         call_fn car, form(%rsp)
-        has_tag TAG_SYMBOL, %rax, store=false
-        jne     7f
-        call_fn car, form(%rsp)
         xor     %r11d, %r11d
         mov     jit_argument_to_register_id_table(%rbx), %r11b
-        call_fn jit_symbol, %rax, %r12, env(%rsp), %r11
+        call_fn jit_datum, %rax, %r12, env(%rsp), %r11
         update_max_locals max_locals(%rsp)
 
-        call_fn cdr, form(%rsp)
-        mov     %rax, form(%rsp)
-
-        jmp     5b
+        jmp     7f
 
 6:      xor     %r11d, %r11d
         mov     jit_argument_to_register_id_table(%rbx), %r11b
@@ -2735,29 +2729,14 @@ jit_procedure_call:             # form, c-stream, environment, register
         mov     jit_pop_register_size_table(,%r11,POINTER_SIZE), %r11
         call_fn fwrite, %rax, $1, %r11, %r12
 
-        call_fn cdr, form(%rsp)
-        mov     %rax, form(%rsp)
-
-        jmp     5b
-
-7:      xor     %r11d, %r11d
-        mov     jit_argument_to_register_id_table(%rbx), %r11b
-        mov     jit_literal_to_register_table(,%r11,POINTER_SIZE), %rax
-        mov     jit_literal_to_register_size_table(,%r11,POINTER_SIZE), %r11
-        call_fn fwrite, %rax, $1, %r11, %r12
-
-        call_fn car, form(%rsp)
-        mov     %rax, literal(%rsp)
-        lea     literal(%rsp), %rax
-        call_fn fwrite, %rax, $1, $POINTER_SIZE, %r12
-
-        call_fn cdr, form(%rsp)
+7:      call_fn cdr, form(%rsp)
         mov     %rax, form(%rsp)
 
         jmp     5b
 
 8:      has_tag TAG_PAIR, operand(%rsp), store=false
         jne     9f
+
         call_fn fwrite, $jit_pop_rax, $1, jit_pop_rax_size, %r12
         jmp     10f
 
@@ -2765,12 +2744,12 @@ jit_procedure_call:             # form, c-stream, environment, register
 
 10:     call_fn fwrite, $jit_unbox_rax, $1, jit_unbox_rax_size, %r12
         call_fn fwrite, $jit_call_rax, $1, jit_call_rax_size, %r12
-
+        mov     register(%rsp), %rbx
         mov     jit_rax_to_register_table(,%rbx,POINTER_SIZE), %rax
         mov     jit_rax_to_register_size_table(,%rbx,POINTER_SIZE), %r11
         call_fn fwrite, %rax, $1, %r11, %r12
 
-11:     return  max_locals(%rsp)
+        return  max_locals(%rsp)
 
         ## 4.1.4. Procedures
 
