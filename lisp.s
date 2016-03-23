@@ -3290,8 +3290,7 @@ jit_letrec:                     # form, c-stream, environment, register
         call_fn car, %rbx
         call_fn car, %rax
 
-        call_fn jit_datum, %rax, %r12, full_env(%rsp), $RAX
-        call_fn fwrite, $jit_rax_to_rdi, $1, jit_rax_to_rdi_size, %r12
+        call_fn jit_datum, %rax, %r12, full_env(%rsp), $RDI
 
         call_fn car, %rbx
         call_fn cdr, %rax
