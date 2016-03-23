@@ -3175,6 +3175,24 @@ jit_named_let_syntax_factory:   # target, form, original-env
         call_fn jit_allocate_code, code(%rsp), %r11
         return
 
+jit_let_collect_bindings:       # bindings
+        prologue
+        mov     %rdi, %rbx
+        mov     $NIL, %r12
+
+1:      is_nil_internal %rbx
+        je      2f
+        call_fn car, %rbx
+        call_fn car, %rax
+        call_fn cons, %rax, %r12
+        mov     %rax, %r12
+
+        call_fn cdr, %rbx
+        mov     %rax, %rbx
+        jmp     1b
+
+2:      return  %r12
+
 jit_let_bindings:               # bindings, c-stream, environment, bindings-environment
         prologue env, bindings_env, variable_init, max_locals
         mov     %rdi, %rbx
@@ -3206,13 +3224,13 @@ jit_let_bindings:               # bindings, c-stream, environment, bindings-envi
 2:      return max_locals(%rsp)
 
 jit_let:                        # form, c-stream, environment
-        prologue form, env, original_env, variable_init, local, max_locals, named_let
+        prologue form, env, variable_init, max_locals, named_let
         mov     %rsi, %r12
         mov     %rdx, env(%rsp)
-        mov     %rdx, original_env(%rsp)
         call_fn cdr, %rdi
         mov     %rax, form(%rsp)
         movq    $0, max_locals(%rsp)
+        movq    $NULL, named_let(%rsp)
 
         call_fn car, form(%rsp)
         has_tag TAG_SYMBOL, %rax, store=false
@@ -3224,9 +3242,8 @@ jit_let:                        # form, c-stream, environment
         call_fn cdr, form(%rsp)
         mov     %rax, form(%rsp)
 
-        call_fn car, form(%rsp)
-        mov     %rax, %rbx
-        call_fn jit_let_bindings %rbx, %r12, env(%rsp), env(%rsp)
+1:      call_fn car, form(%rsp)
+        call_fn jit_let_bindings %rax, %r12, env(%rsp), env(%rsp)
         update_max_locals max_locals(%rsp)
 
         call_fn car, form(%rsp)
@@ -3234,10 +3251,15 @@ jit_let:                        # form, c-stream, environment
         call_fn append, %rax, env(%rsp)
         mov    %rax, env(%rsp)
 
+        mov     named_let(%rsp), %rax
+        test    %rax, %rax
+        jz      2f
+
         call_fn ftell, %r12
         box_int_internal
         call_fn jit_named_let_syntax_factory, %rax, form(%rsp), env(%rsp)
-        mov     named_let(%rsp), %rcx
+
+2:      mov     named_let(%rsp), %rcx
         mov     jit_syntax_jump_table(,%ecx,POINTER_SIZE), %rbx
         mov     %rax, jit_syntax_jump_table(,%ecx,POINTER_SIZE)
 
@@ -3250,40 +3272,6 @@ jit_let:                        # form, c-stream, environment
         mov     %rbx, jit_syntax_jump_table(,%ecx,POINTER_SIZE)
 
         return  max_locals(%rsp)
-
-1:      call_fn car, form(%rsp)
-        mov     %rax, %rbx
-        call_fn jit_let_bindings %rbx, %r12, env(%rsp), env(%rsp)
-        update_max_locals max_locals(%rsp)
-
-        call_fn car, form(%rsp)
-        call_fn jit_let_collect_bindings, %rax
-        call_fn append, %rax, env(%rsp)
-        mov    %rax, env(%rsp)
-
-        call_fn cdr, form(%rsp)
-        call_fn cons, begin_symbol, %rax
-        call_fn jit_datum, %rax, %r12, env(%rsp)
-        update_max_locals max_locals(%rsp)
-        return  max_locals(%rsp)
-
-jit_let_collect_bindings:       # bindings
-        prologue
-        mov     %rdi, %rbx
-        mov     $NIL, %r12
-
-1:      is_nil_internal %rbx
-        je      2f
-        call_fn car, %rbx
-        call_fn car, %rax
-        call_fn cons, %rax, %r12
-        mov     %rax, %r12
-
-        call_fn cdr, %rbx
-        mov     %rax, %rbx
-        jmp     1b
-
-2:      return  %r12
 
 jit_letrec:                     # form, c-stream, environment
         prologue form, env, full_env, variable_init, local, max_locals
@@ -3299,8 +3287,7 @@ jit_letrec:                     # form, c-stream, environment
         mov    %rax, full_env(%rsp)
 
         call_fn car, form(%rsp)
-        mov     %rax, %rbx
-        call_fn jit_let_bindings %rbx, %r12, env(%rsp), full_env(%rsp)
+        call_fn jit_let_bindings %rax, %r12, env(%rsp), full_env(%rsp)
         update_max_locals max_locals(%rsp)
 
         call_fn car, form(%rsp)
