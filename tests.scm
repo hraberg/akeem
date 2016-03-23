@@ -516,7 +516,7 @@
 (assert (symbol? #f))
 
 (assert (symbol->string 'flying-fish))
- (assert (symbol->string 'Martin))
+(assert (symbol->string 'Martin))
 (assert (symbol->string
          (string->symbol "Malvina")))
 
@@ -743,7 +743,7 @@
 (spec ";;; 6.8. Vectors")
 (assert (string->vector "ABC"))
 (assert (vector->string
-    #(#\1 #\2 #\3)))
+         #(#\1 #\2 #\3)))
 
 (define a #(1 8 2 8))
 (define b (vector-copy a 0 4)) ;; should be a
