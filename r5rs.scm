@@ -77,6 +77,13 @@
 
 ;;; 4.2.4. Iteration
 
+(define-syntax named-let
+  (syntax-rules ()
+    ((named-let tag ((name val) ...) body1 body2 ...)
+     ((letrec ((tag (lambda (name ...)
+                      body1 body2 ...)))
+        tag) val ...))))
+
 (define-syntax do
   (syntax-rules ()
     ((do ((var init step ...) ...)
