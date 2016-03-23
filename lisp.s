@@ -2827,7 +2827,7 @@ jit_procedure:                  # form, c-stream, environment, arguments
         return
 
 jit_lambda_factory:             # lambda, argc, env-size
-        prologue args, code, size, old_rbp, local_idx, local, env_size
+        prologue code, size, old_rbp, local_idx, local, env_size
         movq    %rbp, old_rbp(%rsp)
         mov     %rdi, %r12
         mov     %esi, local_idx(%rsp)
@@ -2846,7 +2846,7 @@ jit_lambda_factory:             # lambda, argc, env-size
         return
 
 jit_lambda_patch_factory:       # lambda-factory, argc, env-size
-        prologue args, code, old_rbp, local_idx, local, env_size, lambda
+        prologue code, old_rbp, local_idx, local, env_size, lambda
         movq    %rbp, old_rbp(%rsp)
         unbox_pointer_internal %rdi, %r12
         mov     %esi, local_idx(%rsp)
@@ -2874,11 +2874,12 @@ jit_lambda_patch_factory:       # lambda-factory, argc, env-size
         tag     TAG_PROCEDURE, %r12
         return
 
-jit_lambda_hide_args_in_env:    # environment, arguments
-        prologue env, args, local
-        mov     %rdi, %rbx
-        mov     %rsi, %r12
+jit_lambda_hide_args_in_env:    # arguments, body, environment
+        prologue env, args, body, local
+        mov     %rdi, %r12
         mov     %r12, args(%rsp)
+        mov     %rsi, body(%rsp)
+        mov     %rdx, %rbx
 
         call_fn reverse, %rbx
         call_fn reverse, %rax
@@ -2911,8 +2912,9 @@ jit_lambda_hide_args_in_env:    # environment, arguments
 5:      return  env(%rsp)
 
 jit_lambda:                     # form, c-stream, environment
-        prologue env, args, body, lambda
+        prologue env, args, form, lambda
         mov     %rdi, %rbx
+        mov     %rdi, form(%rsp)
         mov     %rsi, %r12
         mov     %rdx, env(%rsp)
 
@@ -2921,13 +2923,14 @@ jit_lambda:                     # form, c-stream, environment
         call_fn car, %rbx
         mov     %rax, args(%rsp)
 
-        call_fn jit_lambda_hide_args_in_env, env(%rsp), args(%rsp)
-        mov     %rax, env(%rsp)
-
         call_fn cdr, %rbx
         call_fn cons, begin_symbol, %rax
+        mov     %rax, %rbx
 
-        call_fn jit_code, %rax, env(%rsp), args(%rsp)
+        call_fn jit_lambda_hide_args_in_env, args(%rsp), %rbx, env(%rsp)
+        mov     %rax, env(%rsp)
+
+        call_fn jit_code, %rbx, env(%rsp), args(%rsp)
         mov     %rax, lambda(%rsp)
         call_fn length, env(%rsp)
         test    %eax, %eax
