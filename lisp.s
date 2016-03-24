@@ -3021,12 +3021,14 @@ jit_lambda_patch_factory:       # lambda-factory, env-size
         return
 
 jit_lambda:                     # form, c-stream, environment, register, tail
-        prologue env, args, form, lambda, register
+        prologue env, env_size, args, form, lambda, register
         mov     %rdi, %rbx
         mov     %rdi, form(%rsp)
         mov     %rsi, %r12
         mov     %rdx, env(%rsp)
         mov     %rcx, register(%rsp)
+        call_fn length, env(%rsp)
+        mov     %rax, env_size(%rsp)
 
         call_fn cdr, %rbx
         mov     %rax, %rbx
@@ -3039,14 +3041,12 @@ jit_lambda:                     # form, c-stream, environment, register, tail
 
         call_fn jit_code, %rbx, env(%rsp), args(%rsp)
         mov     %rax, lambda(%rsp)
-        call_fn length, env(%rsp)
+        mov     env_size(%rsp), %rax
         test    %eax, %eax
         jz      1f
 
         call_fn jit_literal, lambda(%rsp), %r12, $NIL, $RDI, $C_FALSE
-
-        call_fn length, env(%rsp)
-        call_fn jit_literal, %rax, %r12, $NIL, $RSI, $C_FALSE
+        call_fn jit_literal, env_size(%rsp), %r12, $NIL, $RSI, $C_FALSE
 
         mov     $jit_lambda_factory, %rax
         call_fn jit_literal, %rax, %r12, $NIL, $RAX, $C_FALSE
@@ -3056,13 +3056,12 @@ jit_lambda:                     # form, c-stream, environment, register, tail
         mov     jit_rax_to_register_size_table(,%rbx,POINTER_SIZE), %r11
         call_fn fwrite, %rax, $1, %r11, %r12
 
-        call_fn length, env(%rsp)
-        return
+        return  env_size(%rsp)
 
 1:      tag     TAG_PROCEDURE, lambda(%rsp)
         call_fn jit_literal, %rax, %r12, $NIL, register(%rsp), $C_FALSE
 
-        call_fn length, env(%rsp)
+        return  env_size(%rsp)
         return
 
         ## 4.1.5. Conditionals
