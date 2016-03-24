@@ -533,9 +533,9 @@
 
 (spec ";;; 6.3.4. Characters")
 (assert (<= (char->integer #\a)
-            (char->integer #\a)))
-(assert (char<=? (integer->char x)
-                 (integer->char y)))
+            (char->integer #\b)))
+(assert (char<=? (integer->char 97)
+                 (integer->char 98)))
 
 (spec ";;; 6.3.5. Strings")
 (assert "The word \"recursion\" has many meanings.")
