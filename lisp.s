@@ -665,6 +665,7 @@ open_input_file:                # filename
         unbox_pointer_internal %rdi
         add     $header_size, %rax
         call_fn fopen, %rax, $read_mode
+        perror
         tag     TAG_PORT, %rax
         return
 
@@ -673,6 +674,7 @@ open_output_file:               # filename
         unbox_pointer_internal %rdi
         add     $header_size, %rax
         call_fn fopen, %rax, $write_mode
+        perror
         tag     TAG_PORT, %rax
         return
 
@@ -912,7 +914,9 @@ error:                          # message
         prologue
         mov     %rdi, %rbx
         call_fn current_error_port
-        call_fn display, %rbx, %rax
+        mov     %rax, %r12
+        call_fn display, %rbx, %r12
+        call_fn display, $NEWLINE_CHAR, %r12
         call_fn exit, $1
         return
 
@@ -1125,7 +1129,7 @@ main:                # argc, argv
         mov     symbol_next_id, %rax
         mov     %rax, max_null_environment_symbol
 
-        intern_string read_error_string, "unexpected input\n"
+        intern_string read_error_string, "Unexpected input"
         intern_string false_string, "#f"
         mov     %rax, boolean_string_table + POINTER_SIZE * C_FALSE
         intern_string true_string, "#t"
@@ -1243,6 +1247,7 @@ main:                # argc, argv
         store_pointer $'d, $read_decimal_number
         store_pointer $'x, $read_hexadecimal_number
         store_pointer $'u, $read_bytevector
+        store_pointer $'!, $read_hashbang
 
         lea     jit_jump_table, %rbx
         store_pointer $TAG_DOUBLE, $jit_literal
@@ -2201,6 +2206,17 @@ read_comment:                   # c-stream
 2:      call_fn ungetc, %rax, %rbx
 3:      return
 
+read_hashbang:                  # c-stream
+        prologue
+        mov     %rdi, %rbx
+
+1:      call_fn fgetc, %rbx
+        cmp     $'\n, %al
+        je      3f
+        jmp     1b
+
+3:      return
+
 read_datum:                     # c-stream
         prologue
         mov     %rdi, %rbx
@@ -2316,6 +2332,8 @@ read_string:                    # c-stream, c-char
         je      2f
 
         mov     unescape_char_table(%eax), %al
+        test    %al, %al
+        jz      6f
         jmp     3f
 
 2:      lea     hex(%rsp), %rdx
