@@ -3572,6 +3572,13 @@ jit_epilogue:
 jit_epilogue_size:
         .quad   . - jit_epilogue
 
+        .align  16
+jit_tco_adjust_stack:
+        mov     %rbp, %rsp
+        pop     %rbp
+jit_tco_adjust_stack_size:
+        .quad   . - jit_tco_adjust_stack
+
         .irp reg, rax, rdi, rsi, rdx, rcx, r8, r9
         .align  16
 jit_literal_to_\reg\():
@@ -3644,13 +3651,6 @@ jit_push_rax:
         push    %rax
 jit_push_rax_size:
         .quad   . - jit_push_rax
-
-        .align  16
-jit_tco_adjust_stack:
-        mov     %rbp, %rsp
-        pop     %rbp
-jit_tco_adjust_stack_size:
-        .quad   . - jit_tco_adjust_stack
 
         .align  16
 jit_void_to_rax:
