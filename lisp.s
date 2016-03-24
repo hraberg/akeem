@@ -909,9 +909,10 @@ list_to_bytevector:             # list
         ## 6.11. Exceptions
 
 error:                          # reason
-        minimal_prologue
+        prologue
+        mov     %rdi, %rbx
         call_fn current_error_port
-        call_fn display, %rdi, %rax
+        call_fn display, %rbx, %rax
         call_fn exit, $1
         return
 
