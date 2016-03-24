@@ -39,7 +39,7 @@ See [this tutorial](http://community.schemewiki.org/?emacs-tutorial).
 * Basic support for `define-syntax` / `syntax-rules` and `quasiquote`.
 * NaN-boxed 32-bit integers and 64-bit doubles
 * Function application up to 6 arguments.
-* TCO for calls in tail position.
+* TCO for calls in tail position across functions.
 * The bootstrap Scheme code is embedded in the executable.
 * Mark and Sweep GC.
 
