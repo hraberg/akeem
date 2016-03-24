@@ -2547,12 +2547,12 @@ jit_allocate_code:              # c-code, c-size
         mov     %rdi, code(%rsp)
         mov     %rsi, size(%rsp)
         call_fn jit_write_code_to_disk, %rdi, %rsi
-        call_fn mmap, $NULL, $PAGE_SIZE, $(PROT_READ | PROT_WRITE), $(MAP_PRIVATE | MAP_ANONYMOUS), $-1, $0
+        call_fn mmap, $NULL, size(%rsp), $(PROT_READ | PROT_WRITE), $(MAP_PRIVATE | MAP_ANONYMOUS), $-1, $0
         perror
 	mov     %rax, %rbx
         call_fn memcpy, %rbx, code(%rsp), size(%rsp)
         perror
-        call_fn mprotect, %rbx, $PAGE_SIZE, $(PROT_READ | PROT_EXEC)
+        call_fn mprotect, %rbx, size(%rsp), $(PROT_READ | PROT_EXEC)
         perror  je
         return  %rbx
 
