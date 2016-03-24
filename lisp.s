@@ -697,20 +697,28 @@ current_input_port:
         ret
 
 is_input_port:                  # obj
+        minimal_prologue
+        has_tag TAG_PORT, %rdi, store=false
+        jne     1f
         unbox_pointer_internal %rdi
         call_fn __freadable, %rax
         cmp     $NULL, %rax
         setg    %al
         box_boolean_internal
-        ret
+        return
+1:      return $FALSE
 
 is_output_port:                 # obj
+        minimal_prologue
+        has_tag TAG_PORT, %rdi, store=false
+        jne     1f
         unbox_pointer_internal %rdi
         call_fn __fwritable, %rax
         cmp     $NULL, %rax
         setg    %al
         box_boolean_internal
-        ret
+        return
+1:      return $FALSE
 
         ## 6.6.2. Input
 

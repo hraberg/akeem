@@ -262,7 +262,7 @@
 
 ;; 6.13.1. Ports
 
-(define port? (obj)
+(define (port? obj)
   (or (input-port? obj) (output-port? obj)))
 
 (define textual-port? port?)
