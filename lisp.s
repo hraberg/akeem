@@ -1535,6 +1535,7 @@ main:                # argc, argv
 
         define "read-all", $read_all
         define "gc", $gc
+        define "object-space-size", $object_space_size
         define "class-of", $class_of
         define "void", $void
 
@@ -1646,6 +1647,12 @@ class_of:                       # obj
         mov     header_object_type(%r11), %ax
         tag     TAG_SYMBOL, %rax
         return
+
+object_space_size:
+        mov     stack_top_offset + object_space, %rax
+        shr     $POINTER_SIZE_SHIFT, %rax
+        box_int_internal
+        ret
 
         ## Boxing from C
 
@@ -1915,9 +1922,7 @@ gc:
         minimal_prologue
         call_fn gc_mark
         call_fn gc_sweep
-        mov     stack_top_offset + object_space, %rax
-        shr     $POINTER_SIZE_SHIFT, %rax
-        box_int_internal
+        call_fn object_space_size
         return
 
         ## Printer
