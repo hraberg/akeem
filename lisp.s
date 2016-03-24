@@ -2288,24 +2288,46 @@ read_number_or_symbol:          # c-stream, c-char
         return
 
 read_string:                    # c-stream, c-char
-        prologue str, size
+        prologue str, size, hex
         mov     %rdi, %rbx
         open_string_buffer str(%rsp), size(%rsp), %r12
 
 1:      call_fn fgetc, %rbx
         cmp     $'\", %rax
-        je      3f
+        je      5f
 
         cmp     $'\\, %rax
-        jne     2f
+        jne     3f
         call_fn fgetc, %rbx
-        mov     unescape_char_table(%eax), %al
 
-2:      call_fn fputc, %rax, %r12
+        cmp     $'\n, %al
+        je      1b
+
+        cmp     $'x, %al
+        je      2f
+
+        mov     unescape_char_table(%eax), %al
+        jmp     3f
+
+2:      lea     hex(%rsp), %rdx
+        call_fn fscanf, %rbx, $hex_format, %rdx
+        perror  jge
+
+        call_fn fputc, hex(%rsp), %r12
+        call_fn fgetc, %rbx
+        cmp     $';, %al
+        jne     6f
+
         jmp     1b
 
-3:      string_buffer_to_string str(%rsp), size(%rsp), %r12
+3:      call_fn fputc, %rax, %r12
+        jmp     1b
+
+5:      string_buffer_to_string str(%rsp), size(%rsp), %r12
         register_for_gc
+        return
+
+6:      call_fn error, read_error_string
         return
 
 read_true:                      # c-stream

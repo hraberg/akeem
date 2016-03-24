@@ -254,6 +254,7 @@ mISSISSIppi
 #t
 #t
 ;;; 6.3.5. Strings
+"The word \"recursion\" has many meanings."
 #<void>
 ;;; 6.3.6. Vectors
 #(0 (2 2 2 2) "Anna")
@@ -318,6 +319,11 @@ c
 ;;; 6.6. Characters
 3
 #f
+;;; 6.7. Strings
+"Another example:\ntwo lines of text"
+"Here’s text containing just one line"
+"a is named GREEK SMALL LETTER ALPHA."
+"a12de"
 ;;; 6.8. Vectors
 #(#\A #\B #\C)
 "123"

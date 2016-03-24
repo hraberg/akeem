@@ -538,6 +538,8 @@
                  (integer->char y)))
 
 (spec ";;; 6.3.5. Strings")
+(assert "The word \"recursion\" has many meanings.")
+
 (define (f) (make-string 3 #\*))
 ;; (define (g) "***")
 (assert (string-set! (f) 0 #\?))
@@ -739,6 +741,17 @@
 ;; (assert (digit-value #\x0664))
 ;; (assert (digit-value #\x0AE6))
 (assert (digit-value #\a)) ;; should be #\x0EA6
+
+(spec ";;; 6.7. Strings")
+(assert "Another example:\ntwo lines of text")
+(assert "Here’s text \
+containing just one line")
+(assert "\x061; is named GREEK SMALL LETTER ALPHA.") ;; should be \x03B1;
+
+(define a "12345")
+(define b (string-copy "abcde"))
+(string-copy! b 1 a 0 2)
+(assert b)
 
 (spec ";;; 6.8. Vectors")
 (assert (string->vector "ABC"))
