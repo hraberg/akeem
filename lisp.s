@@ -2539,7 +2539,6 @@ jit_index_of_local:             # environment, symbol
 2:      mov     $-1, %rbx
 3:      return  %rbx
 
-
 jit_symbol:                     # symbol, c-stream, environment, register, tail
         prologue env, env_size, symbol_address, symbol, local, register
         mov     %rdi, symbol(%rsp)
