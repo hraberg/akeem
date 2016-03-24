@@ -53,6 +53,9 @@ profile: CFLAGS += -pg
 profile: benchmark
 	gprof -b $(AKEEM) $(RACKET_BENCHMARKS_HOME)/gmon.out
 
+profile-clean:
+	rm -f $(RACKET_BENCHMARKS_HOME)/gmon.out
+
 jit-dissassmble:
 	objdump -b binary -D -mi386:x86-64 jit_code/jit_code_*.bin
 
@@ -62,8 +65,8 @@ jit-clean:
 release: CFLAGS += -s
 release: clean akeem
 
-clean:	jit-clean
-	rm -f akeem *.o $(RACKET_BENCHMARKS_HOME)/gmon.out
+clean:	jit-clean profile-clean
+	rm -f akeem *.o
 
 check: run-tests
 
