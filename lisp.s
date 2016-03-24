@@ -2859,9 +2859,6 @@ jit_procedure_call:             # form, c-stream, environment, register, tail
         update_max_locals max_locals(%rsp)
 
 10:     call_fn fwrite, $jit_unbox_rax, $1, jit_unbox_rax_size, %r12
-        has_tag TAG_SYMBOL, operand(%rsp), store=false
-        jne     11f
-
         cmp     $C_TRUE, tail(%rsp)
         je      12f
 
@@ -2870,6 +2867,7 @@ jit_procedure_call:             # form, c-stream, environment, register, tail
 
 12:     call_fn fwrite, $jit_tco_adjust_stack, $1, jit_tco_adjust_stack_size, %r12
         call_fn fwrite, $jit_jump_rax, $1, jit_jump_rax_size, %r12
+
         return  max_locals(%rsp)
 
 13:     mov     register(%rsp), %rbx
@@ -3146,18 +3144,6 @@ jit_set_with_rax_as_value:      # symbol, c-stream, environment
         call_fn fwrite, $jit_void_to_rax, $1, jit_void_to_rax_size, %r12
         return
 
-jit_is_lambda:                  # form
-        prologue
-        mov     %rdi, %rbx
-        is_nil_internal %rbx
-        je      1f
-        has_tag TAG_PAIR, %rbx, store=false
-        jne     1f
-        call_fn car, %rbx
-        eq_internal lambda_symbol, %rax
-        return
-1:      return  $C_FALSE
-
 jit_set:                        # form, c-stream, environment, register, tail
         prologue env, max_locals, symbol
         mov     %rdi, %rbx
@@ -3261,6 +3247,18 @@ jit_let:                        # form, c-stream, environment, register, tail
         call_fn jit_datum, %rax, %r12, env(%rsp), register(%rsp), tail(%rsp)
         update_max_locals max_locals(%rsp)
         return  max_locals(%rsp)
+
+jit_is_lambda:                  # form
+        prologue
+        mov     %rdi, %rbx
+        is_nil_internal %rbx
+        je      1f
+        has_tag TAG_PAIR, %rbx, store=false
+        jne     1f
+        call_fn car, %rbx
+        eq_internal lambda_symbol, %rax
+        return
+1:      return  $C_FALSE
 
 jit_letrec:                     # form, c-stream, environment, register, tail
         prologue form, env, full_env, variable_init, local, max_locals, register, tail
