@@ -2669,7 +2669,7 @@ jit_pair:                       # form, c-stream, environment, register, tail
         ## 4.1.3. Procedure calls
 
 jit_procedure_call:             # form, c-stream, environment, register, tail
-        prologue form, len, operand, literal, env, max_locals, register, tail, recur_target
+        prologue form, len, operand, literal, env, env_size, max_locals, register, tail, recur_target
         mov     %rdi, %rbx
         mov     %rbx, form(%rsp)
         mov     %rsi, %r12
@@ -2680,6 +2680,9 @@ jit_procedure_call:             # form, c-stream, environment, register, tail
 
         call_fn length, %rbx
         mov     %rax, len(%rsp)
+
+        call_fn length, env(%rsp)
+        mov     %eax, env_size(%rsp)
 
         call_fn car, %rbx
         mov     %rax, operand(%rsp)
@@ -2752,7 +2755,7 @@ jit_procedure_call:             # form, c-stream, environment, register, tail
 9:      has_tag TAG_SYMBOL, tail(%rsp), store=false
         jne     11f
 
-        call_fn jit_index_of_local env(%rsp), operand(%rsp)
+        call_fn jit_index_of_local, env(%rsp), operand(%rsp)
         cmp     $0, %rax
         jge     13f
 
@@ -2762,7 +2765,9 @@ jit_procedure_call:             # form, c-stream, environment, register, tail
 
         jmp     12f
 
-11:     call_fn jit_index_of_local env(%rsp), operand(%rsp)
+11:     call_fn jit_index_of_local, env(%rsp), operand(%rsp)
+        sub     env_size(%rsp), %rax
+        neg     %rax
         cmp     %rax, tail(%rsp)
         jne     13f
 
@@ -3151,10 +3156,8 @@ jit_let_bindings:               # bindings, c-stream, environment, bindings-envi
         je      2f
 
         mov     %rax, jit_symbol_for_next_lambda
-
-        call_fn cdr, init(%rsp)
-        call_fn car, %rax
-        call_fn length, %rax
+        call_fn length, bindings_env(%rsp)
+        sub     jit_symbol_for_next_lambda, %eax
         add     %eax, jit_symbol_for_next_lambda
 
         call_fn jit_datum, init(%rsp), %r12, bindings_env(%rsp), $RAX, $NIL
