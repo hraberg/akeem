@@ -908,7 +908,7 @@ list_to_bytevector:             # list
 
         ## 6.11. Exceptions
 
-error:                          # reason
+error:                          # message
         prologue
         mov     %rdi, %rbx
         call_fn current_error_port
