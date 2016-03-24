@@ -1168,6 +1168,8 @@ main:                # argc, argv
         mov     symbol_next_id, %rax
         mov     %rax, max_null_environment_symbol
 
+        intern_string empty_string, ""
+
         intern_string read_error_string, "Unexpected input"
         intern_string code_space_error_string, "Code space exceeded"
         intern_string false_string, "#f"
@@ -1621,10 +1623,10 @@ build_environment_alist:        # list
         mov     %rax, env_var_name(%rsp)
 
         lea     save_ptr(%rsp), %rax
-        call_fn strtok_r, $NULL, $empty_string, %rax
+        call_fn strtok_r, $NULL, $empty_string_c, %rax
         test    %rax, %rax
         jnz     2f
-        mov     $empty_string, %rax
+        mov     $empty_string_c, %rax
 
 2:      call_fn box_string, %rax
         call_fn cons, env_var_name(%rsp), %rax
@@ -1695,11 +1697,18 @@ box_int:                        # c-int
 box_string:                     # c-string
         prologue str, size
         mov     %rdi, %rbx
-        open_string_buffer str(%rsp), size(%rsp), %r12
+        cmp     $NULL, %rbx
+        je      1f
+        cmpb    $0, (%rbx)
+        jz      2f
+
+1:      open_string_buffer str(%rsp), size(%rsp), %r12
         xor     %al, %al
         call_fn fprintf, %r12, $string_format, %rbx
         string_buffer_to_string str(%rsp), size(%rsp), %r12
         return
+
+2:      return empty_string
 
         ## Unboxing to C
 
@@ -2334,13 +2343,18 @@ read_number_or_symbol:          # c-stream, c-char
         return
 
 read_string:                    # c-stream, c-char
-        prologue str, size, hex
+        prologue str, size, hex, idx
         mov     %rdi, %rbx
+        movq    $-1, idx(%rsp)
         open_string_buffer str(%rsp), size(%rsp), %r12
 
-1:      call_fn fgetc, %rbx
+1:      incq    idx(%rsp)
+        call_fn fgetc, %rbx
         cmp     $'\", %rax
         je      5f
+
+        cmp     $EOF, %al
+        je      7f
 
         cmp     $'\\, %rax
         jne     3f
@@ -2354,7 +2368,7 @@ read_string:                    # c-stream, c-char
 
         mov     unescape_char_table(%eax), %al
         test    %al, %al
-        jz      6f
+        jz      7f
         jmp     3f
 
 2:      lea     hex(%rsp), %rdx
@@ -2364,18 +2378,23 @@ read_string:                    # c-stream, c-char
         call_fn fputc, hex(%rsp), %r12
         call_fn fgetc, %rbx
         cmp     $';, %al
-        jne     6f
+        jne     7f
 
         jmp     1b
 
 3:      call_fn fputc, %rax, %r12
         jmp     1b
 
-5:      string_buffer_to_string str(%rsp), size(%rsp), %r12
+5:      cmpq    $0, idx(%rsp)
+        je      6f
+
+        string_buffer_to_string str(%rsp), size(%rsp), %r12
         register_for_gc
         return
 
-6:      call_fn error, read_error_string
+6:      return  empty_string
+
+7:      call_fn error, read_error_string
         return
 
 read_true:                      # c-stream
@@ -3566,8 +3585,6 @@ double_format:
         .string "%f"
 object_format:
         .string "#<%s>"
-empty_string:
-        .string ""
 equals_sign:
         .string "="
 read_mode:
