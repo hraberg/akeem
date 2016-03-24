@@ -366,6 +366,7 @@
         call_fn ungetc, %rdi, %rbx
         .endif
         call_fn read_token, %rbx
+        register_for_gc
         call_fn string_to_number, %rax, \radix
         return
         .endm

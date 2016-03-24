@@ -337,6 +337,7 @@ string_to_symbol:               # string
 
         tag     TAG_STRING, %r12
         mov     %rax, symbol_table_names(,%rbx,POINTER_SIZE)
+        call_fn jit_add_to_constant_pool, %rax
 
 3:      tag     TAG_SYMBOL, %rbx
         return
@@ -2227,7 +2228,6 @@ read_token:                     # c-stream
         call_fn fscanf, %rbx, $token_format, %rdx
         perror  jge
         call_fn box_string, str(%rsp)
-        register_for_gc
         mov     %rax, %rbx
         call_fn free, str(%rsp)
         return  %rbx
@@ -2254,7 +2254,9 @@ read_symbol:                    # c-stream, c-char
         jmp     1b
 
 2:      call_fn string_to_symbol, str(%rsp)
-        return
+        mov     %rax, %rbx
+        register_for_gc str(%rsp)
+        return  %rbx
 
 read_number:                    # c-stream, c-char
         read_number_template $DECIMAL_RADIX_INT, unget=true
@@ -2318,6 +2320,7 @@ read_character:                 # c-stream, c-char
         prologue
         mov     %rdi, %rbx
         call_fn read_token, %rbx
+        register_for_gc
         mov     %rax, %r12
         call_fn string_length, %r12
         cmp     $1, %eax
