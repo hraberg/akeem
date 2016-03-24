@@ -13,7 +13,6 @@
           (loop))))))
 
 (define (main args)
-  (gc)
   (let ((files (cdr args)))
     (if (null? files)
         (repl)

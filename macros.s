@@ -404,8 +404,10 @@
 
         .macro intern_string var, name
         .section .rodata
+        .align  16
 \var\()_c:
         .string "\name"
+        .align  16
         .data
 \var:
         .quad   0
@@ -426,6 +428,7 @@
 
         .macro define name, value, tag=TAG_PROCEDURE
         .section .rodata
+        .align  16
 tmp_string_\@:
         .string "\name"
         .text

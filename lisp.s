@@ -626,6 +626,7 @@ call_with_current_continuation: # proc
         call_fn malloc, $JMP_BUF_SIZE
         perror
         mov     %rax, jmp_buffer(%rsp)
+
         call_fn setjmp, jmp_buffer(%rsp) # https://www.gnu.org/software/libc/manual/html_mono/libc.html#System-V-contexts
         jnz 1f
         call_fn jit_call_with_current_continuation_escape_factory, jmp_buffer(%rsp)
@@ -1563,6 +1564,8 @@ main:                # argc, argv
         call_fn build_environment_alist, %rax
         mov     %rax, environment_alist
 
+        call_fn gc
+
         call_fn box_string, $init_scm
         call_fn open_input_string, %rax
         call_fn read_all, %rax
@@ -1813,7 +1816,6 @@ gc_is_markable_object:          # pointer
         return  $C_TRUE
 1:      return  $C_FALSE
 
-
 gc_mark_object:                 # pointer
         prologue
         mov     %rdi, %rbx
@@ -1948,6 +1950,7 @@ gc:
         prologue
         call_fn gc_mark
         call_fn gc_sweep
+
         call_fn object_space_size
         return
 
@@ -2663,14 +2666,15 @@ jit_maybe_add_to_constant_pool: # obj
         return
 
 jit_quote:                      # form, c-stream, environment, register, tail
-        prologue env, register
+        prologue env, register, tail
         mov     %rdi, %rbx
         mov     %rsi, %r12
         mov     %rdx, env(%rsp)
         mov     %rcx, register(%rsp)
+        mov     %r8, tail(%rsp)
         call_fn cdr, %rbx
         call_fn car, %rax
-        call_fn jit_literal, %rax, %r12, env(%rsp), register(%rsp)
+        call_fn jit_literal, %rax, %r12, env(%rsp), register(%rsp), tail(%rsp)
         return
 
 jit_literal:                    # literal, c-stream, environment, register, tail
@@ -3505,8 +3509,10 @@ jit_code_file_counter:
 jit_code_debug:
         .quad   0
 
+        .align  16
 command_line_arguments:
         .quad   0
+        .align  16
 environment_alist:
         .quad   0
 
