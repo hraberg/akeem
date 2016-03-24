@@ -1097,6 +1097,12 @@ main:                # argc, argv
         call_fn init_pointer_stack, $gc_mark_stack, $POINTER_STACK_INITIAL_SIZE
         call_fn init_pointer_stack, $constant_pool, $POINTER_STACK_INITIAL_SIZE
 
+        movq    $CODE_SPACE_SIZE, jit_code_space_size
+        call_fn mmap, $NULL, jit_code_space_size, $(PROT_READ | PROT_WRITE | PROT_EXEC), $(MAP_PRIVATE | MAP_ANONYMOUS), $-1, $0
+        perror
+        mov     %rax, jit_code_space
+        mov     %rax, jit_code_space_next_address
+
         lea     jit_constant_pool_jump_table, %rbx
         store_pointer $TAG_DOUBLE, $jit_add_to_constant_pool_nop
         store_pointer $TAG_BOOLEAN, $jit_add_to_constant_pool_nop
@@ -1163,6 +1169,7 @@ main:                # argc, argv
         mov     %rax, max_null_environment_symbol
 
         intern_string read_error_string, "Unexpected input"
+        intern_string code_space_error_string, "Code space exceeded"
         intern_string false_string, "#f"
         mov     %rax, boolean_string_table + POINTER_SIZE * C_FALSE
         intern_string true_string, "#t"
@@ -2547,14 +2554,26 @@ jit_allocate_code:              # c-code, c-size
         mov     %rdi, code(%rsp)
         mov     %rsi, size(%rsp)
         call_fn jit_write_code_to_disk, %rdi, %rsi
-        call_fn mmap, $NULL, size(%rsp), $(PROT_READ | PROT_WRITE), $(MAP_PRIVATE | MAP_ANONYMOUS), $-1, $0
-        perror
-	mov     %rax, %rbx
+
+        mov     jit_code_space_next_address, %r12
+        add     size(%rsp), %r12
+        add     $(2 * POINTER_SIZE), %r12
+        and     $-(2 * POINTER_SIZE), %r12
+
+        mov     jit_code_space, %r11
+        add     jit_code_space_size, %r11
+        cmp     %r11, %r12
+        jge     1f
+
+        mov     jit_code_space_next_address, %rbx
         call_fn memcpy, %rbx, code(%rsp), size(%rsp)
         perror
-        call_fn mprotect, %rbx, size(%rsp), $(PROT_READ | PROT_EXEC)
-        perror  je
+
+        mov     %r12, jit_code_space_next_address
+
         return  %rbx
+1:      call_fn error, code_space_error_string
+        return
 
 jit_code:                       # form, environment, arguments
         prologue env, args, code, size
@@ -2973,8 +2992,6 @@ jit_lambda_patch_factory:       # lambda-factory, env-size
         call_fn fclose, %rbx
         perror  je
 
-        call_fn mprotect, %r12, $PAGE_SIZE, $(PROT_READ | PROT_WRITE)
-        perror  je
         call_fn fmemopen, %r12, $PAGE_SIZE, $write_mode
         perror
         mov     %rax, %rbx
@@ -2983,8 +3000,6 @@ jit_lambda_patch_factory:       # lambda-factory, env-size
         call_fn fclose, %rbx
         perror  je
 
-        call_fn mprotect, %r12, $PAGE_SIZE, $(PROT_READ | PROT_EXEC)
-        perror  je
         tag     TAG_PROCEDURE, %r12
         return
 
@@ -3507,6 +3522,14 @@ constant_pool:
 jit_code_file_counter:
         .quad   0
 jit_code_debug:
+        .quad   0
+
+        .align  16
+jit_code_space:
+        .quad   0
+jit_code_space_next_address:
+        .quad   0
+jit_code_space_size:
         .quad   0
 
         .align  16

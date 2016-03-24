@@ -78,6 +78,8 @@
         .equ MAX_NUMBER_OF_SYMBOLS, 1024
         .equ POINTER_STACK_INITIAL_SIZE, 8 * 1024
 
+        .equ CODE_SPACE_SIZE, 8 * 1024 * 1024
+
         .equ CHAR_TABLE_SIZE, 256
         .equ CHAR_PREFIX_LENGTH, 2
 
