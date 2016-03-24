@@ -2227,6 +2227,7 @@ read_token:                     # c-stream
         call_fn fscanf, %rbx, $token_format, %rdx
         perror  jge
         call_fn box_string, str(%rsp)
+        register_for_gc
         mov     %rax, %rbx
         call_fn free, str(%rsp)
         return  %rbx
