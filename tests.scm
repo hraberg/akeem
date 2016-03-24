@@ -744,7 +744,7 @@
 
 (spec ";;; 6.7. Strings")
 (assert "Another example:\ntwo lines of text")
-(assert "Here’s text \
+(assert "Here's text \
 containing just one line")
 (assert "\x061; is named GREEK SMALL LETTER ALPHA.") ;; should be \x03B1;
 

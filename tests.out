@@ -321,7 +321,7 @@ c
 #f
 ;;; 6.7. Strings
 "Another example:\ntwo lines of text"
-"Here’s text containing just one line"
+"Here's text containing just one line"
 "a is named GREEK SMALL LETTER ALPHA."
 "a12de"
 ;;; 6.8. Vectors
