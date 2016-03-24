@@ -1247,6 +1247,7 @@ main:                # argc, argv
         lea     read_datum_jump_table, %rbx
         store_pointer $'\#, $read_hash
         store_pointer $'(, $read_list
+        store_pointer $'[, $read_list
         store_pointer $'\", $read_string
         .irp digit, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9
         store_pointer $(\digit + '0), $read_number
@@ -2475,7 +2476,7 @@ read_unquote:                   # c-stream
 
 read_vector:                    # c-stream
         prologue
-        call_fn read_list, %rdi
+        call_fn read_list, %rdi, $'(
         call_fn list_to_vector, %rax
         return
 
@@ -2489,52 +2490,58 @@ read_bytevector:                # c-stream
         cmp     $'(, %al
         jne     1f
 
-        call_fn read_list, %rbx
+        call_fn read_list, %rbx, $'(
         call_fn list_to_bytevector, %rax
         return
 
 1:      call_fn error, read_error_string
         return
 
-read_list:                      # c-stream
-        prologue head
+read_list:                      # c-stream, c-char
+        prologue head, closing
         mov     %rdi, %rbx
 
-        mov     $NIL, %r12
+        movb    $'), closing(%rsp)
+        cmp     $'(, %esi
+        je      1f
+
+        movb    $'], closing(%rsp)
+
+1:      mov     $NIL, %r12
         mov     %r12, head(%rsp)
-1:      call_fn read_whitespace, %rbx
+2:      call_fn read_whitespace, %rbx
         call_fn fgetc, %rbx
-        cmp     $'), %al
-        je      4f
+        cmp     closing(%rsp), %al
+        je      5f
 
         call_fn ungetc, %rax, %rbx
 
         call_fn read_datum, %rbx
         cmp     dot_symbol, %rax
-        je      3f
+        je      4f
 
         call_fn cons, %rax, $NIL
         is_nil_internal %r12
-        jne     2f
+        jne     3f
         mov     %rax, %r12
         mov     %r12, head(%rsp)
-        jmp     1b
+        jmp     2b
 
-2:      mov     %r12, %r11
+3:      mov     %r12, %r11
         mov     %rax, %r12
         call_fn set_cdr, %r11, %r12
-        jmp     1b
+        jmp     2b
 
-3:      call_fn read_datum, %rbx
+4:      call_fn read_datum, %rbx
         call_fn set_cdr, %r12, %rax
 
         call_fn read_whitespace, %rbx
         call_fn fgetc, %rbx
-        cmp     $'), %al
-        je      4f
+        cmp     closing(%rsp), %al
+        je      5f
         call_fn error, read_error_string
 
-4:      return  head(%rsp)
+5:      return  head(%rsp)
 
         ## JIT
 
@@ -3533,7 +3540,7 @@ max_null_environment_symbol:
 string_format:
         .string "%s"
 token_format:
-        .string "%a[^ \f\n\r\t\v()\";]"
+        .string "%a[^] \f\n\r\t\v()\";]"
 char_format:
         .string "%c"
 machine_readable_char_format:
