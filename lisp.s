@@ -258,7 +258,7 @@ length:                         # list
 1:      is_nil_internal %rax
         je      2f
 
-        call_fn cdr, %rax
+        cdr     %rax
         inc     %rbx
         jmp     1b
 
@@ -273,12 +273,11 @@ append:                        # list1, list2
 1:      is_nil_internal %rbx
         je      2f
 
-        calL_fn car, %rbx
+        car     %rbx
         call_fn cons, %rax, %r12
         mov     %rax, %r12
 
-        call_fn cdr, %rbx
-        mov     %rax, %rbx
+        cdr     %rbx, %rbx
         jmp     1b
 
 2:      return  %r12
@@ -290,12 +289,11 @@ reverse:                        # list
 1:      is_nil_internal %rbx
         je      2f
 
-        calL_fn car, %rbx
+        car     %rbx
         call_fn cons, %rax, %r12
         mov     %rax, %r12
 
-        call_fn cdr, %rbx
-        mov     %rax, %rbx
+        cdr     %rbx, %rbx
         jmp     1b
 
 2:      return  %r12
@@ -556,10 +554,9 @@ list_to_vector:                 # list
 1:      is_nil_internal %r12
         je      2f
 
-        call_fn car, %r12
+        car     %r12
         call_fn vector_set, vec(%rsp), %rbx, %rax
-        call_fn cdr, %r12
-        mov     %rax, %r12
+        cdr     %r12, %r12
 
         inc     %rbx
         jmp     1b
@@ -584,10 +581,9 @@ apply:                          # proc, args
 
 1:      is_nil_internal %r12
         je      2f
-        call_fn car, %r12
-        push %rax
-        call_fn cdr, %r12
-        mov     %rax, %r12
+        car     %r12
+        push    %rax
+        cdr     %r12, %r12
         jmp     1b
 
 2:      mov     $MAX_REGISTER_ARGS, %eax
@@ -901,10 +897,9 @@ list_to_bytevector:             # list
 1:      is_nil_internal %r12
         je      2f
 
-        call_fn car, %r12
+        car     %r12
         call_fn bytevector_u8_set, vec(%rsp), %rbx, %rax
-        call_fn cdr, %r12
-        mov     %rax, %r12
+        cdr     %r12, %r12
 
         inc     %rbx
         jmp     1b
@@ -1611,7 +1606,7 @@ build_environment_alist:        # list
 1:      is_nil_internal %r12
         je      3f
 
-        call_fn car, %r12
+        car     %r12
         unbox_pointer_internal %rax
         add     $header_size, %rax
         call_fn strdup, %rax
@@ -1634,8 +1629,7 @@ build_environment_alist:        # list
 
         call_fn free, env_var(%rsp)
 
-        call_fn cdr, %r12
-        mov     %rax, %r12
+        cdr     %r12, %r12
         jmp     1b
 
 3:      return  %rbx
@@ -2042,14 +2036,13 @@ pair_to_string:                 # pair
 1:      is_nil_internal %r12
         je      2f
 
-        call_fn car, %r12
+        car     %r12
         call_fn to_string, %rax
         unbox_pointer_internal %rax, %rdi
         add     $header_size, %rdi
         call_fn fputs, %rdi, stream(%rsp)
 
-        call_fn cdr, %r12
-        mov     %rax, %r12
+        cdr     %r12, %r12
         is_nil_internal %r12
         je      2f
 
@@ -2628,12 +2621,11 @@ jit_index_of_local:             # environment, symbol
 1:      is_nil_internal %r12
         je      2f
 
-        call_fn car, %r12
+        car     %r12
         cmp     symbol(%rsp), %rax
         je      3f
 
-        call_fn cdr, %r12
-        mov     %rax, %r12
+        cdr     %r12, %r12
         inc     %rbx
         jmp     1b
 
@@ -2710,8 +2702,8 @@ jit_quote:                      # form, c-stream, environment, register, tail
         mov     %rdx, env(%rsp)
         mov     %rcx, register(%rsp)
         mov     %r8, tail(%rsp)
-        call_fn cdr, %rbx
-        call_fn car, %rax
+        cdr     %rbx
+        car     %rax
         call_fn jit_literal, %rax, %r12, env(%rsp), register(%rsp), tail(%rsp)
         return
 
@@ -2743,7 +2735,7 @@ jit_pair:                       # form, c-stream, environment, register, tail
         mov     %rcx, register(%rsp)
         mov     %r8, tail(%rsp)
 
-        call_fn car, %rbx
+        car     %rbx
         mov     %rax, symbol(%rsp)
         has_tag TAG_SYMBOL, symbol(%rsp), store=false
         jne     3f
@@ -2787,7 +2779,7 @@ jit_procedure_call:             # form, c-stream, environment, register, tail
         call_fn length, %rbx
         mov     %rax, len(%rsp)
 
-        call_fn car, %rbx
+        car     %rbx
         mov     %rax, operand(%rsp)
         has_tag TAG_PAIR, %rax, store=false
         jne     1f
@@ -2795,32 +2787,31 @@ jit_procedure_call:             # form, c-stream, environment, register, tail
         update_max_locals max_locals(%rsp)
         call_fn fwrite, $jit_push_rax, $1, jit_push_rax_size, %r12
 
-        call_fn cdr, %rbx
-        mov     %rax, %rbx
+        cdr     %rbx, %rbx
 
 1:      is_nil_internal %rbx
         je      4f
 
-        call_fn car, %rbx
+        car     %rbx
         has_tag TAG_PAIR, %rax, store=false
         je      2f
 
         jmp     3f
 
-2:      call_fn car, %rbx
+2:      car     %rbx
         call_fn jit_datum, %rax, %r12, env(%rsp), $RAX, $C_FALSE
         update_max_locals max_locals(%rsp)
         call_fn fwrite, $jit_push_rax, $1, jit_push_rax_size, %r12
 
-3:      call_fn cdr, %rbx
-        mov     %rax, %rbx
+3:      cdr     %rbx, %rbx
         jmp     1b
 
-4:      mov     len(%rsp), %rbx
-        dec     %ebx
-        call_fn cdr, form(%rsp)
+4:      call_fn cdr, form(%rsp)
         call_fn reverse, %rax
         mov     %rax, form(%rsp)
+
+        mov     len(%rsp), %rbx
+        dec     %ebx
 
 5:      test    %ebx, %ebx
         jz      8f
@@ -3030,12 +3021,11 @@ jit_lambda:                     # form, c-stream, environment, register, tail
         call_fn length, env(%rsp)
         mov     %rax, env_size(%rsp)
 
-        call_fn cdr, %rbx
-        mov     %rax, %rbx
-        call_fn car, %rbx
+        cdr     %rbx, %rbx
+        car     %rbx
         mov     %rax, args(%rsp)
 
-        call_fn cdr, %rbx
+        cdr     %rbx
         call_fn cons, begin_symbol, %rax
         mov     %rax, %rbx
 
@@ -3048,8 +3038,7 @@ jit_lambda:                     # form, c-stream, environment, register, tail
         call_fn jit_literal, lambda(%rsp), %r12, $NIL, $RDI, $C_FALSE
         call_fn jit_literal, env_size(%rsp), %r12, $NIL, $RSI, $C_FALSE
 
-        mov     $jit_lambda_factory, %rax
-        call_fn jit_literal, %rax, %r12, $NIL, $RAX, $C_FALSE
+        call_fn jit_literal, $jit_lambda_factory, %r12, $NIL, $RAX, $C_FALSE
         call_fn fwrite, $jit_call_rax, $1, jit_call_rax_size, %r12
         mov     register(%rsp), %rbx
         mov     jit_rax_to_register_table(,%rbx,POINTER_SIZE), %rax
@@ -3075,9 +3064,8 @@ jit_if:                         # form, c-stream, environment, register, tail
         mov     %r8, tail(%rsp)
         movq    $0, max_locals(%rsp)
 
-        call_fn cdr, %rbx
-        mov     %rax, %rbx
-        call_fn car, %rax
+        cdr     %rbx, %rbx
+        car     %rbx
         call_fn jit_datum, %rax, %r12, env(%rsp), $RAX, $FALSE
         update_max_locals max_locals(%rsp)
         call_fn fwrite, $jit_conditional_rax_is_false_jump, $1, jit_conditional_rax_is_false_jump_size, %r12
@@ -3085,21 +3073,20 @@ jit_if:                         # form, c-stream, environment, register, tail
         call_fn ftell, %r12
         mov     %rax, if_offset(%rsp)
 
-        call_fn cdr, %rbx
-        mov     %rax, %rbx
-        call_fn car, %rax
+        cdr     %rbx, %rbx
+        car     %rbx
         call_fn jit_datum, %rax, %r12, env(%rsp), register(%rsp), tail(%rsp)
         update_max_locals max_locals(%rsp)
         call_fn fwrite, $jit_unconditional_jump, $1, jit_unconditional_jump_size, %r12
 
         patch_jump %r12, else_offset(%rsp), if_offset(%rsp), jump_offset(%rsp)
 
-        call_fn cdr, %rbx
+        cdr     %rbx
         is_nil_internal %rax
         jne     1f
         mov     $VOID, %rax
         jmp     2f
-1:      call_fn car, %rax
+1:      car     %rax
 2:      call_fn jit_datum, %rax, %r12, env(%rsp), register(%rsp), tail(%rsp)
         update_max_locals max_locals(%rsp)
         patch_jump %r12, end_offset(%rsp), else_offset(%rsp), jump_offset(%rsp)
@@ -3148,13 +3135,12 @@ jit_set:                        # form, c-stream, environment, register, tail
         mov     %rdi, %rbx
         mov     %rsi, %r12
         mov     %rdx, env(%rsp)
-        call_fn cdr, %rbx
-        mov     %rax, %rbx
-        call_fn car, %rbx
+        cdr     %rbx, %rbx
+        car     %rbx
         mov     %rax, symbol(%rsp)
 
-        call_fn cdr, %rbx
-        call_fn car, %rax
+        cdr     %rbx
+        car     %rax
         call_fn jit_datum, %rax, %r12, env(%rsp), $RAX, $C_FALSE
         mov     %rax, max_locals(%rsp)
 
@@ -3170,12 +3156,12 @@ jit_let_collect_bindings:       # bindings
 
 1:      is_nil_internal %rbx
         je      2f
-        call_fn car, %rbx
-        call_fn car, %rax
+        car     %rbx
+        car     %rax
         call_fn cons, %rax, %r12
         mov     %rax, %r12
 
-        call_fn cdr, %rbx
+        cdr     %rbx
         mov     %rax, %rbx
         jmp     1b
 
@@ -3191,11 +3177,11 @@ jit_let_bindings:               # bindings, c-stream, environment, bindings-envi
 
 1:      is_nil_internal %rbx
         je      2f
-        call_fn car, %rbx
+        car     %rbx
         mov     %rax, variable_init(%rsp)
 
         call_fn cdr, variable_init(%rsp)
-        call_fn car, %rax
+        car     %rax
         mov     %rax, init(%rsp)
 
         call_fn jit_datum, init(%rsp), %r12, bindings_env(%rsp), $RAX, $C_FALSE
@@ -3207,20 +3193,19 @@ jit_let_bindings:               # bindings, c-stream, environment, bindings-envi
         call_fn car, variable_init(%rsp)
         call_fn jit_set_with_rax_as_value, %rax, %r12, env(%rsp)
 
-        call_fn cdr, %rbx
-        mov     %rax, %rbx
+        cdr     %rbx, %rbx
         jmp     1b
 
 2:      return max_locals(%rsp)
 
 jit_let:                        # form, c-stream, environment, register, tail
         prologue form, env, variable_init, max_locals, register, tail
+        cdr     %rdi
+        mov     %rax, form(%rsp)
         mov     %rsi, %r12
         mov     %rdx, env(%rsp)
         mov     %rcx, register(%rsp)
         mov     %r8, tail(%rsp)
-        call_fn cdr, %rdi
-        mov     %rax, form(%rsp)
         movq    $0, max_locals(%rsp)
 
         call_fn car, form(%rsp)
@@ -3261,12 +3246,12 @@ jit_is_lambda:                  # form
 
 jit_letrec:                     # form, c-stream, environment, register, tail
         prologue form, env, full_env, variable_init, local, max_locals, register, tail
+        cdr     %rdi
+        mov     %rax, form(%rsp)
         mov     %rsi, %r12
         mov     %rdx, env(%rsp)
         mov     %rcx, register(%rsp)
         mov     %r8, tail(%rsp)
-        call_fn cdr, %rdi
-        mov     %rax, form(%rsp)
         movq    $0, max_locals(%rsp)
 
         call_fn car, form(%rsp)
@@ -3284,16 +3269,16 @@ jit_letrec:                     # form, c-stream, environment, register, tail
 1:      is_nil_internal %rbx
         je      3f
 
-        call_fn car, %rbx
-        call_fn cdr, %rax
-        call_fn car, %rax
+        car     %rbx
+        cdr     %rax
+        car     %rax
 
         call_fn jit_is_lambda, %rax
         cmp     $C_TRUE, %rax
         jne     2f
 
-        call_fn car, %rbx
-        call_fn car, %rax
+        car      %rbx
+        car      %rax
         call_fn jit_datum, %rax, %r12, full_env(%rsp), $RDI, $C_FALSE
 
         call_fn length, full_env(%rsp)
@@ -3303,8 +3288,7 @@ jit_letrec:                     # form, c-stream, environment, register, tail
         call_fn jit_literal, %rax, %r12, $NIL, $RAX, $C_FALSE
         call_fn fwrite, $jit_call_rax, $1, jit_call_rax_size, %r12
 
-2:      call_fn cdr, %rbx
-        mov     %rax, %rbx
+2:      cdr     %rbx, %rbx
         jmp     1b
 
 3:      call_fn cdr, form(%rsp)
@@ -3324,9 +3308,7 @@ jit_begin:                     # form, c-stream, environment, register, tail
         mov     %r8, tail(%rsp)
         movq    $0, max_locals(%rsp)
 
-        call_fn cdr, %rbx
-        mov     %rax, %rbx
-
+        cdr     %rbx, %rbx
         is_nil_internal %rbx
         jne     2f
 
@@ -3336,20 +3318,19 @@ jit_begin:                     # form, c-stream, environment, register, tail
 2:      is_nil_internal %rbx
         je      5f
 
-        call_fn cdr, %rbx
+        cdr     %rbx
         is_nil_internal %rax
         je      3f
 
-        call_fn car, %rbx
+        car     %rbx
         call_fn jit_datum, %rax, %r12, env(%rsp), register(%rsp), $C_FALSE
         jmp     4f
 
-3:      call_fn car, %rbx
+3:      car     %rbx
         call_fn jit_datum, %rax, %r12, env(%rsp), register(%rsp), tail(%rsp)
 
 4:      update_max_locals max_locals(%rsp)
-        call_fn cdr, %rbx
-        mov     %rax, %rbx
+        cdr     %rbx, %rbx
         jmp     2b
 
 5:      return  max_locals(%rsp)
@@ -3363,15 +3344,14 @@ jit_define_syntax:              # form, c-stream, environment, register, tail
         mov     %rdx, env(%rsp)
         movq    $0, max_locals(%rsp)
 
-        call_fn cdr, %rbx
-        mov     %rax, %rbx
+        cdr     %rbx, %rbx
 
-        call_fn cdr, %rbx
-        call_fn car, %rax
+        cdr     %rbx
+        car     %rax
         call_fn jit_datum, %rax, %r12, env(%rsp), $RAX, $C_FALSE
         update_max_locals max_locals(%rsp)
 
-        call_fn car, %rbx
+        car     %rbx
         lea     jit_syntax_jump_table(,%eax,POINTER_SIZE), %rax
         mov     %rax, syntax_address(%rsp)
 

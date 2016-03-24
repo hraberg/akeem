@@ -68,6 +68,16 @@
         .endif
         .endm
 
+        .macro car from, to=%rax
+        unbox_pointer_internal \from \to
+        mov     pair_car(\to), \to
+        .endm
+
+        .macro cdr from, to=%rax
+        unbox_pointer_internal \from \to
+        mov     pair_cdr(\to), \to
+        .endm
+
         .macro eq_internal x, y, store=true
         cmp     \x, \y
         .ifc \store, true
