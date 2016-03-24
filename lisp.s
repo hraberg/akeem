@@ -2067,7 +2067,6 @@ integer_to_string:              # int, radix
         xor     %al, %al
         call_fn fprintf, %r12, format(%rsp), %rbx
         string_buffer_to_string str(%rsp), size(%rsp), %r12
-
         register_for_gc
         return
 
