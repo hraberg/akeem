@@ -184,6 +184,7 @@ Only functions written in assembler will show up.
 * http://www.schemers.org/Documents/Standards/R5RS/r5rs.pdf
 * http://trac.sacrideo.us/wg/raw-attachment/wiki/WikiStart/r7rs.pdf
 * http://srfi.schemers.org/final-srfis.html
+* http://www.phyast.pitt.edu/~micheles/syntax-rules.pdf
 * https://github.com/kanaka/mal
 * http://shenlanguage.org/
 
