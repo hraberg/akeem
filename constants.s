@@ -76,7 +76,7 @@
         .equ HEX_RADIX_INT, (NAN_MASK | (TAG_INT << TAG_SHIFT) | 16)
 
         .equ MAX_NUMBER_OF_SYMBOLS, 1024
-        .equ OBJECT_SPACE_INITIAL_SIZE, 8 * 1024
+        .equ POINTER_STACK_INITIAL_SIZE, 8 * 1024
 
         .equ CHAR_TABLE_SIZE, 256
         .equ CHAR_PREFIX_LENGTH, 2

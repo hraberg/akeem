@@ -39,7 +39,7 @@ See [this tutorial](http://community.schemewiki.org/?emacs-tutorial).
 * Basic support for `define-syntax` / `syntax-rules` and `quasiquote`.
 * NaN-boxed 32-bit integers and 64-bit doubles
 * Function application up to 6 arguments.
-* TCO for self calls in tail position.
+* TCO for calls in tail position.
 * The bootstrap Scheme code is embedded in the executable.
 * Mark and Sweep GC.
 
@@ -58,7 +58,6 @@ See [this tutorial](http://community.schemewiki.org/?emacs-tutorial).
   way.
 * No GC for functions or their constant literals.
 * The JIT is static, once a function is generated its done.
-* No TCO for mutual recursion.
 * Not full support for Scheme numbers in the reader.
 * No support for converting internal `define` to `letrec`.
 * "named `let`" compiles to a jump and not a procedure that returns.

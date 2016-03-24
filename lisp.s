@@ -332,12 +332,14 @@ string_to_symbol:               # string
         jnz     1b
         jmp     3f
 
-2:      movq    symbol_next_id, %rbx
+2:      mov     symbol_next_id, %rbx
         incq    symbol_next_id
 
-        tag     TAG_STRING, %r12
+        lea     header_size(%r12), %r11
+        call_fn box_string, %r11
+        register_for_gc
         mov     %rax, symbol_table_names(,%rbx,POINTER_SIZE)
-        call_fn jit_add_to_constant_pool, %rax
+        call_fn jit_maybe_add_to_constant_pool, %rax
 
 3:      tag     TAG_SYMBOL, %rbx
         return
@@ -1090,9 +1092,39 @@ main:                # argc, argv
         mov     %rsp, execution_stack_top
         movq    $LOG_JIT, jit_code_debug
 
-        call_fn init_pointer_stack, $object_space, $OBJECT_SPACE_INITIAL_SIZE
-        call_fn init_pointer_stack, $gc_mark_stack, $OBJECT_SPACE_INITIAL_SIZE
-        call_fn init_pointer_stack, $constant_pool, $OBJECT_SPACE_INITIAL_SIZE
+        call_fn init_pointer_stack, $object_space, $POINTER_STACK_INITIAL_SIZE
+        call_fn init_pointer_stack, $gc_mark_stack, $POINTER_STACK_INITIAL_SIZE
+        call_fn init_pointer_stack, $constant_pool, $POINTER_STACK_INITIAL_SIZE
+
+        lea     jit_constant_pool_jump_table, %rbx
+        store_pointer $TAG_DOUBLE, $jit_add_to_constant_pool_nop
+        store_pointer $TAG_BOOLEAN, $jit_add_to_constant_pool_nop
+        store_pointer $TAG_CHAR, $jit_add_to_constant_pool_nop
+        store_pointer $TAG_INT, $jit_add_to_constant_pool_nop
+        store_pointer $TAG_SYMBOL, $jit_add_to_constant_pool_nop
+        store_pointer $TAG_PROCEDURE, $jit_add_to_constant_pool_nop
+        store_pointer $TAG_PORT, $jit_add_to_constant_pool_nop
+        store_pointer $TAG_STRING, $jit_add_to_constant_pool
+        store_pointer $TAG_PAIR, $jit_add_to_constant_pool
+        store_pointer $TAG_VECTOR, $jit_add_to_constant_pool
+        store_pointer $TAG_OBJECT, $jit_add_to_constant_pool
+
+        lea     gc_mark_jump_table, %rbx
+        store_pointer $TAG_DOUBLE, $gc_mark_nop
+        store_pointer $TAG_BOOLEAN, $gc_mark_nop
+        store_pointer $TAG_CHAR, $gc_mark_nop
+        store_pointer $TAG_INT, $gc_mark_nop
+        store_pointer $TAG_SYMBOL, $gc_mark_nop
+        store_pointer $TAG_PROCEDURE, $gc_mark_nop
+        store_pointer $TAG_PORT, $gc_mark_nop
+        store_pointer $TAG_STRING, $gc_mark_string
+        store_pointer $TAG_PAIR, $gc_mark_object
+        store_pointer $TAG_VECTOR, $gc_mark_object
+        store_pointer $TAG_OBJECT, $gc_mark_object
+
+        lea     gc_mark_queue_jump_table, %rbx
+        store_pointer $TAG_PAIR, $gc_mark_queue_pair
+        store_pointer $TAG_VECTOR, $gc_mark_queue_vector
 
         intern_symbol double_symbol, "double", id=TAG_DOUBLE
         intern_symbol boolean_symbol, "boolean", id=TAG_BOOLEAN
@@ -1202,23 +1234,6 @@ main:                # argc, argv
         store_pointer $TAG_VECTOR, $unbox_vector
         store_pointer $TAG_OBJECT, $unbox_object
 
-        lea     gc_mark_jump_table, %rbx
-        store_pointer $TAG_DOUBLE, $gc_mark_nop
-        store_pointer $TAG_BOOLEAN, $gc_mark_nop
-        store_pointer $TAG_CHAR, $gc_mark_nop
-        store_pointer $TAG_INT, $gc_mark_nop
-        store_pointer $TAG_SYMBOL, $gc_mark_nop
-        store_pointer $TAG_PROCEDURE, $gc_mark_nop
-        store_pointer $TAG_PORT, $gc_mark_nop
-        store_pointer $TAG_STRING, $gc_mark_string
-        store_pointer $TAG_PAIR, $gc_mark_object
-        store_pointer $TAG_VECTOR, $gc_mark_object
-        store_pointer $TAG_OBJECT, $gc_mark_nop
-
-        lea     gc_mark_queue_jump_table, %rbx
-        store_pointer $TAG_PAIR, $gc_mark_queue_pair
-        store_pointer $TAG_VECTOR, $gc_mark_queue_vector
-
         lea     integer_to_string_format_table, %rbx
         store_pointer $8, $oct_format
         store_pointer $10, $int_format
@@ -1261,19 +1276,6 @@ main:                # argc, argv
         store_pointer $TAG_PAIR, $jit_pair
         store_pointer $TAG_VECTOR, $jit_literal
         store_pointer $TAG_OBJECT, $jit_literal
-
-        lea     jit_constant_pool_jump_table, %rbx
-        store_pointer $TAG_DOUBLE, $jit_add_to_constant_pool_nop
-        store_pointer $TAG_BOOLEAN, $jit_add_to_constant_pool_nop
-        store_pointer $TAG_CHAR, $jit_add_to_constant_pool_nop
-        store_pointer $TAG_INT, $jit_add_to_constant_pool_nop
-        store_pointer $TAG_SYMBOL, $jit_add_to_constant_pool_nop
-        store_pointer $TAG_PROCEDURE, $jit_add_to_constant_pool_nop
-        store_pointer $TAG_PORT, $jit_add_to_constant_pool_nop
-        store_pointer $TAG_STRING, $jit_add_to_constant_pool
-        store_pointer $TAG_PAIR, $jit_add_to_constant_pool
-        store_pointer $TAG_VECTOR, $jit_add_to_constant_pool
-        store_pointer $TAG_OBJECT, $jit_add_to_constant_pool
 
         lea     jit_argument_to_register_id_table, %rbx
         movb    $RDI, 0(%rbx)
@@ -1587,7 +1589,7 @@ box_string_array_as_list:       # c-string-array
         jmp     1b
 
 2:      call_fn reverse, strings(%rsp)
-        call_fn jit_add_to_constant_pool, %rax
+        call_fn jit_maybe_add_to_constant_pool, %rax
         return  %rax
 
 build_environment_alist:        # list
@@ -1770,7 +1772,7 @@ push_pointer_on_stack:          # a-stack, pointer
         add     $POINTER_SIZE, stack_top_offset(%rdi)
         return  %rsi
 
-pop_pointer_from_stack:         # c-stack
+pop_pointer_from_stack:         # a-stack
         sub     $POINTER_SIZE, stack_top_offset(%rdi)
         mov     stack_top_offset(%rdi), %rcx
         mov     stack_bottom(%rdi), %r11
@@ -1790,14 +1792,6 @@ gc_allocate_memory:             # c-size
         perror
 1:      return
 
-gc_has_mark:                    # pointer
-        unbox_pointer_internal %rdi
-        btw     $GC_MARK_BIT, header_object_mark(%rax)
-        setc    %al
-        and     $C_TRUE, %eax
-        box_boolean_internal
-        ret
-
 gc_mark_nop:                    # obj
         ret
 
@@ -1806,7 +1800,7 @@ gc_mark_string:                 # string
         btsw    $GC_MARK_BIT, header_object_mark(%rax)
         ret
 
-gc_mark_object:                 # pointer
+gc_is_markable_object:          # pointer
         minimal_prologue
         is_nil_internal %rdi
         je      1f
@@ -1814,10 +1808,24 @@ gc_mark_object:                 # pointer
         je      1f
         is_eof_object_internal %rdi
         je      1f
-        unbox_pointer_internal %rdi
+        test    %rdi, %rdi
+        js      1f
+        return  $C_TRUE
+1:      return  $C_FALSE
+
+
+gc_mark_object:                 # pointer
+        prologue
+        mov     %rdi, %rbx
+
+        call_fn gc_is_markable_object, %rdi
+        cmp     $C_TRUE, %rax
+        jne     1f
+
+        unbox_pointer_internal %rbx
         btsw    $GC_MARK_BIT, header_object_mark(%rax)
         jc      1f
-        call_fn push_pointer_on_stack, $gc_mark_stack, %rdi
+        call_fn push_pointer_on_stack, $gc_mark_stack, %rbx
 1:      return
 
 gc_maybe_mark:                  # obj
@@ -1827,10 +1835,12 @@ gc_maybe_mark:                  # obj
 
 gc_mark_queue_pair:             # pair
         prologue
+        is_nil_internal %rdi
+        je      1f
         unbox_pointer_internal %rdi, %rbx
         call_fn gc_maybe_mark, pair_car(%rbx)
         call_fn gc_maybe_mark, pair_cdr(%rbx)
-        return
+1:      return
 
 gc_mark_queue_vector:           # vector
         prologue
@@ -1868,21 +1878,22 @@ gc_mark_queue_stack:
 gc_mark_queue_global_variables:
         prologue
         mov     symbol_next_id, %rbx
-1:      test    %ebx, %ebx
+1:      test    %rbx, %rbx
         jz      2f
 
-        dec     %ebx
-        cmpq    $NULL, symbol_table_names(,%ebx,POINTER_SIZE)
+        dec     %rbx
+        cmpq    $NULL, symbol_table_names(,%rbx,POINTER_SIZE)
         je      1b
 
-        mov     symbol_table_values(,%ebx,POINTER_SIZE), %rdi
+        mov     symbol_table_values(,%rbx,POINTER_SIZE), %rdi
         call_fn gc_maybe_mark, %rdi
         jmp     1b
 2:      return
 
 gc_mark_queue_constant_pool:
         prologue
-        xor     %ebx, %ebx
+
+        xor     %rbx, %rbx
 1:      cmp     %rbx, stack_top_offset + constant_pool
         je      2f
 
@@ -1890,7 +1901,7 @@ gc_mark_queue_constant_pool:
         mov     (%rax,%rbx), %rdi
         call_fn gc_maybe_mark, %rdi
 
-        add     $POINTER_SIZE, %ebx
+        add     $POINTER_SIZE, %rbx
         jmp     1b
 
 2:      return
@@ -1912,7 +1923,7 @@ gc_mark:
 
 gc_sweep:
         prologue
-        xor     %ebx, %ebx
+        xor     %rbx, %rbx
 1:      cmp     %rbx, stack_top_offset + object_space
         je      3f
 
@@ -1929,12 +1940,12 @@ gc_sweep:
         mov     %rax, (%r11,%rbx)
         jmp     1b
 
-2:      add     $POINTER_SIZE, %ebx
+2:      add     $POINTER_SIZE, %rbx
         jmp     1b
 3:      return
 
 gc:
-        minimal_prologue
+        prologue
         call_fn gc_mark
         call_fn gc_sweep
         call_fn object_space_size
@@ -2636,11 +2647,15 @@ jit_add_to_constant_pool_nop:   # obj
         ret
 
 jit_add_to_constant_pool:       # obj
-        minimal_prologue
-        is_nil_internal %rdi
-        je      1f
-        call_fn push_pointer_on_stack, $constant_pool, %rdi
-1:      return
+        prologue
+        mov     %rdi, %rbx
+
+        call_fn gc_is_markable_object, %rdi
+        cmp     $C_TRUE, %rax
+        jne     1f
+
+1:      call_fn push_pointer_on_stack, $constant_pool, %rbx
+        return
 
 jit_maybe_add_to_constant_pool: # obj
         minimal_prologue
@@ -2659,11 +2674,12 @@ jit_quote:                      # form, c-stream, environment, register, tail
         return
 
 jit_literal:                    # literal, c-stream, environment, register, tail
-        prologue env, literal, register
+        prologue env, literal, register, tail
         mov     %rdi, literal(%rsp)
         mov     %rsi, %r12
         mov     %rdx, env(%rsp)
         mov     %rcx, register(%rsp)
+        mov     %r8, tail(%rsp)
 
         call_fn jit_maybe_add_to_constant_pool, %rdi
 
@@ -2672,7 +2688,7 @@ jit_literal:                    # literal, c-stream, environment, register, tail
         mov     jit_literal_to_register_size_table(,%rbx,POINTER_SIZE), %r11
         call_fn fwrite, %rax, $1, %r11, %r12
         lea     literal(%rsp), %rax
-        call_fn fwrite, %rax, $1, $POINTER_SIZE, %r12
+        call_fn fwrite, %rax, $1, $POINTER_SIZE, %r12, tail(%rsp)
 
         call_fn length, env(%rsp)
         return
@@ -2717,7 +2733,7 @@ jit_pair:                       # form, c-stream, environment, register, tail
         ## 4.1.3. Procedure calls
 
 jit_procedure_call:             # form, c-stream, environment, register, tail
-        prologue form, len, operand, literal, env, env_size, max_locals, register, tail, recur_target
+        prologue form, len, operand, literal, env, max_locals, register, tail
         mov     %rdi, %rbx
         mov     %rbx, form(%rsp)
         mov     %rsi, %r12
@@ -2729,14 +2745,11 @@ jit_procedure_call:             # form, c-stream, environment, register, tail
         call_fn length, %rbx
         mov     %rax, len(%rsp)
 
-        call_fn length, env(%rsp)
-        mov     %eax, env_size(%rsp)
-
         call_fn car, %rbx
         mov     %rax, operand(%rsp)
         has_tag TAG_PAIR, %rax, store=false
         jne     1f
-        call_fn jit_datum, operand(%rsp), %r12, env(%rsp), $RAX, $NIL
+        call_fn jit_datum, operand(%rsp), %r12, env(%rsp), $RAX, $C_FALSE
         update_max_locals max_locals(%rsp)
         call_fn fwrite, $jit_push_rax, $1, jit_push_rax_size, %r12
 
@@ -2753,7 +2766,7 @@ jit_procedure_call:             # form, c-stream, environment, register, tail
         jmp     3f
 
 2:      call_fn car, %rbx
-        call_fn jit_datum, %rax, %r12, env(%rsp), $RAX, $NIL
+        call_fn jit_datum, %rax, %r12, env(%rsp), $RAX, $C_FALSE
         update_max_locals max_locals(%rsp)
         call_fn fwrite, $jit_push_rax, $1, jit_push_rax_size, %r12
 
@@ -2778,7 +2791,7 @@ jit_procedure_call:             # form, c-stream, environment, register, tail
         call_fn car, form(%rsp)
         xor     %r11d, %r11d
         mov     jit_argument_to_register_id_table(%rbx), %r11b
-        call_fn jit_datum, %rax, %r12, env(%rsp), %r11, $NIL
+        call_fn jit_datum, %rax, %r12, env(%rsp), %r11, $C_FALSE
         update_max_locals max_locals(%rsp)
 
         jmp     7f
@@ -2798,43 +2811,26 @@ jit_procedure_call:             # form, c-stream, environment, register, tail
         jne     9f
 
         call_fn fwrite, $jit_pop_rax, $1, jit_pop_rax_size, %r12
-        jmp     14f
+        jmp     10f
 
-9:      has_tag TAG_SYMBOL, tail(%rsp), store=false
+9:      call_fn jit_datum, operand(%rsp), %r12, env(%rsp), $RAX, $C_FALSE
+        update_max_locals max_locals(%rsp)
+
+10:     call_fn fwrite, $jit_unbox_rax, $1, jit_unbox_rax_size, %r12
+        has_tag TAG_SYMBOL, operand(%rsp), store=false
         jne     11f
 
-        call_fn jit_index_of_local, env(%rsp), operand(%rsp)
-        cmp     $0, %rax
-        jge     13f
+        cmp     $C_TRUE, tail(%rsp)
+        je      12f
 
-        mov     operand(%rsp), %rax
-        cmp     %rax, tail(%rsp)
-        jne     13f
+11:     call_fn fwrite, $jit_call_rax, $1, jit_call_rax_size, %r12
+        jmp     13f
 
-        jmp     12f
-
-11:     call_fn jit_index_of_local, env(%rsp), operand(%rsp)
-        sub     env_size(%rsp), %rax
-        neg     %rax
-        cmp     %rax, tail(%rsp)
-        jne     13f
-
-12:     call_fn ftell, %r12
-        add     jit_unconditional_jump_size, %rax
-        mov     jit_prologue_size, %r11
-        sub     %rax, %r11
-        mov     %r11d, recur_target(%rsp)
-        call_fn fwrite, $jit_unconditional_known_jump, $1, jit_unconditional_known_jump_size, %r12
-        lea     recur_target(%rsp), %rax
-        call_fn fwrite, %rax, $1, $INT_SIZE, %r12
-
+12:     call_fn fwrite, $jit_tco_adjust_stack, $1, jit_tco_adjust_stack_size, %r12
+        call_fn fwrite, $jit_jump_rax, $1, jit_jump_rax_size, %r12
         return  max_locals(%rsp)
 
-13:     call_fn jit_datum, operand(%rsp), %r12, env(%rsp), $RAX, $NIL
-
-14:     call_fn fwrite, $jit_unbox_rax, $1, jit_unbox_rax_size, %r12
-        call_fn fwrite, $jit_call_rax, $1, jit_call_rax_size, %r12
-        mov     register(%rsp), %rbx
+13:     mov     register(%rsp), %rbx
         mov     jit_rax_to_register_table(,%rbx,POINTER_SIZE), %rax
         mov     jit_rax_to_register_size_table(,%rbx,POINTER_SIZE), %r11
         call_fn fwrite, %rax, $1, %r11, %r12
@@ -2844,7 +2840,7 @@ jit_procedure_call:             # form, c-stream, environment, register, tail
         ## 4.1.4. Procedures
 
 jit_procedure:                  # form, c-stream, environment, arguments
-        prologue env, args, env_size, frame_size, local_idx, local, prologue_offset, end_offset, tail
+        prologue env, args, env_size, frame_size, local_idx, local, prologue_offset, end_offset
         mov     %rdi, %rbx
         mov     %rsi, %r12
         mov     %rdx, env(%rsp)
@@ -2859,11 +2855,6 @@ jit_procedure:                  # form, c-stream, environment, arguments
 
         call_fn length, args(%rsp)
         mov     %eax, local_idx(%rsp)
-
-        mov     jit_symbol_for_next_lambda, %rax
-        mov     %rax, tail(%rsp)
-        mov     $NIL, %rax
-        mov     %rax, jit_symbol_for_next_lambda
 
 1:      mov     local_idx(%rsp), %ecx
         test    %ecx, %ecx
@@ -2888,7 +2879,7 @@ jit_procedure:                  # form, c-stream, environment, arguments
 
 2:      call_fn reverse, args(%rsp)
         call_fn append, %rax, env(%rsp)
-        call_fn jit_datum, %rbx, %r12, %rax, $RAX, tail(%rsp)
+        call_fn jit_datum, %rbx, %r12, %rax, $RAX, $C_TRUE
 
         shl     $POINTER_SIZE_SHIFT, %eax
         add     $POINTER_SIZE, %eax
@@ -2916,7 +2907,7 @@ jit_lambda_factory_code:        # lambda, c-stream, env-size
         movq    $0, local_idx(%rsp)
         mov     %edx, env_size(%rsp)
 
-        call_fn jit_literal, %r12, %rbx, $NIL, $RAX
+        call_fn jit_literal, %r12, %rbx, $NIL, $RAX, $C_FALSE
 
         sub     $POINTER_SIZE, rbp(%rsp)
 1:      cmp     $0, env_size(%rsp)
@@ -2924,7 +2915,7 @@ jit_lambda_factory_code:        # lambda, c-stream, env-size
         mov     rbp(%rsp), %rax
         call_fn jit_maybe_add_to_constant_pool, (%rax)
         mov     rbp(%rsp), %rax
-        call_fn jit_literal, (%rax), %rbx, $NIL, $RAX
+        call_fn jit_literal, (%rax), %rbx, $NIL, $RAX, $C_FALSE
         sub     $POINTER_SIZE, rbp(%rsp)
 
         decl    env_size(%rsp)
@@ -2940,7 +2931,7 @@ jit_lambda_factory_code:        # lambda, c-stream, env-size
 
         jmp     1b
 
-2:      call_fn jit_literal, %r12, %rbx, $NIL, $RAX
+2:      call_fn jit_literal, %r12, %rbx, $NIL, $RAX, $C_FALSE
         call_fn fwrite, $jit_jump_rax, $1, jit_jump_rax_size, %rbx
         return
 
@@ -3016,13 +3007,13 @@ jit_lambda:                     # form, c-stream, environment, register, tail
         test    %eax, %eax
         jz      1f
 
-        call_fn jit_literal, lambda(%rsp), %r12, $NIL, $RDI, $NIL
+        call_fn jit_literal, lambda(%rsp), %r12, $NIL, $RDI, $C_FALSE
 
         call_fn length, env(%rsp)
-        call_fn jit_literal, %rax, %r12, $NIL, $RSI, $NIL
+        call_fn jit_literal, %rax, %r12, $NIL, $RSI, $C_FALSE
 
         mov     $jit_lambda_factory, %rax
-        call_fn jit_literal, %rax, %r12, $NIL, $RAX, $NIL
+        call_fn jit_literal, %rax, %r12, $NIL, $RAX, $C_FALSE
         call_fn fwrite, $jit_call_rax, $1, jit_call_rax_size, %r12
         mov     register(%rsp), %rbx
         mov     jit_rax_to_register_table(,%rbx,POINTER_SIZE), %rax
@@ -3033,7 +3024,7 @@ jit_lambda:                     # form, c-stream, environment, register, tail
         return
 
 1:      tag     TAG_PROCEDURE, lambda(%rsp)
-        call_fn jit_literal, %rax, %r12, $NIL, register(%rsp), $NIL
+        call_fn jit_literal, %rax, %r12, $NIL, register(%rsp), $C_FALSE
 
         call_fn length, env(%rsp)
         return
@@ -3052,7 +3043,7 @@ jit_if:                         # form, c-stream, environment, register, tail
         call_fn cdr, %rbx
         mov     %rax, %rbx
         call_fn car, %rax
-        call_fn jit_datum, %rax, %r12, env(%rsp), $RAX, $NIL
+        call_fn jit_datum, %rax, %r12, env(%rsp), $RAX, $FALSE
         update_max_locals max_locals(%rsp)
         call_fn fwrite, $jit_conditional_rax_is_false_jump, $1, jit_conditional_rax_is_false_jump_size, %r12
 
@@ -3130,7 +3121,7 @@ jit_is_lambda:                  # form
 1:      return  $C_FALSE
 
 jit_set:                        # form, c-stream, environment, register, tail
-        prologue env, max_locals, value, symbol
+        prologue env, max_locals, symbol
         mov     %rdi, %rbx
         mov     %rsi, %r12
         mov     %rdx, env(%rsp)
@@ -3141,19 +3132,9 @@ jit_set:                        # form, c-stream, environment, register, tail
 
         call_fn cdr, %rbx
         call_fn car, %rax
-        mov     %rax, value(%rsp)
-        call_fn jit_is_lambda, %rax
-        cmp     $C_TRUE, %rax
-        jne     1f
-
-        mov     symbol(%rsp), %rax
-        mov     %rax, jit_symbol_for_next_lambda
-
-1:      call_fn jit_datum, value(%rsp), %r12, env(%rsp), $RAX, $NIL
+        call_fn jit_datum, %rax, %r12, env(%rsp), $RAX, $C_FALSE
         mov     %rax, max_locals(%rsp)
 
-        mov     $NIL, %rax
-        mov     %rax, jit_symbol_for_next_lambda
         call_fn jit_set_with_rax_as_value, symbol(%rsp), %r12, env(%rsp)
         return  max_locals(%rsp)
 
@@ -3186,7 +3167,7 @@ jit_let_bindings:               # bindings, c-stream, environment, bindings-envi
         movq    $0, max_locals(%rsp)
 
 1:      is_nil_internal %rbx
-        je      4f
+        je      2f
         call_fn car, %rbx
         mov     %rax, variable_init(%rsp)
 
@@ -3194,31 +3175,10 @@ jit_let_bindings:               # bindings, c-stream, environment, bindings-envi
         call_fn car, %rax
         mov     %rax, init(%rsp)
 
-        call_fn jit_is_lambda, %rax
-        cmp     $C_TRUE, %rax
-        jne     2f
+        call_fn jit_datum, init(%rsp), %r12, bindings_env(%rsp), $RAX, $C_FALSE
+        update_max_locals max_locals(%rsp)
 
         call_fn car, variable_init(%rsp)
-        call_fn jit_index_of_local, bindings_env(%rsp), %rax
-        cmp     $-1, %rax
-        je      2f
-
-        mov     %rax, jit_symbol_for_next_lambda
-        call_fn length, bindings_env(%rsp)
-        sub     jit_symbol_for_next_lambda, %eax
-        add     %eax, jit_symbol_for_next_lambda
-
-        call_fn jit_datum, init(%rsp), %r12, bindings_env(%rsp), $RAX, $NIL
-        update_max_locals max_locals(%rsp)
-        mov     $NIL, %rax
-        mov     %rax, jit_symbol_for_next_lambda
-
-        jmp     3f
-
-2:      call_fn jit_datum, init(%rsp), %r12, bindings_env(%rsp), $RAX, $NIL
-        update_max_locals max_locals(%rsp)
-
-3:      call_fn car, variable_init(%rsp)
         call_fn cons, %rax, env(%rsp)
         mov     %rax, env(%rsp)
         call_fn car, variable_init(%rsp)
@@ -3228,7 +3188,7 @@ jit_let_bindings:               # bindings, c-stream, environment, bindings-envi
         mov     %rax, %rbx
         jmp     1b
 
-4:      return max_locals(%rsp)
+2:      return max_locals(%rsp)
 
 jit_let:                        # form, c-stream, environment, register, tail
         prologue form, env, variable_init, max_locals, register, tail
@@ -3299,13 +3259,13 @@ jit_letrec:                     # form, c-stream, environment, register, tail
 
         call_fn car, %rbx
         call_fn car, %rax
-        call_fn jit_datum, %rax, %r12, full_env(%rsp), $RDI, $NIL
+        call_fn jit_datum, %rax, %r12, full_env(%rsp), $RDI, $C_FALSE
 
         call_fn length, full_env(%rsp)
-        call_fn jit_literal, %rax, %r12, $NIL, $RDX
+        call_fn jit_literal, %rax, %r12, $NIL, $RDX, $C_FALSE
 
         mov     $jit_lambda_patch_factory, %rax
-        call_fn jit_literal, %rax, %r12, $NIL, $RAX
+        call_fn jit_literal, %rax, %r12, $NIL, $RAX, $C_FALSE
         call_fn fwrite, $jit_call_rax, $1, jit_call_rax_size, %r12
 
 2:      call_fn cdr, %rbx
@@ -3346,7 +3306,7 @@ jit_begin:                     # form, c-stream, environment, register, tail
         je      3f
 
         call_fn car, %rbx
-        call_fn jit_datum, %rax, %r12, env(%rsp), register(%rsp), $NIL
+        call_fn jit_datum, %rax, %r12, env(%rsp), register(%rsp), $C_FALSE
         jmp     4f
 
 3:      call_fn car, %rbx
@@ -3373,7 +3333,7 @@ jit_define_syntax:              # form, c-stream, environment, register, tail
 
         call_fn cdr, %rbx
         call_fn car, %rax
-        call_fn jit_datum, %rax, %r12, env(%rsp), $RAX, $NIL
+        call_fn jit_datum, %rax, %r12, env(%rsp), $RAX, $C_FALSE
         update_max_locals max_locals(%rsp)
 
         call_fn car, %rbx
@@ -3404,9 +3364,9 @@ jit_call_with_current_continuation_escape_factory: # jmp-buffer
         perror
         mov     %rax, %rbx
 
-        call_fn jit_literal, %r12, %rbx, $NIL, $RSI, $NIL
+        call_fn jit_literal, %r12, %rbx, $NIL, $RSI, $C_FALSE
 
-        call_fn jit_literal, $jit_call_with_current_continuation_escape, %rbx, $NIL, $RAX, $NIL
+        call_fn jit_literal, $jit_call_with_current_continuation_escape, %rbx, $NIL, $RAX, $C_FALSE
         call_fn fwrite, $jit_jump_rax, $1, jit_jump_rax_size, %rbx
 
         call_fn fclose, %rbx
@@ -3544,8 +3504,6 @@ jit_code_file_counter:
         .quad   0
 jit_code_debug:
         .quad   0
-jit_symbol_for_next_lambda:
-        .quad   NIL
 
 command_line_arguments:
         .quad   0
@@ -3680,6 +3638,13 @@ jit_push_rax:
         push    %rax
 jit_push_rax_size:
         .quad   . - jit_push_rax
+
+        .align  16
+jit_tco_adjust_stack:
+        mov     %rbp, %rsp
+        pop     %rbp
+jit_tco_adjust_stack_size:
+        .quad   . - jit_tco_adjust_stack
 
         .align  16
 jit_void_to_rax:

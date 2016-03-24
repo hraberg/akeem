@@ -145,8 +145,8 @@
         and     %r9b, %al
         .endm
 
-        .macro tagged_jump table
-        extract_tag
+        .macro tagged_jump table receiver=%rdi
+        extract_tag \receiver
         call    *\table(,%rax,POINTER_SIZE)
         .endm
 
