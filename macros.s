@@ -196,13 +196,14 @@
 \name\()_op:
         \double_op %xmm1, %xmm0
         movq    %xmm0, %rax
-        ret
+        jmp     \name\()_return
         binary_op_moves \name
         .ifnb \integer_op
 \name\()_int_int:
         mov     %edi, %eax
         \integer_op %esi, %eax
         box_int_internal
+\name\()_return:
         ret
         .endif
         .endm
@@ -214,13 +215,14 @@
         comisd  %xmm1, %xmm0
         \double_setter %al
         box_boolean_internal %rax
-        ret
+        jmp     \name\()_return
         binary_op_moves \name
 \name\()_int_int:
         xor     %eax, %eax
         cmp     %esi, %edi
         \integer_setter %al
         box_boolean_internal
+\name\()_return:
         ret
         .endm
 

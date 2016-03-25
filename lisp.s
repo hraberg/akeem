@@ -78,6 +78,7 @@ divide_int_int:
         cvtsi2sd %esi, %xmm1
         divsd   %xmm1, %xmm0
         maybe_round_to_int
+divide_return:
         ret
 
 quotient:                       # n1, n2
