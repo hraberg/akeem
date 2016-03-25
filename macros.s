@@ -442,8 +442,7 @@ tmp_string_\@:
         .ifnb \tag
         tag    \tag, \value, target=%rcx
         .endif
-        unbox_pointer_internal %rax
-        mov     %rcx, symbol_table_values(,%rax,POINTER_SIZE)
+        mov     %rcx, symbol_table_values(,%eax,POINTER_SIZE)
         .endm
 
         .macro update_max_locals max_locals, value=%rax, tmp=%r11

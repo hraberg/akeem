@@ -224,13 +224,11 @@ cons:                           # obj1, obj2
         return
 
 car:                            # pair
-        unbox_pointer_internal %rdi
-        mov     pair_car(%rax), %rax
+        car     %rdi
         ret
 
 cdr:                            # pair
-        unbox_pointer_internal %rdi
-        mov     pair_cdr(%rax), %rax
+        cdr     %rdi
         ret
 
 set_car:                        # pair, obj
@@ -311,8 +309,7 @@ symbol_to_string:               # symbol
 
 string_to_symbol:               # string
         prologue
-        unbox_pointer_internal %rdi
-        mov     %rax, %r12
+        unbox_pointer_internal %rdi, %r12
         mov     symbol_next_id, %rbx
 
 1:      test    %rbx, %rbx
@@ -322,7 +319,7 @@ string_to_symbol:               # string
         mov     symbol_table_names(,%rbx,POINTER_SIZE), %rax
         unbox_pointer_internal %rax
 
-        test    %eax, %eax
+        test    %rax, %rax
         jz      1b
         add     $header_size, %rax
         lea     header_size(%r12), %r11
@@ -794,7 +791,7 @@ write_char:                     # char, port
         minimal_prologue
         default_arg TAG_PORT, stdout, %rsi
 
-        unbox_pointer_internal %rsi, %rax
+        unbox_pointer_internal %rsi
         mov     %edi, %edi
         call_fn fputc, %rdi, %rax
         return  $VOID
@@ -986,7 +983,7 @@ write_u8:                       # byte, port
         minimal_prologue
         default_arg TAG_PORT, stdout, %rsi
 
-        unbox_pointer_internal %rsi, %rax
+        unbox_pointer_internal %rsi
         mov     %edi, %edi
         call_fn fputc, %rdi, %rax
         return  $VOID
@@ -1154,14 +1151,14 @@ main:                # argc, argv
         intern_symbol unquote_splicing_symbol, "unquote-splicing"
         intern_symbol define_syntax_symbol, "define-syntax"
 
+        mov     symbol_next_id, %rax
+        mov     %rax, max_null_environment_symbol
+
         intern_symbol r5rs_let_symbol, "r5rs-let"
 
         intern_symbol dot_symbol, "."
         intern_symbol void_symbol, "void"
         intern_symbol eof_symbol, "eof"
-
-        mov     symbol_next_id, %rax
-        mov     %rax, max_null_environment_symbol
 
         intern_string empty_string, ""
 
@@ -1857,9 +1854,8 @@ gc_mark_queue_pair:             # pair
 
 gc_mark_queue_vector:           # vector
         prologue
-        unbox_pointer_internal %rdi
-        mov     %rax, %r12
-        mov     header_object_size(%rax), %ebx
+        unbox_pointer_internal %rdi, %r12
+        mov     header_object_size(%r12), %ebx
 1:      test    %ebx, %ebx
         jz      2f
 
@@ -2171,8 +2167,7 @@ object_to_string:               # obj
         mov     %rdi, obj(%rsp)
         call_fn class_of, %rdi
         mov     %rax, %rbx
-        unbox_pointer_internal %rax, %rcx
-        mov     to_string_jump_table(,%rcx,POINTER_SIZE), %r11
+        mov     to_string_jump_table(,%eax,POINTER_SIZE), %r11
         cmp     $object_to_string, %r11
         je      1f
         test    %r11, %r11
@@ -2764,7 +2759,7 @@ jit_pair:                       # form, c-stream, environment, register, tail
         call_fn *%rax, %rbx, %r12, env(%rsp), register(%rsp), tail(%rsp)
         return
 
-5:      unbox_pointer_internal syntax(%rsp), %rax
+5:      unbox_pointer_internal syntax(%rsp)
         call_fn *%rax, %rbx, env(%rsp)
         call_fn jit_datum, %rax, %r12, env(%rsp), register(%rsp), tail(%rsp)
         return
