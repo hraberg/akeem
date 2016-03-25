@@ -2858,7 +2858,7 @@ jit_procedure_call:             # form, c-stream, environment, register, tail
 11:     call_fn fwrite, $jit_call_rax, $1, jit_call_rax_size, %r12
         jmp     13f
 
-12:     call_fn fwrite, $jit_tco_adjust_stack, $1, jit_tco_adjust_stack_size, %r12
+12:     call_fn fwrite, $jit_epilogue, $1, jit_epilogue_size, %r12
         call_fn fwrite, $jit_jump_rax, $1, jit_jump_rax_size, %r12
 
         return  max_locals(%rsp)
@@ -2929,6 +2929,7 @@ jit_procedure:                  # form, c-stream, environment, arguments
         call_fn fseek, %r12, end_offset(%rsp), $SEEK_SET
 
         call_fn fwrite, $jit_epilogue, $1, jit_epilogue_size, %r12
+        call_fn fwrite, $jit_return, $1, jit_return_size, %r12
         return
 
 jit_lambda_factory_code:        # lambda, c-stream, env-size
@@ -3580,16 +3581,14 @@ jit_prologue_size:
 jit_epilogue:
         mov     %rbp, %rsp
         pop     %rbp
-        ret
 jit_epilogue_size:
         .quad   . - jit_epilogue
 
         .align  16
-jit_tco_adjust_stack:
-        mov     %rbp, %rsp
-        pop     %rbp
-jit_tco_adjust_stack_size:
-        .quad   . - jit_tco_adjust_stack
+jit_return:
+        ret
+jit_return_size:
+        .quad   . - jit_return
 
         .irp reg, rax, rdi, rsi, rdx, rcx, r8, r9
         .align  16
