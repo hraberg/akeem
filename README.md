@@ -32,10 +32,9 @@ See [this tutorial](http://community.schemewiki.org/?emacs-tutorial).
 ## What Works?
 
 * Subset of R5RS and R7RS "small" procedures.
-* JIT for `if`, `lambda`, `set!`, `let`,
-  "named `let`", `letrec` and `begin`
-* Syntax for `and`, `or`, `cond`, `case`, `let*`, `do`, `delay` and
-  `define` + R7RS `case`, `when` and `unless`.
+* JIT for `if`, `lambda`, `set!`, `let`, `letrec` and `begin`
+* Syntax for `and`, `or`, `cond`, `case`, `let*`, "named `let`", `do`,
+  `delay` and `define` + R7RS `case`, `when` and `unless`.
 * Basic support for `define-syntax` / `syntax-rules` and `quasiquote`.
 * NaN-boxed 32-bit integers and 64-bit doubles
 * Function application up to 6 arguments.
@@ -47,20 +46,17 @@ See [this tutorial](http://community.schemewiki.org/?emacs-tutorial).
 ## What Doesn't Work?
 
 * No vararg support.
-* Max arity is currently 6, higher requires the use of the stack.
-* No `let-syntax` and `letrec-syntax`.
-* No `call-with-values` or `dynamic-wind`.
-* `call-with-current-continuation` only uses `setjmp`.
 * Almost no error handling.
+* No `call-with-values` or `dynamic-wind`.
+* No `let-syntax` and `letrec-syntax`.
+* `call-with-current-continuation` only uses `setjmp`.
+* Max arity is currently 6, higher requires the use of the stack.
 * No register allocation.
 * No hygienic macro expansion.
-* The memory for the generated code is allocated in a very wasteful
-  way.
 * No GC for functions or their constant literals.
 * The JIT is static, once a function is generated its done.
 * Not full support for Scheme numbers in the reader.
 * No support for converting internal `define` to `letrec`.
-* "named `let`" compiles to a jump and not a procedure that returns.
 * No mutation of closed over variables (needs array boxing).
 * Limited numeric tower, see above.
 
