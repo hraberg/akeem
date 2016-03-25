@@ -159,6 +159,7 @@ Only functions written in assembler will show up.
 
 ### Assembler
 
+* http://www.intel.com/content/www/us/en/processors/architectures-software-developer-manuals.html
 * http://ref.x86asm.net/coder64-abc.html
 * http://www.x86-64.org/documentation/abi.pdf
 * https://sourceware.org/binutils/docs/as/
@@ -167,6 +168,7 @@ Only functions written in assembler will show up.
 * http://www.agner.org/optimize/
 * http://www.avabodh.com/cin/cin.html
 * http://github.com/nineties/amber
+* https://rwmj.wordpress.com/2010/08/07/jonesforth-git-repository/
 * http://lemick.sourceforge.net/papers/JIT_design.pdf
 * http://piumarta.com/doc/dcg-1992.pdf
 
