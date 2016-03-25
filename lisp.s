@@ -1192,6 +1192,32 @@ main:                # argc, argv
         intern_symbol unquote_splicing_symbol, "unquote-splicing"
         intern_symbol define_syntax_symbol, "define-syntax"
 
+        intern_symbol car_symbol, "car"
+        intern_symbol cdr_symbol, "cdr"
+
+        intern_symbol equal_symbol, "="
+        intern_symbol less_than_symbol, "<"
+        intern_symbol less_than_or_equal_symbol, "<="
+        intern_symbol greater_than_symbol, ">"
+        intern_symbol greater_than_or_equal_symbol, ">="
+
+        intern_symbol plus_symbol, "+"
+        intern_symbol minus_symbol, "-"
+        intern_symbol multiply_symbol, "*"
+        intern_symbol divide_symbol, "/"
+
+        intern_symbol string_length_symbol, "string-length"
+        intern_symbol string_ref_symbol, "string-ref"
+        intern_symbol string_set_symbol, "string-set!"
+
+        intern_symbol vector_length_symbol, "vector-length"
+        intern_symbol vector_ref_symbol, "vector-ref"
+        intern_symbol vector_set_symbol, "vector-set!"
+
+        intern_symbol bytevector_length_symbol, "bytevector-length"
+        intern_symbol bytevector_u8_ref_symbol, "bytevector-u8-ref"
+        intern_symbol bytevector_u8_set_symbol, "bytevector-u8-set!"
+
         mov     symbol_next_id, %rax
         mov     %rax, max_null_environment_symbol
 
@@ -1421,8 +1447,7 @@ main:                # argc, argv
 
         lea     jit_syntax_jump_table, %rbx
         .irp symbol, quote, if, set, lambda, begin, let, letrec, define_syntax
-        unbox_pointer_internal \symbol\()_symbol
-        store_pointer %eax, $jit_\symbol
+        store_pointer \symbol\()_symbol, $jit_\symbol
         .endr
 
         .irp name, eq, eqv, number, complex, real, rational, integer, exact, inexact
@@ -1544,6 +1569,20 @@ main:                # argc, argv
 
         define "load", $load
 
+        ## .irp symbol, plus, minus, multiply, divide, equal, less_than, less_than_or_equal, greater_than, greater_than_or_equal
+        ## lea     jit_inline_table, %rbx
+        ## store_pointer \symbol\()_symbol, $\symbol
+        ## lea     jit_inline_size_table, %rbx
+        ## store_pointer \symbol\()_symbol, \symbol\()_size
+        ## .endr
+
+        .irp symbol, car, cdr, string_length, string_ref, string_set, vector_length, vector_ref, vector_set
+        lea     jit_inline_table, %rbx
+        store_pointer \symbol\()_symbol, $\symbol
+        lea     jit_inline_size_table, %rbx
+        store_pointer \symbol\()_symbol, \symbol\()_size
+        .endr
+
         call_fn box_string, $boot_scm
         call_fn open_input_string, %rax
         call_fn read_all, %rax
@@ -1589,6 +1628,13 @@ main:                # argc, argv
         define "current-second", $current_second
         define "current-jiffy", $current_jiffy
         define "jiffies-per-second", $jiffies_per_second
+
+        .irp symbol, bytevector_length, bytevector_u8_ref, bytevector_u8_set
+        lea     jit_inline_table, %rbx
+        store_pointer \symbol\()_symbol, $\symbol
+        lea     jit_inline_size_table, %rbx
+        store_pointer \symbol\()_symbol, \symbol\()_size
+        .endr
 
         call_fn box_string, $r7rs_scm
         call_fn open_input_string, %rax
@@ -2135,7 +2181,7 @@ integer_to_string:              # int, radix
         default_arg TAG_INT, $10, %rsi
         mov     %esi, %esi
 
-        mov     integer_to_string_format_table(,%rsi,8), %rax
+        mov     integer_to_string_format_table(,%rsi,POINTER_SIZE), %rax
         mov     %rax, format(%rsp)
 
         movsx   %edi, %rbx
@@ -2786,7 +2832,7 @@ jit_pair:                       # form, c-stream, environment, register, tail
         jge     3f
 
 2:      unbox_pointer_internal symbol(%rsp)
-        mov     jit_syntax_jump_table(,%rax,8), %rax
+        mov     jit_syntax_jump_table(,%rax,POINTER_SIZE), %rax
         test    %rax, %rax
         jnz     4f
 
@@ -2878,7 +2924,10 @@ jit_procedure_call:             # form, c-stream, environment, register, tail
 7:      cdr     %rbx, %rbx
         jmp     5b
 
-8:      has_tag TAG_PAIR, operand(%rsp), store=false
+8:      has_tag TAG_SYMBOL, operand(%rsp), store=false
+        je      14f
+
+        has_tag TAG_PAIR, operand(%rsp), store=false
         jne     9f
 
         call_fn fwrite, $jit_pop_rax, $1, jit_pop_rax_size, %r12
@@ -2905,6 +2954,16 @@ jit_procedure_call:             # form, c-stream, environment, register, tail
         call_fn fwrite, %rax, $1, %r11, %r12
 
         return  max_locals(%rsp)
+
+14:     unbox_pointer_internal operand(%rsp), %rbx
+        mov     jit_inline_table(,%rbx,POINTER_SIZE), %rax
+        test    %rax, %rax
+        jz      9b
+
+        mov     jit_inline_size_table(,%rbx,POINTER_SIZE), %r11
+        call_fn fwrite, %rax, $1, %r11, %r12
+
+        jmp     13b
 
         ## 4.1.4. Procedures
 
@@ -3512,6 +3571,14 @@ jit_register_to_local_size_table:
 
         .align  16
 jit_syntax_jump_table:
+        .zero   MAX_NUMBER_OF_SYMBOLS * POINTER_SIZE
+
+        .align  16
+jit_inline_table:
+        .zero   MAX_NUMBER_OF_SYMBOLS * POINTER_SIZE
+
+        .align  16
+jit_inline_size_table:
         .zero   MAX_NUMBER_OF_SYMBOLS * POINTER_SIZE
 
         .align  16
