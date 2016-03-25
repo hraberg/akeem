@@ -3620,8 +3620,8 @@ jit_unconditional_known_jump_size:
 
         .align  16
 jit_unbox_rax:
-        mov     $PAYLOAD_MASK, %r11
-        and     %r11, %rax
+        shl     $PAYLOAD_SHIFT, %rax
+        shr     $PAYLOAD_SHIFT, %rax
 jit_unbox_rax_size:
         .quad   . - jit_unbox_rax
 

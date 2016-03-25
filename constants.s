@@ -34,8 +34,7 @@
         .equ TAG_MASK, (1 << 6) - 1
         .equ POINTER_TAG_MASK, ~(TAG_SYMBOL - 1)
 
-        .equ PAYLOAD_MASK, (1 << 47) - 1
-        .equ INT_MASK, (1 << 32) - 1
+        .equ PAYLOAD_SHIFT, 64 - 48
         .equ SIGN_BIT, 63
 
         .equ TAG_DOUBLE, 0

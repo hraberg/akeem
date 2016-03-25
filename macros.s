@@ -57,15 +57,10 @@
         ret
         .endm
 
-        .macro unbox_pointer_internal ptr, to=%rax, tmp=%r11
-        .ifc \ptr, \to
-        mov     $PAYLOAD_MASK, \tmp
-        and     \ptr, \tmp
-        mov     \tmp, \to
-        .else
-        mov     $PAYLOAD_MASK, \to
-        and     \ptr, \to
-        .endif
+        .macro unbox_pointer_internal ptr, to=%rax
+        mov_reg \ptr, \to
+        shl     $PAYLOAD_SHIFT, \to
+        shr     $PAYLOAD_SHIFT, \to
         .endm
 
         .macro car from, to=%rax
