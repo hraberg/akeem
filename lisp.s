@@ -3064,7 +3064,7 @@ jit_if:                         # form, c-stream, environment, register, tail
         car     %rbx
         call_fn jit_datum, %rax, %r12, env(%rsp), $RAX, $FALSE
         update_max_locals max_locals(%rsp)
-        call_fn fwrite, $jit_conditional_rax_is_false_jump, $1, jit_conditional_rax_is_false_jump_size, %r12
+        call_fn fwrite, $jit_rax_is_false_jump, $1, jit_rax_is_false_jump_size, %r12
 
         call_fn ftell, %r12
         mov     %rax, if_offset(%rsp)
@@ -3073,7 +3073,7 @@ jit_if:                         # form, c-stream, environment, register, tail
         car     %rbx
         call_fn jit_datum, %rax, %r12, env(%rsp), register(%rsp), tail(%rsp)
         update_max_locals max_locals(%rsp)
-        call_fn fwrite, $jit_unconditional_jump, $1, jit_unconditional_jump_size, %r12
+        call_fn fwrite, $jit_jump, $1, jit_jump_size, %r12
 
         patch_jump %r12, else_offset(%rsp), if_offset(%rsp), jump_offset(%rsp)
 
@@ -3346,7 +3346,7 @@ jit_define_syntax:              # form, c-stream, environment, register, tail
         lea     jit_syntax_jump_table(,%eax,POINTER_SIZE), %rax
         mov     %rax, syntax_address(%rsp)
 
-        call_fn fwrite, $jit_rax_to_syntax, $1, jit_rax_to_syntax_size, %r12
+        call_fn fwrite, $jit_rax_to_global, $1, jit_rax_to_global_size, %r12
         lea     syntax_address(%rsp), %rax
         call_fn fwrite, %rax, $1, $POINTER_SIZE, %r12
         call_fn fwrite, $jit_void_to_rax, $1, jit_void_to_rax_size, %r12
@@ -3594,24 +3594,18 @@ jit_literal_to_\reg\()_size:
         .endr
 
         .align  16
-jit_conditional_rax_is_false_jump:
+jit_rax_is_false_jump:
         mov     $FALSE, %r11
         cmp     %rax, %r11
         je      0
-jit_conditional_rax_is_false_jump_size:
-        .quad   (. - jit_conditional_rax_is_false_jump)
+jit_rax_is_false_jump_size:
+        .quad   (. - jit_rax_is_false_jump)
 
         .align  16
-jit_unconditional_jump:
+jit_jump:
         jmp     0
-jit_unconditional_jump_size:
-        .quad   (. - jit_unconditional_jump)
-
-        .align  16
-jit_unconditional_known_jump:
-        jmp     0
-jit_unconditional_known_jump_size:
-        .quad   (. - jit_unconditional_known_jump) - INT_SIZE
+jit_jump_size:
+        .quad   (. - jit_jump)
 
         .align  16
 jit_unbox_rax:
@@ -3643,6 +3637,7 @@ jit_pop_\reg\()_size:
 jit_rax_to_rax:
 jit_rax_to_rax_size:
         .quad   . - jit_rax_to_rax
+
         .irp reg, rdi, rsi, rdx, rcx, r8, r9
         .align  16
 jit_rax_to_\reg\():
@@ -3690,12 +3685,6 @@ jit_\reg\()_to_local:
 jit_\reg\()_to_local_size:
         .quad   (. - jit_\reg\()_to_local) - INT_SIZE
         .endr
-
-        .align  16
-jit_rax_to_syntax:
-        mov     %rax, 0x1122334455667788
-jit_rax_to_syntax_size:
-        .quad   (. - jit_rax_to_syntax) - POINTER_SIZE
 
         .align  16
 jit_rax_to_closure:
