@@ -3536,7 +3536,7 @@ max_null_environment_symbol:
 string_format:
         .string "%s"
 token_format:
-        .string "%a[^] \f\n\r\t\v()\";]"
+        .string "%a[^] \f\n\r\t\v()\";#]"
 char_format:
         .string "%c"
 machine_readable_char_format:
