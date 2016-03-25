@@ -49,27 +49,43 @@ is_inexact:                     # z
 
 equal:                          # z1, z2
         binary_comparsion equals, sete, sete
+equal_size:
+        .quad   . - equal - RET_SIZE
 
 less_than:                      # z1, z2
         binary_comparsion less_than, setb, setl
+less_than_size:
+        .quad   . - less_than - RET_SIZE
 
 greater_than:                   # z1, z2
         binary_comparsion greater_than, seta, setg
+greater_than_size:
+        .quad   . - greater_than - RET_SIZE
 
 less_than_or_equal:             # z1, z2
         binary_comparsion less_than_or_equals, setbe, setle
+less_than_or_equal_size:
+        .quad   . - less_than_or_equal - RET_SIZE
 
 greater_than_or_equal:          # z1, z2
         binary_comparsion greater_than_or_equals, setae, setge
+greater_than_or_equal_size:
+        .quad   . - greater_than_or_equal - RET_SIZE
 
 plus:                           # z1, z2
         binary_op plus, addsd, add
+plus_size:
+        .quad   . - plus - RET_SIZE
 
 minus:                          # z1, z2
         binary_op minus, subsd, sub
+minus_size:
+        .quad   . - minus - RET_SIZE
 
 multiply:                       # z1, z2
         binary_op multiply, mulsd, imul
+multiply_size:
+        .quad   . - multiply - RET_SIZE
 
 divide:                         # z1, z2
         binary_op divide, divsd
@@ -80,6 +96,8 @@ divide_int_int:
         maybe_round_to_int
 divide_return:
         ret
+divide_size:
+        .quad   . - divide - RET_SIZE
 
 quotient:                       # n1, n2
         integer_division
