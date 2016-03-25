@@ -93,6 +93,8 @@
         .equ NUMBER_OF_REGISTERS, 16
         .equ MAX_REGISTER_ARGS, 6
 
+        .equ RET_SIZE, 1
+
         .equ RAX, 0
         .equ RCX, 1
         .equ RDX, 2

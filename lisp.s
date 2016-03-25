@@ -227,10 +227,14 @@ cons:                           # obj1, obj2
 car:                            # pair
         car     %rdi
         ret
+car_size:
+        .quad   . - car - RET_SIZE
 
 cdr:                            # pair
         cdr     %rdi
         ret
+cdr_size:
+        .quad   . - cdr - RET_SIZE
 
 set_car:                        # pair, obj
         unbox_pointer_internal %rdi
