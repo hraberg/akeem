@@ -3620,8 +3620,7 @@ jit_unconditional_known_jump_size:
 
         .align  16
 jit_unbox_rax:
-        shl     $PAYLOAD_SHIFT, %rax
-        shr     $PAYLOAD_SHIFT, %rax
+        unbox_pointer_internal %rax
 jit_unbox_rax_size:
         .quad   . - jit_unbox_rax
 
