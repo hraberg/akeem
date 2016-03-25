@@ -471,6 +471,8 @@ string_length:                  # string
         dec     %eax
         box_int_internal %eax
         ret
+string_length_size:
+        .quad   . - string_length - RET_SIZE
 
 string_ref:                     # string, k
         mov     %esi, %esi
@@ -478,6 +480,8 @@ string_ref:                     # string, k
         movzxb  header_size(%rax,%rsi), %eax
         tag     TAG_CHAR, %rax
         ret
+string_ref_size:
+        .quad   . - string_ref - RET_SIZE
 
 string_set:                     # string, k, char
         mov     %esi, %esi
@@ -485,6 +489,8 @@ string_set:                     # string, k, char
         mov     %dl, header_size(%rax,%rsi)
         mov     $VOID, %rax
         ret
+string_set_size:
+        .quad   . - string_set - RET_SIZE
 
 is_string_equal:                # string1, string2
         string_comparator strcmp, setz
@@ -549,12 +555,16 @@ vector_length:                  # vector
         shr     $POINTER_SIZE_SHIFT, %eax
         box_int_internal
         ret
+vector_length_size:
+        .quad   . - vector_length - RET_SIZE
 
 vector_ref:                     # vector, k
         unbox_pointer_internal %rdi
         mov     %esi, %esi
         mov     header_size(%rax,%rsi,POINTER_SIZE), %rax
         ret
+vector_ref_size:
+        .quad   . - vector_ref - RET_SIZE
 
 vector_set:                     # vector, k, obj
         unbox_pointer_internal %rdi
@@ -562,6 +572,8 @@ vector_set:                     # vector, k, obj
         mov     %rdx, header_size(%rax,%rsi,POINTER_SIZE)
         mov     $VOID, %rax
         ret
+vector_set_size:
+        .quad   . - vector_set - RET_SIZE
 
 list_to_vector:                 # list
         prologue vec
@@ -890,6 +902,8 @@ bytevector_length:              # bytevector
         mov     header_object_size(%rax), %eax
         box_int_internal
         ret
+bytevector_length_size:
+        .quad   . - bytevector_length - RET_SIZE
 
 bytevector_u8_ref:              # bytevector, k
         unbox_pointer_internal %rdi
@@ -898,6 +912,8 @@ bytevector_u8_ref:              # bytevector, k
         mov     header_size(%rax,%rsi), %r11b
         tag     TAG_INT, %r11
         ret
+bytevector_u8_ref_size:
+        .quad   . - bytevector_u8_ref - RET_SIZE
 
 bytevector_u8_set:              # bytevector, k, byte
         unbox_pointer_internal %rdi
@@ -905,6 +921,8 @@ bytevector_u8_set:              # bytevector, k, byte
         mov     %dl, header_size(%rax,%rsi)
         mov     $VOID, %rax
         ret
+bytevector_u8_set_size:
+        .quad   . - bytevector_u8_set - RET_SIZE
 
 list_to_bytevector:             # list
         prologue vec
