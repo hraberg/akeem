@@ -88,12 +88,17 @@ multiply_size:
         .quad   . - multiply - RET_SIZE
 
 divide:                         # z1, z2
-        binary_op divide, divsd
+        binary_op_jump divide
+        binary_op_moves divide
 divide_int_int:
         cvtsi2sd %edi, %xmm0
         cvtsi2sd %esi, %xmm1
         divsd   %xmm1, %xmm0
         maybe_round_to_int
+        jmp     divide_return
+divide_op:
+        divsd   %xmm1, %xmm0
+        movq    %xmm0, %rax
 divide_return:
         ret
 divide_size:

@@ -193,19 +193,17 @@
 
         .macro binary_op name, double_op, integer_op
         binary_op_jump \name
-\name\()_op:
-        \double_op %xmm1, %xmm0
-        movq    %xmm0, %rax
-        jmp     \name\()_return
         binary_op_moves \name
-        .ifnb \integer_op
 \name\()_int_int:
         mov     %edi, %eax
         \integer_op %esi, %eax
         box_int_internal
+        jmp     \name\()_return
+\name\()_op:
+        \double_op %xmm1, %xmm0
+        movq    %xmm0, %rax
 \name\()_return:
         ret
-        .endif
         .endm
 
         .macro binary_comparsion name, double_setter, integer_setter
