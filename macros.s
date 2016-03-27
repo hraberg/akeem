@@ -170,9 +170,6 @@
         shl     $BINARY_OP_SHIFT, %al
         lea     \name\()_double_double(%eax), %rax
         jmp     *%rax
-        .endm
-
-        .macro binary_op_moves name
         .align  (1 << BINARY_OP_SHIFT)
 \name\()_double_double:
         movq    %rdi, %xmm0
@@ -193,7 +190,6 @@
 
         .macro binary_op name, double_op, integer_op
         binary_op_jump \name
-        binary_op_moves \name
 \name\()_int_int:
         mov     %edi, %eax
         \integer_op %esi, %eax
@@ -208,7 +204,6 @@
 
         .macro binary_comparsion name, double_setter, integer_setter
         binary_op_jump \name
-        binary_op_moves \name
 \name\()_int_int:
         xor     %eax, %eax
         cmp     %esi, %edi
@@ -276,7 +271,6 @@
         .macro math_library_binary_call name, round=false
         minimal_prologue
         binary_op_jump \name
-        binary_op_moves \name
 \name\()_int_int:
         cvtsi2sd %edi, %xmm0
         cvtsi2sd %esi, %xmm1

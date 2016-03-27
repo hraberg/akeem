@@ -89,7 +89,6 @@ multiply_size:
 
 divide:                         # z1, z2
         binary_op_jump divide
-        binary_op_moves divide
 divide_int_int:
         cvtsi2sd %edi, %xmm0
         cvtsi2sd %esi, %xmm1
