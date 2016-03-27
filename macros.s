@@ -208,19 +208,18 @@
 
         .macro binary_comparsion name, double_setter, integer_setter
         binary_op_jump \name
-\name\()_op:
-        xor     %eax, %eax
-        comisd  %xmm1, %xmm0
-        \double_setter %al
-        box_boolean_internal %rax
-        jmp     \name\()_return
         binary_op_moves \name
 \name\()_int_int:
         xor     %eax, %eax
         cmp     %esi, %edi
         \integer_setter %al
-        box_boolean_internal
+        jmp     \name\()_return
+\name\()_op:
+        xor     %eax, %eax
+        comisd  %xmm1, %xmm0
+        \double_setter %al
 \name\()_return:
+        box_boolean_internal
         ret
         .endm
 
