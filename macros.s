@@ -252,30 +252,35 @@
         .endm
 
         .macro math_library_unary_call name, round=false, return_int=false
+        minimal_prologue
         movq    %rdi, %xmm0
         has_tag TAG_INT, %rdi, store=false
         jne     \name\()_double
 \name\()_int:
         .ifc \return_int, true
         mov     %rdi, %rax
-        ret
+        jmp     \name\()_return
         .else
         cvtsi2sd %edi, %xmm0
         .endif
 \name\()_double:
-        minimal_prologue
         call_fn \name
         movq    %xmm0, %rax
         .ifc \round, true
         maybe_round_to_int
         .endif
+\name\()_return:
         return
         .endm
 
         .macro math_library_binary_call name, round=false
-        binary_op_jump \name
-\name\()_op:
         minimal_prologue
+        binary_op_jump \name
+        binary_op_moves \name
+\name\()_int_int:
+        cvtsi2sd %edi, %xmm0
+        cvtsi2sd %esi, %xmm1
+\name\()_op:
         call_fn \name
         .ifc \round, true
         maybe_round_to_int
@@ -283,11 +288,6 @@
         movq    %xmm0, %rax
         .endif
         return
-        binary_op_moves \name
-\name\()_int_int:
-        cvtsi2sd %edi, %xmm0
-        cvtsi2sd %esi, %xmm1
-        jmp     \name\()_op
         .endm
 
         .macro with_file_io_template name, stream
