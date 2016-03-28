@@ -1273,7 +1273,7 @@ main:                # argc, argv
         movb    $'\\, 92(%rbx)
 
         lea     unescape_char_table, %rbx
-        movb    $'\a, 97(%rbx)
+        movb    $7, 97(%rbx)
         movb    $'\b, 98(%rbx)
         movb    $'\t, 116(%rbx)
         movb    $'\n, 110(%rbx)
@@ -1327,6 +1327,8 @@ main:                # argc, argv
         store_pointer $'', $read_quote
         store_pointer $'`, $read_quasiquote
         store_pointer $',, $read_unquote
+        store_pointer $'), $NULL
+        store_pointer $'], $NULL
 
         lea     read_hash_jump_table, %rbx
         store_pointer $'t, $read_true
@@ -3661,7 +3663,7 @@ max_null_environment_symbol:
 string_format:
         .string "%s"
 token_format:
-        .string "%a[^] \f\n\r\t\v()\";#]"
+        .string "%a[^][ \f\n\r\t\v()\";#]"
 char_format:
         .string "%c"
 machine_readable_char_format:

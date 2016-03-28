@@ -394,7 +394,7 @@
         test    \tmp, \tmp
         jnz     .L_\@_1
         mov_reg  \byte, %rax
-        box_int_internal
+        tag     TAG_CHAR, %rax
         call_fn error, read_error_string, %rax
         jmp     .L_\@_2
 .L_\@_1:
