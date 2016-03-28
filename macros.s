@@ -393,7 +393,9 @@
         mov     \table(,\byte,POINTER_SIZE), \tmp
         test    \tmp, \tmp
         jnz     .L_\@_1
-        call_fn error, read_error_string
+        mov_reg     \byte, %rax
+        box_int_internal
+        call_fn error, read_error_string, %rax
         jmp     .L_\@_2
 .L_\@_1:
         call_fn *\tmp, \stream, \byte

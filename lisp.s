@@ -950,12 +950,14 @@ list_to_bytevector:             # list
 
         ## 6.11. Exceptions
 
-error:                          # message
-        prologue
+error:                          # message, irritants
+        prologue irritant
         mov     %rdi, %rbx
+        mov     %rsi, irritant(%rsp)
         call_fn current_error_port
         mov     %rax, %r12
         call_fn display, %rbx, %r12
+        call_fn display, irritant(%rsp), %r12
         call_fn display, $NEWLINE_CHAR, %r12
         call_fn exit, $1
         return
@@ -1233,8 +1235,8 @@ main:                # argc, argv
 
         intern_string empty_string, ""
 
-        intern_string read_error_string, "Unexpected input"
-        intern_string code_space_error_string, "Code space exceeded"
+        intern_string read_error_string, "Unexpected input: "
+        intern_string code_space_error_string, "Code space exceeded: "
         intern_string false_string, "#f"
         mov     %rax, boolean_string_table + POINTER_SIZE * C_FALSE
         intern_string true_string, "#t"
@@ -2446,9 +2448,10 @@ read_string:                    # c-stream, c-char
         cmp     $'x, %al
         je      2f
 
-        mov     unescape_char_table(%eax), %al
-        test    %al, %al
-        jz      7f
+        mov     unescape_char_table(%eax), %r11b
+        test    %r11b, %r11b
+        jz      8f
+        mov     %r11, %rax
         jmp     3f
 
 2:      lea     hex(%rsp), %rdx
@@ -2458,7 +2461,7 @@ read_string:                    # c-stream, c-char
         call_fn fputc, hex(%rsp), %r12
         call_fn fgetc, %rbx
         cmp     $';, %al
-        jne     7f
+        jne     8f
 
         jmp     1b
 
@@ -2474,7 +2477,11 @@ read_string:                    # c-stream, c-char
 
 6:      return  empty_string
 
-7:      call_fn error, read_error_string
+7:      call_fn error, read_error_string, $EOF_OBJECT
+        return
+
+8:      tag     TAG_CHAR, %rax
+        call_fn error, read_error_string, %rax
         return
 
 read_true:                      # c-stream
@@ -2520,12 +2527,13 @@ read_character:                 # c-stream, c-char
         add     $header_size + CHAR_PREFIX_LENGTH, %rax
         lea     header_size(%r12), %r11
         call_fn strcmp, %r11, %rax
-        jnz     3b
+        jnz     3f
 
         tag     TAG_CHAR, $0
         return
 
-3:      call_fn error, read_error_string
+3:      tag     TAG_STRING, %r12
+        call_fn error, read_error_string, %rax
         return
 
 4:      call_fn string_ref, %r12, $ZERO_INT
@@ -2580,7 +2588,8 @@ read_bytevector:                # c-stream
         call_fn list_to_bytevector, %rax
         return
 
-1:      call_fn error, read_error_string
+1:      tag     TAG_CHAR, %rax
+        call_fn error, read_error_string, %rax
         return
 
 read_list:                      # c-stream, c-char
@@ -2625,7 +2634,8 @@ read_list:                      # c-stream, c-char
         call_fn fgetc, %rbx
         cmp     closing(%rsp), %al
         je      5f
-        call_fn error, read_error_string
+        tag     TAG_CHAR, %rax
+        call_fn error, read_error_string, %rax
 
 5:      return  head(%rsp)
 
@@ -2677,7 +2687,10 @@ jit_allocate_code:              # c-code, c-size
         mov     %r12, jit_code_space_next_address
 
         return  %rbx
-1:      call_fn error, code_space_error_string
+1:      mov     jit_code_space_next_address, %rax
+        sub     jit_code_space, %rax
+        box_int_internal
+        call_fn error, code_space_error_string, %rax
         return
 
 jit_code:                       # form, environment, arguments
