@@ -131,7 +131,7 @@
 (set! transform-syntax-rules
       (lambda (literals syntax-rules form env)
         (if (null? syntax-rules)
-            (error "Bad syntax")
+            (error "Bad syntax: " form)
             (let ((pattern (cdr (car (car syntax-rules))))
                   (template (cdr (car syntax-rules))))
               (let ((match (match-syntax-rule literals pattern form '() '() env)))
