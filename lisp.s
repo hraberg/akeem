@@ -1914,10 +1914,20 @@ gc_is_markable_object:          # pointer
         je      1f
         is_eof_object_internal %rdi
         je      1f
+        ## TODO: figure out what these are.
         test    %rdi, %rdi
-        js      1f
+        js      2f
+        mov     $0x7ffd000000000030, %r11
+        cmp     %r11, %rdi
+        je      2f
+        mov     $0x7ffd000000000002, %r11
+        cmp     %r11, %rdi
+        je      2f
+
         return  $C_TRUE
 1:      return  $C_FALSE
+
+2:      return  $C_FALSE
 
 gc_mark_object:                 # pointer
         prologue
@@ -3102,27 +3112,28 @@ jit_lambda_factory:             # lambda, env-size
         return
 
 jit_lambda_patch_factory:       # lambda-factory, env-size
-        prologue code, env_size, lambda
+        prologue env_size, lambda, patch_code, patch_size
         unbox_pointer_internal %rdi, %rbx
         mov     %edx, env_size(%rsp)
 
-        call_fn fmemopen, %rbx, $PAGE_SIZE, $read_mode
-        perror
-        mov     %rax, %r12
+        mov     %rbx, %rax
+        add     jit_literal_to_rax_size, %rax
+        mov     (%rax), %rax
+        mov     %rax, lambda(%rsp)
 
-        call_fn fseek, %r12, jit_literal_to_rax_size
-        lea     lambda(%rsp), %rax
-        call_fn fread, %rax, $1, $POINTER_SIZE, %r12
-        call_fn fclose, %r12
-        perror  je
-
-        call_fn fmemopen, %rbx, $PAGE_SIZE, $write_mode
+        lea     patch_code(%rsp), %rdi
+        lea     patch_size(%rsp), %rsi
+        call_fn open_memstream, %rdi, %rsi
         perror
         mov     %rax, %r12
 
         call_fn jit_lambda_factory_code, lambda(%rsp), %r12, env_size(%rsp)
         call_fn fclose, %r12
         perror  je
+
+        mov     patch_size(%rsp), %r11d
+        call_fn memcpy, %rbx, patch_code(%rsp), %r11
+        perror
 
         tag     TAG_PROCEDURE, %rbx
         return
