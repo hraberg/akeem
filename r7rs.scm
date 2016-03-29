@@ -220,13 +220,13 @@
   (do ((acc (make-string (- end start)))
        (idx start (+ idx 1)))
       ((= idx end) acc)
-    (string-set! acc (- idx start) (bytevector-u8-ref bytevector idx))))
+    (string-set! acc (- idx start) (integer->char (bytevector-u8-ref bytevector idx)))))
 
 (define (string->utf8 string start end)
   (do ((acc (make-bytevector (- end start)))
        (idx start (+ idx 1)))
       ((= idx end) acc)
-    (bytevector-u8-set! acc (- idx start) (string-ref string idx))))
+    (bytevector-u8-set! acc (- idx start) (char->integer (string-ref string idx)))))
 
 ;;; 6.10. Control features
 

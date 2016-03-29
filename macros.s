@@ -116,6 +116,23 @@
         .endif
         .endm
 
+        .macro assert_tag tag, value, error
+        has_tag \tag, \value, store=false
+        je      .L_\@_1
+        call_fn error, \error, \value
+.L_\@_1:
+        .endm
+
+        .macro assert_pair value, error=not_a_pair_string
+        is_nil_internal \value
+        je      .L_\@_1
+        has_tag TAG_PAIR, \value, store=false
+        je      .L_\@_2
+.L_\@_1:
+        call_fn error, \error, \value
+.L_\@_2:
+        .endm
+
         .macro is_nil_internal value, tmp=%r11, store=false
         mov     $NIL, \tmp
         eq_internal \value, \tmp, store=\store
@@ -286,6 +303,8 @@
 
         .macro with_file_io_template name, stream
         prologue previous_port
+        assert_tag TAG_STRING, %rdi, not_a_string_string
+        assert_tag TAG_PROCEDURE, %rsi, not_a_procedure_string
         unbox_pointer_internal %rsi, %rbx
         mov     \stream, %rax
         mov     %rax, previous_port(%rsp)
@@ -299,8 +318,9 @@
         return  %rbx
         .endm
 
-        .macro open_input_buffer_template size_adjust
+        .macro open_input_buffer_template size_adjust, tag, error
         prologue empty_stream, empty_stream_size
+        assert_tag \tag, %rdi, \error
         unbox_pointer_internal %rdi
         mov     header_object_size(%rax), %esi
         add     \size_adjust, %esi

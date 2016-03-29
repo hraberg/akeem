@@ -188,6 +188,7 @@ number_to_string:               # z, radix
 
 string_to_number:               # string, radix
         prologue tail
+        assert_tag TAG_STRING, %rdi, not_a_string_string
         default_arg TAG_INT, $10, %rsi
         mov     %esi, %esi
 
@@ -247,28 +248,36 @@ cons:                           # obj1, obj2
         return
 
 car:                            # pair
+        minimal_prologue
+        assert_pair %rdi
         car     %rdi
-        ret
+        return
 car_size:
         .quad   . - car - RET_SIZE
 
 cdr:                            # pair
+        minimal_prologue
+        assert_pair %rdi
         cdr     %rdi
-        ret
+        return
 cdr_size:
         .quad   . - cdr - RET_SIZE
 
 set_car:                        # pair, obj
+        minimal_prologue
+        assert_pair %rdi
         unbox_pointer_internal %rdi
         mov     %rsi, pair_car(%rax)
         mov     $VOID, %rax
-        ret
+        return
 
 set_cdr:                        # pair, obj
+        minimal_prologue
+        assert_pair %rdi
         unbox_pointer_internal %rdi
         mov     %rsi, pair_cdr(%rax)
         mov     $VOID, %rax
-        ret
+        return
 
 is_null:                        # obj
         is_nil_internal %rdi, store=true
@@ -331,11 +340,13 @@ is_symbol:                      # obj
         ret
 
 symbol_to_string:               # symbol
+        assert_tag TAG_SYMBOL, %rdi, not_a_symbol_string
         mov     symbol_table_names(,%edi,POINTER_SIZE), %rax
         ret
 
 string_to_symbol:               # string
         prologue
+        assert_tag TAG_STRING, %rdi, not_a_string_string
         unbox_pointer_internal %rdi, %r12
         mov     symbol_next_id, %rbx
 
@@ -374,11 +385,13 @@ is_char:                        # obj
         ret
 
 char_to_integer:                # char
+        assert_tag TAG_CHAR, %rdi, not_a_character_string
         mov    %edi, %eax
         box_int_internal
         ret
 
 integer_to_char:                # n
+        assert_tag TAG_INT, %rdi, not_an_integer_string
         xor     %eax, %eax
         mov     %di, %ax
         tag     TAG_CHAR, %rax
@@ -386,6 +399,7 @@ integer_to_char:                # n
 
 is_char_alphabetic:             # char
         minimal_prologue
+        assert_tag TAG_CHAR, %rdi, not_a_character_string
         mov    %edi, %edi
         call_fn isalpha, %rdi
         setnz   %al
@@ -394,6 +408,7 @@ is_char_alphabetic:             # char
 
 is_char_numeric:                # char
         minimal_prologue
+        assert_tag TAG_CHAR, %rdi, not_a_character_string
         mov    %edi, %edi
         call_fn isdigit, %rdi
         setnz   %al
@@ -402,6 +417,7 @@ is_char_numeric:                # char
 
 is_char_whitespace:             # char
         minimal_prologue
+        assert_tag TAG_CHAR, %rdi, not_a_character_string
         mov    %edi, %edi
         call_fn isspace, %rdi
         setnz   %al
@@ -410,6 +426,7 @@ is_char_whitespace:             # char
 
 is_char_upper_case:             # char
         minimal_prologue
+        assert_tag TAG_CHAR, %rdi, not_a_character_string
         mov    %edi, %edi
         call_fn isupper, %rdi
         setnz   %al
@@ -418,6 +435,7 @@ is_char_upper_case:             # char
 
 is_char_lower_case:             # char
         minimal_prologue
+        assert_tag TAG_CHAR, %rdi, not_a_character_string
         mov    %edi, %edi
         call_fn islower, %rdi
         setnz   %al
@@ -426,6 +444,7 @@ is_char_lower_case:             # char
 
 char_upcase:                    # char
         minimal_prologue
+        assert_tag TAG_CHAR, %rdi, not_a_character_string
         mov    %edi, %edi
         call_fn toupper, %rdi
         tag     TAG_CHAR, %rax
@@ -433,6 +452,7 @@ char_upcase:                    # char
 
 char_downcase:                  # char
         minimal_prologue
+        assert_tag TAG_CHAR, %rdi, not_a_character_string
         mov    %edi, %edi
         call_fn tolower, %rdi
         tag     TAG_CHAR, %rax
@@ -447,6 +467,8 @@ is_string:                      # obj
 
 make_string:                    # k, fill
         prologue
+        assert_tag TAG_INT, %rdi, not_an_integer_string
+        default_arg TAG_CHAR, $'\ , %rsi
         mov     %edi, %edi
         mov     %edi, %ebx
         add     $header_size, %edi
@@ -470,6 +492,7 @@ make_string:                    # k, fill
         return
 
 string_length:                  # string
+        assert_tag TAG_STRING, %rdi, not_a_string_string
         unbox_pointer_internal %rdi
         mov     header_object_size(%rax), %eax
         dec     %eax
@@ -479,6 +502,8 @@ string_length_size:
         .quad   . - string_length - RET_SIZE
 
 string_ref:                     # string, k
+        assert_tag TAG_STRING, %rdi, not_a_string_string
+        assert_tag TAG_INT, %rsi, not_an_integer_string
         mov     %esi, %esi
         unbox_pointer_internal %rdi
         movzxb  header_size(%rax,%rsi), %eax
@@ -488,6 +513,9 @@ string_ref_size:
         .quad   . - string_ref - RET_SIZE
 
 string_set:                     # string, k, char
+        assert_tag TAG_STRING, %rdi, not_a_string_string
+        assert_tag TAG_INT, %rsi, not_an_integer_string
+        assert_tag TAG_CHAR, %rdx, not_a_character_string
         mov     %esi, %esi
         unbox_pointer_internal %rdi
         mov     %dl, header_size(%rax,%rsi)
@@ -535,6 +563,7 @@ is_vector:                      # obj
 
 make_vector:                    # k, fill
         prologue
+        assert_tag TAG_INT, %rdi, not_an_integer_string
         mov     %rsi, %r12
         shl     $POINTER_SIZE_SHIFT, %edi
         mov     %edi, %ebx
@@ -554,6 +583,7 @@ make_vector:                    # k, fill
         return
 
 vector_length:                  # vector
+        assert_tag TAG_VECTOR, %rdi, not_a_vector_string
         unbox_pointer_internal %rdi
         mov     header_object_size(%rax), %eax
         shr     $POINTER_SIZE_SHIFT, %eax
@@ -563,6 +593,8 @@ vector_length_size:
         .quad   . - vector_length - RET_SIZE
 
 vector_ref:                     # vector, k
+        assert_tag TAG_VECTOR, %rdi, not_a_vector_string
+        assert_tag TAG_INT, %rsi, not_an_integer_string
         unbox_pointer_internal %rdi
         mov     %esi, %esi
         mov     header_size(%rax,%rsi,POINTER_SIZE), %rax
@@ -571,6 +603,8 @@ vector_ref_size:
         .quad   . - vector_ref - RET_SIZE
 
 vector_set:                     # vector, k, obj
+        assert_tag TAG_VECTOR, %rdi, not_a_vector_string
+        assert_tag TAG_INT, %rsi, not_an_integer_string
         unbox_pointer_internal %rdi
         mov     %esi, %esi
         mov     %rdx, header_size(%rax,%rsi,POINTER_SIZE)
@@ -590,8 +624,10 @@ list_to_vector:                 # list
 1:      is_nil_internal %r12
         je      2f
 
+        box_int_internal %ebx
+        mov     %rax, %rsi
         car     %r12
-        call_fn vector_set, vec(%rsp), %rbx, %rax
+        call_fn vector_set, vec(%rsp), %rsi, %rax
         cdr     %r12, %r12
 
         inc     %rbx
@@ -608,6 +644,7 @@ is_procedure:                   # obj
 
 apply:                          # proc, args
         prologue
+        assert_tag TAG_PROCEDURE, %rdi, not_a_procedure_string
         unbox_pointer_internal %rdi
         push    %rax
 
@@ -654,6 +691,7 @@ apply_0:
 
 call_with_current_continuation: # proc
         prologue jmp_buffer
+        assert_tag TAG_PROCEDURE, %rdi, not_a_procedure_string
         unbox_pointer_internal %rdi, %rbx
         call_fn malloc, $JMP_BUF_SIZE
         perror
@@ -697,6 +735,7 @@ interaction_environment:
 
 open_input_file:                # filename
         minimal_prologue
+        assert_tag TAG_STRING, %rdi, not_a_string_string
         unbox_pointer_internal %rdi
         add     $header_size, %rax
         call_fn fopen, %rax, $read_mode
@@ -706,6 +745,7 @@ open_input_file:                # filename
 
 open_output_file:               # filename
         minimal_prologue
+        assert_tag TAG_STRING, %rdi, not_a_string_string
         unbox_pointer_internal %rdi
         add     $header_size, %rax
         call_fn fopen, %rax, $write_mode
@@ -716,6 +756,7 @@ open_output_file:               # filename
 close_input_port:               # port
 close_output_port:              # port
         minimal_prologue
+        assert_tag TAG_PORT, %rdi, not_a_port_string
         call_fn close_port, %rdi
         return
 
@@ -828,6 +869,7 @@ display:                        # obj, port
 
 write_char:                     # char, port
         minimal_prologue
+        assert_tag TAG_CHAR, %rdi, not_a_character_string
         default_arg TAG_PORT, stdout, %rsi
 
         unbox_pointer_internal %rsi
@@ -839,6 +881,7 @@ write_char:                     # char, port
 
 load:                           # filename
         prologue
+        assert_tag TAG_STRING, %rdi, not_a_string_string
         call_fn open_input_file, %rdi
         mov     %rax, %rbx
         call_fn read_all, %rax
@@ -884,6 +927,9 @@ is_bytevector:                  # obj
 
 make_bytevector:                # k, byte
         prologue
+        assert_tag TAG_INT, %rdi, not_an_integer_string
+        default_arg TAG_INT, $ZERO_INT , %rsi
+
         mov     %rsi, %r12
         mov     %edi, %ebx
         add     $header_size, %edi
@@ -902,6 +948,7 @@ make_bytevector:                # k, byte
         return
 
 bytevector_length:              # bytevector
+        assert_tag TAG_OBJECT, %rdi, not_a_bytevector_string
         unbox_pointer_internal %rdi
         mov     header_object_size(%rax), %eax
         box_int_internal
@@ -910,6 +957,8 @@ bytevector_length_size:
         .quad   . - bytevector_length - RET_SIZE
 
 bytevector_u8_ref:              # bytevector, k
+        assert_tag TAG_OBJECT, %rdi, not_a_bytevector_string
+        assert_tag TAG_INT, %rsi, not_an_integer_string
         unbox_pointer_internal %rdi
         mov     %esi, %esi
         xor     %r11d, %r11d
@@ -920,6 +969,9 @@ bytevector_u8_ref_size:
         .quad   . - bytevector_u8_ref - RET_SIZE
 
 bytevector_u8_set:              # bytevector, k, byte
+        assert_tag TAG_OBJECT, %rdi, not_a_bytevector_string
+        assert_tag TAG_INT, %rsi, not_an_integer_string
+        assert_tag TAG_INT, %rdx, not_an_integer_string
         unbox_pointer_internal %rdi
         mov     %esi, %esi
         mov     %dl, header_size(%rax,%rsi)
@@ -939,8 +991,10 @@ list_to_bytevector:             # list
 1:      is_nil_internal %r12
         je      2f
 
+        box_int_internal %ebx
+        mov     %rax, %rsi
         car     %r12
-        call_fn bytevector_u8_set, vec(%rsp), %rbx, %rax
+        call_fn bytevector_u8_set, vec(%rsp), %rsi, %rax
         cdr     %r12, %r12
 
         inc     %rbx
@@ -952,6 +1006,7 @@ list_to_bytevector:             # list
 
 error:                          # message, irritants
         prologue irritant
+        assert_tag TAG_STRING, %rdi, not_a_string_string
         mov     %rdi, %rbx
         mov     %rsi, irritant(%rsp)
         call_fn current_error_port
@@ -967,6 +1022,8 @@ error:                          # message, irritants
 
 call_with_port:                 # port, proc
         prologue
+        assert_tag TAG_PORT, %rdi, not_a_port_string
+        assert_tag TAG_PROCEDURE, %rsi, not_a_procedure_string
         unbox_pointer_internal %rsi, %rbx
         mov     %rdi, %r12
         call_fn *%rbx, %rax
@@ -980,6 +1037,7 @@ current_error_port:
 
 close_port:                     # port
         minimal_prologue
+        assert_tag TAG_PORT, %rdi, not_a_port_string
         unbox_pointer_internal %rdi
         call_fn fclose, %rax
         test    %eax, %eax
@@ -988,10 +1046,10 @@ close_port:                     # port
         return
 
 open_input_string:              # string
-        open_input_buffer_template $-1
+        open_input_buffer_template $-1, TAG_STRING, not_a_string_string
 
 open_input_bytevector:          # bytevector
-        open_input_buffer_template $0
+        open_input_buffer_template $0, TAG_OBJECT, not_a_bytevector_string
 
         ## 6.13.2. Input
 
@@ -1028,6 +1086,7 @@ peek_u8:                        # port
 
 write_u8:                       # byte, port
         minimal_prologue
+        assert_tag TAG_INT, %rdi, not_an_integer_string
         default_arg TAG_PORT, stdout, %rsi
 
         unbox_pointer_internal %rsi
@@ -1047,6 +1106,7 @@ flush_output_port:              # port
 
 delete_file:                    # filename
         minimal_prologue
+        assert_tag TAG_STRING, %rdi, not_a_string_string
         call_fn unbox_string, %rdi
         call_fn unlink, %rax
         perror  jge
@@ -1054,6 +1114,7 @@ delete_file:                    # filename
 
 is_file_exists:                 # filename
         minimal_prologue
+        assert_tag TAG_STRING, %rdi, not_a_string_string
         call_fn unbox_string, %rdi
         call_fn access, %rax, $F_OK
         cmp     $-1, %rax
@@ -1237,6 +1298,15 @@ main:                # argc, argv
 
         intern_string read_error_string, "Unexpected input: "
         intern_string code_space_error_string, "Code space exceeded: "
+        intern_string not_a_character_string, "Not a character: "
+        intern_string not_an_integer_string, "Not an integer: "
+        intern_string not_a_pair_string, "Not a pair: "
+        intern_string not_a_string_string, "Not a string: "
+        intern_string not_a_symbol_string, "Not a symbol: "
+        intern_string not_a_vector_string, "Not a vector: "
+        intern_string not_a_procedure_string, "Not a procedure: "
+        intern_string not_a_port_string, "Not a port: "
+        intern_string not_a_bytevector_string, "Not a bytevector: "
         intern_string false_string, "#f"
         mov     %rax, boolean_string_table + POINTER_SIZE * C_FALSE
         intern_string true_string, "#t"
@@ -1584,12 +1654,12 @@ main:                # argc, argv
         ## store_pointer \symbol\()_symbol, \symbol\()_size
         ## .endr
 
-        .irp symbol, car, cdr, string_length, string_ref, string_set, vector_length, vector_ref, vector_set
-        lea     jit_inline_table, %rbx
-        store_pointer \symbol\()_symbol, $\symbol
-        lea     jit_inline_size_table, %rbx
-        store_pointer \symbol\()_symbol, \symbol\()_size
-        .endr
+        ## .irp symbol, car, cdr, string_length, string_ref, string_set, vector_length, vector_ref, vector_set
+        ## lea     jit_inline_table, %rbx
+        ## store_pointer \symbol\()_symbol, $\symbol
+        ## lea     jit_inline_size_table, %rbx
+        ## store_pointer \symbol\()_symbol, \symbol\()_size
+        ## .endr
 
         call_fn box_string, $boot_scm
         call_fn open_input_string, %rax
