@@ -2722,7 +2722,9 @@ jit_code:                       # form, environment, arguments
 
         mov     size(%rsp), %r11d
         call_fn jit_allocate_code, code(%rsp), %r11
-        return
+        mov     %rax, %rbx
+        call_fn free, code(%rsp)
+        return  %rbx
 
 jit_datum:                      # form, c-stream, environment, register, tail
         minimal_prologue
@@ -3108,7 +3110,9 @@ jit_lambda_factory:             # lambda, env-size
 
         mov     size(%rsp), %r11d
         call_fn jit_allocate_code, code(%rsp), %r11
-        tag     TAG_PROCEDURE, %rax
+        mov     %rax, %rbx
+        call_fn free, code(%rsp)
+        tag     TAG_PROCEDURE, %rbx
         return
 
 jit_lambda_patch_factory:       # lambda-factory, env-size
@@ -3134,7 +3138,7 @@ jit_lambda_patch_factory:       # lambda-factory, env-size
         mov     patch_size(%rsp), %r11d
         call_fn memcpy, %rbx, patch_code(%rsp), %r11
         perror
-
+        call_fn free, patch_code(%rsp)
         tag     TAG_PROCEDURE, %rbx
         return
 
@@ -3510,7 +3514,9 @@ jit_call_with_current_continuation_escape_factory: # jmp-buffer
 
         mov     size(%rsp), %r11d
         call_fn jit_allocate_code, code(%rsp), %r11
-        return
+        mov     %rax, %rbx
+        call_fn free, code(%rsp)
+        return  %rbx
 
         .data
         .align  16
