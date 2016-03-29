@@ -1678,7 +1678,7 @@ box_string_array_as_list:       # c-string-array
         xor     %ebx, %ebx
 
 1:      mov     (%r12,%rbx,POINTER_SIZE), %rax
-        test    %eax, %eax
+        test    %rax, %rax
         jz      2f
 
         call_fn box_string, %rax
@@ -2228,7 +2228,7 @@ string_to_machine_readable_string: # string
         open_string_buffer str(%rsp), size(%rsp), stream(%rsp)
 
         call_fn fputc, $'\", stream(%rsp)
-        test    %ebx, %ebx
+        test    %rbx, %rbx
         jz      4f
 
         mov     $header_size, %r12
