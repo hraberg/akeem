@@ -3265,6 +3265,9 @@ jit_lambda_closure_environment_bitmask: # form, environment, closure_bitmask
 1:      is_nil_internal %rbx
         je      4f
 
+        has_tag TAG_PAIR, %rbx, store=false
+        jne     5f
+
         car     %rbx
         has_tag TAG_PAIR, %rax, store=false
         jne     2f
@@ -3285,6 +3288,13 @@ jit_lambda_closure_environment_bitmask: # form, environment, closure_bitmask
         jmp     1b
 
 4:      return  %r12
+
+5:      call_fn jit_index_of_local, env(%rsp), %rbx
+        cmp     $-1, %rax
+        je      4b
+
+        bts     %rax, %r12
+        jmp     4b
 
 jit_lambda:                     # form, c-stream, environment, register, tail
         prologue env, args, form, lambda, register, closure_env, closure_env_bitmask
