@@ -3297,7 +3297,7 @@ jit_lambda_closure_environment_bitmask: # form, environment, closure_bitmask
         jmp     4b
 
 jit_lambda:                     # form, c-stream, environment, register, tail
-        prologue env, args, form, lambda, register, closure_env, closure_env_bitmask
+        prologue env, args, form, lambda, register, closure_env_bitmask
         mov     %rdi, %rbx
         mov     %rsi, %r12
         mov     %rdx, env(%rsp)
@@ -3305,8 +3305,6 @@ jit_lambda:                     # form, c-stream, environment, register, tail
 
         call_fn jit_lambda_closure_environment_bitmask, env(%rsp), env(%rsp), $0
         mov     %rax, closure_env_bitmask(%rsp)
-        call_fn jit_lambda_closure_environment, env(%rsp), closure_env_bitmask(%rsp)
-        mov     %rax, closure_env(%rsp)
 
         cdr     %rbx, %rbx
         car     %rbx
@@ -3316,7 +3314,8 @@ jit_lambda:                     # form, c-stream, environment, register, tail
         call_fn cons, begin_symbol, %rax
         mov     %rax, %rbx
 
-        call_fn jit_code, %rbx, closure_env(%rsp), args(%rsp)
+        call_fn jit_lambda_closure_environment, env(%rsp), closure_env_bitmask(%rsp)
+        call_fn jit_code, %rbx, %rax, args(%rsp)
         mov     %rax, lambda(%rsp)
 
         cmp     $0, closure_env_bitmask(%rsp)
