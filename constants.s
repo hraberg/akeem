@@ -92,6 +92,8 @@
         .equ NUMBER_OF_REGISTERS, 16
         .equ MAX_REGISTER_ARGS, 6
 
+        .equ MAX_CLOSURE_ENVIRONMENT_SIZE, 64
+
         .equ RET_SIZE, 1
 
         .equ RAX, 0
