@@ -27,9 +27,10 @@
         .equ SSE4_1, 1 << 19
         .equ SSE4_2, 1 << 20
 
-        .equ POINTER_SIZE, 8
-        .equ INT_SIZE, POINTER_SIZE / 2
-        .equ WORD_SIZE, INT_SIZE / 2
+        .equ BYTE_SIZE, 1
+        .equ WORD_SIZE, BYTE_SIZE * 2
+        .equ INT_SIZE, WORD_SIZE * 2
+        .equ POINTER_SIZE, INT_SIZE * 2
 
         .equ POINTER_SIZE_SHIFT, 3
 

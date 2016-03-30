@@ -1452,6 +1452,7 @@ main:                # argc, argv
         store_pointer $RDI, $jit_pop_rdi
         store_pointer $R8, $jit_pop_r8
         store_pointer $R9, $jit_pop_r9
+        store_pointer $R11, $jit_pop_r11
 
         lea     jit_pop_register_size_table, %rbx
         store_pointer $RAX, $jit_pop_rax_size
@@ -1461,6 +1462,7 @@ main:                # argc, argv
         store_pointer $RDI, jit_pop_rdi_size
         store_pointer $R8, jit_pop_r8_size
         store_pointer $R9, jit_pop_r9_size
+        store_pointer $R11, jit_pop_r11_size
 
         lea     jit_literal_to_register_table, %rbx
         store_pointer $RAX, $jit_literal_to_rax
@@ -1490,6 +1492,7 @@ main:                # argc, argv
         store_pointer $RDI, $jit_rax_to_rdi
         store_pointer $R8, $jit_rax_to_r8
         store_pointer $R9, $jit_rax_to_r9
+        store_pointer $11, $jit_rax_to_r11
 
         lea     jit_rax_to_register_size_table, %rbx
         store_pointer $RAX, jit_rax_to_rax_size
@@ -1499,6 +1502,7 @@ main:                # argc, argv
         store_pointer $RDI, jit_rax_to_rdi_size
         store_pointer $R8, jit_rax_to_r8_size
         store_pointer $R9, jit_rax_to_r9_size
+        store_pointer $R11, jit_rax_to_r11_size
 
         lea     jit_local_to_register_table, %rbx
         store_pointer $RAX, $jit_local_to_rax
@@ -1508,6 +1512,7 @@ main:                # argc, argv
         store_pointer $RDI, $jit_local_to_rdi
         store_pointer $R8, $jit_local_to_r8
         store_pointer $R9, $jit_local_to_r9
+        store_pointer $R11, $jit_local_to_r11
 
         lea     jit_local_to_register_size_table, %rbx
         store_pointer $RAX, jit_local_to_rax_size
@@ -1517,6 +1522,7 @@ main:                # argc, argv
         store_pointer $RDI, jit_local_to_rdi_size
         store_pointer $R8, jit_local_to_r8_size
         store_pointer $R9, jit_local_to_r9_size
+        store_pointer $R11, jit_local_to_r11_size
 
         lea     jit_register_to_local_table, %rbx
         store_pointer $RAX, $jit_rax_to_local
@@ -1526,6 +1532,7 @@ main:                # argc, argv
         store_pointer $RDI, $jit_rdi_to_local
         store_pointer $R8, $jit_r8_to_local
         store_pointer $R9, $jit_r9_to_local
+        store_pointer $R11, $jit_r11_to_local
 
         lea     jit_register_to_local_size_table, %rbx
         store_pointer $RAX, jit_rax_to_local_size
@@ -1535,6 +1542,7 @@ main:                # argc, argv
         store_pointer $RDI, jit_rdi_to_local_size
         store_pointer $R8, jit_r8_to_local_size
         store_pointer $R9, jit_r9_to_local_size
+        store_pointer $R11, jit_r11_to_local_size
 
         lea     jit_syntax_jump_table, %rbx
         .irp symbol, quote, if, set, lambda, begin, let, letrec, define_syntax
@@ -2976,7 +2984,7 @@ jit_pair:                       # form, c-stream, environment, register, tail
         ## 4.1.3. Procedure calls
 
 jit_procedure_call:             # form, c-stream, environment, register, tail
-        prologue form, len, operand, env, max_locals, register, tail
+        prologue form, len, operand, env, max_locals, register, tail, arity
         mov     %rdi, %rbx
         mov     %rbx, form(%rsp)
         mov     %rsi, %r12
@@ -2987,6 +2995,8 @@ jit_procedure_call:             # form, c-stream, environment, register, tail
 
         call_fn length, %rbx
         mov     %rax, len(%rsp)
+        dec     %eax
+        mov     %al, arity(%rsp)
 
         car     %rbx
         mov     %rax, operand(%rsp)
@@ -3052,21 +3062,25 @@ jit_procedure_call:             # form, c-stream, environment, register, tail
         has_tag TAG_PAIR, operand(%rsp), store=false
         jne     9f
 
-        call_fn fwrite, $jit_pop_rax, $1, jit_pop_rax_size, %r12
+        call_fn fwrite, $jit_pop_r11, $1, jit_pop_r11_size, %r12
         jmp     10f
 
-9:      call_fn jit_datum, operand(%rsp), %r12, env(%rsp), $RAX, $C_FALSE
+9:      call_fn jit_datum, operand(%rsp), %r12, env(%rsp), $R11, $C_FALSE
         update_max_locals max_locals(%rsp)
 
-10:     call_fn fwrite, $jit_unbox_rax, $1, jit_unbox_rax_size, %r12
+10:     call_fn fwrite, $jit_unbox_r11, $1, jit_unbox_r11_size, %r12
+        call_fn fwrite, $jit_arity_to_al, $1, jit_arity_to_al_size, %r12
+        lea     arity(%rsp), %rax
+        call_fn fwrite, %rax, $1, $BYTE_SIZE, %r12
+
         cmp     $C_TRUE, tail(%rsp)
         je      12f
 
-11:     call_fn fwrite, $jit_call_rax, $1, jit_call_rax_size, %r12
+11:     call_fn fwrite, $jit_call_r11, $1, jit_call_r11_size, %r12
         jmp     13f
 
 12:     call_fn fwrite, $jit_epilogue, $1, jit_epilogue_size, %r12
-        call_fn fwrite, $jit_jump_rax, $1, jit_jump_rax_size, %r12
+        call_fn fwrite, $jit_jump_r11, $1, jit_jump_r11_size, %r12
 
         return  max_locals(%rsp)
 
@@ -3947,19 +3961,19 @@ jit_jump:
 jit_jump_size:
         .quad   (. - jit_jump)
 
-        .align  16
-jit_unbox_rax:
-        unbox_pointer_internal %rax
-jit_unbox_rax_size:
-        .quad   . - jit_unbox_rax
-
-        .align  16
-jit_call_rax:
-        call    *%rax
-jit_call_rax_size:
-        .quad   . - jit_call_rax
-
         .irp reg, rax, r11
+        .align  16
+jit_unbox_\reg\():
+        unbox_pointer_internal %\reg, %\reg
+jit_unbox_\reg\()_size:
+        .quad   . - jit_unbox_\reg
+
+        .align  16
+jit_call_\reg\():
+        call    *%\reg
+jit_call_\reg\()_size:
+        .quad   . - jit_call_\reg
+
         .align  16
 jit_jump_\reg\():
         jmp     *%\reg
@@ -3967,7 +3981,7 @@ jit_jump_\reg\()_size:
         .quad   (. - jit_jump_\reg\())
         .endr
 
-        .irp reg, rax, rdi, rsi, rdx, rcx, r8, r9
+        .irp reg, rax, rdi, rsi, rdx, rcx, r8, r9, r11
         .align  16
 jit_pop_\reg\():
         pop    %\reg
@@ -3980,7 +3994,7 @@ jit_rax_to_rax:
 jit_rax_to_rax_size:
         .quad   . - jit_rax_to_rax
 
-        .irp reg, rdi, rsi, rdx, rcx, r8, r9
+        .irp reg, rdi, rsi, rdx, rcx, r8, r9, r11
         .align  16
 jit_rax_to_\reg\():
         mov     %rax, %\reg
@@ -4017,7 +4031,7 @@ jit_rax_to_global:
 jit_rax_to_global_size:
         .quad   (. - jit_rax_to_global) - POINTER_SIZE
 
-        .irp reg, rax, rdi, rsi, rdx, rcx, r8, r9
+        .irp reg, rax, rdi, rsi, rdx, rcx, r8, r9, r11
         .align  16
 jit_local_to_\reg\():
         mov     -0x11223344(%rbp), %\reg
@@ -4025,7 +4039,7 @@ jit_local_to_\reg\()_size:
         .quad   (. - jit_local_to_\reg) - INT_SIZE
         .endr
 
-        .irp reg, rax, rdi, rsi, rdx, rcx, r8, r9
+        .irp reg, rax, rdi, rsi, rdx, rcx, r8, r9, r11
         .align  16
 jit_\reg\()_to_local:
         mov     %\reg, -0x11223344(%rbp)
@@ -4038,6 +4052,13 @@ jit_rax_to_closure:
         mov     %rax, -0x11223344(%rsp)
 jit_rax_to_closure_size:
         .quad   (. - jit_rax_to_closure) - INT_SIZE
+
+        .align  16
+jit_arity_to_al:
+        xor     %eax, %eax
+        mov     $0x11, %al
+jit_arity_to_al_size:
+        .quad   (. - jit_arity_to_al) - BYTE_SIZE
 
         .irp file, boot, r5rs, r7rs, init
         .align  16
