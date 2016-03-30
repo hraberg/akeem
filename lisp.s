@@ -1314,6 +1314,8 @@ main:                # argc, argv
         intern_string true_string, "#t"
         mov     %rax, boolean_string_table + POINTER_SIZE * C_TRUE
 
+        intern_string eof_object_char, "#\\eof"
+
         intern_string alarm_char, "#\\alarm"
         intern_string backspace_char, "#\\backspace"
         intern_string delete_char, "#\\delete"
@@ -1826,17 +1828,14 @@ class_of:                       # obj
         je      1f
         tag     TAG_SYMBOL, %rax
         return
-1:      is_eof_object_internal %rbx
-        jne     2f
-        return  eof_symbol
-2:      is_void_internal  %rbx
-        jne     3f
-        return  void_symbol
-3:      xor     %eax, %eax
+1:      xor     %eax, %eax
         unbox_pointer_internal %rbx, %r11
+        test    %r11, %r11
+        jz      2f
         mov     header_object_type(%r11), %ax
         tag     TAG_SYMBOL, %rax
         return
+2:      return  void_symbol
 
 object_space_size:
         mov     stack_top_offset + object_space, %rax
@@ -1893,9 +1892,9 @@ unbox_pair:                     # pair
         ret
 
 unbox_object:                   # object
-        is_void_internal %rdi
-        jz      1f
         unbox_pointer_internal %rdi
+        test    %rax, %rax
+        jz      1f
         add     $header_size, %rax
 1:      ret
 
@@ -1985,8 +1984,6 @@ gc_is_markable_object:          # pointer
         is_nil_internal %rdi
         je      1f
         is_void_internal %rdi
-        je      1f
-        is_eof_object_internal %rdi
         je      1f
         ## TODO: figure out what these are.
         test    %rdi, %rdi
@@ -2243,7 +2240,11 @@ pair_to_string:                 # pair
 char_to_string:                 # char
         prologue str, size
         mov     %edi, %ebx
-        open_string_buffer str(%rsp), size(%rsp), %r12
+        cmp     $EOF, %ebx
+        jne     1f
+        return  eof_object_char
+
+1:      open_string_buffer str(%rsp), size(%rsp), %r12
         xor     %al, %al
         call_fn fprintf, %r12, $char_format, %rbx
         string_buffer_to_string str(%rsp), size(%rsp), %r12
@@ -2257,11 +2258,15 @@ char_to_machine_readable_string: # char
         jnz     1f
         return  null_char
 
-1:      mov     char_to_string_table(,%ebx,POINTER_SIZE), %rax
+1:      cmp     $EOF, %ebx
+        jne     2f
+        return  eof_object_char
+
+2:      mov     char_to_string_table(,%ebx,POINTER_SIZE), %rax
         test    %rax, %rax
-        jz      2f
+        jz      3f
         return
-2:      open_string_buffer str(%rsp), size(%rsp), %r12
+3:      open_string_buffer str(%rsp), size(%rsp), %r12
         xor     %al, %al
         call_fn fprintf, %r12, $machine_readable_char_format, %rbx
         string_buffer_to_string str(%rsp), size(%rsp), %r12

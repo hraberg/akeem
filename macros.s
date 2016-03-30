@@ -136,11 +136,9 @@
         .macro assert_object value, class, error
         has_tag TAG_OBJECT, \value, store=false
         jne     .L_\@_1
-        is_void_internal \value, store=false
-        je      .L_\@_1
-        is_eof_object_internal \value, store=false
-        je      .L_\@_1
         unbox_pointer_internal \value, %r11
+        test    %r11, %r11
+        jz      .L_\@_1
         mov     header_object_type(%r11), %ax
         cmp     $\class, %ax
         je      .L_\@_2
