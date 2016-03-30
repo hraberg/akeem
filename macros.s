@@ -486,6 +486,8 @@ tmp_string_\@:
 
         .macro string_comparator comparator, setter, string1=%rdi, string2=%rsi
         prologue
+        assert_tag TAG_STRING, %rdi, not_a_string_string
+        assert_tag TAG_STRING, %rsi, not_a_string_string
         unbox_pointer_internal \string1
         add     $header_size, %rax
         mov     %rax, %rdi
