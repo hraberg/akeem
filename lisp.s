@@ -3200,7 +3200,7 @@ jit_lambda_factory:             # lambda, env-size
 jit_lambda_patch_factory:       # lambda-factory, env-size
         prologue env_size, lambda, patch_code, patch_size
         unbox_pointer_internal %rdi, %rbx
-        mov     %edx, env_size(%rsp)
+        mov     %esi, env_size(%rsp)
 
         mov     %rbx, %rax
         add     jit_literal_to_rax_size, %rax
@@ -3489,7 +3489,7 @@ jit_letrec:                     # form, c-stream, environment, register, tail
         call_fn jit_datum, %rax, %r12, full_env(%rsp), $RDI, $C_FALSE
 
         call_fn length, full_env(%rsp)
-        call_fn jit_literal, %rax, %r12, $NIL, $RDX, $C_FALSE
+        call_fn jit_literal, %rax, %r12, $NIL, $RSI, $C_FALSE
 
         mov     $jit_lambda_patch_factory, %rax
         call_fn jit_literal, %rax, %r12, $NIL, $RAX, $C_FALSE
