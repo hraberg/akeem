@@ -948,7 +948,7 @@ make_bytevector:                # k, byte
         return
 
 bytevector_length:              # bytevector
-        assert_tag TAG_OBJECT, %rdi, not_a_bytevector_string
+        assert_object %rdi, TAG_BYTEVECTOR, not_a_bytevector_string
         unbox_pointer_internal %rdi
         mov     header_object_size(%rax), %eax
         box_int_internal
@@ -957,7 +957,7 @@ bytevector_length_size:
         .quad   . - bytevector_length - RET_SIZE
 
 bytevector_u8_ref:              # bytevector, k
-        assert_tag TAG_OBJECT, %rdi, not_a_bytevector_string
+        assert_object %rdi, TAG_BYTEVECTOR, not_a_bytevector_string
         assert_tag TAG_INT, %rsi, not_an_integer_string
         unbox_pointer_internal %rdi
         mov     %esi, %esi
@@ -969,7 +969,7 @@ bytevector_u8_ref_size:
         .quad   . - bytevector_u8_ref - RET_SIZE
 
 bytevector_u8_set:              # bytevector, k, byte
-        assert_tag TAG_OBJECT, %rdi, not_a_bytevector_string
+        assert_object %rdi, TAG_BYTEVECTOR, not_a_bytevector_string
         assert_tag TAG_INT, %rsi, not_an_integer_string
         assert_tag TAG_INT, %rdx, not_an_integer_string
         unbox_pointer_internal %rdi
