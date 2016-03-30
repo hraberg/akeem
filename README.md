@@ -58,7 +58,6 @@ trying again.
 
 ## What Doesn't Work?
 
-* Closures capture their entire environment.
 * No vararg support.
 * No `call-with-values` or `dynamic-wind`.
 * No `let-syntax` and `letrec-syntax`.
@@ -71,6 +70,8 @@ trying again.
 * Not full support for Scheme numbers in the reader.
 * No support for converting internal `define` to `letrec`.
 * No mutation of closed over variables (needs array boxing).
+* Closures needlessly capture variables shadowed by inner `let`
+  expressions.
 * Limited numeric tower, see above.
 
 Most of the above is intended to be solved at some point, in roughly
