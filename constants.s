@@ -110,7 +110,7 @@
 
         .equ MICROSECONDS_PER_SEC, 1000000
 
-        .equ LOG_JIT, C_TRUE
+        .equ LOG_JIT, C_FALSE
 
         .struct 0
 header_object_mark:
