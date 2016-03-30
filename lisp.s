@@ -1463,7 +1463,6 @@ main:                # argc, argv
         store_pointer $RDI, $jit_literal_to_rdi
         store_pointer $R8, $jit_literal_to_r8
         store_pointer $R9, $jit_literal_to_r9
-        store_pointer $R11, $jit_literal_to_r11
 
         lea     jit_literal_to_register_size_table, %rbx
         store_pointer $RAX, jit_literal_to_rax_size
@@ -1473,7 +1472,6 @@ main:                # argc, argv
         store_pointer $RDI, jit_literal_to_rdi_size
         store_pointer $R8, jit_literal_to_r8_size
         store_pointer $R9, jit_literal_to_r9_size
-        store_pointer $R11, jit_literal_to_r11_size
 
         lea     jit_rax_to_register_table, %rbx
         store_pointer $RAX, $jit_rax_to_rax
@@ -1660,12 +1658,12 @@ main:                # argc, argv
         ## store_pointer \symbol\()_symbol, \symbol\()_size
         ## .endr
 
-        ## .irp symbol, car, cdr, string_length, string_ref, string_set, vector_length, vector_ref, vector_set
-        ## lea     jit_inline_table, %rbx
-        ## store_pointer \symbol\()_symbol, $\symbol
-        ## lea     jit_inline_size_table, %rbx
-        ## store_pointer \symbol\()_symbol, \symbol\()_size
-        ## .endr
+        .irp symbol, car, cdr, string_length, string_ref, string_set, vector_length, vector_ref, vector_set
+        lea     jit_inline_table, %rbx
+        store_pointer \symbol\()_symbol, $\symbol
+        lea     jit_inline_size_table, %rbx
+        store_pointer \symbol\()_symbol, \symbol\()_size
+        .endr
 
         call_fn box_string, $boot_scm
         call_fn open_input_string, %rax
@@ -1713,12 +1711,12 @@ main:                # argc, argv
         define "current-jiffy", $current_jiffy
         define "jiffies-per-second", $jiffies_per_second
 
-        ## .irp symbol, bytevector_length, bytevector_u8_ref, bytevector_u8_set
-        ## lea     jit_inline_table, %rbx
-        ## store_pointer \symbol\()_symbol, $\symbol
-        ## lea     jit_inline_size_table, %rbx
-        ## store_pointer \symbol\()_symbol, \symbol\()_size
-        ## .endr
+        .irp symbol, bytevector_length, bytevector_u8_ref, bytevector_u8_set
+        lea     jit_inline_table, %rbx
+        store_pointer \symbol\()_symbol, $\symbol
+        lea     jit_inline_size_table, %rbx
+        store_pointer \symbol\()_symbol, \symbol\()_size
+        .endr
 
         call_fn box_string, $r7rs_scm
         call_fn open_input_string, %rax
@@ -2834,6 +2832,11 @@ jit_index_of_local:             # environment, symbol
 2:      mov     $-1, %rcx
 3:      return  %rcx
 
+jit_symbol_not_defined:         # symbol
+        minimal_prologue
+        call_fn error, symbol_not_defined_string, %rdi
+        return
+
 jit_symbol:                     # symbol, c-stream, environment, register, tail
         prologue env, symbol_address, symbol, local, register
         mov     %rdi, symbol(%rsp)
@@ -2845,8 +2848,7 @@ jit_symbol:                     # symbol, c-stream, environment, register, tail
         cmp     $0, %rax
         jge     3f
 
-2:      call_fn jit_literal, $error, %r12, $NIL, $R11, $C_FALSE
-        call_fn jit_literal, symbol(%rsp), %r12, $NIL, $RAX, $C_FALSE
+2:      call_fn jit_literal, symbol(%rsp), %r12, $NIL, $RAX, $C_FALSE
         call_fn fwrite, $jit_global_to_rax, $1, jit_global_to_rax_size, %r12
         mov     register(%rsp), %rbx
         mov     jit_rax_to_register_table(,%rbx,POINTER_SIZE), %rax
@@ -3885,11 +3887,10 @@ jit_void_to_rax_size:
         .align  16
 jit_global_to_rax:
         mov     symbol_table_values(,%eax,POINTER_SIZE), %r10
-        push    %r11
         is_void_internal %r10, store=false
-        pop     %r11
         jne     1f
-        call_fn *%r11, symbol_not_defined_string, %rax
+        mov     $jit_symbol_not_defined, %r11
+        call_fn *%r11, %rax
 1:      mov     %r10, %rax
 jit_global_to_rax_size:
         .quad   (. - jit_global_to_rax)
