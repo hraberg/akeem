@@ -4039,7 +4039,7 @@ jit_rax_to_closure:
 jit_rax_to_closure_size:
         .quad   (. - jit_rax_to_closure) - INT_SIZE
 
-        .irp file, boot r5rs, r7rs, init
+        .irp file, boot, r5rs, r7rs, init
         .align  16
 \file\()_scm:
         .incbin "\file\().scm"
