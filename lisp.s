@@ -3141,11 +3141,12 @@ jit_procedure:                  # form, c-stream, environment, arguments
         return
 
 jit_lambda_factory_code:        # lambda, c-stream, closure-bitmask
-        prologue  rbp, local_idx, local, closure_bitmask
+        prologue  rbp, local_idx, local, closure_bitmask, closure_idx
         unbox_pointer_internal %rdi, %rbx
         mov     %rsi, %r12
         mov     %rbp, rbp(%rsp)
         movq    $0, local_idx(%rsp)
+        movq    $0, closure_idx(%rsp)
         mov     %rdx, closure_bitmask(%rsp)
 
         call_fn jit_literal, %rbx, %r12, $NIL, $RAX, $C_FALSE
@@ -3154,9 +3155,8 @@ jit_lambda_factory_code:        # lambda, c-stream, closure-bitmask
         je      2f
 
         sub     $POINTER_SIZE, rbp(%rsp)
-        incl    local_idx(%rsp)
         mov     local_idx(%rsp), %rax
-        dec     %eax
+        incl    local_idx(%rsp)
         bt      %eax, closure_bitmask(%rsp)
         jnc     1b
 
@@ -3165,7 +3165,8 @@ jit_lambda_factory_code:        # lambda, c-stream, closure-bitmask
         mov     rbp(%rsp), %rax
         call_fn jit_literal, (%rax), %r12, $NIL, $RAX, $C_FALSE
 
-        mov     local_idx(%rsp), %ecx
+        incl    closure_idx(%rsp)
+        mov     closure_idx(%rsp), %ecx
         shl     $POINTER_SIZE_SHIFT, %rcx
         add     $POINTER_SIZE, %rcx
         neg     %ecx
@@ -3234,14 +3235,22 @@ jit_lambda_closure_environment: # form, environment
         ret
 
 jit_lambda_closure_environment_bitmask: # environment, closure_environment
-        ## TODO: calculate actual bitmask.
-        minimal_prologue
-        call_fn length, %rdi
-        mov     %eax, %ecx
-        mov     $1, %rax
-        shl     %cl, %rax
-        dec     %rax
-        return
+        prologue env
+        mov     %rdi, env(%rsp)
+        mov     %rsi, %rbx
+        xor     %r12d, %r12d
+
+1:      is_nil_internal %rbx
+        je      2f
+
+        car     %rbx
+        call_fn jit_index_of_local, env(%rsp), %rax
+        bts     %rax, %r12
+
+        cdr     %rbx, %rbx
+        jmp     1b
+
+2:      return  %r12
 
 jit_lambda:                     # form, c-stream, environment, register, tail
         prologue env, args, form, lambda, register, closure_env
