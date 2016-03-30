@@ -138,6 +138,8 @@
 
 (define-syntax define
   (syntax-rules ()
+    ((define (variable . formal) body ...)
+     (define variable (lambda formal body ...)))
     ((define (variable formals ...) body ...)
      (define variable (lambda (formals ...) body ...)))
     ((define variable expression)

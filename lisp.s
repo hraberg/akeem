@@ -3104,26 +3104,32 @@ jit_procedure_call:             # form, c-stream, environment, register, tail
         ## 4.1.4. Procedures
 
 jit_procedure:                  # form, c-stream, environment, arguments
-        prologue env, args, env_size, frame_size, local_idx, local, end_offset
+        prologue env, args, env_size, frame_size, local_idx, local, end_offset, flat_args, varargs_idx, arity
         mov     %rdi, %rbx
         mov     %rsi, %r12
         mov     %rdx, env(%rsp)
         mov     %rcx, args(%rsp)
+        movl    $0, local_idx(%rsp)
+        call_fn jit_lambda_flatten_arguments, args(%rsp)
+        mov     %rax, flat_args(%rsp)
 
-        call_fn fwrite, $jit_prologue, $1, jit_prologue_size, %r12
-        call_fn ftell, %r12
+        call_fn jit_lambda_varargs_index, args(%rsp)
+        mov     %eax, varargs_idx(%rsp)
 
         call_fn length, env(%rsp)
         mov     %eax, env_size(%rsp)
 
-        call_fn length, args(%rsp)
-        mov     %eax, local_idx(%rsp)
+        call_fn length, flat_args(%rsp)
+        mov     %eax, arity(%rsp)
+
+        call_fn fwrite, $jit_prologue, $1, jit_prologue_size, %r12
 
 1:      mov     local_idx(%rsp), %ecx
-        test    %ecx, %ecx
-        jz      2f
-        dec     %ecx
-        mov     %ecx, local_idx(%rsp)
+        cmp     %ecx, arity(%rsp)
+        je      2f
+
+        cmp     %ecx, varargs_idx(%rsp)
+        je      3f
 
         xor     %r11d, %r11d
         mov     jit_argument_to_register_id_table(%rcx), %r11b
@@ -3138,9 +3144,11 @@ jit_procedure:                  # form, c-stream, environment, arguments
         mov     %eax, local(%rsp)
         lea     local(%rsp), %rax
         call_fn fwrite, %rax, $1, $INT_SIZE, %r12
+
+        incl    local_idx(%rsp)
         jmp     1b
 
-2:      call_fn reverse, args(%rsp)
+2:      call_fn reverse, flat_args(%rsp)
         call_fn append, %rax, env(%rsp)
         call_fn jit_datum, %rbx, %r12, %rax, $RAX, $C_TRUE
 
@@ -3162,6 +3170,8 @@ jit_procedure:                  # form, c-stream, environment, arguments
         call_fn fwrite, $jit_epilogue, $1, jit_epilogue_size, %r12
         call_fn fwrite, $jit_return, $1, jit_return_size, %r12
         return
+
+3:      jmp     2b
 
 jit_lambda_factory_code:        # lambda, c-stream, closure-bitmask
         prologue  rbp, local, local_idx, closure_bitmask, closure_idx, closure_env_size
@@ -3341,6 +3351,51 @@ jit_lambda_closure_environment_bitmask: # form, environment, closure_environment
         bts     %rax, %r12
         jmp     4b
 
+jit_lambda_flatten_arguments:   # arguments
+        prologue
+        mov     %rdi, %rbx
+        mov     $NIL, %r12
+
+1:      is_nil_internal %rbx
+        je      2f
+
+        has_tag TAG_PAIR, %rbx, store=false
+        jne     3f
+
+        car     %rbx
+        call_fn cons, %rax, %r12
+        mov     %rax, %r12
+
+        cdr     %rbx, %rbx
+        jmp     1b
+
+2:      call_fn reverse, %r12
+        return
+
+3:      call_fn cons, %rbx, %r12
+        mov     %rax, %r12
+        jmp     2b
+
+jit_lambda_varargs_index:       # arguments
+        prologue
+        mov     %rdi, %rbx
+        xor     %r12d, %r12d
+
+1:      is_nil_internal %rbx
+        je      2f
+
+        has_tag TAG_PAIR, %rbx, store=false
+        jne     3f
+
+        inc     %r12d
+        cdr     %rbx, %rbx
+        jmp     1b
+
+2:      return  $-1
+
+3:      return  %r12
+
+
 jit_lambda:                     # form, c-stream, environment, register, tail
         prologue env, args, form, lambda, register, closure_env_bitmask
         mov     %rdi, %rbx
@@ -3352,7 +3407,8 @@ jit_lambda:                     # form, c-stream, environment, register, tail
         car     %rax
         mov     %rax, args(%rsp)
 
-        call_fn jit_lambda_closure_environment_bitmask, %rbx, env(%rsp), args(%rsp), $0
+        call_fn jit_lambda_flatten_arguments, args(%rsp)
+        call_fn jit_lambda_closure_environment_bitmask, %rbx, env(%rsp), %rax, $0
         mov     %rax, closure_env_bitmask(%rsp)
 
         cdr     %rbx, %rbx
@@ -3614,6 +3670,7 @@ jit_letrec:                     # form, c-stream, environment, register, tail
 
         cdr     %rax
         car     %rax
+        call_fn jit_lambda_flatten_arguments, %rax
         call_fn jit_lambda_closure_environment_bitmask, lambda(%rsp), full_env(%rsp), %rax, $0
         call_fn jit_literal, %rax, %r12, $NIL, $RSI, $C_FALSE
 
