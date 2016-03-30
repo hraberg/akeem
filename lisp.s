@@ -3884,14 +3884,13 @@ jit_void_to_rax_size:
 
         .align  16
 jit_global_to_rax:
-        push    %r11
         mov     symbol_table_values(,%eax,POINTER_SIZE), %r10
+        push    %r11
         is_void_internal %r10, store=false
-        jne     1f
         pop     %r11
+        jne     1f
         call_fn *%r11, symbol_not_defined_string, %rax
-1:      pop     %r11
-        mov     %r10, %rax
+1:      mov     %r10, %rax
 jit_global_to_rax_size:
         .quad   (. - jit_global_to_rax)
 
