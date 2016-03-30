@@ -34,6 +34,13 @@ See [this tutorial](http://community.schemewiki.org/?emacs-tutorial).
 make run-docker
 ```
 
+The
+[`Dockerfile`](https://github.com/hraberg/akeem/blob/master/Dockerfile)
+will create a development container than can both run and compile
+Akeem. If `rlwrap` crashes, the above command usually works when
+trying again.
+
+
 ## What Works?
 
 * Subset of R5RS and R7RS "small" procedures.

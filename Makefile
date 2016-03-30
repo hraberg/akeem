@@ -79,5 +79,8 @@ docker:
 run-docker: docker
 	docker run --rm -i -t akeem
 
-.PHONY: run-tests run-tests-catchsegv run-repl retest benchmark profile jit-clean jit-dissassmble clean check release docker run-docker
+run-docker-shell: docker
+	docker run --rm -i -t akeem bash
+
+.PHONY: run-tests run-tests-catchsegv run-repl retest benchmark profile jit-clean jit-dissassmble clean check release docker run-docker run-docker-shell
 .SILENT: run-tests retest benchmark profile
