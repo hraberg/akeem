@@ -1660,12 +1660,12 @@ main:                # argc, argv
         ## store_pointer \symbol\()_symbol, \symbol\()_size
         ## .endr
 
-        ## .irp symbol, car, cdr, string_length, string_ref, string_set, vector_length, vector_ref, vector_set
-        ## lea     jit_inline_table, %rbx
-        ## store_pointer \symbol\()_symbol, $\symbol
-        ## lea     jit_inline_size_table, %rbx
-        ## store_pointer \symbol\()_symbol, \symbol\()_size
-        ## .endr
+        .irp symbol, car, cdr, string_length, string_ref, string_set, vector_length, vector_ref, vector_set
+        lea     jit_inline_table, %rbx
+        store_pointer \symbol\()_symbol, $\symbol
+        lea     jit_inline_size_table, %rbx
+        store_pointer \symbol\()_symbol, \symbol\()_size
+        .endr
 
         call_fn box_string, $boot_scm
         call_fn open_input_string, %rax
@@ -1713,12 +1713,12 @@ main:                # argc, argv
         define "current-jiffy", $current_jiffy
         define "jiffies-per-second", $jiffies_per_second
 
-        ## .irp symbol, bytevector_length, bytevector_u8_ref, bytevector_u8_set
-        ## lea     jit_inline_table, %rbx
-        ## store_pointer \symbol\()_symbol, $\symbol
-        ## lea     jit_inline_size_table, %rbx
-        ## store_pointer \symbol\()_symbol, \symbol\()_size
-        ## .endr
+        .irp symbol, bytevector_length, bytevector_u8_ref, bytevector_u8_set
+        lea     jit_inline_table, %rbx
+        store_pointer \symbol\()_symbol, $\symbol
+        lea     jit_inline_size_table, %rbx
+        store_pointer \symbol\()_symbol, \symbol\()_size
+        .endr
 
         call_fn box_string, $r7rs_scm
         call_fn open_input_string, %rax

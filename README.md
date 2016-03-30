@@ -47,11 +47,9 @@ See [this tutorial](http://community.schemewiki.org/?emacs-tutorial).
 ## What Doesn't Work?
 
 * No vararg support.
-* Almost no error handling.
 * No `call-with-values` or `dynamic-wind`.
 * No `let-syntax` and `letrec-syntax`.
 * `call-with-current-continuation` only uses `setjmp`.
-* No inlining.
 * Max arity is currently 6, higher requires the use of the stack.
 * No register allocation.
 * No hygienic macro expansion.
