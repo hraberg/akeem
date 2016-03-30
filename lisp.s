@@ -1463,6 +1463,7 @@ main:                # argc, argv
         store_pointer $RDI, $jit_literal_to_rdi
         store_pointer $R8, $jit_literal_to_r8
         store_pointer $R9, $jit_literal_to_r9
+        store_pointer $R11, $jit_literal_to_r11
 
         lea     jit_literal_to_register_size_table, %rbx
         store_pointer $RAX, jit_literal_to_rax_size
@@ -1472,6 +1473,7 @@ main:                # argc, argv
         store_pointer $RDI, jit_literal_to_rdi_size
         store_pointer $R8, jit_literal_to_r8_size
         store_pointer $R9, jit_literal_to_r9_size
+        store_pointer $R11, jit_literal_to_r11_size
 
         lea     jit_rax_to_register_table, %rbx
         store_pointer $RAX, $jit_rax_to_rax
@@ -3151,7 +3153,7 @@ jit_lambda_factory_code:        # lambda, c-stream, closure-bitmask
         popcnt  %rdx, %rax
         mov     %rax, closure_env_size(%rsp)
 
-        call_fn jit_literal, %rbx, %r12, $NIL, $RAX, $C_FALSE
+        call_fn jit_literal, %rbx, %r12, $NIL, $R11, $C_FALSE
 
 1:      mov     closure_idx(%rsp), %rax
         cmp     %rax, closure_env_size(%rsp)
@@ -3180,8 +3182,7 @@ jit_lambda_factory_code:        # lambda, c-stream, closure-bitmask
 
         jmp     1b
 
-2:      call_fn jit_literal, %rbx, %r12, $NIL, $RAX, $C_FALSE
-        call_fn fwrite, $jit_jump_rax, $1, jit_jump_rax_size, %r12
+2:      call_fn fwrite, $jit_jump_r11, $1, jit_jump_r11_size, %r12
         return
 
 jit_lambda_factory:             # lambda, closure-bitmask
@@ -3930,11 +3931,13 @@ jit_call_rax:
 jit_call_rax_size:
         .quad   . - jit_call_rax
 
+        .irp reg, rax, r11
         .align  16
-jit_jump_rax:
-        jmp     *%rax
-jit_jump_rax_size:
-        .quad   (. - jit_jump_rax)
+jit_jump_\reg\():
+        jmp     *%\reg
+jit_jump_\reg\()_size:
+        .quad   (. - jit_jump_\reg\())
+        .endr
 
         .irp reg, rax, rdi, rsi, rdx, rcx, r8, r9
         .align  16
