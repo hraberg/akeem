@@ -3259,14 +3259,33 @@ jit_lambda_closure_environment: # environment, closure_bitmask
 
 3:      return  env(%rsp)
 
-jit_lambda_closure_environment_bitmask: # form, environment, closure_bitmask
-        prologue env, env_size
+jit_lambda_bit_of_closed_over_variable: # symbol, environment, closure_environment
+        prologue env, closure_env, env_size
         mov     %rdi, %rbx
-        mov     %rdx, %r12
         mov     %rsi, env(%rsp)
+        mov     %rdx, closure_env(%rsp)
         call_fn length, env(%rsp)
         dec     %eax
         mov     %rax, env_size(%rsp)
+
+        call_fn jit_index_of_local, closure_env(%rsp), %rbx
+        cmp     $0, %rax
+        jge     1f
+
+        call_fn jit_index_of_local, env(%rsp), %rbx
+        cmp     $-1, %rax
+        je      1f
+        sub     env_size(%rsp), %rax
+        neg     %rax
+        return  %rax
+1:      return  $-1
+
+jit_lambda_closure_environment_bitmask: # form, environment, closure_environment, closure_bitmask
+        prologue env, closure_env
+        mov     %rdi, %rbx
+        mov     %rdx, closure_env(%rsp)
+        mov     %rcx, %r12
+        mov     %rsi, env(%rsp)
 
 1:      is_nil_internal %rbx
         je      4f
@@ -3279,30 +3298,25 @@ jit_lambda_closure_environment_bitmask: # form, environment, closure_bitmask
         jne     2f
 
         car     %rbx
-        call_fn jit_lambda_closure_environment_bitmask, %rax, env(%rsp), %r12
+        call_fn jit_lambda_closure_environment_bitmask, %rax, env(%rsp), closure_env(%rsp), %r12
         mov     %rax, %r12
         jmp     3f
 
 2:      car     %rbx
-        call_fn jit_index_of_local, env(%rsp), %rax
+        call_fn jit_lambda_bit_of_closed_over_variable, %rax, env(%rsp), closure_env(%rsp)
         cmp     $-1, %rax
         je      3f
 
-        sub     env_size(%rsp), %rax
-        neg     %rax
         bts     %rax, %r12
-
 3:      cdr     %rbx, %rbx
         jmp     1b
 
 4:      return  %r12
 
-5:      call_fn jit_index_of_local, env(%rsp), %rbx
+5:      call_fn jit_lambda_bit_of_closed_over_variable, %rbx, env(%rsp), closure_env(%rsp)
         cmp     $-1, %rax
         je      4b
 
-        sub     env_size(%rsp), %rax
-        neg     %rax
         bts     %rax, %r12
         jmp     4b
 
@@ -3313,13 +3327,14 @@ jit_lambda:                     # form, c-stream, environment, register, tail
         mov     %rdx, env(%rsp)
         mov     %rcx, register(%rsp)
 
-        call_fn jit_lambda_closure_environment_bitmask, %rbx, env(%rsp), $0
+        cdr     %rbx
+        car     %rax
+        mov     %rax, args(%rsp)
+
+        call_fn jit_lambda_closure_environment_bitmask, %rbx, env(%rsp), args(%rsp), $0
         mov     %rax, closure_env_bitmask(%rsp)
 
         cdr     %rbx, %rbx
-        car     %rbx
-        mov     %rax, args(%rsp)
-
         cdr     %rbx
         call_fn cons, begin_symbol, %rax
         mov     %rax, %rbx
@@ -3539,7 +3554,7 @@ jit_is_lambda:                  # form
 1:      return  $C_FALSE
 
 jit_letrec:                     # form, c-stream, environment, register, tail
-        prologue form, env, full_env, max_locals, register, tail, closure_env
+        prologue form, env, full_env, max_locals, register, tail, closure_env, lambda
         cdr     %rdi
         mov     %rax, form(%rsp)
         mov     %rax, %rbx
@@ -3574,7 +3589,11 @@ jit_letrec:                     # form, c-stream, environment, register, tail
         car     %rbx
         cdr     %rax
         car     %rax
-        call_fn jit_lambda_closure_environment_bitmask, %rax, full_env(%rsp), $0
+        mov     %rax, lambda(%rsp)
+
+        cdr     %rax
+        car     %rax
+        call_fn jit_lambda_closure_environment_bitmask, lambda(%rsp), full_env(%rsp), %rax, $0
         call_fn jit_literal, %rax, %r12, $NIL, $RSI, $C_FALSE
 
         mov     $jit_lambda_patch_factory, %rax
