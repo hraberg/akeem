@@ -23,6 +23,10 @@
 
         .equ ROUNDING_MODE_TRUNCATE, 0b11
 
+        .equ CPUID_FEATURE_INFORMATION, 1
+        .equ SSE4_1, 1 << 19
+        .equ SSE4_2, 1 << 20
+
         .equ POINTER_SIZE, 8
         .equ INT_SIZE, POINTER_SIZE / 2
         .equ WORD_SIZE, INT_SIZE / 2

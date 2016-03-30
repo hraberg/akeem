@@ -1193,7 +1193,14 @@ main:                # argc, argv
         mov     %rsp, execution_stack_top
         movq    $LOG_JIT, jit_code_debug
 
-        call_fn init_pointer_stack, $object_space, $POINTER_STACK_INITIAL_SIZE
+        mov     $CPUID_FEATURE_INFORMATION, %rax
+        cpuid
+        test    $(SSE4_1 | SSE4_2), %ecx
+        jnz     1f
+        call_fn printf, $cpuid_error
+        return  $1
+
+1:      call_fn init_pointer_stack, $object_space, $POINTER_STACK_INITIAL_SIZE
         call_fn init_pointer_stack, $gc_mark_stack, $POINTER_STACK_INITIAL_SIZE
         call_fn init_pointer_stack, $constant_pool, $POINTER_STACK_INITIAL_SIZE
 
@@ -3890,6 +3897,8 @@ read_mode:
         .string "r"
 write_mode:
         .string "w"
+cpuid_error:
+        .string "No SSE4.2 support.\n"
 jit_code_directory:
         .string "jit_code"
 jit_code_file_format:
