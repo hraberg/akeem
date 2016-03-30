@@ -3241,7 +3241,7 @@ jit_lambda_closure_environment: # environment, closure_bitmask
         je      3f
 
         mov     local_idx(%rsp), %rax
-        bts     %rax, %r12
+        bt      %rax, %r12
         jnc     2f
 
         car     %rbx
