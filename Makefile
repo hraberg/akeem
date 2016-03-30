@@ -20,9 +20,12 @@ akeem: lisp.o
 
 # based on http://unix.stackexchange.com/a/79137
 run-tests: akeem
-	./$<  tests.scm | diff -y -W250 tests.out - | expand | grep --color=always -nEC1 '^.{123} [|<>]( |$$)' \
-		&& echo Tests FAILED \
-		|| echo `cat tests.out | grep -v ';;;' | wc -l` Tests PASSED
+	./$<  tests.scm | diff -y -W250 tests.out - | expand | grep --color=always -nEC1 '^.{123} [|<>]( |$$)'; \
+	if [ $$? -eq 0 ] ; then \
+		echo Tests FAILED ; false ; \
+	else \
+		echo `cat tests.out | grep -v ';;;' | wc -l` Tests PASSED ; \
+	fi
 
 run-tests-catchsegv: akeem
 	catchsegv ./$< tests.scm
@@ -70,5 +73,11 @@ clean:	jit-clean profile-clean
 
 check: run-tests
 
-.PHONY: run-tests run-tests-catchsegv run-repl retest benchmark profile jit-clean jit-dissassmble clean check release
-.SILENT: benchmark profile
+docker:
+	docker build -t akeem .
+
+run-docker: docker
+	docker run --rm -i -t akeem
+
+.PHONY: run-tests run-tests-catchsegv run-repl retest benchmark profile jit-clean jit-dissassmble clean check release docker run-docker
+.SILENT: run-tests retest benchmark profile

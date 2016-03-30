@@ -20,7 +20,7 @@ make
 `which rlwrap` ./akeem # or make run-repl
 ```
 
-In Emacs:
+### Emacs
 
 ``` el
 (setq scheme-program-name "/path/to/akeem")
@@ -28,6 +28,11 @@ In Emacs:
 ```
 See [this tutorial](http://community.schemewiki.org/?emacs-tutorial).
 
+### Docker
+
+``` bash
+make run-docker
+```
 
 ## What Works?
 
