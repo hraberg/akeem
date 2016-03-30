@@ -2849,7 +2849,7 @@ jit_symbol:                     # symbol, c-stream, environment, register, tail
         jge     3f
 
 2:      call_fn jit_literal, symbol(%rsp), %r12, $NIL, $RAX, $C_FALSE
-        call_fn fwrite, $jit_global_to_rax, $1, jit_global_to_rax_size, %r12
+        call_fn fwrite, $jit_global_symbol_in_rax_to_rax, $1, jit_global_symbol_in_rax_to_rax_size, %r12
         mov     register(%rsp), %rbx
         mov     jit_rax_to_register_table(,%rbx,POINTER_SIZE), %rax
         mov     jit_rax_to_register_size_table(,%rbx,POINTER_SIZE), %r11
@@ -3885,15 +3885,15 @@ jit_void_to_rax_size:
         .quad   . - jit_void_to_rax
 
         .align  16
-jit_global_to_rax:
+jit_global_symbol_in_rax_to_rax:
         mov     symbol_table_values(,%eax,POINTER_SIZE), %r10
         is_void_internal %r10, store=false
         jne     1f
         mov     $jit_symbol_not_defined, %r11
         call_fn *%r11, %rax
 1:      mov     %r10, %rax
-jit_global_to_rax_size:
-        .quad   (. - jit_global_to_rax)
+jit_global_symbol_in_rax_to_rax_size:
+        .quad   (. - jit_global_symbol_in_rax_to_rax)
 
         .align  16
 jit_rax_to_global:
