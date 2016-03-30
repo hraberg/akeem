@@ -1307,6 +1307,8 @@ main:                # argc, argv
         intern_string not_a_procedure_string, "Not a procedure: "
         intern_string not_a_port_string, "Not a port: "
         intern_string not_a_bytevector_string, "Not a bytevector: "
+        intern_string symbol_not_defined_string, "Symbol not defined: "
+
         intern_string false_string, "#f"
         mov     %rax, boolean_string_table + POINTER_SIZE * C_FALSE
         intern_string true_string, "#t"
@@ -1459,6 +1461,7 @@ main:                # argc, argv
         store_pointer $RDI, $jit_literal_to_rdi
         store_pointer $R8, $jit_literal_to_r8
         store_pointer $R9, $jit_literal_to_r9
+        store_pointer $R11, $jit_literal_to_r11
 
         lea     jit_literal_to_register_size_table, %rbx
         store_pointer $RAX, jit_literal_to_rax_size
@@ -1468,6 +1471,7 @@ main:                # argc, argv
         store_pointer $RDI, jit_literal_to_rdi_size
         store_pointer $R8, jit_literal_to_r8_size
         store_pointer $R9, jit_literal_to_r9_size
+        store_pointer $R11, jit_literal_to_r11_size
 
         lea     jit_rax_to_register_table, %rbx
         store_pointer $RAX, $jit_rax_to_rax
@@ -1707,12 +1711,12 @@ main:                # argc, argv
         define "current-jiffy", $current_jiffy
         define "jiffies-per-second", $jiffies_per_second
 
-        .irp symbol, bytevector_length, bytevector_u8_ref, bytevector_u8_set
-        lea     jit_inline_table, %rbx
-        store_pointer \symbol\()_symbol, $\symbol
-        lea     jit_inline_size_table, %rbx
-        store_pointer \symbol\()_symbol, \symbol\()_size
-        .endr
+        ## .irp symbol, bytevector_length, bytevector_u8_ref, bytevector_u8_set
+        ## lea     jit_inline_table, %rbx
+        ## store_pointer \symbol\()_symbol, $\symbol
+        ## lea     jit_inline_size_table, %rbx
+        ## store_pointer \symbol\()_symbol, \symbol\()_size
+        ## .endr
 
         call_fn box_string, $r7rs_scm
         call_fn open_input_string, %rax
@@ -1855,17 +1859,17 @@ box_string:                     # c-string
         prologue str, size
         mov     %rdi, %rbx
         cmp     $NULL, %rbx
-        je      1f
-        cmpb    $0, (%rbx)
-        jz      2f
+        je      3f
 
 1:      open_string_buffer str(%rsp), size(%rsp), %r12
+        cmpb    $0, (%rbx)
+        jz      2f
         xor     %al, %al
         call_fn fprintf, %r12, $string_format, %rbx
-        string_buffer_to_string str(%rsp), size(%rsp), %r12
+2:      string_buffer_to_string str(%rsp), size(%rsp), %r12
         return
 
-2:      return empty_string
+3:      return empty_string
 
         ## Unboxing to C
 
@@ -2461,6 +2465,9 @@ read_symbol:                    # c-stream, c-char
         call_fn unbox, %rax
         mov     %rax, %rbx
 
+        cmpb    $0, (%rbx)
+        je      3f
+
         xor     %r12d, %r12d
         xor     %eax, %eax
 1:      mov     (%rbx,%r12), %al
@@ -2476,6 +2483,8 @@ read_symbol:                    # c-stream, c-char
         mov     %rax, %rbx
         register_for_gc str(%rsp)
         return  %rbx
+
+3:      return  $VOID
 
 read_number:                    # c-stream, c-char
         read_number_template $DECIMAL_RADIX_INT, unget=true
@@ -2831,13 +2840,9 @@ jit_symbol:                     # symbol, c-stream, environment, register, tail
         cmp     $0, %rax
         jge     3f
 
-2:      mov     symbol(%rsp), %rdi
-        lea     symbol_table_values(,%edi,POINTER_SIZE), %rax
-        mov     %rax, symbol_address(%rsp)
-
+2:      call_fn jit_literal, $error, %r12, $NIL, $R11, $C_FALSE
+        call_fn jit_literal, symbol(%rsp), %r12, $NIL, $RAX, $C_FALSE
         call_fn fwrite, $jit_global_to_rax, $1, jit_global_to_rax_size, %r12
-        lea     symbol_address(%rsp), %rax
-        call_fn fwrite, %rax, $1, $POINTER_SIZE, %r12
         mov     register(%rsp), %rbx
         mov     jit_rax_to_register_table(,%rbx,POINTER_SIZE), %rax
         mov     jit_rax_to_register_size_table(,%rbx,POINTER_SIZE), %r11
@@ -3799,7 +3804,7 @@ jit_return:
 jit_return_size:
         .quad   . - jit_return
 
-        .irp reg, rax, rdi, rsi, rdx, rcx, r8, r9
+        .irp reg, rax, rdi, rsi, rdx, rcx, r8, r9, r11
         .align  16
 jit_literal_to_\reg\():
         mov     $0x1122334455667788, %\reg
@@ -3874,9 +3879,16 @@ jit_void_to_rax_size:
 
         .align  16
 jit_global_to_rax:
-        mov     0x1122334455667788, %rax
+        push    %r11
+        mov     symbol_table_values(,%eax,POINTER_SIZE), %r10
+        is_void_internal %r10, store=false
+        jne     1f
+        pop     %r11
+        call_fn *%r11, symbol_not_defined_string, %rax
+1:      pop     %r11
+        mov     %r10, %rax
 jit_global_to_rax_size:
-        .quad   (. - jit_global_to_rax) - POINTER_SIZE
+        .quad   (. - jit_global_to_rax)
 
         .align  16
 jit_rax_to_global:

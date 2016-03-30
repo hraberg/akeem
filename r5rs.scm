@@ -438,7 +438,7 @@
 
 (define (for-each proc list)
   (do ((list list (cdr list)))
-      ((null? list) acc)
+      ((null? list))
     (proc (car list))))
 
 (define force
