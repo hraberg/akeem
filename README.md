@@ -46,6 +46,7 @@ See [this tutorial](http://community.schemewiki.org/?emacs-tutorial).
 
 ## What Doesn't Work?
 
+* Closures capture their entire environment.
 * No vararg support.
 * No `call-with-values` or `dynamic-wind`.
 * No `let-syntax` and `letrec-syntax`.
