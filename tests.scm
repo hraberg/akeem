@@ -155,7 +155,7 @@
 (assert (let loop ((numbers '(3 -2 1 6 -5))
                    (nonneg '())
                    (neg '()))
-          (cond ((null? numbers) (cons nonneg (cons neg '()))) ;; should be list
+          (cond ((null? numbers) (list nonneg neg))
                 ((>= (car numbers) 0)
                  (loop (cdr numbers)
                        (cons (car numbers) nonneg)
@@ -295,7 +295,7 @@
 
 (assert (eq? 'a 'a))
 (assert (eq? '(a) '(a)))
-;; (assert (eq? (list 'a) (list 'a)))
+(assert (eq? (list 'a) (list 'a)))
 (assert (eq? "a" "a"))
 (assert (eq? "" ""))
 (assert (eq? '() '()))
@@ -413,10 +413,10 @@
 
 (assert (not #t))
 (assert (not 3))
-;; (assert (not (list 3)))
+(assert (not (list 3)))
 (assert (not #f))
 (assert (not '()))
-;; (assert (not (list)))
+(assert (not (list)))
 (assert (not 'nil))
 
 (assert (boolean? #f))
@@ -424,7 +424,7 @@
 (assert (boolean? '()))
 
 (spec ";;; 6.3.2. Pairs and lists")
-(define x '(a b c)) ;; should not be constant
+(define x (list 'a 'b 'c))
 (define y x)
 (assert y)
 (assert (list? y))
@@ -456,9 +456,9 @@
 (assert (cdr '(1 . 2)))
 ;; (assert (cdr '()))
 
-;; (define (f) (list 'not-a-constant-list))
+(define (f) (list 'not-a-constant-list))
 ;; (define (g) '(constant-list))
-;; (assert (set-car! (f) 3))
+(assert (set-car! (f) 3))
 ;; (assert (set-car! (g) 3))
 
 (assert (list? '(a b c)))
@@ -468,8 +468,8 @@
 ;;           (set-cdr! x x)
 ;;           (list? x)))
 
-;; (assert (list 'a (+ 3 4) 'c))
-;; (assert (list))
+(assert (list 'a (+ 3 4) 'c))
+(assert (list))
 
 (assert (length '(a b c)))
 (assert (length '(a (b) (c d e))))
@@ -551,7 +551,7 @@
 (spec ";;; 6.3.6. Vectors")
 (assert '#(0 (2 2 2 2) "Anna"))
 
-;; (vector 'a 'b 'c)
+(assert (vector 'a 'b 'c))
 
 (assert (vector-ref '#(1 1 2 3 5 8 13 21)
                     5))
@@ -577,11 +577,11 @@
 (assert (call-with-current-continuation procedure?))
 
 (assert (apply + '(3 4)))
-;; (define compose
-;;   (lambda (f g)
-;;     (lambda args
-;;       (f (apply g args)))))
-;; (assert ((compose sqrt *) 12 75))
+(define compose
+  (lambda (f g)
+    (lambda args
+      (f (apply g args)))))
+(assert ((compose sqrt *) 12 75))
 
 (assert (map cadr '((a b) (d e) (g h))))
 
@@ -602,7 +602,7 @@
 
 (assert (force (delay (+ 1 2))))
 (assert (let ((p (delay (+ 1 2))))
-          (cons (force p) (cons (force p) '())))) ;; should be list
+          (cons (force p) (list (force p)))))
 (define a-stream
   (letrec ((next
             (lambda (n)
@@ -726,7 +726,7 @@
 (spec ";;; 6.4. Pairs and lists")
 (assert (make-list 2 3))
 
-(assert (let ((ls (cons 'one (cons 'two (cons 'five! '()))))) ;; should be list
+(assert (let ((ls (list 'one 'two 'five!)))
           (list-set! ls 2 'three)
           ls))
 
@@ -766,34 +766,34 @@ containing just one line")
 (define c (vector-copy b 1 3))
 (assert c)
 
-(define a #(1 2 3 4 5)) ;; should be vector
-(define b #(10 20 30 40 50)) ;; should be vector
+(define a (vector 1 2 3 4 5))
+(define b (vector 10 20 30 40 50))
 (vector-copy! b 1 a 0 2)
 (assert b)
 
 (assert (vector-append #(a b c) #(d e f)))
 
-(define a #(1 2 3 4 5)) ;; should be vector
+(define a (vector 1 2 3 4 5))
 (vector-fill! a 'smash 2 4)
 (assert a)
 
 (spec ";;; 6.9. Bytevectors")
 (assert (make-bytevector 2 12))
 
-;; (assert (bytevector 1 3 5 1 3 5))
-;; (assert (bytevector))
+(assert (bytevector 1 3 5 1 3 5))
+(assert (bytevector))
 
 (assert (bytevector-u8-ref '#u8(1 1 2 3 5 8 13 21) 5))
 
-(assert (let ((bv #u8(1 2 3 4))) ;; should be bytevector
+(assert (let ((bv (bytevector 1 2 3 4)))
           (bytevector-u8-set! bv 1 3)
           bv))
 
 (define a #u8(1 2 3 4 5))
 (assert (bytevector-copy a 2 4))
 
-(define a #u8(1 2 3 4 5)) ;; should be bytevector
-(define b #u8(10 20 30 40 50)) ;; should be bytevector
+(define a (bytevector 1 2 3 4 5))
+(define b (bytevector 10 20 30 40 50))
 (bytevector-copy! b 1 a 0 2)
 (assert b)
 

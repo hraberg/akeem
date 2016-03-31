@@ -300,6 +300,9 @@
           ((pair? obj) (loop (cdr obj)))
           (else #f))))
 
+(define (list . obj)
+  obj)
+
 (define (list-tail list k)
   (let loop ((list list)
              (k k))
@@ -374,10 +377,8 @@
 
 ;;; 6.3.5. Strings
 
-(define (string->list string)
-  (do ((list '() (cons (string-ref string idx) list))
-       (idx (- (string-length string) 1) (- idx 1)))
-      ((negative? idx) list)))
+(define (string . char)
+  (list->string char))
 
 (define (substring string start end)
   (do ((copy (make-string (- end start)))
@@ -396,6 +397,11 @@
         ((= idx length2))
       (string-set! acc (+ idx length1) (string-ref string2 idx)))
     acc))
+
+(define (string->list string)
+  (do ((list '() (cons (string-ref string idx) list))
+       (idx (- (string-length string) 1) (- idx 1)))
+      ((negative? idx) list)))
 
 (define (list->string list)
   (do ((list list (cdr list))
@@ -417,6 +423,9 @@
     (string-set! string idx fill)))
 
 ;;; 6.3.6. Vectors
+
+(define (vector . obj)
+  (list->vector obj))
 
 (define (vector->list vector)
   (do ((list '() (cons (vector-ref vector idx) list))

@@ -196,6 +196,9 @@
 
 ;;; 6.9. Bytevectors
 
+(define (bytevector . byte)
+  (list->bytevector byte))
+
 (define (bytevector-copy bytevector start end)
   (bytevector-copy! (make-bytevector (- end start) 0) 0 bytevector start end))
 
