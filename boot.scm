@@ -3,11 +3,11 @@
 ;;; 4.3.2. Pattern language
 
 (define-syntax and
-  (lambda (form)
+  (lambda (form env)
     (append (cons 'if (cdr form)) '(#f))))
 
 (define-syntax or
-  (lambda (form)
+  (lambda (form env)
     (let ((form (cdr form)))
       (cons 'if (cons (car form) (cons #t (cdr form)))))))
 
@@ -149,7 +149,7 @@
                 transformed)))))
 
 (define-syntax syntax-rules
-  (lambda (transformer-spec)
+  (lambda (transformer-spec env)
     (cons 'lambda (cons (cons 'form (cons 'env '()))
                         (cons (cons 'transform-syntax
                                     (cons (cons 'quote (cons transformer-spec '()))

@@ -327,6 +327,7 @@
         mov     %rax, previous_port(%rsp)
         call_fn open_\name\()_file, %rdi
         mov     %rax, \stream
+        xor     %eax, %eax
         call_fn *%rbx
         mov     %rax, %rbx
         call_fn close_\name\()_port, \stream

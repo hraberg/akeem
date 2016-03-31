@@ -118,7 +118,7 @@
 
 ;; Based on https://github.com/mishoo/SLip/blob/master/lisp/compiler.lisp#L25
 (define-syntax quasiquote
-  (lambda (qq-template)
+  (lambda (qq-template env)
     (letrec ((qq (lambda (x)
                    (cond ((pair? x)
                           (case (car x)
@@ -432,7 +432,7 @@
 
 (define (map proc list)
   (let* ((length (length list))
-         (acc (make-list length)))
+         (acc (make-list length (void))))
     (do ((from list (cdr from))
          (to acc (cdr to)))
         ((null? from) acc)
@@ -475,8 +475,3 @@
 
 (define (call-with-output-file string proc)
   (call-with-port (open-output-file string) proc))
-
-;;; 6.6.3. Output
-
-(define (newline port)
-  (write-char #\newline port))

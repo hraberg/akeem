@@ -1,6 +1,6 @@
 (define (repl)
   (display "Welcome to Akeem Scheme.")
-  (newline)
+  (newline (current-output-port))
 
   (let loop ()
     (display "> " (current-output-port))

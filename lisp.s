@@ -650,6 +650,7 @@ apply:                          # proc, args
 
         mov     %rsi, %r12
         call_fn length, %r12
+        push    %rax
         mov     %eax, %ebx
 
 1:      is_nil_internal %r12
@@ -686,7 +687,9 @@ apply_1:
         .align  APPLY_JUMP_ALIGNMENT
 apply_0:
         pop     %rax
-        call    *%rax
+        mov     %eax, %eax
+        pop     %r11
+        call    *%r11
         return
 
 call_with_current_continuation: # proc
@@ -701,7 +704,9 @@ call_with_current_continuation: # proc
         jnz 1f
         call_fn jit_call_with_current_continuation_escape_factory, jmp_buffer(%rsp)
         tag     TAG_PROCEDURE, %rax
-        call_fn *%rbx, %rax
+        mov     %rax, %r11
+        mov     $1, %eax
+        call_fn *%rbx, %r11
         return
 1:      call_fn free, jmp_buffer(%rsp)
         return  %xmm0
@@ -715,7 +720,9 @@ eval:                           # expression, environment-specifier
         mov     %esi, max_global_symbol(%rsp)
 
         call_fn jit_code, %rdi, $NIL, $NIL
-        call    *%rax
+        mov     %rax, %r11
+        xor     %eax, %eax
+        call    *%r11
         return
 
 scheme_report_environment:      # version
@@ -866,6 +873,11 @@ display:                        # obj, port
         call_fn fprintf, %rbx, %rdi
         call_fn fflush, %rbx
         return  $VOID
+
+newline:                        # port
+        minimal_prologue
+        call_fn write_char, $NEWLINE_CHAR, %rdi
+        return
 
 write_char:                     # char, port
         minimal_prologue
@@ -1026,7 +1038,9 @@ call_with_port:                 # port, proc
         assert_tag TAG_PROCEDURE, %rsi, not_a_procedure_string
         unbox_pointer_internal %rsi, %rbx
         mov     %rdi, %r12
-        call_fn *%rbx, %rax
+        mov     %rax, %r11
+        mov     $1, %eax
+        call_fn *%rbx, %r11
         mov     %rax, %rbx
         call_fn close_port, %r12
         return  %rbx
@@ -1315,6 +1329,7 @@ main:                # argc, argv
         intern_string not_a_port_string, "Not a port: "
         intern_string not_a_bytevector_string, "Not a bytevector: "
         intern_string symbol_not_defined_string, "Symbol not defined: "
+        intern_string arity_check_error_string, "Unexpected number of arguments: "
 
         intern_string false_string, "#f"
         mov     %rax, boolean_string_table + POINTER_SIZE * C_FALSE
@@ -1666,6 +1681,7 @@ main:                # argc, argv
 
         define "write", $write
         define "display", $display
+        define "newline", $newline
         define "write-char", $write_char
 
         define "load", $load
@@ -2975,11 +2991,15 @@ jit_pair:                       # form, c-stream, environment, register, tail
         has_tag TAG_PROCEDURE, %rax, store=false
         je      5f
         unbox_pointer_internal syntax(%rsp)
-        call_fn *%rax, %rbx, %r12, env(%rsp), register(%rsp), tail(%rsp)
+        mov     %rax, %r11
+        mov     $5, %eax
+        call_fn *%r11, %rbx, %r12, env(%rsp), register(%rsp), tail(%rsp)
         return
 
 5:      unbox_pointer_internal syntax(%rsp)
-        call_fn *%rax, %rbx, env(%rsp)
+        mov     %rax, %r11
+        mov     $2, %eax
+        call_fn *%r11, %rbx, env(%rsp)
         call_fn jit_datum, %rax, %r12, env(%rsp), register(%rsp), tail(%rsp)
         return
 
@@ -3147,6 +3167,11 @@ jit_procedure_call:             # form, c-stream, environment, register, tail
 
         ## 4.1.4. Procedures
 
+jit_arity_check_error:          # expected-arity
+        minimal_prologue
+        call_fn error, arity_check_error_string, %rdi
+        return
+
 jit_procedure:                  # form, c-stream, environment, arguments
         prologue env, args, env_size, frame_size, local_idx, local, end_offset, flat_args, varargs_idx, arity
         mov     %rdi, %rbx
@@ -3167,9 +3192,12 @@ jit_procedure:                  # form, c-stream, environment, arguments
         mov     %eax, arity(%rsp)
 
         call_fn fwrite, $jit_prologue, $1, jit_prologue_size, %r12
-
         cmp     $-1, varargs_idx(%rsp)
         jne     4f
+
+        mov     arity(%rsp), %eax
+        call_fn jit_literal, %rax, %r12, $NIL, $R11, $C_FALSE
+        call_fn fwrite, $jit_arity_check_r11b_with_al, $1, jit_arity_check_r11b_with_al_size, %r12
 
 1:      mov     local_idx(%rsp), %ecx
         cmp     %ecx, arity(%rsp)
@@ -3215,7 +3243,12 @@ jit_procedure:                  # form, c-stream, environment, arguments
         call_fn fwrite, $jit_return, $1, jit_return_size, %r12
         return
 
-4:      mov     varargs_idx(%rsp), %eax
+4:      mov     arity(%rsp), %eax
+        dec     %eax
+        call_fn jit_literal, %rax, %r12, $NIL, $R11, $C_FALSE
+        call_fn fwrite, $jit_varargs_arity_check_r11b_with_al, $1, jit_varargs_arity_check_r11b_with_al_size, %r12
+
+        mov     varargs_idx(%rsp), %eax
         call_fn jit_literal, %rax, %r12, $NIL, $R10, $C_FALSE
         call_fn jit_literal, $jit_lambda_collect_varargs, %r12, $NIL, $R11, $C_FALSE
         call_fn fwrite, $jit_call_r11, $1, jit_call_r11_size, %r12
@@ -3232,7 +3265,7 @@ jit_lambda_factory_code:        # lambda, c-stream, closure-bitmask
         popcnt  %rdx, %rax
         mov     %rax, closure_env_size(%rsp)
 
-        call_fn jit_literal, %rbx, %r12, $NIL, $R11, $C_FALSE
+        call_fn jit_literal, %rbx, %r12, $NIL, $R10, $C_FALSE
 
 1:      mov     closure_idx(%rsp), %rax
         cmp     %rax, closure_env_size(%rsp)
@@ -3247,7 +3280,7 @@ jit_lambda_factory_code:        # lambda, c-stream, closure-bitmask
         mov     rbp(%rsp), %rax
         call_fn jit_maybe_add_to_constant_pool, (%rax)
         mov     rbp(%rsp), %rax
-        call_fn jit_literal, (%rax), %r12, $NIL, $RAX, $C_FALSE
+        call_fn jit_literal, (%rax), %r12, $NIL, $R11, $C_FALSE
 
         incl    closure_idx(%rsp)
         mov     closure_idx(%rsp), %ecx
@@ -3255,13 +3288,13 @@ jit_lambda_factory_code:        # lambda, c-stream, closure-bitmask
         add     $POINTER_SIZE, %rcx
         neg     %ecx
         mov     %ecx, local(%rsp)
-        call_fn fwrite, $jit_rax_to_closure, $1, jit_rax_to_closure_size, %r12
+        call_fn fwrite, $jit_r11_to_closure, $1, jit_r11_to_closure_size, %r12
         lea     local(%rsp), %rax
         call_fn fwrite, %rax, $1, $INT_SIZE, %r12
 
         jmp     1b
 
-2:      call_fn fwrite, $jit_jump_r11, $1, jit_jump_r11_size, %r12
+2:      call_fn fwrite, $jit_jump_r10, $1, jit_jump_r10_size, %r12
         return
 
 jit_lambda_factory:             # lambda, closure-bitmask
@@ -4186,6 +4219,28 @@ jit_epilogue_size:
         .quad   . - jit_epilogue
 
         .align  16
+jit_arity_check_r11b_with_al:
+        cmp     %r11b, %al
+        je      1f
+        box_int_internal %eax
+        mov     $jit_arity_check_error, %r11
+        call_fn *%r11, %rax
+1:
+jit_arity_check_r11b_with_al_size:
+        .quad   (. - jit_arity_check_r11b_with_al)
+
+        .align  16
+jit_varargs_arity_check_r11b_with_al:
+        cmp     %r11b, %al
+        jge     1f
+        box_int_internal %eax
+        mov     $jit_arity_check_error, %r11
+        call_fn *%r11, %rax
+1:
+jit_varargs_arity_check_r11b_with_al_size:
+        .quad   (. - jit_varargs_arity_check_r11b_with_al)
+
+        .align  16
 jit_return:
         ret
 jit_return_size:
@@ -4300,10 +4355,10 @@ jit_\reg\()_to_local_size:
         .endr
 
         .align  16
-jit_rax_to_closure:
-        mov     %rax, -0x11223344(%rsp)
-jit_rax_to_closure_size:
-        .quad   (. - jit_rax_to_closure) - INT_SIZE
+jit_r11_to_closure:
+        mov     %r11, -0x11223344(%rsp)
+jit_r11_to_closure_size:
+        .quad   (. - jit_r11_to_closure) - INT_SIZE
 
         .align  16
 jit_arity_to_al:
