@@ -46,7 +46,7 @@ trying again.
 * Subset of R5RS and R7RS "small" procedures.
 * JIT for `if`, `lambda`, `set!`, `let`, `letrec` and `begin`
 * Syntax for `and`, `or`, `cond`, `case`, `let*`, "named `let`", `do`,
-  `delay`, `call-with-values` and `define`.
+  `delay`, and `define`.
   * + R7RS `case`, `when`, `unless` and `case-lambda`.
 * Basic support for `define-syntax` / `syntax-rules` and `quasiquote`.
 * NaN-boxed 32-bit integers and 64-bit doubles
