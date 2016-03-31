@@ -7,7 +7,7 @@ AKEEM = $(AKEEM_HOME)/akeem
 RACKET = `which racket`
 RACKET_HOME = ../racket
 RACKET_BENCHMARKS_HOME = $(RACKET_HOME)/pkgs/racket-benchmarks/tests/racket/benchmarks/common
-RACKET_BENCHMARKS = ctak nothing nqueens puzzle tak takr
+RACKET_BENCHMARKS = ctak nboyer nfa nothing nqueens puzzle scheme-c2 scheme-c takr2 tak takr
 RUN_RACKET_BENCHMARKS = true
 
 default: akeem
