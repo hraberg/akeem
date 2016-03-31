@@ -3575,8 +3575,7 @@ varargs_store_5:
         jle     8f
 
         mov     %r12, %rcx
-        sub     $VARARGS_STACK_OFFSET, %rcx
-        neg     %rcx
+        add     $VARARGS_STACK_OFFSET, %rcx
         mov     (%rbp,%rcx,POINTER_SIZE), %rax
 
         call_fn cons, %rax, %rbx
@@ -3585,10 +3584,7 @@ varargs_store_5:
         dec     %r12d
         jmp     7b
 
-8:      call_fn reverse, %rbx
-        movq    %rax, %rbx
-
-        pop    %r9
+8:      pop    %r9
         pop    %r8
         pop    %rdx
         pop    %rcx
