@@ -91,6 +91,8 @@
         .equ BINARY_OP_INT_INT, (1 << 1 | 1)
 
         .equ APPLY_JUMP_ALIGNMENT, 2
+        .equ VARARGS_JUMP_ALIGNMENT, 16
+        .equ VARARGS_STACK_OFFSET, 8
 
         .equ GC_MARK_BIT, 0
 

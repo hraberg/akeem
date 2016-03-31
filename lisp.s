@@ -2986,13 +2986,14 @@ jit_pair:                       # form, c-stream, environment, register, tail
         ## 4.1.3. Procedure calls
 
 jit_procedure_call:             # form, c-stream, environment, register, tail
-        prologue form, len, operand, env, max_locals, register, tail, arity
+        prologue form, len, operand, env, max_locals, register, tail, arity, argc
         mov     %rdi, %rbx
         mov     %rbx, form(%rsp)
         mov     %rsi, %r12
         mov     %rdx, env(%rsp)
         mov     %rcx, register(%rsp)
         mov     %r8, tail(%rsp)
+        movl    $0, argc(%rsp)
         movq    $0, max_locals(%rsp)
 
         call_fn length, %rbx
@@ -3000,7 +3001,10 @@ jit_procedure_call:             # form, c-stream, environment, register, tail
         dec     %eax
         mov     %al, arity(%rsp)
 
-        car     %rbx
+        cmpb    $(MAX_REGISTER_ARGS), arity(%rsp)
+        jg      15f
+
+0:      car     %rbx
         mov     %rax, operand(%rsp)
         has_tag TAG_PAIR, %rax, store=false
         jne     1f
@@ -3009,8 +3013,12 @@ jit_procedure_call:             # form, c-stream, environment, register, tail
         call_fn fwrite, $jit_push_rax, $1, jit_push_rax_size, %r12
 
         cdr     %rbx, %rbx
+        incl    argc(%rsp)
 
 1:      is_nil_internal %rbx
+        je      4f
+
+        cmpl    $(MAX_REGISTER_ARGS + 1), argc(%rsp)
         je      4f
 
         car     %rbx
@@ -3025,6 +3033,7 @@ jit_procedure_call:             # form, c-stream, environment, register, tail
         call_fn fwrite, $jit_push_rax, $1, jit_push_rax_size, %r12
 
 3:      cdr     %rbx, %rbx
+        incl    argc(%rsp)
         jmp     1b
 
 4:      call_fn cdr, form(%rsp)
@@ -3036,6 +3045,9 @@ jit_procedure_call:             # form, c-stream, environment, register, tail
         jz      8f
         decl    len(%rsp)
         mov     len(%rsp), %ecx
+
+        cmp     $MAX_REGISTER_ARGS, %ecx
+        jge     7f
 
         car     %rbx
         has_tag TAG_PAIR, %rax, store=false
@@ -3103,6 +3115,32 @@ jit_procedure_call:             # form, c-stream, environment, register, tail
 
         jmp     13b
 
+15:     xor     %r11d, %r11d
+        movb    arity(%rsp), %r11b
+        movl    %r11d, argc(%rsp)
+        cdr     %rbx
+        call_fn reverse, %rax
+        mov     %rax, %rbx
+
+16:     is_nil_internal %rbx
+        je      18f
+
+        cmpl    $MAX_REGISTER_ARGS, argc(%rsp)
+        je      18f
+
+        car     %rbx
+        call_fn jit_datum, %rax, %r12, env(%rsp), $RAX, $C_FALSE
+        update_max_locals max_locals(%rsp)
+        call_fn fwrite, $jit_push_rax, $1, jit_push_rax_size, %r12
+
+17:     cdr     %rbx, %rbx
+        decl    argc(%rsp)
+        jmp     16b
+
+18:     mov     form(%rsp), %rbx
+        movl    $0, argc(%rsp)
+        jmp     0b
+
         ## 4.1.4. Procedures
 
 jit_procedure:                  # form, c-stream, environment, arguments
@@ -3126,12 +3164,12 @@ jit_procedure:                  # form, c-stream, environment, arguments
 
         call_fn fwrite, $jit_prologue, $1, jit_prologue_size, %r12
 
+        cmp     $-1, varargs_idx(%rsp)
+        jne     4f
+
 1:      mov     local_idx(%rsp), %ecx
         cmp     %ecx, arity(%rsp)
         je      3f
-
-        cmp     %ecx, varargs_idx(%rsp)
-        je      4f
 
 2:      xor     %r11d, %r11d
         mov     jit_argument_to_register_id_table(%rcx), %r11b
@@ -3177,8 +3215,7 @@ jit_procedure:                  # form, c-stream, environment, arguments
         call_fn jit_literal, %rax, %r12, $NIL, $R10, $C_FALSE
         call_fn jit_literal, $jit_lambda_collect_varargs, %r12, $NIL, $R11, $C_FALSE
         call_fn fwrite, $jit_call_r11, $1, jit_call_r11_size, %r12
-        mov     local_idx(%rsp), %ecx
-        jmp     2b
+        jmp     1b
 
 jit_lambda_factory_code:        # lambda, c-stream, closure-bitmask
         prologue  rbp, local, local_idx, closure_bitmask, closure_idx, closure_env_size
@@ -3402,12 +3439,176 @@ jit_lambda_varargs_index:       # arguments
 
 3:      return  %r12
 
-jit_lambda_collect_varargs:     # varargs_idx in r10, arity in rax
-        prologue varargs_idx, arity
-        mov     %r10, varargs_idx(%rsp)
-        mov     %rax, arity(%rsp)
+jit_lambda_collect_varargs:     # arity in rax, varargs_idx in r10
+        push    %rbp
+        push    %rbx
+        push    %r12
+        push    %r13
+        push    %r14
+        mov     %rsp, %rbp
+        sub     $POINTER_SIZE, %rsp
 
-        return
+        mov     %rax, %r13
+        mov     %r10, %r14
+
+        push    %rdi
+        push    %rsi
+        push    %rcx
+        push    %rdx
+        push    %r8
+        push    %r9
+
+        mov     $NIL, %rbx
+        jmp     6f
+
+1:      push    %rbx
+        mov     %r13, %r12
+        sub     %r14, %r12
+
+        mov     %r14, %r11
+        imul    $VARARGS_JUMP_ALIGNMENT, %r11
+        add     $varargs_load_0, %r11
+        jmp     *%r11
+
+        .align  16
+varargs_load_0:
+        test    %r12d, %r12d
+        jz      2f
+        push    %rdi
+        dec     %r12d
+        .align  VARARGS_JUMP_ALIGNMENT
+varargs_load_1:
+        test    %r12d, %r12d
+        jz      2f
+        push    %rsi
+        dec     %r12d
+        .align  VARARGS_JUMP_ALIGNMENT
+varargs_load_2:
+        test    %r12d, %r12d
+        jz      2f
+        push    %rdx
+        dec     %r12d
+        .align  VARARGS_JUMP_ALIGNMENT
+varargs_load_3:
+        test    %r12d, %r12d
+        jz      2f
+        push    %rcx
+        dec     %r12d
+        .align  VARARGS_JUMP_ALIGNMENT
+varargs_load_4:
+        test    %r12d, %r12d
+        jz      2f
+        push    %r8
+        dec     %r12d
+        .align  VARARGS_JUMP_ALIGNMENT
+varargs_load_5:
+        test    %r12d, %r12d
+        jz      2f
+        push    %r9
+        dec     %r12d
+        .align  VARARGS_JUMP_ALIGNMENT
+
+2:      mov     %r14, %r12
+        mov     $NIL, %rbx
+
+3:      cmp     $MAX_REGISTER_ARGS, %r12
+        je      4f
+        cmp     %r13, %r12
+        je      4f
+
+        pop     %rax
+        call_fn cons, %rax, %rbx
+        mov     %rax, %rbx
+
+        inc     %r12d
+        jmp     3b
+
+4:      pop     %rax
+        call_fn append, %rbx, %rax
+        mov     %rax, %rbx
+
+        pop    %r9
+        pop    %r8
+        pop    %rdx
+        pop    %rcx
+        pop    %rsi
+        pop    %rdi
+
+        mov     %r14, %r11
+        imul    $VARARGS_JUMP_ALIGNMENT, %r11
+        add     $varargs_store_0, %r11
+        jmp     *%r11
+
+        .align  16
+varargs_store_0:
+        mov     %rbx, %rdi
+        jmp     5f
+        .align  VARARGS_JUMP_ALIGNMENT
+varargs_store_1:
+        mov     %rbx, %rsi
+        jmp     5f
+        .align  VARARGS_JUMP_ALIGNMENT
+varargs_store_2:
+        mov     %rbx, %rdx
+        jmp     5f
+        .align  VARARGS_JUMP_ALIGNMENT
+varargs_store_3:
+        mov     %rbx, %rcx
+        jmp     5f
+        .align  VARARGS_JUMP_ALIGNMENT
+varargs_store_4:
+        mov     %rbx, %r8
+        jmp     5f
+        .align  VARARGS_JUMP_ALIGNMENT
+varargs_store_5:
+        mov     %rbx, %r9
+        jmp     5f
+        .align  VARARGS_JUMP_ALIGNMENT
+
+5:      mov    %rbp, %rsp
+        pop    %r14
+        pop    %r13
+        pop    %r12
+        pop    %rbx
+        pop    %rbp
+        ret
+
+6:      mov     %rax, %r12
+        sub     $MAX_REGISTER_ARGS, %r12
+        mov     $NIL, %rbx
+
+7:      cmp     $0, %r12d
+        jle     8f
+
+        mov     %r12, %rcx
+        sub     $VARARGS_STACK_OFFSET, %rcx
+        neg     %rcx
+        mov     (%rbp,%rcx,POINTER_SIZE), %rax
+
+        call_fn cons, %rax, %rbx
+        mov     %rax, %rbx
+
+        dec     %r12d
+        jmp     7b
+
+8:      call_fn reverse, %rbx
+        movq    %rax, %rbx
+
+        pop    %r9
+        pop    %r8
+        pop    %rdx
+        pop    %rcx
+        pop    %rsi
+        pop    %rdi
+
+        push    %rdi
+        push    %rsi
+        push    %rcx
+        push    %rdx
+        push    %r8
+        push    %r9
+
+        jmp     1b
 
 jit_lambda:                     # form, c-stream, environment, register, tail
         prologue env, args, form, lambda, register, closure_env_bitmask
