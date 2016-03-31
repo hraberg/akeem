@@ -7,9 +7,11 @@ Akeem is a small JIT-ed subset of
 [R5RS Scheme](http://www.schemers.org/Documents/Standards/R5RS/)
 written in x86-64 assembler as an experiment.
 
-Only tested on Linux. Written in
-[GNU Assembler](https://sourceware.org/binutils/docs/as/) using AT&T
-syntax. Akeem depends on
+Written in [GNU Assembler](https://sourceware.org/binutils/docs/as/)
+using AT&T syntax. Only builds on Linux as Apple has their own version
+of `as`.
+
+Akeem depends on
 [glibc](https://www.gnu.org/software/libc/manual/html_mono/libc.html).
 
 
