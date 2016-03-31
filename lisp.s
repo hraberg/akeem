@@ -1472,6 +1472,7 @@ main:                # argc, argv
         store_pointer $RDI, $jit_literal_to_rdi
         store_pointer $R8, $jit_literal_to_r8
         store_pointer $R9, $jit_literal_to_r9
+        store_pointer $R10, $jit_literal_to_r10
         store_pointer $R11, $jit_literal_to_r11
 
         lea     jit_literal_to_register_size_table, %rbx
@@ -1482,6 +1483,7 @@ main:                # argc, argv
         store_pointer $RDI, jit_literal_to_rdi_size
         store_pointer $R8, jit_literal_to_r8_size
         store_pointer $R9, jit_literal_to_r9_size
+        store_pointer $R10, jit_literal_to_r10_size
         store_pointer $R11, jit_literal_to_r11_size
 
         lea     jit_rax_to_register_table, %rbx
@@ -3126,12 +3128,12 @@ jit_procedure:                  # form, c-stream, environment, arguments
 
 1:      mov     local_idx(%rsp), %ecx
         cmp     %ecx, arity(%rsp)
-        je      2f
-
-        cmp     %ecx, varargs_idx(%rsp)
         je      3f
 
-        xor     %r11d, %r11d
+        cmp     %ecx, varargs_idx(%rsp)
+        je      4f
+
+2:      xor     %r11d, %r11d
         mov     jit_argument_to_register_id_table(%rcx), %r11b
         mov     jit_register_to_local_table(,%r11,POINTER_SIZE), %rax
         mov     jit_register_to_local_size_table(,%r11,POINTER_SIZE), %r11
@@ -3148,7 +3150,7 @@ jit_procedure:                  # form, c-stream, environment, arguments
         incl    local_idx(%rsp)
         jmp     1b
 
-2:      call_fn reverse, flat_args(%rsp)
+3:      call_fn reverse, flat_args(%rsp)
         call_fn append, %rax, env(%rsp)
         call_fn jit_datum, %rbx, %r12, %rax, $RAX, $C_TRUE
 
@@ -3171,7 +3173,12 @@ jit_procedure:                  # form, c-stream, environment, arguments
         call_fn fwrite, $jit_return, $1, jit_return_size, %r12
         return
 
-3:      jmp     2b
+4:      mov     varargs_idx(%rsp), %eax
+        call_fn jit_literal, %rax, %r12, $NIL, $R10, $C_FALSE
+        call_fn jit_literal, $jit_lambda_collect_varargs, %r12, $NIL, $R11, $C_FALSE
+        call_fn fwrite, $jit_call_r11, $1, jit_call_r11_size, %r12
+        mov     local_idx(%rsp), %ecx
+        jmp     2b
 
 jit_lambda_factory_code:        # lambda, c-stream, closure-bitmask
         prologue  rbp, local, local_idx, closure_bitmask, closure_idx, closure_env_size
@@ -3395,6 +3402,12 @@ jit_lambda_varargs_index:       # arguments
 
 3:      return  %r12
 
+jit_lambda_collect_varargs:     # varargs_idx in r10, arity in rax
+        prologue varargs_idx, arity
+        mov     %r10, varargs_idx(%rsp)
+        mov     %rax, arity(%rsp)
+
+        return
 
 jit_lambda:                     # form, c-stream, environment, register, tail
         prologue env, args, form, lambda, register, closure_env_bitmask
@@ -3996,7 +4009,7 @@ jit_return:
 jit_return_size:
         .quad   . - jit_return
 
-        .irp reg, rax, rdi, rsi, rdx, rcx, r8, r9, r11
+        .irp reg, rax, rdi, rsi, rdx, rcx, r8, r9, r10, r11
         .align  16
 jit_literal_to_\reg\():
         mov     $0x1122334455667788, %\reg
@@ -4018,7 +4031,13 @@ jit_jump:
 jit_jump_size:
         .quad   (. - jit_jump)
 
-        .irp reg, rax, r11
+        .irp reg, rax, r10, r11
+        .align  16
+jit_push_\reg\():
+        push    %\reg
+jit_push_\reg\()_size:
+        .quad   . - jit_push_\reg
+
         .align  16
 jit_unbox_\reg\():
         unbox_pointer_internal %\reg, %\reg
@@ -4058,12 +4077,6 @@ jit_rax_to_\reg\():
 jit_rax_to_\reg\()_size:
         .quad   . - jit_rax_to_\reg
         .endr
-
-        .align  16
-jit_push_rax:
-        push    %rax
-jit_push_rax_size:
-        .quad   . - jit_push_rax
 
         .align  16
 jit_void_to_rax:
