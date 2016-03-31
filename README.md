@@ -38,7 +38,9 @@ make run-docker
 The
 [`Dockerfile`](https://github.com/hraberg/akeem/blob/master/Dockerfile)
 will create a development container than can both run and compile
-Akeem. If `rlwrap` crashes, the above command usually works when
+Akeem. Running under Docker should work on Mac as well.
+
+If `rlwrap` crashes, the above command usually works when
 trying again.
 
 
