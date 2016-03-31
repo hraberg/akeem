@@ -20,12 +20,18 @@
 
         ## unistd.h
         .equ F_OK, 0
+        .equ STDERR_FILENO, 2
+
+        ## signal.h
+        .equ SIGSEGV, 11
 
         .equ ROUNDING_MODE_TRUNCATE, 0b11
 
         .equ CPUID_FEATURE_INFORMATION, 1
         .equ SSE4_1, 1 << 19
         .equ SSE4_2, 1 << 20
+
+        .equ STACKTRACE_SIZE, 10
 
         .equ BYTE_SIZE, 1
         .equ WORD_SIZE, BYTE_SIZE * 2

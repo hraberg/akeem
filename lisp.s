@@ -1025,8 +1025,9 @@ error:                          # message, irritants
         mov     %rax, %r12
         call_fn display, %rbx, %r12
         call_fn display, irritant(%rsp), %r12
-        call_fn display, $NEWLINE_CHAR, %r12
-        call_fn exit, $1
+        call_fn newline, %r12
+
+        call_fn longjmp, error_jmp_buffer, $C_TRUE
         return
 
         ## 6.13. Input and output
@@ -1214,7 +1215,9 @@ main:                # argc, argv
         call_fn printf, $cpuid_error
         return  $1
 
-1:      call_fn init_pointer_stack, $object_space, $POINTER_STACK_INITIAL_SIZE
+1:      call_fn signal, $SIGSEGV, $segv_handler
+
+        call_fn init_pointer_stack, $object_space, $POINTER_STACK_INITIAL_SIZE
         call_fn init_pointer_stack, $gc_mark_stack, $POINTER_STACK_INITIAL_SIZE
         call_fn init_pointer_stack, $constant_pool, $POINTER_STACK_INITIAL_SIZE
 
@@ -1317,6 +1320,9 @@ main:                # argc, argv
 
         intern_string empty_string, ""
 
+        intern_string welcome_message_string, "Welcome to Akeem Scheme."
+
+        intern_string segfault_error_string, "Segmentation fault: "
         intern_string read_error_string, "Unexpected input: "
         intern_string code_space_error_string, "Code space exceeded: "
         intern_string not_a_character_string, "Not a character: "
@@ -1772,11 +1778,40 @@ main:                # argc, argv
 
         call_fn gc
 
-        call_fn box_string, $init_scm
+        call_fn length, command_line_arguments
+        cmp     $1, %eax
+        jg      1f
+
+        call_fn display, welcome_message_string
+        call_fn newline
+
+        call_fn malloc, $JMP_BUF_SIZE
+        perror
+        mov     %rax, error_jmp_buffer
+        call_fn setjmp, error_jmp_buffer
+
+1:      call_fn box_string, $init_scm
         call_fn open_input_string, %rax
         call_fn read_all, %rax
 
         return  $0
+
+segv_handler:                   # signal
+        prologue stacktrace
+
+        call_fn display, segfault_error_string
+        call_fn newline
+
+        call_fn malloc, $(POINTER_SIZE * STACKTRACE_SIZE)
+        perror
+        mov     %rax, stacktrace(%rsp)
+        call_fn backtrace, stacktrace(%rsp), $STACKTRACE_SIZE
+        call_fn backtrace_symbols_fd, stacktrace(%rsp), $STACKTRACE_SIZE, $STDERR_FILENO
+
+        call_fn free, stacktrace(%rsp)
+
+        call_fn longjmp, error_jmp_buffer, $C_TRUE
+        return
 
 box_string_array_as_list:       # c-string-array
         prologue strings
@@ -4140,6 +4175,8 @@ gc_mark_stack:
         .zero   stack_size
 constant_pool:
         .zero   stack_size
+error_jmp_buffer:
+        .quad   0
 
         .align  16
 jit_code_file_counter:
