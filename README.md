@@ -1,7 +1,7 @@
 # Akeem
 
-*When you think of garbage, think of Akeem.*
-— [Prince Akeem of Zamunda](http://www.imdb.com/title/tt0094898/)
+*When you think of garbage, think of Akeem.* —
+[Prince Akeem of Zamunda](http://www.imdb.com/title/tt0094898/)
 
 Akeem is a small JIT-ed subset of
 [R5RS Scheme](http://www.schemers.org/Documents/Standards/R5RS/)
@@ -26,6 +26,7 @@ make
 (setq scheme-program-name "/path/to/akeem")
 (run-scheme)
 ```
+
 See [this tutorial](http://community.schemewiki.org/?emacs-tutorial).
 
 ### Docker
@@ -124,8 +125,9 @@ Parts of the implementation are in
 [`boot.scm`](https://github.com/hraberg/akeem/blob/master/boot.scm),
 [`r5rs.scm`](https://github.com/hraberg/akeem/blob/master/r5rs.scm),
 [`r7rs.scm`](https://github.com/hraberg/akeem/blob/master/r7rs.scm)
-and [`init.scm`](https://github.com/hraberg/akeem/blob/master/init.scm),
-which are embedded as strings during compilation and is loaded at
+and
+[`init.scm`](https://github.com/hraberg/akeem/blob/master/init.scm),
+which are embedded as strings during compilation and are loaded at
 startup in this order.
 
 While running, the result of the JIT can be logged into `jit_code` and
@@ -147,13 +149,14 @@ make run-tests-catchsegv
 
 ### Benchmarks
 
-You can run a small set of the Racket benchmarks using:
+You can run a small subset of the Racket benchmarks using:
 
 ``` bash
 make RACKET_HOME=/path/to/racket benchmarks
 ```
+
 The `racket` executable itself is assumed to be on the path. Akeem can
-currently run about 10% of the benchmarks, and is about 3 times slower
+currently run about 10% of the benchmarks, and is about 4 times slower
 than Racket.
 
 ### Profiling
@@ -164,7 +167,9 @@ You can run a single benchmark followed by
 ``` bash
 make RACKET_BENCHMARKS=nqueens profile
 ```
-Only functions written in assembler will show up.
+
+Only functions written in assembler will show up in the profile
+report.
 
 
 ## References
