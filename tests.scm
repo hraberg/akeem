@@ -653,8 +653,8 @@
 (assert (list-length '(1 2 3 4)))
 (assert (list-length '(a b . c)))
 
-;; (assert (call-with-values (lambda () (values 4 5))
-;;           (lambda (a b) b)))
+(assert (call-with-values (lambda () (values 4 5))
+          (lambda (a b) b)))
 ;; (assert (call-with-values * -))
 
 ;; (assert (let ((path '())

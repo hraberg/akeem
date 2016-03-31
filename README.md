@@ -46,7 +46,7 @@ trying again.
 * Subset of R5RS and R7RS "small" procedures.
 * JIT for `if`, `lambda`, `set!`, `let`, `letrec` and `begin`
 * Syntax for `and`, `or`, `cond`, `case`, `let*`, "named `let`", `do`,
-  `delay` and `define`.
+  `delay`, `call-with-values` and `define`.
   * + R7RS `case`, `when`, `unless` and `case-lambda`.
 * Basic support for `define-syntax` / `syntax-rules` and `quasiquote`.
 * NaN-boxed 32-bit integers and 64-bit doubles
@@ -58,7 +58,7 @@ trying again.
 
 ## What Doesn't Work?
 
-* No `call-with-values` or `dynamic-wind`.
+* No `dynamic-wind`.
 * No `let-syntax` and `letrec-syntax`.
 * `call-with-current-continuation` only uses `setjmp`.
 * Max arity is currently 6, higher requires the use of the stack.

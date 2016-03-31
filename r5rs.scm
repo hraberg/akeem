@@ -469,6 +469,12 @@
                          (set-cdr! result x)
                          (cdr result)))))))))
 
+(define (values . things)
+  (lambda (cont) (apply cont things)))
+
+(define (call-with-values producer consumer)
+  ((producer) consumer))
+
 (define (dynamic-wind before thunk after)
   (before)
   (let ((return (thunk)))
