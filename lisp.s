@@ -3461,8 +3461,7 @@ jit_lambda_collect_varargs:     # arity in rax, varargs_idx in r10
         mov     $NIL, %rbx
         jmp     6f
 
-1:      push    %rbx
-        mov     %r13, %r12
+1:      mov     %r13, %r12
         sub     %r14, %r12
 
         mov     %r14, %r11
@@ -3509,7 +3508,6 @@ varargs_load_5:
         .align  VARARGS_JUMP_ALIGNMENT
 
 2:      mov     %r14, %r12
-        mov     $NIL, %rbx
 
 3:      cmp     $MAX_REGISTER_ARGS, %r12
         je      4f
@@ -3523,11 +3521,7 @@ varargs_load_5:
         inc     %r12d
         jmp     3b
 
-4:      pop     %rax
-        call_fn append, %rbx, %rax
-        mov     %rax, %rbx
-
-        pop    %r9
+4:      pop    %r9
         pop    %r8
         pop    %rdx
         pop    %rcx
