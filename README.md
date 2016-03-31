@@ -50,7 +50,7 @@ trying again.
   * + R7RS `case`, `when` and `unless`.
 * Basic support for `define-syntax` / `syntax-rules` and `quasiquote`.
 * NaN-boxed 32-bit integers and 64-bit doubles
-* Function application up to 6 arguments.
+* Function application up to 6 named arguments with varargs support.
 * TCO for calls in tail position across functions.
 * The bootstrap Scheme code is embedded in the executable.
 * Mark and Sweep GC.
@@ -58,7 +58,6 @@ trying again.
 
 ## What Doesn't Work?
 
-* No vararg support.
 * No `call-with-values` or `dynamic-wind`.
 * No `let-syntax` and `letrec-syntax`.
 * `call-with-current-continuation` only uses `setjmp`.

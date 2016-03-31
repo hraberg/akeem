@@ -3021,7 +3021,7 @@ jit_procedure_call:             # form, c-stream, environment, register, tail
         dec     %eax
         mov     %al, arity(%rsp)
 
-        cmpb    $(MAX_REGISTER_ARGS), arity(%rsp)
+        cmpb    $MAX_REGISTER_ARGS, arity(%rsp)
         jg      15f
 
 0:      car     %rbx
@@ -3107,9 +3107,8 @@ jit_procedure_call:             # form, c-stream, environment, register, tail
         lea     arity(%rsp), %rax
         call_fn fwrite, %rax, $1, $BYTE_SIZE, %r12
 
-        mov     $TCO_JIT, %r11
-        cmp     $C_FALSE, %r11
-        je      11f
+        cmpb    $MAX_REGISTER_ARGS, arity(%rsp)
+        jg      11f
 
         cmp     $C_TRUE, tail(%rsp)
         je      12f
