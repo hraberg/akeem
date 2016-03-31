@@ -698,6 +698,18 @@
           (display "2")
           (newline)))
 
+(spec ";;; 4.2.9. Case-lambda")
+
+(define range
+  (case-lambda
+   ((e) (range 0 e))
+   ((b e) (do ((r '() (cons e r))
+               (e (- e 1) (- e 1)))
+              ((< e b) r)))))
+
+(assert (range 3))
+(assert (range 3 5))
+
 (spec ";;; 6.2. Numbers")
 (spec ";;; 6.2.6. Numerical operations")
 (assert (exact-integer? 32))

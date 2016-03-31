@@ -47,6 +47,31 @@
      (if (not test)
          (begin result1 result2 ...)))))
 
+;;; 4.2.9. Case-lambda
+
+(define-syntax case-lambda
+  (syntax-rules ()
+    ((case-lambda (params body0 ...) ...)
+     (lambda args
+       (let ((len (length args)))
+         (case-lambda len (params body0 ...) ...))))
+    ((case-lambda len)
+     (error "no matching clause"))
+    ((case-lambda len ((p ...) . body) . rest)
+     (if (= len (length '(p ...)))
+         (apply (lambda (p ...)
+                  . body)
+                args)
+         (case-lambda len . rest)))
+    ((case-lambda len ((p ... . tail) . body)
+                  . rest)
+     (if (>= len (length '(p ...)))
+         (apply
+          (lambda (p ... . tail)
+            . body)
+          args)
+         (case-lambda len . rest)))))
+
 ;;; 6.1. Equivalence predicates
 
 (define (pair=? pair1 pair2)
