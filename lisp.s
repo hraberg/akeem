@@ -3087,6 +3087,10 @@ jit_procedure_call:             # form, c-stream, environment, register, tail
         lea     arity(%rsp), %rax
         call_fn fwrite, %rax, $1, $BYTE_SIZE, %r12
 
+        mov     $TCO_JIT, %r11
+        cmp     $C_FALSE, %r11
+        je      11f
+
         cmp     $C_TRUE, tail(%rsp)
         je      12f
 
@@ -3441,22 +3445,18 @@ jit_lambda_varargs_index:       # arguments
 
 jit_lambda_collect_varargs:     # arity in rax, varargs_idx in r10
         push    %rbp
-        push    %rbx
-        push    %r12
-        push    %r13
-        push    %r14
         mov     %rsp, %rbp
-        sub     $POINTER_SIZE, %rsp
+
+        .irp reg, rbx, r12, r13, r14
+        push    %\reg
+        .endr
 
         mov     %rax, %r13
         mov     %r10, %r14
 
-        push    %rdi
-        push    %rsi
-        push    %rcx
-        push    %rdx
-        push    %r8
-        push    %r9
+        .irp reg, rdi, rsi, rdx, rcx, r8, r9
+        push    %\reg
+        .endr
 
         mov     $NIL, %rbx
         jmp     6f
@@ -3521,12 +3521,9 @@ varargs_load_5:
         inc     %r12d
         jmp     3b
 
-4:      pop    %r9
-        pop    %r8
-        pop    %rdx
-        pop    %rcx
-        pop    %rsi
-        pop    %rdi
+4:      .irp reg, r9, r8, rcx, rdx, rsi, rdi
+        pop    %\reg
+        .endr
 
         mov     %r14, %r11
         imul    $VARARGS_JUMP_ALIGNMENT, %r11
@@ -3559,11 +3556,11 @@ varargs_store_5:
         jmp     5f
         .align  VARARGS_JUMP_ALIGNMENT
 
-5:      mov    %rbp, %rsp
-        pop    %r14
-        pop    %r13
-        pop    %r12
-        pop    %rbx
+5:      .irp reg, r14, r13, r12, rbx
+        pop    %\reg
+        .endr
+
+        mov    %rbp, %rsp
         pop    %rbp
         ret
 
@@ -3584,19 +3581,13 @@ varargs_store_5:
         dec     %r12d
         jmp     7b
 
-8:      pop    %r9
-        pop    %r8
-        pop    %rdx
-        pop    %rcx
-        pop    %rsi
-        pop    %rdi
+8:      .irp reg, r9, r8, rcx, rdx, rsi, rdi
+        pop    %\reg
+        .endr
 
-        push    %rdi
-        push    %rsi
-        push    %rcx
-        push    %rdx
-        push    %r8
-        push    %r9
+        .irp reg, rdi, rsi, rdx, rcx, r8, r9
+        push    %\reg
+        .endr
 
         jmp     1b
 

@@ -92,7 +92,7 @@
 
         .equ APPLY_JUMP_ALIGNMENT, 2
         .equ VARARGS_JUMP_ALIGNMENT, 16
-        .equ VARARGS_STACK_OFFSET, 4 # (return address, rbp) * 2
+        .equ VARARGS_STACK_OFFSET, 5 # (return address, rbp) * 2 + ?
 
         .equ GC_MARK_BIT, 0
 
@@ -118,6 +118,7 @@
         .equ MICROSECONDS_PER_SEC, 1000000
 
         .equ LOG_JIT, C_FALSE
+        .equ TCO_JIT, C_FALSE
 
         .struct 0
 header_object_mark:
