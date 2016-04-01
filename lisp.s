@@ -2041,7 +2041,9 @@ gc_allocate_memory:             # c-size
         call_fn gc
         call_fn malloc, %rbx
         perror
-1:      return
+1:      mov     %rax, %r12
+        call_fn memset, %r12, $NULL, %rbx
+        return  %r12
 
 gc_mark_nop:                    # obj
         ret
