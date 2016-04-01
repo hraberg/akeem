@@ -3515,9 +3515,6 @@ jit_lambda_varargs_index:       # arguments
 3:      return  %r12
 
 jit_lambda_collect_varargs:     # arity in rax, varargs_idx in r10
-        push    %rbp
-        mov     %rsp, %rbp
-
         .irp reg, rbx, r12, r13, r14
         push    %\reg
         .endr
@@ -3653,9 +3650,6 @@ varargs_store_5:
 6:      .irp reg, r14, r13, r12, rbx
         pop    %\reg
         .endr
-
-        mov    %rbp, %rsp
-        pop    %rbp
         ret
 
 jit_lambda:                     # form, c-stream, environment, register, tail
