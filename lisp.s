@@ -3551,7 +3551,7 @@ jit_lambda_collect_varargs:     # arity in rax, varargs_idx in r10
         jle     2f
 
         mov     %r12, %rcx
-        add     $VARARGS_STACK_OFFSET, %rcx
+        inc     %rcx
         mov     (%rbp,%rcx,POINTER_SIZE), %rax
 
         call_fn cons, %rax, %rbx
