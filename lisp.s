@@ -3559,7 +3559,7 @@ jit_lambda_collect_varargs:     # arity in rax, varargs_idx in r10
         sub     %r14, %r12
 
         mov     %r14, %r11
-        imul    $VARARGS_JUMP_ALIGNMENT, %r11
+        shl     $VARARGS_JUMP_ALIGNMENT_SHIFT, %r11
         add     $varargs_load_0, %r11
         jmp     *%r11
 
@@ -3620,7 +3620,7 @@ varargs_load_5:
         .endr
 
         mov     %r14, %r11
-        imul    $VARARGS_JUMP_ALIGNMENT, %r11
+        shl     $VARARGS_JUMP_ALIGNMENT_SHIFT, %r11
         add     $varargs_store_0, %r11
         jmp     *%r11
 

@@ -98,6 +98,7 @@
 
         .equ APPLY_JUMP_ALIGNMENT, 2
         .equ VARARGS_JUMP_ALIGNMENT, 16
+        .equ VARARGS_JUMP_ALIGNMENT_SHIFT, 4
         .equ VARARGS_STACK_OFFSET, 5 # (return address, rbp) * 2 + ?
 
         .equ GC_MARK_BIT, 0
