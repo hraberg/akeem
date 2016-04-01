@@ -3045,7 +3045,7 @@ jit_pair:                       # form, c-stream, environment, register, tail
         ## 4.1.3. Procedure calls
 
 jit_procedure_call:             # form, c-stream, environment, register, tail
-        prologue form, len, operand, env, max_locals, register, tail, arity, argc
+        prologue form, len, operand, env, max_locals, register, tail, arity, argc, pushed_args_size
         mov     %rdi, %rbx
         mov     %rbx, form(%rsp)
         mov     %rsi, %r12
@@ -3053,6 +3053,7 @@ jit_procedure_call:             # form, c-stream, environment, register, tail
         mov     %rcx, register(%rsp)
         mov     %r8, tail(%rsp)
         movl    $0, argc(%rsp)
+        movl    $0, pushed_args_size(%rsp)
         movq    $0, max_locals(%rsp)
 
         call_fn length, %rbx
@@ -3153,6 +3154,9 @@ jit_procedure_call:             # form, c-stream, environment, register, tail
         je      12f
 
 11:     call_fn fwrite, $jit_call_r11, $1, jit_call_r11_size, %r12
+        cmpl    $0, pushed_args_size(%rsp)
+        jg      19f
+
         jmp     13f
 
 12:     call_fn fwrite, $jit_epilogue, $1, jit_epilogue_size, %r12
@@ -3177,8 +3181,14 @@ jit_procedure_call:             # form, c-stream, environment, register, tail
 
         jmp     13b
 
-15:     xor     %r11d, %r11d
-        movb    arity(%rsp), %r11b
+15:     xor     %eax, %eax
+        mov     arity(%rsp), %al
+        sub     $MAX_REGISTER_ARGS, %al
+        shl     $POINTER_SIZE_SHIFT, %eax
+        mov     %eax, pushed_args_size(%rsp)
+
+        xor     %r11d, %r11d
+        mov     arity(%rsp), %r11b
         movl    %r11d, argc(%rsp)
         cdr     %rbx
         call_fn reverse, %rax
@@ -3202,6 +3212,12 @@ jit_procedure_call:             # form, c-stream, environment, register, tail
 18:     mov     form(%rsp), %rbx
         movl    $0, argc(%rsp)
         jmp     0b
+
+19:     call_fn fwrite, $jit_caller_cleanup, $1, jit_caller_cleanup_size, %r12
+        lea     pushed_args_size(%rsp), %rax
+        call_fn fwrite, %rax, $1, $INT_SIZE, %r12
+
+        jmp     13b
 
         ## 4.1.4. Procedures
 
@@ -4323,6 +4339,12 @@ jit_jump_\reg\():
 jit_jump_\reg\()_size:
         .quad   (. - jit_jump_\reg\())
         .endr
+
+        .align  16
+jit_caller_cleanup:
+        add     $0x11223344, %rsp
+jit_caller_cleanup_size:
+        .quad   (. - jit_caller_cleanup) - INT_SIZE
 
         .irp reg, rax, rdi, rsi, rdx, rcx, r8, r9, r11
         .align  16
