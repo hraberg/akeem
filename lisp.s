@@ -919,6 +919,37 @@ load:                           # filename
 
         ## R7RS
 
+        ## 5.5. Record-type definitions
+
+make_record:                    # k, type
+        prologue
+        assert_tag TAG_PAIR, %rdi, not_a_pair_string
+        assert_tag TAG_SYMBOL, %rsi, not_a_symbol_string
+        mov     %rsi, %rbx
+        call_fn list_to_vector, %rdi
+        unbox_pointer_internal %rax
+        mov     %bx, header_object_type(%rax)
+        tag     TAG_OBJECT, %rax
+        return
+
+record_ref:                     # record, k
+        assert_tag TAG_OBJECT, %rdi, not_a_vector_string
+        assert_tag TAG_INT, %rsi, not_an_integer_string
+        unbox_pointer_internal %rdi
+        mov     %esi, %esi
+        mov     header_size(%rax,%rsi,POINTER_SIZE), %rax
+        ret
+
+record_set:                     # record, k, obj
+        assert_tag TAG_OBJECT, %rdi, not_a_vector_string
+        assert_tag TAG_INT, %rsi, not_an_integer_string
+        unbox_pointer_internal %rdi
+        mov     %esi, %esi
+        mov     %rdx, header_size(%rax,%rsi,POINTER_SIZE)
+        mov     $VOID, %rax
+        ret
+
+
         ## 6. Standard procedures
         ## 6.2. Numbers
         ## 6.2.6. Numerical operations
@@ -1756,6 +1787,10 @@ main:                # argc, argv
 
         mov     symbol_next_id, %rax
         mov     %rax, max_scheme_report_environment_symbol
+
+        define "make-record", $make_record
+        define "record-ref", $record_ref
+        define "record-set!", $record_set
 
         define "infinite?", $is_infinite
         define "nan?", $is_nan

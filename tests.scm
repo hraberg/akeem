@@ -725,6 +725,21 @@
 (assert (range 3))
 (assert (range 3 5))
 
+(spec ";;; 5.5. Record-type definitions")
+(define-record-type <pare>
+  (kons x y)
+  pare?
+  (x kar set-kar!)
+  (y kdr))
+
+(assert (pare? (kons 1 2)))
+(assert (pare? (cons 1 2)))
+(assert (kar (kons 1 2)))
+(assert (kdr (kons 1 2)))
+(assert (let ((k (kons 1 2)))
+          (set-kar! k 3)
+          (kar k)))
+
 (spec ";;; 6.2. Numbers")
 (spec ";;; 6.2.6. Numerical operations")
 (assert (exact-integer? 32))

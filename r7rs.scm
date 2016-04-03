@@ -107,6 +107,35 @@
           args)
          (case-lambda len . rest)))))
 
+;;; 5.5. Record-type definitions
+
+(define-syntax define-record-type
+  (syntax-rules ()
+    ((define-record-type name
+       (constructor fields ...)
+        pred
+        (field-name accessor modifier ...) ...)
+
+     (define (constructor fields ...)
+       (make-record (list fields ...) 'name))
+
+     (define (pred obj)
+       (eq? 'name (class-of obj)))
+
+     (let ((fs '(fields ...)))
+       (define-record-type "field" fs (field-name accessor modifier ...)) ...))
+
+    ((define-record-type "field" fields (field-name accessor))
+     (let ((field-idx (- (length fields) (length (memq 'field-name fields)))))
+       (define (accessor record)
+         (record-ref record field-idx))))
+
+    ((define-record-type "field" fields (field-name accessor modifier))
+     (define-record-type "field" fields (field-name accessor))
+     (let ((field-idx (- (length fields) (length (memq 'field-name fields)))))
+       (define (modifier record value)
+         (record-set! record field-idx value))))))
+
 ;;; 6.1. Equivalence predicates
 
 (define (pair=? pair1 pair2)
