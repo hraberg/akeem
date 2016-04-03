@@ -16,7 +16,7 @@ default: akeem
 	$(AS) $< $(ASFLAGS) -o $@
 
 akeem: lisp.o
-	$(CC) $^ $(CFLAGS) $(LDLIBS) -o $@
+	$(CC) $^ $(LDLIBS) -o $@
 
 # based on http://unix.stackexchange.com/a/79137
 run-tests: akeem
@@ -43,6 +43,9 @@ retest: /usr/bin/entr
 	while true; do find . -name '*.s' -o -name '*.scm' -o -name Makefile -o -name tests.out | \
 		$< -r $(MAKE) -s run-tests ; done
 
+valgrind: clean akeem
+	echo "(exit 0)" | valgrind --suppressions=akeem.suppressions --error-exitcode=1 -q $(AKEEM) > /dev/null
+
 benchmark: clean akeem
 	cd $(RACKET_BENCHMARKS_HOME) ; \
 	for test in $(RACKET_BENCHMARKS) ; do \
@@ -65,11 +68,11 @@ jit-dissassmble:
 jit-clean:
 	rm -rf jit_code
 
-release: CFLAGS += -s
-release: clean akeem
+release: clean akeem run-tests valgrind
+	strip $(AKEEM)
 
 clean:	jit-clean profile-clean
-	rm -f akeem *.o
+	rm -f $(AKEEM) *.o
 
 check: run-tests
 

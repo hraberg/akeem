@@ -734,7 +734,7 @@ null_environment:               # version
         ret
 
 interaction_environment:
-        box_int_internal $-1
+        box_int_internal $MAX_NUMBER_OF_SYMBOLS
         ret
 
         ## 6.6. Input and output
@@ -1888,7 +1888,7 @@ read_all:                       # port
 1:      call_fn read, %rbx
         is_eof_object_internal %rax
         je      2f
-        call_fn eval, %rax
+        call_fn eval, %rax, $MAX_NUMBER_OF_SYMBOLS
         jmp     1b
 2:      return  $TRUE
 
@@ -2059,20 +2059,9 @@ gc_is_markable_object:          # pointer
         je      1f
         is_void_internal %rdi
         je      1f
-        ## TODO: figure out what these are.
-        test    %rdi, %rdi
-        js      2f
-        mov     $0x7ffd000000000030, %r11
-        cmp     %r11, %rdi
-        je      2f
-        mov     $0x7ffd000000000002, %r11
-        cmp     %r11, %rdi
-        je      2f
 
         return  $C_TRUE
 1:      return  $C_FALSE
-
-2:      return  $C_FALSE
 
 gc_mark_object:                 # pointer
         prologue
@@ -2133,6 +2122,8 @@ gc_mark_queue_stack:
         jmp     1b
 2:      return
 
+        .type gc_mark_queue_stack, @function
+        .size gc_mark_queue_stack, . - gc_mark_queue_stack
 
 gc_mark_queue_global_variables:
         prologue
@@ -3828,36 +3819,43 @@ jit_let_collect_bindings:       # bindings
 
 2:      return  %r12
 
-jit_let_bindings:               # bindings, c-stream, environment, bindings-environment
-        prologue env, bindings_env, max_locals
+jit_let_bindings:               # bindings, c-stream, environment, bindings-environment, init-to-void
+        prologue env, bindings_env, max_locals, init_to_void
         mov     %rdi, %rbx
         mov     %rsi, %r12
         mov     %rdx, env(%rsp)
         mov     %rcx, bindings_env(%rsp)
         movq    $0, max_locals(%rsp)
+        mov     %r8, init_to_void(%rsp)
 
 1:      is_nil_internal %rbx
-        je      2f
-        car     %rbx
-
-        cdr     %rax
-        car     %rax
-        call_fn jit_datum, %rax, %r12, bindings_env(%rsp), $RAX, $C_FALSE
-        update_max_locals max_locals(%rsp)
+        je      4f
 
         car     %rbx
         car     %rax
         call_fn cons, %rax, env(%rsp)
         mov     %rax, env(%rsp)
 
-        car     %rbx
+        cmp     $C_TRUE, init_to_void(%rsp)
+        jne     2f
+
+        call_fn jit_literal, $VOID, %r12, $NIL, $RAX, $C_FALSE
+        jmp     3f
+
+2:      car     %rbx
+        cdr     %rax
+        car     %rax
+        call_fn jit_datum, %rax, %r12, bindings_env(%rsp), $RAX, $C_FALSE
+        update_max_locals max_locals(%rsp)
+
+3:      car     %rbx
         car     %rax
         call_fn jit_set_with_rax_as_value, %rax, %r12, env(%rsp)
 
         cdr     %rbx, %rbx
         jmp     1b
 
-2:      return max_locals(%rsp)
+4:      return max_locals(%rsp)
 
 jit_let:                        # form, c-stream, environment, register, tail
         prologue env, max_locals, register, tail
@@ -3879,7 +3877,7 @@ jit_let:                        # form, c-stream, environment, register, tail
         return
 
 1:      car     %rbx
-        call_fn jit_let_bindings %rax, %r12, env(%rsp), env(%rsp)
+        call_fn jit_let_bindings %rax, %r12, env(%rsp), env(%rsp), $C_FALSE
         update_max_locals max_locals(%rsp)
 
         car     %rbx
@@ -3920,7 +3918,8 @@ jit_letrec:                     # form, c-stream, environment, register, tail
         call_fn append, %rax, env(%rsp)
         mov    %rax, full_env(%rsp)
 
-        call_fn jit_let_bindings %rbx, %r12, env(%rsp), full_env(%rsp)
+        call_fn jit_let_bindings %rbx, %r12, env(%rsp), full_env(%rsp), $C_TRUE
+        call_fn jit_let_bindings %rbx, %r12, env(%rsp), full_env(%rsp), $C_FALSE
         update_max_locals max_locals(%rsp)
 
 1:      is_nil_internal %rbx

@@ -5,6 +5,6 @@ RUN apt-get update && apt-get install -y gcc make rlwrap && apt-get clean && rm 
 WORKDIR /usr/src/akeem
 COPY . /usr/src/akeem
 
-RUN make release run-tests
+RUN make release
 
 CMD ["rlwrap", "./akeem"]
