@@ -452,7 +452,7 @@
 
 (define (map proc list)
   (let* ((length (length list))
-         (acc (make-list length (void))))
+         (acc (make-list length)))
     (do ((from list (cdr from))
          (to acc (cdr to)))
         ((null? from) acc)

@@ -1800,8 +1800,6 @@ main:                # argc, argv
         store_pointer \symbol\()_symbol, \symbol\()_size
         .endr
 
-        define "void", $void
-
         call_fn box_string, $r7rs_scm
         call_fn open_input_string, %rax
         call_fn read_all, %rax
@@ -1916,11 +1914,6 @@ build_environment_alist:        # list
 3:      return  %rbx
 
         ## Public API
-
-void:
-        mov     $VOID, %rax
-        ret
-
 
 read_all:                       # port
         prologue

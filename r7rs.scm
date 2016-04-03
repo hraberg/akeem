@@ -167,10 +167,14 @@
 
 ;;; 6.4. Pairs and lists
 
-(define (make-list k fill)
-  (do ((acc '() (cons fill acc))
-       (idx 0 (+ idx 1)))
-      ((= idx k) acc)))
+(define make-list
+  (case-lambda
+   ((k)
+    (make-list k (if #f #f)))
+   ((k fill)
+    (do ((acc '() (cons fill acc))
+         (idx 0 (+ idx 1)))
+        ((= idx k) acc)))))
 
 (define (list-set! list k obj)
   (set-car! (list-tail list k) obj))

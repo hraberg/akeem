@@ -4,7 +4,7 @@
     (let ((input (read (current-input-port))))
       (unless (eof-object? input)
         (let ((result (eval input (interaction-environment))))
-          (unless (eq? (void) result)
+          (unless (eq? (if #f #f) result)
             (write result (current-output-port))
             (newline (current-output-port)))
           (loop))))))
