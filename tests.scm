@@ -561,7 +561,7 @@
                           (inexact->exact i)
                           i))))
 
-(assert (let ((vec '#(0 '(2 2 2 2) "Anna")))  ;; should not be constant
+(assert (let ((vec (vector 0 '(2 2 2 2) "Anna")))
           (vector-set! vec 1 '("Sue" "Sue"))
           vec))
 ;; (assert (vector-set! '#(0 1 2) 1 "doe"))
