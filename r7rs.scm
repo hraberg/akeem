@@ -64,32 +64,23 @@
        (else
         (error "bad parameter syntax"))))))
 
+
 (define-syntax parameterize
-  (syntax-rules ()
-    ((parameterize ("step")
-       ((param value p old new) ...)
-       ()
-       body)
-     (let ((p param) ...)
-       (let ((old (p)) ...
-             (new ((p '<param-convert>) value)) ...)
-         (dynamic-wind
-             (lambda () (p '<param-set!> new) ...)
-             (lambda () . body)
-             (lambda () (p '<param-set!> old) ...)))))
-    ((parameterize ("step")
-       args
-       ((param value) . rest)
-       body)
-     (parameterize ("step")
-       ((param value p old new) . args)
-       rest
-       body))
-    ((parameterize ((param value) ...) . body)
-     (parameterize ("step")
-       ()
-       ((param value) ...)
-       body))))
+  (lambda (form env)
+    `(let ((old (list ,@(map (lambda (p)
+                               `(cons (,(car p)) ,(car p)))
+                             (cadr form)))))
+       (dynamic-wind
+         (lambda ()
+           ,@(map (lambda (p)
+                    `(,(car p) '<param-set!> ((,(car p) '<param-convert>) ,(cadr p))))
+                  (cadr form)))
+         (lambda ()
+           ,@(cddr form))
+         (lambda ()
+           (for-each (lambda (p)
+                       ((cdr p) '<param-set!> (car p)))
+                     old))))))
 
 ;;; 4.2.9. Case-lambda
 

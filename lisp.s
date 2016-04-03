@@ -1800,6 +1800,8 @@ main:                # argc, argv
         store_pointer \symbol\()_symbol, \symbol\()_size
         .endr
 
+        define "void", $void
+
         call_fn box_string, $r7rs_scm
         call_fn open_input_string, %rax
         call_fn read_all, %rax
@@ -1808,7 +1810,6 @@ main:                # argc, argv
         define "gc", $gc
         define "object-space-size", $object_space_size
         define "class-of", $class_of
-        define "void", $void
 
         call_fn box_string_array_as_list, argv(%rsp)
         mov     %rax, command_line_arguments
