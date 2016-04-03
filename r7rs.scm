@@ -283,6 +283,15 @@
 
 ;;; 6.8. Vectors
 
+(define make-vector-internal make-vector)
+
+(define make-vector
+  (case-lambda
+   ((k)
+    (make-vector k (if #f #f)))
+   ((k fill)
+    (make-vector-internal k fill))))
+
 (define vector->list
   (case-lambda
    ((vector)
