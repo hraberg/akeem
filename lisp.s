@@ -3527,7 +3527,7 @@ jit_lambda_varargs_index:       # arguments
 
 3:      return  %r12
 
-jit_lambda_arity_check_error: # arity in al, expected-arity in r11b
+jit_lambda_arity_check_error:   # arity in al, expected-arity in r11b
         minimal_prologue
         mov     %rax, %rdi
         mov     %r11d, %esi
