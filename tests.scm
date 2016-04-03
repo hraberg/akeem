@@ -698,6 +698,32 @@
           (display "2")
           (newline)))
 
+(spec ";;; 4.2.5. Delayed evaluation")
+(define integers
+  (letrec ((next
+            (lambda (n)
+              (delay (cons n (next (+ n 1)))))))
+    (next 0)))
+(define head
+  (lambda (stream) (car (force stream))))
+(define tail
+  (lambda (stream) (cdr (force stream))))
+(assert (head (tail (tail integers))))
+
+(define (stream-filter p? s)
+  (delay-force
+   (if (null? (force s))
+       (delay '())
+       (let ((h (car (force s)))
+             (t (cdr (force s))))
+         (if (p? h)
+             (delay (cons h (stream-filter p? t)))
+             (stream-filter p? t))))))
+(assert (head (tail (tail (stream-filter odd? integers)))))
+
+(assert (car
+         (list (delay (* 3 7)) 13)))
+
 (spec ";;; 4.2.6. Dynamic bindings")
 (define radix
   (make-parameter

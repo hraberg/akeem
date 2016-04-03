@@ -47,6 +47,33 @@
      (if (not test)
          (begin result1 result2 ...)))))
 
+;;; 4.2.5. Delayed evaluation
+
+(define-syntax delay-force
+  (syntax-rules ()
+    ((delay-force expression)
+     (make-promise #f (lambda () expression)))))
+
+(define-syntax delay
+  (syntax-rules ()
+    ((delay expression)
+     (delay-force (make-promise #t expression)))))
+
+(define (force promise)
+  (if (promise-done? promise)
+      (promise-value promise)
+      (let ((promise* ((promise-value promise))))
+        (unless (promise-done? promise)
+          (promise-update! promise* promise))
+        (force promise))))
+
+(define promise-update!
+  (lambda (new old)
+    (set-promise-done! old (promise-done? new))
+    (set-promise-value! old (promise-value new))
+    (set-promise-value! new (promise-value old))
+    (set-promise-done! new (promise-done? old))))
+
 ;;; 4.2.6. Dynamic bindings
 
 (define (make-parameter init . o)
@@ -502,6 +529,12 @@
       (proc (vector-ref vector idx)))))
 
 (define call/cc call-with-current-continuation)
+
+(define-record-type promise
+  (make-promise done? value)
+  promise?
+  (done? promise-done? set-promise-done!)
+  (value promise-value set-promise-value!))
 
 ;;; 6.11. Exceptions
 
