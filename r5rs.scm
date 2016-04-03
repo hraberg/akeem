@@ -127,11 +127,11 @@
                             (else
                              (if (and (pair? (car x))
                                       (eq? 'unquote-splicing (caar x)))
-                                 (cons 'append (cons (cadar x) (cons (qq (cdr x)) '())))
-                                 (cons 'cons (cons (qq (car x)) (cons (qq (cdr x)) '())))))))
+                                 (list 'append (cadar x) (qq (cdr x)))
+                                 (list 'cons (qq (car x)) (qq (cdr x)))))))
                          ((vector? x)
-                          (cons 'list->vector (cons (qq (vector->list x)) '())))
-                         (else (cons 'quote (cons x '())))))))
+                          (list 'list->vector (qq (vector->list x))))
+                         (else (list 'quote x))))))
       (qq (cadr qq-template)))))
 
 ;;; 5.2. Definitions
