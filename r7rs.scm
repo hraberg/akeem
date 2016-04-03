@@ -131,7 +131,7 @@
        (define (accessor record)
          (if (eq? type (class-of record))
              (record-ref record field-idx)
-             (error (string-append (string-append "Not a " (symbol->string type)) ":") record)))))
+             (error (string-append "Not a " (symbol->string type) ":") record)))))
 
     ((define-record-type "field" fields type (field-name accessor modifier))
      (define-record-type "field" fields type (field-name accessor))
@@ -139,7 +139,7 @@
        (define (modifier record value)
          (if (eq? type (class-of record))
              (record-set! record field-idx value)
-             (error (string-append (string-append "Not a " (symbol->string type)) ":") record)))))))
+             (error (string-append "Not a " (symbol->string type) ":") record)))))))
 
 ;;; 6.1. Equivalence predicates
 
@@ -381,17 +381,21 @@
         ((= idx end) acc)
       (vector-set! acc (- idx start) (string-ref string idx))))))
 
-(define (vector-append vector1 vector2)
-  (let* ((length1 (vector-length vector1))
-         (length2 (vector-length vector2))
-         (acc (make-vector (+ length1 length2))))
-    (do ((idx 0 (+ idx 1)))
-        ((= idx length1))
-      (vector-set! acc idx (vector-ref vector1 idx)))
-    (do ((idx 0 (+ idx 1)))
-        ((= idx length2))
-      (vector-set! acc (+ idx length1) (vector-ref vector2 idx)))
-    acc))
+(define (vector-append . vectors)
+  (if (null? vectors)
+      #()
+      (let* ((vector1 (car vectors))
+             (vector2 (apply vector-append (cdr vectors)))
+             (length1 (vector-length vector1))
+             (length2 (vector-length vector2))
+             (acc (make-vector (+ length1 length2))))
+        (do ((idx 0 (+ idx 1)))
+            ((= idx length1))
+          (vector-set! acc idx (vector-ref vector1 idx)))
+        (do ((idx 0 (+ idx 1)))
+            ((= idx length2))
+          (vector-set! acc (+ idx length1) (vector-ref vector2 idx)))
+        acc)))
 
 (define vector-fill!
   (case-lambda
@@ -429,17 +433,21 @@
         ((= idx end) to)
       (bytevector-u8-set! to (- (+ idx at) start) (bytevector-u8-ref from idx))))))
 
-(define (bytevector-append bytevector1 bytevector2)
-  (let* ((length1 (bytevector-length bytevector1))
-         (length2 (bytevector-length bytevector2))
-         (acc (make-bytevector (+ length1 length2))))
-    (do ((idx 0 (+ idx 1)))
-        ((= idx length1))
-      (bytevector-u8-set! acc idx (bytevector-u8-ref bytevector1 idx)))
-    (do ((idx 0 (+ idx 1)))
-        ((= idx length2))
-      (bytevector-u8-set! acc (+ idx length1) (bytevector-u8-ref bytevector2 idx)))
-    acc))
+(define (bytevector-append . bytevectors)
+  (if (null? bytevectors)
+      (bytevector)
+      (let* ((bytevector1 (car bytevectors))
+             (bytevector2 (apply bytevector-append (cdr bytevectors)))
+             (length1 (bytevector-length bytevector1))
+             (length2 (bytevector-length bytevector2))
+             (acc (make-bytevector (+ length1 length2))))
+        (do ((idx 0 (+ idx 1)))
+            ((= idx length1))
+          (bytevector-u8-set! acc idx (bytevector-u8-ref bytevector1 idx)))
+        (do ((idx 0 (+ idx 1)))
+            ((= idx length2))
+          (bytevector-u8-set! acc (+ idx length1) (bytevector-u8-ref bytevector2 idx)))
+        acc)))
 
 (define utf8->string
   (case-lambda

@@ -300,9 +300,6 @@
           ((pair? obj) (loop (cdr obj)))
           (else #f))))
 
-(define (list . obj)
-  obj)
-
 (define (list-tail list k)
   (let loop ((list list)
              (k k))
@@ -342,6 +339,20 @@
 
 (define (assoc obj alist)
   (assoc-aux obj alist equal?))
+
+(define (list . obj)
+  obj)
+
+(define append-internal append)
+
+(define (append . lists)
+  (cond ((null? lists)
+         '())
+        ((null? (cdr lists))
+         (car lists))
+        (else
+         (append-internal (car lists)
+                          (apply append (cdr lists))))))
 
 ;;; 6.3.4. Characters
 
@@ -386,17 +397,21 @@
       ((= idx end) copy)
     (string-set! copy (- idx start) (string-ref string idx))))
 
-(define (string-append string1 string2)
-  (let* ((length1 (string-length string1))
-         (length2 (string-length string2))
-         (acc (make-string (+ length1 length2))))
-    (do ((idx 0 (+ idx 1)))
-        ((= idx length1))
-      (string-set! acc idx (string-ref string1 idx)))
-    (do ((idx 0 (+ idx 1)))
-        ((= idx length2))
-      (string-set! acc (+ idx length1) (string-ref string2 idx)))
-    acc))
+(define (string-append . strings)
+  (if (null? strings)
+      ""
+      (let* ((string1 (car strings))
+             (string2 (apply string-append (cdr strings)))
+             (length1 (string-length string1))
+             (length2 (string-length string2))
+             (acc (make-string (+ length1 length2))))
+        (do ((idx 0 (+ idx 1)))
+            ((= idx length1))
+          (string-set! acc idx (string-ref string1 idx)))
+        (do ((idx 0 (+ idx 1)))
+            ((= idx length2))
+          (string-set! acc (+ idx length1) (string-ref string2 idx)))
+        acc)))
 
 (define (string->list string)
   (do ((list '() (cons (string-ref string idx) list))
