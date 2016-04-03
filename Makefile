@@ -46,6 +46,8 @@ retest: /usr/bin/entr
 valgrind: clean akeem
 	if [ -n "`which valgrind`" ] ; then \
 		echo "(exit 0)" | valgrind --suppressions=akeem.suppressions --error-exitcode=1 -q $(AKEEM) > /dev/null ; \
+	else \
+		echo "valgrind not found, skipping." ; \
 	fi
 
 benchmark: clean akeem
