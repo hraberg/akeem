@@ -122,19 +122,24 @@
      (define (pred obj)
        (eq? 'name (class-of obj)))
 
-     (let ((fs '(fields ...)))
-       (define-record-type "field" fs (field-name accessor modifier ...)) ...))
+     (let ((fs '(fields ...))
+           (type 'name))
+       (define-record-type "field" fs type (field-name accessor modifier ...)) ...))
 
-    ((define-record-type "field" fields (field-name accessor))
+    ((define-record-type "field" fields type (field-name accessor))
      (let ((field-idx (- (length fields) (length (memq 'field-name fields)))))
        (define (accessor record)
-         (record-ref record field-idx))))
+         (if (eq? type (class-of record))
+             (record-ref record field-idx)
+             (error (string-append (string-append "Not a " (symbol->string type)) ":") record)))))
 
-    ((define-record-type "field" fields (field-name accessor modifier))
-     (define-record-type "field" fields (field-name accessor))
+    ((define-record-type "field" fields type (field-name accessor modifier))
+     (define-record-type "field" fields type (field-name accessor))
      (let ((field-idx (- (length fields) (length (memq 'field-name fields)))))
        (define (modifier record value)
-         (record-set! record field-idx value))))))
+         (if (eq? type (class-of record))
+             (record-set! record field-idx value)
+             (error (string-append (string-append "Not a " (symbol->string type)) ":") record)))))))
 
 ;;; 6.1. Equivalence predicates
 
@@ -492,14 +497,22 @@
 
 ;;; 6.11. Exceptions
 
+(define-record-type error-object
+  (make-error-object message irritants)
+  error-object?
+  (message error-object-message)
+  (irritants error-object-irritants))
+
 (define (error message . obj)
-  (display message (current-error-port))
-  (for-each (lambda (irritant)
-              (display #\space)
-              (display irritant (current-error-port)))
-            obj)
-  (newline)
-  (raise message))
+  (let ((error (make-error-object message obj)))
+    (display (error-object-message error)
+             (current-error-port))
+    (for-each (lambda (irritant)
+                (display #\space)
+                (display irritant (current-error-port)))
+              (error-object-irritants error))
+    (newline (current-error-port))
+    (raise error)))
 
 ;; 6.13. Input and output
 
