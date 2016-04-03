@@ -413,6 +413,17 @@
 
 (define call/cc call-with-current-continuation)
 
+;;; 6.11. Exceptions
+
+(define (error message . obj)
+  (display message (current-error-port))
+  (for-each (lambda (irritant)
+              (display #\space)
+              (display irritant (current-error-port)))
+            obj)
+  (newline)
+  (raise message))
+
 ;; 6.13. Input and output
 
 ;; 6.13.1. Ports

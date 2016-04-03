@@ -76,6 +76,7 @@
 
         .equ EOF_OBJECT, (NAN_MASK | (TAG_CHAR << TAG_SHIFT) | 0xffffffff)
         .equ NEWLINE_CHAR, (NAN_MASK | (TAG_CHAR << TAG_SHIFT) | 10)
+        .equ SPACE_CHAR, (NAN_MASK | (TAG_CHAR << TAG_SHIFT) | 32)
 
         .equ ZERO_INT, (NAN_MASK | (TAG_INT << TAG_SHIFT) | 0)
 

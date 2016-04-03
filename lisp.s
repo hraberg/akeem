@@ -1016,6 +1016,16 @@ list_to_bytevector:             # list
 
         ## 6.11. Exceptions
 
+raise:                          # error
+        minimal_prologue
+        cmp     $NULL, error_jmp_buffer
+        je      1f
+        movq    %rdi, %xmm0
+        call_fn longjmp, error_jmp_buffer, $C_TRUE
+
+1:      call_fn exit, $1
+        return
+
 error:                          # message, irritants
         prologue irritant
         assert_tag TAG_STRING, %rdi, not_a_string_string
@@ -1024,14 +1034,11 @@ error:                          # message, irritants
         call_fn current_error_port
         mov     %rax, %r12
         call_fn display, %rbx, %r12
+        call_fn display, $SPACE_CHAR, %r12
         call_fn display, irritant(%rsp), %r12
         call_fn newline, %r12
 
-        cmp     $NULL, error_jmp_buffer
-        je      1f
-        call_fn longjmp, error_jmp_buffer, $C_TRUE
-
-1:      call_fn exit, $1
+        call_fn raise, %rbx
         return
 
         ## 6.13. Input and output
@@ -1319,25 +1326,26 @@ main:                # argc, argv
         intern_symbol dot_symbol, "."
         intern_symbol void_symbol, "void"
         intern_symbol eof_symbol, "eof"
+        intern_symbol error_symbol, "error"
 
         intern_string empty_string, ""
 
         intern_string welcome_message_string, "Welcome to Akeem Scheme."
 
-        intern_string segfault_error_string, "Segmentation fault: "
-        intern_string read_error_string, "Unexpected input: "
-        intern_string code_space_error_string, "Code space exceeded: "
-        intern_string not_a_character_string, "Not a character: "
-        intern_string not_an_integer_string, "Not an integer: "
-        intern_string not_a_pair_string, "Not a pair: "
-        intern_string not_a_string_string, "Not a string: "
-        intern_string not_a_symbol_string, "Not a symbol: "
-        intern_string not_a_vector_string, "Not a vector: "
-        intern_string not_a_procedure_string, "Not a procedure: "
-        intern_string not_a_port_string, "Not a port: "
-        intern_string not_a_bytevector_string, "Not a bytevector: "
-        intern_string symbol_not_defined_string, "Symbol not defined: "
-        intern_string arity_check_error_string, "Unexpected number of arguments: "
+        intern_string segfault_error_string, "Segmentation fault:"
+        intern_string read_error_string, "Unexpected input:"
+        intern_string code_space_error_string, "Code space exceeded:"
+        intern_string not_a_character_string, "Not a character:"
+        intern_string not_an_integer_string, "Not an integer:"
+        intern_string not_a_pair_string, "Not a pair:"
+        intern_string not_a_string_string, "Not a string:"
+        intern_string not_a_symbol_string, "Not a symbol:"
+        intern_string not_a_vector_string, "Not a vector:"
+        intern_string not_a_procedure_string, "Not a procedure:"
+        intern_string not_a_port_string, "Not a port:"
+        intern_string not_a_bytevector_string, "Not a bytevector:"
+        intern_string symbol_not_defined_string, "Symbol not defined:"
+        intern_string arity_check_error_string, "Unexpected number of arguments:"
 
         intern_string false_string, "#f"
         mov     %rax, boolean_string_table + POINTER_SIZE * C_FALSE
@@ -1729,6 +1737,7 @@ main:                # argc, argv
         define "bytevector-u8-set!", $bytevector_u8_set
         define "list->bytevector", $list_to_bytevector
 
+        define "raise", $raise
         define "error", $error
 
         define "call-with-port", $call_with_port
@@ -3214,11 +3223,6 @@ jit_procedure_call:             # form, c-stream, environment, register, tail
 
         ## 4.1.4. Procedures
 
-jit_arity_check_error:          # expected-arity
-        minimal_prologue
-        call_fn error, arity_check_error_string, %rdi
-        return
-
 jit_procedure:                  # form, c-stream, environment, arguments
         prologue env, args, env_size, frame_size, local_idx, local, end_offset, flat_args, varargs_idx, arity
         mov     %rdi, %rbx
@@ -3522,6 +3526,23 @@ jit_lambda_varargs_index:       # arguments
 2:      return  $-1
 
 3:      return  %r12
+
+jit_lambda_arity_check_error: # arity in al, expected-arity in r11b
+        minimal_prologue
+        mov     %rax, %rdi
+        mov     %r11d, %esi
+
+        box_int_internal %edi
+        mov     %rax, %rdi
+        box_int_internal %esi
+        mov     %rax, %rsi
+
+        mov     error_symbol, %ecx
+        mov     symbol_table_values(,%ecx,POINTER_SIZE), %r11
+        unbox_pointer_internal %r11, %r11
+        mov     $3, %eax
+        call_fn *%r11, arity_check_error_string, %rdi, %rsi
+        return
 
 jit_lambda_collect_varargs:     # arity in rax, varargs_idx in r10
         .irp reg, rbx, r12, r13, r14
@@ -4269,9 +4290,8 @@ jit_epilogue_size:
 jit_arity_check_r11b_with_al:
         cmp     %r11b, %al
         je      1f
-        box_int_internal %eax
-        mov     $jit_arity_check_error, %r11
-        call_fn *%r11, %rax
+        mov     $jit_lambda_arity_check_error, %r10
+        call   *%r10
 1:
 jit_arity_check_r11b_with_al_size:
         .quad   (. - jit_arity_check_r11b_with_al)
@@ -4280,9 +4300,8 @@ jit_arity_check_r11b_with_al_size:
 jit_varargs_arity_check_r11b_with_al:
         cmp     %r11b, %al
         jge     1f
-        box_int_internal %eax
-        mov     $jit_arity_check_error, %r11
-        call_fn *%r11, %rax
+        mov     $jit_lambda_arity_check_error, %r10
+        call   *%r10
 1:
 jit_varargs_arity_check_r11b_with_al_size:
         .quad   (. - jit_varargs_arity_check_r11b_with_al)

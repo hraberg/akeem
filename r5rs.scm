@@ -439,6 +439,17 @@
 
 ;;; 6.4. Control features
 
+(define apply-internal apply)
+
+(define (apply proc . args)
+  (let* ((args (reverse args))
+         (flat-args (car args)))
+    (if (list? flat-args)
+        (do ((args (cdr args) (cdr args))
+             (flat-args flat-args (cons (car args) flat-args)))
+            ((null? args) (apply-internal proc flat-args)))
+        (error "Not a list:" flat-args))))
+
 (define (map proc list)
   (let* ((length (length list))
          (acc (make-list length (void))))
