@@ -47,6 +47,50 @@
      (if (not test)
          (begin result1 result2 ...)))))
 
+;;; 4.2.6. Dynamic bindings
+
+(define (make-parameter init . o)
+  (let* ((converter
+          (if (pair? o) (car o) (lambda (x) x)))
+         (value (cons (converter init) '())))
+    (lambda args
+      (cond
+       ((null? args)
+        (car value))
+       ((eq? (car args) '<param-set!>)
+        (set-car! value (cadr args)))
+       ((eq? (car args) '<param-convert>)
+        converter)
+       (else
+        (error "bad parameter syntax"))))))
+
+(define-syntax parameterize
+  (syntax-rules ()
+    ((parameterize ("step")
+       ((param value p old new) ...)
+       ()
+       body)
+     (let ((p param) ...)
+       (let ((old (p)) ...
+             (new ((p '<param-convert>) value)) ...)
+         (dynamic-wind
+             (lambda () (p '<param-set!> new) ...)
+             (lambda () . body)
+             (lambda () (p '<param-set!> old) ...)))))
+    ((parameterize ("step")
+       args
+       ((param value) . rest)
+       body)
+     (parameterize ("step")
+       ((param value p old new) . args)
+       rest
+       body))
+    ((parameterize ((param value) ...) . body)
+     (parameterize ("step")
+       ()
+       ((param value) ...)
+       body))))
+
 ;;; 4.2.9. Case-lambda
 
 (define-syntax case-lambda
@@ -433,6 +477,28 @@
 
 (define textual-port? port?)
 (define binary-port? port?)
+
+(define current-input-port (make-parameter (current-input-port)))
+(define current-output-port (make-parameter (current-output-port)))
+(define current-error-port (make-parameter (current-error-port)))
+
+(define (with-input-from-file string thunk)
+  (let ((in (open-input-file string)))
+    (parameterize ((current-input-port in))
+      (dynamic-wind
+          (lambda ())
+          thunk
+          (lambda ()
+            (close-input-port in))))))
+
+(define (with-output-to-file string thunk)
+  (let ((out (open-output-file string)))
+    (parameterize ((current-output-port out))
+      (dynamic-wind
+          (lambda ())
+          thunk
+          (lambda ()
+            (close-output-port out))))))
 
 (define open-binary-input-file open-input-file)
 (define open-binary-output-file open-output-file)

@@ -305,6 +305,10 @@ c
 12
 #<void>
 #<void>
+;;; 4.2.6. Dynamic bindings
+"12"
+"c"
+"12"
 ;;; 4.2.9. Case-lambda
 (0 1 2)
 (3 4)

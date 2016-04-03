@@ -809,7 +809,10 @@ is_output_port:                 # obj
 
 read:                           # port
         minimal_prologue
-        default_arg TAG_PORT, stdin, %rdi
+        mov     %rdi, %rbx
+        call_fn current_input_port
+        mov     %rbx, %rdi
+        default_arg TAG_PORT, %rax, %rdi
 
         unbox_pointer_internal %rdi
         call_fn read_datum, %rax
@@ -817,7 +820,10 @@ read:                           # port
 
 read_char:                      # port
         minimal_prologue
-        default_arg TAG_PORT, stdin, %rdi
+        mov     %rdi, %rbx
+        call_fn current_input_port
+        mov     %rbx, %rdi
+        default_arg TAG_PORT, %rax, %rdi
 
         unbox_pointer_internal %rdi
         call_fn fgetc, %rax
@@ -829,7 +835,10 @@ read_char:                      # port
 
 peek_char:                      # port
         prologue
-        default_arg TAG_PORT, stdin, %rdi
+        mov     %rdi, %rbx
+        call_fn current_input_port
+        mov     %rbx, %rdi
+        default_arg TAG_PORT, %rax, %rdi
 
         unbox_pointer_internal %rdi, %rbx
         call_fn fgetc, %rbx
@@ -862,11 +871,15 @@ write:                          # obj, port
         return  $VOID
 
 display:                        # obj, port
-        prologue
-        default_arg TAG_PORT, stdout, %rsi
+        prologue obj, port
+        mov     %rdi, obj(%rsp)
+        mov     %rsi, port(%rsp)
+        call_fn current_output_port
+        mov     port(%rsp), %rsi
+        default_arg TAG_PORT, %rax, %rsi
 
         unbox_pointer_internal %rsi, %rbx
-        call_fn to_string, %rdi
+        call_fn to_string, obj(%rsp)
         unbox_pointer_internal %rax, %rdi
         xor     %al, %al
         add     $header_size, %rdi
@@ -880,12 +893,16 @@ newline:                        # port
         return
 
 write_char:                     # char, port
-        minimal_prologue
+        prologue char, port
         assert_tag TAG_CHAR, %rdi, not_a_character_string
-        default_arg TAG_PORT, stdout, %rsi
+        mov     %edi, char(%rsp)
+        mov     %rsi, port(%rsp)
+        call_fn current_output_port
+        mov     port(%rsp), %rsi
+        default_arg TAG_PORT, %rax, %rsi
 
         unbox_pointer_internal %rsi
-        mov     %edi, %edi
+        mov     char(%rsp), %edi
         call_fn fputc, %rdi, %rax
         return  $VOID
 
@@ -1085,7 +1102,10 @@ eof_object:
 
 read_u8:                        # port
         minimal_prologue
-        default_arg TAG_PORT, stdin, %rdi
+        mov     %rdi, %rbx
+        call_fn current_input_port
+        mov     %rbx, %rdi
+        default_arg TAG_PORT, %rax, %rdi
 
         unbox_pointer_internal %rdi
         call_fn fgetc, %rax
@@ -1097,7 +1117,10 @@ read_u8:                        # port
 
 peek_u8:                        # port
         prologue
-        default_arg TAG_PORT, stdin, %rdi
+        mov     %rdi, %rbx
+        call_fn current_input_port
+        mov     %rbx, %rdi
+        default_arg TAG_PORT, %rax, %rdi
 
         unbox_pointer_internal %rdi, %rbx
         call_fn fgetc, %rbx
@@ -1111,20 +1134,27 @@ peek_u8:                        # port
         ## 6.13.3. Output
 
 write_u8:                       # byte, port
-        minimal_prologue
+        prologue byte, port
         assert_tag TAG_INT, %rdi, not_an_integer_string
-        default_arg TAG_PORT, stdout, %rsi
+        mov     %edi, byte(%rsp)
+        mov     %rsi, port(%rsp)
+        call_fn current_output_port
+        mov     port(%rsp), %rsi
+        default_arg TAG_PORT, %rax, %rsi
 
         unbox_pointer_internal %rsi
-        mov     %edi, %edi
+        mov     byte(%rsp), %edi
         call_fn fputc, %rdi, %rax
         return  $VOID
 
 flush_output_port:              # port
         minimal_prologue
-        default_arg TAG_PORT, stdout, %rsi
+        mov     %rdi, %rbx
+        call_fn current_output_port
+        mov     %rbx, %rdi
+        default_arg TAG_PORT, %rax, %rdi
 
-        unbox_pointer_internal %rsi
+        unbox_pointer_internal %rdi
         call_fn fflush, %rax
         return  $VOID
 

@@ -698,8 +698,23 @@
           (display "2")
           (newline)))
 
-(spec ";;; 4.2.9. Case-lambda")
+(spec ";;; 4.2.6. Dynamic bindings")
+(define radix
+  (make-parameter
+   10
+   (lambda (x)
+     (if (and (exact-integer? x) (<= 2 x 16))
+         x
+         (error "invalid radix")))))
 
+(define (f n) (number->string n (radix)))
+
+(assert (f 12))
+(assert (parameterize ((radix 16)) ;;; should be 2
+          (f 12)))
+(assert (f 12))
+
+(spec ";;; 4.2.9. Case-lambda")
 (define range
   (case-lambda
    ((e) (range 0 e))
