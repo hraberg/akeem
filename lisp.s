@@ -2962,8 +2962,8 @@ jit_add_to_constant_pool:       # obj
         cmp     $C_TRUE, %rax
         jne     1f
 
-1:      call_fn push_pointer_on_stack, $constant_pool, %rbx
-        return
+        call_fn push_pointer_on_stack, $constant_pool, %rbx
+1:      return
 
 jit_maybe_add_to_constant_pool: # obj
         minimal_prologue
