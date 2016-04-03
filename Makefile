@@ -44,7 +44,9 @@ retest: /usr/bin/entr
 		$< -r $(MAKE) -s run-tests ; done
 
 valgrind: clean akeem
-	echo "(exit 0)" | valgrind --suppressions=akeem.suppressions --error-exitcode=1 -q $(AKEEM) > /dev/null
+	if [ -n "`which valgrind`" ] ; then \
+		echo "(exit 0)" | valgrind --suppressions=akeem.suppressions --error-exitcode=1 -q $(AKEEM) > /dev/null ; \
+	fi
 
 benchmark: clean akeem
 	cd $(RACKET_BENCHMARKS_HOME) ; \
@@ -86,4 +88,4 @@ run-docker-shell: docker
 	docker run --rm -i -t akeem bash
 
 .PHONY: run-tests run-tests-catchsegv run-repl retest benchmark profile jit-clean jit-dissassmble clean check release docker run-docker run-docker-shell
-.SILENT: run-tests retest benchmark profile
+.SILENT: run-tests retest benchmark profile valgrind
