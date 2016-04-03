@@ -492,8 +492,8 @@
 (assert (memq 'a '(a b c)))
 (assert (memq 'b '(a b c)))
 (assert (memq 'a '(b c d)))
-(assert (memq '(a) '(b (a) c)))
-(assert (member '(a)
+(assert (memq (list 'a) '(b (a) c)))
+(assert (member (list 'a)
                 '(b (a) c)))
 (assert (memq 101 '(100 101 102)))
 (assert (memv 101 '(100 101 102)))
@@ -502,8 +502,8 @@
 (assert (assq 'a e))
 (assert (assq 'b e))
 (assert (assq 'd e))
-(assert (assq '(a) '(((a)) ((b)) ((c)))))
-(assert (assoc '(a) '(((a)) ((b)) ((c)))))
+(assert (assq (list 'a) '(((a)) ((b)) ((c)))))
+(assert (assoc (list 'a) '(((a)) ((b)) ((c)))))
 (assert (assq 5 '((2 3) (5 7) (11 13))))
 (assert (assv 5 '((2 3) (5 7) (11 13))))
 
@@ -742,6 +742,12 @@
           (list-set! ls 2 'three)
           ls))
 
+(assert (member "B"
+                '("a" "b" "c")
+                string-ci=?))
+
+(assert (assoc 2.0 '((1 1) (2 4) (3 9)) =))
+
 (define a '(1 8 2 8))
 (define b (list-copy a))
 (set-car! b 3)
@@ -766,12 +772,14 @@ containing just one line")
 (assert b)
 
 (spec ";;; 6.8. Vectors")
+(assert (vector->list '#(dah dah didah) 1 2))
+
 (assert (string->vector "ABC"))
 (assert (vector->string
          #(#\1 #\2 #\3)))
 
 (define a #(1 8 2 8))
-(define b (vector-copy a 0 4)) ;; should be a
+(define b (vector-copy a))
 (vector-set! b 0 3)
 (assert b)
 
@@ -811,8 +819,8 @@ containing just one line")
 
 (assert (bytevector-append #u8(0 1 2) #u8(3 4 5)))
 
-(assert (utf8->string #u8(#x41) 0 1)) ;; should be #u8(#x41)
-(assert (string->utf8 "A" 0 1)) ;; should be λ
+(assert (utf8->string #u8(#x41)))
+(assert (string->utf8 "A")) ;; should be λ
 
 (spec ";;; 6.10. Control features")
 (assert (string-map

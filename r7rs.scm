@@ -143,6 +143,38 @@
 (define (list-copy obj)
   (map (lambda (x) x) obj))
 
+(define member
+  (case-lambda
+   ((obj list)
+    (member obj list equal?))
+   ((obj list compare)
+    (let loop ((list list))
+      (cond ((null? list) #f)
+            ((compare obj (car list)) list)
+            (else (loop (cdr list))))))))
+
+(define (memq obj list)
+  (member obj list eq?))
+
+(define (memv obj list)
+  (member obj list eqv?))
+
+(define (assq obj alist)
+  (assoc obj alist eq?))
+
+(define (assv obj alist)
+  (assoc obj alist eqv?))
+
+(define assoc
+  (case-lambda
+   ((obj list)
+    (assoc obj list equal?))
+   ((obj alist compare)
+    (let loop ((alist alist))
+      (cond ((null? alist) #f)
+            ((compare obj (caar alist)) (car alist))
+            (else (loop (cdr alist))))))))
+
 ;;; 6.5. Symbols
 
 (define (symbol=? symbol1 symbol2)
@@ -168,39 +200,104 @@
 (define (string-foldcase string)
   (string-map char-foldcase string))
 
-(define (string-copy! to at from start end)
-  (do ((idx start (+ idx 1)))
-      ((= idx end) to)
-    (string-set! to (- (+ idx at) start) (string-ref from idx))))
+(define string->list
+  (case-lambda
+   ((string)
+    (string->list string 0))
+   ((string start)
+    (string->list string start (string-length string)))
+   ((string start end)
+    (do ((list '() (cons (string-ref string idx) list))
+         (idx (- end 1) (- idx 1)))
+        ((< idx start) list)))))
 
-(define (string-fill! string fill start end)
-  (do ((idx start (+ idx 1)))
-      ((= idx end) string)
-    (string-set! string idx fill)))
+(define string-copy
+  (case-lambda
+   ((string)
+    (string-copy string 0))
+   ((string start)
+    (string-copy string start (string-length string)))
+   ((string start end)
+    (string-copy! (make-string (- end start) #\space) 0 string start end))))
+
+(define string-copy!
+  (case-lambda
+   ((to at from)
+    (string-copy! to at from 0))
+   ((to at from start)
+    (string-copy! to at start (string-length string)))
+   ((to at from start end)
+    (do ((idx start (+ idx 1)))
+        ((= idx end) to)
+      (string-set! to (- (+ idx at) start) (string-ref from idx))))))
+
+(define string-fill!
+  (case-lambda
+   ((string fill)
+    (string-fill! string fill 0))
+   ((string fill start)
+    (string-fill! string fill start (string-length string)))
+   ((string fill start end)
+    (do ((idx start (+ idx 1)))
+        ((= idx end) string)
+      (string-set! string idx fill)))))
 
 ;;; 6.8. Vectors
 
-(define (vector-copy vector start end)
-  (vector-copy! (make-vector (- end start) 0) 0 vector start end))
+(define vector->list
+  (case-lambda
+   ((vector)
+    (vector->list vector 0))
+   ((vector start)
+    (vector->list vector start (vector-length vector)))
+   ((vector start end)
+    (do ((list '() (cons (vector-ref vector idx) list))
+         (idx (- end 1) (- idx 1)))
+        ((< idx start) list)))))
 
-(define (vector-copy! to at from start end)
-  (do ((idx start (+ idx 1)))
-      ((= idx end) to)
-    (vector-set! to (- (+ idx at) start) (vector-ref from idx))))
+(define vector-copy
+  (case-lambda
+   ((vector)
+    (vector-copy vector 0))
+   ((vector start)
+    (vector-copy vector start (vector-length vector)))
+   ((vector start end)
+    (vector-copy! (make-vector (- end start) 0) 0 vector start end))))
 
-(define (string->vector string)
-  (let ((length (string-length string)))
-    (do ((acc (make-vector length))
-         (idx 0 (+ idx 1)))
-        ((= idx length) acc)
-      (vector-set! acc idx (string-ref string idx)))))
+(define vector-copy!
+  (case-lambda
+   ((to at from)
+    (vector-copy! to at from 0))
+   ((to at from start)
+    (vector-copy! to at start (vector-length vector)))
+   ((to at from start end)
+    (do ((idx start (+ idx 1)))
+        ((= idx end) to)
+      (vector-set! to (- (+ idx at) start) (vector-ref from idx))))))
 
-(define (vector->string vector)
-  (let ((length (vector-length vector)))
-    (do ((acc (make-string length))
-         (idx 0 (+ idx 1)))
-        ((= idx length) acc)
-      (string-set! acc idx (vector-ref vector idx)))))
+(define vector->string
+  (case-lambda
+   ((vector)
+    (vector->string vector 0))
+   ((vector start)
+    (vector->string vector start (vector-length vector)))
+   ((vector start end)
+    (do ((acc (make-string (- end start) #\space))
+         (idx start (+ idx 1)))
+        ((= idx end) acc)
+      (string-set! acc (- idx start) (vector-ref vector idx))))))
+
+(define string->vector
+  (case-lambda
+   ((string)
+    (string->vector string 0))
+   ((string start)
+    (string->vector string start (string-length string)))
+   ((string start end)
+    (do ((acc (make-vector (- end start)))
+         (idx start (+ idx 1)))
+        ((= idx end) acc)
+      (vector-set! acc (- idx start) (string-ref string idx))))))
 
 (define (vector-append vector1 vector2)
   (let* ((length1 (vector-length vector1))
@@ -214,23 +311,41 @@
       (vector-set! acc (+ idx length1) (vector-ref vector2 idx)))
     acc))
 
-(define (vector-fill! vector fill start end)
-  (do ((idx start (+ idx 1)))
-      ((= idx end) vector)
-    (vector-set! vector idx fill)))
+(define vector-fill!
+  (case-lambda
+   ((vector fill)
+    (vector-fill! vector fill 0))
+   ((vector fill start)
+    (vector-fill! vector fill start (vector-length vector)))
+   ((vector fill start end)
+    (do ((idx start (+ idx 1)))
+        ((= idx end) vector)
+      (vector-set! vector idx fill)))))
 
 ;;; 6.9. Bytevectors
 
 (define (bytevector . byte)
   (list->bytevector byte))
 
-(define (bytevector-copy bytevector start end)
-  (bytevector-copy! (make-bytevector (- end start) 0) 0 bytevector start end))
+(define bytevector-copy
+  (case-lambda
+   ((bytevector)
+    (bytevector-copy bytevector 0))
+   ((bytevector start)
+    (bytevector-copy bytevector start (bytevector-length bytevector)))
+   ((bytevector start end)
+    (bytevector-copy! (make-bytevector (- end start) 0) 0 bytevector start end))))
 
-(define (bytevector-copy! to at from start end)
-  (do ((idx start (+ idx 1)))
-      ((= idx end) to)
-    (bytevector-u8-set! to (- (+ idx at) start) (bytevector-u8-ref from idx))))
+(define bytevector-copy!
+  (case-lambda
+   ((to at from)
+    (bytevector-copy! to at from 0))
+   ((to at from start)
+    (bytevector-copy! to at start (bytevector-length bytevector)))
+   ((to at from start end)
+    (do ((idx start (+ idx 1)))
+        ((= idx end) to)
+      (bytevector-u8-set! to (- (+ idx at) start) (bytevector-u8-ref from idx))))))
 
 (define (bytevector-append bytevector1 bytevector2)
   (let* ((length1 (bytevector-length bytevector1))
@@ -244,17 +359,29 @@
       (bytevector-u8-set! acc (+ idx length1) (bytevector-u8-ref bytevector2 idx)))
     acc))
 
-(define (utf8->string bytevector start end)
-  (do ((acc (make-string (- end start)))
-       (idx start (+ idx 1)))
-      ((= idx end) acc)
-    (string-set! acc (- idx start) (integer->char (bytevector-u8-ref bytevector idx)))))
+(define utf8->string
+  (case-lambda
+   ((bytevector)
+    (utf8->string bytevector 0))
+   ((bytevector start)
+    (utf8->string bytevector start (bytevector-length bytevector)))
+   ((bytevector start end)
+    (do ((acc (make-string (- end start)))
+         (idx start (+ idx 1)))
+        ((= idx end) acc)
+      (string-set! acc (- idx start) (integer->char (bytevector-u8-ref bytevector idx)))))))
 
-(define (string->utf8 string start end)
-  (do ((acc (make-bytevector (- end start)))
-       (idx start (+ idx 1)))
-      ((= idx end) acc)
-    (bytevector-u8-set! acc (- idx start) (char->integer (string-ref string idx)))))
+(define string->utf8
+  (case-lambda
+   ((string)
+    (string->utf8 string 0))
+   ((string start)
+    (string->utf8 string start (string-length string)))
+   ((string start end)
+    (do ((acc (make-bytevector (- end start)))
+         (idx start (+ idx 1)))
+        ((= idx end) acc)
+      (bytevector-u8-set! acc (- idx start) (char->integer (string-ref string idx)))))))
 
 ;;; 6.10. Control features
 
@@ -301,38 +428,74 @@
 
 ;;; 6.13.2. Input
 
-(define (read-line port)
-  (do ((acc '() (cons char acc))
-       (char (read-char port) (read-char port)))
-      ((or (eq? #\newline char)
-           (eq? #\return char)
-           (eof-object? char)) (list->string (reverse acc)))))
+(define read-line
+  (case-lambda
+   (()
+    (read-line (current-input-port)))
+   ((port)
+    (do ((acc '() (cons char acc))
+         (char (read-char port) (read-char port)))
+        ((or (eq? #\newline char)
+             (eq? #\return char)
+             (eof-object? char)) (list->string (reverse acc)))))))
 
-(define (read-string k port)
-  (utf8->string (read-bytevector k port) 0 k))
+(define read-string
+  (case-lambda
+   ((k)
+    (read-string k (current-input-port)))
+   ((k port)
+    (utf8->string (read-bytevector k port) 0 k))))
 
-(define (read-bytevector k port)
-  (let ((bytevector (make-bytevector k 0)))
-    (read-bytevector! bytevector port 0 k)
-    bytevector))
+(define read-bytevector
+  (case-lambda
+   ((k)
+    (read-bytevector k (current-input-port)))
+   ((k port)
+    (let ((bytevector (make-bytevector k 0)))
+      (read-bytevector! bytevector port 0 k)
+      bytevector))))
 
-(define (read-bytevector! bytevector port start end)
-  (do ((idx start (+ idx 1))
-       (byte (read-u8 port) (read-u8 port)))
-      ((or (= idx end) (eof-object? byte)) (if (= idx start)
-                                               (eof-object)
-                                               idx))
-    (bytevector-u8-set! bytevector idx byte)))
+(define read-bytevector!
+  (case-lambda
+   ((bytevector)
+    (read-bytevector! bytevector (current-input-port)))
+   ((bytevector port)
+    (read-bytevector! bytevector port 0))
+   ((bytevector port start)
+    (read-bytevector! bytevector port start (bytevector-length bytevector)))
+   ((bytevector port start end)
+    (do ((idx start (+ idx 1))
+         (byte (read-u8 port) (read-u8 port)))
+        ((or (= idx end) (eof-object? byte)) (if (= idx start)
+                                                 (eof-object)
+                                                 idx))
+      (bytevector-u8-set! bytevector idx byte)))))
 
 ;;; 6.13.3. Output
 
-(define (write-string string port start end)
-  (write-bytevector (string->utf8 string start end) port start end))
+(define write-string
+  (case-lambda
+   ((string)
+    (write-string string (current-output-port)))
+   ((string port)
+    (write-string string port 0))
+   ((string port start)
+    (write-string string port start (string-length string)))
+   ((string port start end)
+    (write-bytevector (string->utf8 string start end) port start end))))
 
-(define (write-bytevector bytevector port start end)
-  (do ((idx start (+ idx 1)))
-      ((= idx end) (- end start))
-    (write-u8 (bytevector-u8-ref bytevector idx) port)))
+(define write-bytevector
+  (case-lambda
+   ((bytevector)
+    (write-bytevector bytevector (current-output-port)))
+   ((bytevector port)
+    (write-bytevector bytevector port 0))
+   ((bytevector port start)
+    (write-bytevector bytevector port start (bytevector-length bytevector)))
+   ((bytevector port start end)
+    (do ((idx start (+ idx 1)))
+        ((= idx end) (- end start))
+      (write-u8 (bytevector-u8-ref bytevector idx) port)))))
 
 ;;; 6.14. System interface
 
