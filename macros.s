@@ -131,9 +131,9 @@
         has_tag TAG_PAIR, \value, store=false
         je      .L_\@_2
 .L_\@_1:
-        mov     $internal_error, %r10
+        mov     $internal_error, %r11
         mov     $2, %eax
-        call_fn *%r10, \error, \value
+        call_fn *%r11, \error, \value
 .L_\@_2:
         .endm
 
