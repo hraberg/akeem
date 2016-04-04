@@ -124,7 +124,7 @@
                      (let ((result (cond ,@guard)))
                        (if result
                            (continue result)
-                           (raise-continuable ,condition))))
+                           (raise ,condition))))
                    (lambda ()
                      ,@body)))))))
 
