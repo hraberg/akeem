@@ -20,7 +20,7 @@ akeem: lisp.o
 
 # based on http://unix.stackexchange.com/a/79137
 run-tests: akeem
-	./$<  tests.scm | diff -y -W250 tests.out - | expand | grep --color=always -nEC1 '^.{123} [|<>]( |$$)'; \
+	./$<  tests.scm 2>&1 | diff -y -W250 tests.out - | expand | grep --color=always -nEC1 '^.{123} [|<>]( |$$)'; \
 	if [ $$? -eq 0 ] ; then \
 		echo Tests FAILED ; false ; \
 	else \

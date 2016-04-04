@@ -376,3 +376,11 @@ c
 "IBM"
 #(b e h)
 #(1 4 27 256 3125)
+;;; 6.11. Exceptions
+condition: an-error
+exception
+something went wrong
+an-error
+#<void>
+should be a number
+65

@@ -538,6 +538,42 @@
 
 ;;; 6.11. Exceptions
 
+(define (default-exception-handler error)
+  (if (error-object? error)
+      (begin
+        (display (error-object-message error)
+                 (current-error-port))
+        (for-each (lambda (irritant)
+                    (display #\space (current-error-port))
+                    (display irritant (current-error-port)))
+                  (error-object-irritants error)))
+      (display error (current-error-port)))
+  (newline (current-error-port)))
+
+(define exception-handler-stack (make-parameter (list default-exception-handler)))
+
+(define exception-handler-continuation (make-parameter (lambda (x))))
+
+(define (parent-exception-handler)
+  (let ((stack (exception-handler-stack)))
+    (if (null? stack)
+        stack
+        (cdr stack))))
+
+(define (with-exception-handler handler thunk)
+  (parameterize ((exception-handler-stack
+                  (cons (lambda (obj)
+                          (parameterize ((exception-handler-stack (parent-exception-handler)))
+                            ((exception-handler-continuation) (handler obj))
+                            (raise obj)))
+                        (exception-handler-stack))))
+    (thunk)))
+
+(define (raise-continuable obj)
+  (call/cc (lambda (continue)
+             (parameterize ((exception-handler-continuation continue))
+               (raise obj)))))
+
 (define-record-type error-object
   (make-error-object message irritants)
   error-object?
@@ -545,15 +581,7 @@
   (irritants error-object-irritants))
 
 (define (error message . obj)
-  (let ((error (make-error-object message obj)))
-    (display (error-object-message error)
-             (current-error-port))
-    (for-each (lambda (irritant)
-                (display #\space)
-                (display irritant (current-error-port)))
-              (error-object-irritants error))
-    (newline (current-error-port))
-    (raise error)))
+  (raise (make-error-object message obj)))
 
 ;; 6.13. Input and output
 

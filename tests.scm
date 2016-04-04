@@ -887,3 +887,33 @@ containing just one line")
 
 (assert (vector-map (lambda (n) (expt n n))
                     '#(1 2 3 4 5)))
+
+(spec ";;; 6.11. Exceptions")
+(assert (call-with-current-continuation
+         (lambda (k)
+           (with-exception-handler
+            (lambda (x)
+              (display "condition: ")
+              (write x)
+              (newline)
+              (k 'exception))
+            (lambda ()
+              (+ 1 (raise 'an-error)))))))
+
+(assert (with-exception-handler
+         (lambda (x)
+           (display "something went wrong\n"))
+         (lambda ()
+           (+ 1 (raise 'an-error)))))
+
+(assert (with-exception-handler
+         (lambda (con)
+           (cond
+            ((string? con)
+             (display con))
+            (else
+             (display "a warning has been issued\n")))
+           42)
+         (lambda ()
+           (+ (raise-continuable "should be a number\n")
+              23))))
