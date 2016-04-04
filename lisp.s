@@ -808,14 +808,14 @@ is_output_port:                 # obj
         ## 6.6.2. Input
 
 read:                           # port
-        minimal_prologue
+        prologue
         parameter_default_arg TAG_PORT, current_input_port_symbol, %rdi
         unbox_pointer_internal %rdi
         call_fn read_datum, %rax
         return
 
 read_char:                      # port
-        minimal_prologue
+        prologue
         parameter_default_arg TAG_PORT, current_input_port_symbol, %rdi
         unbox_pointer_internal %rdi
         call_fn fgetc, %rax
@@ -1075,26 +1075,6 @@ exception_handler_stack:
         mov     $NIL, %rax
         ret
 
-error:                          # message, irritants
-        prologue irritant
-        assert_tag TAG_STRING, %rdi, not_a_string_string
-        mov     %rdi, %rbx
-        mov     %rsi, irritant(%rsp)
-
-        parameter_default_arg TAG_PORT, current_error_port_symbol, %r12
-        call_fn display, %rbx, %r12
-        call_fn display, $SPACE_CHAR, %r12
-        call_fn display, irritant(%rsp), %r12
-        call_fn newline, %r12
-
-        cmp     $NULL, error_jmp_buffer
-        je      1f
-        movq    %rbx, %xmm0
-        call_fn longjmp, error_jmp_buffer, $C_TRUE
-
-1:      call_fn exit, $1
-        return
-
         ## 6.13. Input and output
         ## 6.13.1. Ports
 
@@ -1138,7 +1118,7 @@ eof_object:
         ret
 
 read_u8:                        # port
-        minimal_prologue
+        prologue
         parameter_default_arg TAG_PORT, current_input_port_symbol, %rsi
         unbox_pointer_internal %rdi
         call_fn fgetc, %rax
@@ -1172,7 +1152,7 @@ write_u8:                       # byte, port
         return  $VOID
 
 flush_output_port:              # port
-        minimal_prologue
+        prologue
         parameter_default_arg TAG_PORT, current_output_port_symbol, %rdi
         unbox_pointer_internal %rdi
         call_fn fflush, %rax
@@ -1797,7 +1777,6 @@ main:                # argc, argv
         define "list->bytevector", $list_to_bytevector
 
         define "raise", $raise
-        define "error", $error
         define "exception-handler_stack", $exception_handler_stack
 
         define "call-with-port", $call_with_port
@@ -1883,6 +1862,28 @@ segv_handler:                   # signal
         call_fn free, stacktrace(%rsp)
 
         call_fn longjmp, error_jmp_buffer, $C_TRUE
+        return
+
+internal_error:                 # message, irritants
+        prologue
+        mov     error_symbol, %r11d
+        mov     symbol_table_values(,%r11d,POINTER_SIZE), %r11
+        unbox_pointer_internal %r11, %r11
+        cmp     $NULL, %r11
+        je      1f
+        call   *%r11
+
+        cmp     $NULL, error_jmp_buffer
+        je      1f
+        movq    %rbx, %xmm0
+        call_fn longjmp, error_jmp_buffer, $C_TRUE
+
+1:      mov     %rdi, %rbx
+        call_fn current_error_port
+        mov     %rax, %r12
+        call_fn display, %rbx, %rax
+        call_fn newline, %r12
+        call_fn exit, $1
         return
 
 box_string_array_as_list:       # c-string-array
@@ -2701,11 +2702,11 @@ read_string:                    # c-stream, c-char
 
 6:      return  empty_string
 
-7:      call_fn error, read_error_string, $EOF_OBJECT
+7:      call_fn read_error, $EOF_OBJECT
         return
 
 8:      tag     TAG_CHAR, %rax
-        call_fn error, read_error_string, %rax
+        call_fn read_error, %rax
         return
 
 read_true:                      # c-stream
@@ -2757,7 +2758,7 @@ read_character:                 # c-stream, c-char
         return
 
 3:      tag     TAG_STRING, %r12
-        call_fn error, read_error_string, %rax
+        call_fn read_error, %rax
         return
 
 4:      call_fn string_ref, %r12, $ZERO_INT
@@ -2813,7 +2814,7 @@ read_bytevector:                # c-stream
         return
 
 1:      tag     TAG_CHAR, %rax
-        call_fn error, read_error_string, %rax
+        call_fn read_error, %rax
         return
 
 read_list:                      # c-stream, c-char
@@ -2859,9 +2860,15 @@ read_list:                      # c-stream, c-char
         cmp     closing(%rsp), %al
         je      5f
         tag     TAG_CHAR, %rax
-        call_fn error, read_error_string, %rax
+        call_fn read_error, %rax
 
 5:      return  head(%rsp)
+
+read_error:                     # error
+        minimal_prologue
+        mov     $2, %eax
+        call_fn internal_error, read_error_string, %rdi
+        return
 
         ## JIT
 
@@ -2914,7 +2921,9 @@ jit_allocate_code:              # c-code, c-size
 1:      mov     jit_code_space_next_address, %rax
         sub     jit_code_space, %rax
         box_int_internal
-        call_fn error, code_space_error_string, %rax
+        mov     %rax, %rdi
+        mov     $1, %eax
+        call_fn internal_error, code_space_error_string, %rdi
         return
 
 jit_code:                       # form, environment, arguments
@@ -2964,7 +2973,8 @@ jit_index_of_local:             # environment, symbol
 
 jit_symbol_not_defined:         # symbol
         minimal_prologue
-        call_fn error, symbol_not_defined_string, %rdi
+        mov     $2, %eax
+        call_fn internal_error, symbol_not_defined_string, %rdi
         return
 
 jit_symbol:                     # symbol, c-stream, environment, register, tail
@@ -3591,11 +3601,8 @@ jit_lambda_arity_check_error:   # arity in al, expected-arity in r11b
         box_int_internal %esi
         mov     %rax, %rsi
 
-        mov     error_symbol, %ecx
-        mov     symbol_table_values(,%ecx,POINTER_SIZE), %r11
-        unbox_pointer_internal %r11, %r11
         mov     $3, %eax
-        call_fn *%r11, arity_check_error_string, %rdi, %rsi
+        call_fn internal_error, arity_check_error_string, %rdi, %rsi
         return
 
 jit_lambda_collect_varargs:     # arity in rax, varargs_idx in r10
