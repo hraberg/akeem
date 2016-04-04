@@ -378,6 +378,18 @@
         cmovne  \tmp, \value
         .endm
 
+        .macro parameter_default_arg tag, parameter, value, tmp=%r11
+        push    \value
+        mov     \parameter, \tmp
+        unbox_pointer_internal \tmp, \tmp
+        mov     symbol_table_values(,\tmp,POINTER_SIZE), \tmp
+        unbox_pointer_internal \tmp, \tmp
+        xor     %eax, %eax
+        call_fn *\tmp
+        pop     \value
+        default_arg \tag, %rax, \value, \tmp
+        .endm
+
         .macro lookup_global_symbol_internal symbol_id
         mov     symbol_table_values(,\symbol_id,POINTER_SIZE), %rax
         .endm

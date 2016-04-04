@@ -808,31 +808,15 @@ is_output_port:                 # obj
         ## 6.6.2. Input
 
 read:                           # port
-        prologue
-        mov     %rdi, %rbx
-        mov     current_input_port_symbol, %ecx
-        mov     symbol_table_values(,%ecx,POINTER_SIZE), %r11
-        unbox_pointer_internal %r11, %r11
-        xor     %eax, %eax
-        call_fn *%r11
-        mov     %rbx, %rdi
-        default_arg TAG_PORT, %rax, %rdi
-
+        minimal_prologue
+        parameter_default_arg TAG_PORT, current_input_port_symbol, %rdi
         unbox_pointer_internal %rdi
         call_fn read_datum, %rax
         return
 
 read_char:                      # port
-        prologue
-        mov     %rdi, %rbx
-        mov     current_input_port_symbol, %ecx
-        mov     symbol_table_values(,%ecx,POINTER_SIZE), %r11
-        unbox_pointer_internal %r11, %r11
-        xor     %eax, %eax
-        call_fn *%r11
-        mov     %rbx, %rdi
-        default_arg TAG_PORT, %rax, %rdi
-
+        minimal_prologue
+        parameter_default_arg TAG_PORT, current_input_port_symbol, %rdi
         unbox_pointer_internal %rdi
         call_fn fgetc, %rax
         cmp     $EOF, %al
@@ -843,15 +827,7 @@ read_char:                      # port
 
 peek_char:                      # port
         prologue
-        mov     %rdi, %rbx
-        mov     current_input_port_symbol, %ecx
-        mov     symbol_table_values(,%ecx,POINTER_SIZE), %r11
-        unbox_pointer_internal %r11, %r11
-        xor     %eax, %eax
-        call_fn *%r11
-        mov     %rbx, %rdi
-        default_arg TAG_PORT, %rax, %rdi
-
+        parameter_default_arg TAG_PORT, current_input_port_symbol, %rdi
         unbox_pointer_internal %rdi, %rbx
         call_fn fgetc, %rbx
         call_fn ungetc, %rax, %rbx
@@ -883,17 +859,9 @@ write:                          # obj, port
         return  $VOID
 
 display:                        # obj, port
-        prologue obj, port
+        prologue obj
         mov     %rdi, obj(%rsp)
-        mov     %rsi, port(%rsp)
-        mov     current_output_port_symbol, %ecx
-        mov     symbol_table_values(,%ecx,POINTER_SIZE), %r11
-        unbox_pointer_internal %r11, %r11
-        xor     %eax, %eax
-        call_fn *%r11
-        mov     port(%rsp), %rsi
-        default_arg TAG_PORT, %rax, %rsi
-
+        parameter_default_arg TAG_PORT, current_output_port_symbol, %rsi
         unbox_pointer_internal %rsi, %rbx
         call_fn to_string, obj(%rsp)
         unbox_pointer_internal %rax, %rdi
@@ -912,15 +880,7 @@ write_char:                     # char, port
         prologue char, port
         assert_tag TAG_CHAR, %rdi, not_a_character_string
         mov     %edi, char(%rsp)
-        mov     %rsi, port(%rsp)
-        mov     current_output_port_symbol, %ecx
-        mov     symbol_table_values(,%ecx,POINTER_SIZE), %r11
-        unbox_pointer_internal %r11, %r11
-        xor     %eax, %eax
-        call_fn *%r11
-        mov     port(%rsp), %rsi
-        default_arg TAG_PORT, %rax, %rsi
-
+        parameter_default_arg TAG_PORT, current_output_port_symbol, %rsi
         unbox_pointer_internal %rsi
         mov     char(%rsp), %edi
         call_fn fputc, %rdi, %rax
@@ -1121,15 +1081,7 @@ error:                          # message, irritants
         mov     %rdi, %rbx
         mov     %rsi, irritant(%rsp)
 
-        mov     %rdi, %rbx
-        mov     current_error_port_symbol, %ecx
-        mov     symbol_table_values(,%ecx,POINTER_SIZE), %r11
-        unbox_pointer_internal %r11, %r11
-        xor     %eax, %eax
-        call_fn *%r11
-        mov     %rax, %r12
-        mov     %rbx, %rdi
-
+        parameter_default_arg TAG_PORT, current_error_port_symbol, %r12
         call_fn display, %rbx, %r12
         call_fn display, $SPACE_CHAR, %r12
         call_fn display, irritant(%rsp), %r12
@@ -1187,15 +1139,7 @@ eof_object:
 
 read_u8:                        # port
         minimal_prologue
-        mov     %rdi, %rbx
-        mov     current_input_port_symbol, %ecx
-        mov     symbol_table_values(,%ecx,POINTER_SIZE), %r11
-        unbox_pointer_internal %r11, %r11
-        xor     %eax, %eax
-        call_fn *%r11
-        mov     %rbx, %rdi
-        default_arg TAG_PORT, %rax, %rdi
-
+        parameter_default_arg TAG_PORT, current_input_port_symbol, %rsi
         unbox_pointer_internal %rdi
         call_fn fgetc, %rax
         cmp     $EOF, %al
@@ -1206,15 +1150,7 @@ read_u8:                        # port
 
 peek_u8:                        # port
         prologue
-        mov     %rdi, %rbx
-        mov     current_input_port_symbol, %ecx
-        mov     symbol_table_values(,%ecx,POINTER_SIZE), %r11
-        unbox_pointer_internal %r11, %r11
-        xor     %eax, %eax
-        call_fn *%r11
-        mov     %rbx, %rdi
-        default_arg TAG_PORT, %rax, %rdi
-
+        parameter_default_arg TAG_PORT, current_input_port_symbol, %rsi
         unbox_pointer_internal %rdi, %rbx
         call_fn fgetc, %rbx
         call_fn ungetc, %rax, %rbx
@@ -1227,18 +1163,9 @@ peek_u8:                        # port
         ## 6.13.3. Output
 
 write_u8:                       # byte, port
-        prologue byte, port
-        assert_tag TAG_INT, %rdi, not_an_integer_string
+        prologue byte
         mov     %edi, byte(%rsp)
-        mov     %rsi, port(%rsp)
-        mov     current_output_port_symbol, %ecx
-        mov     symbol_table_values(,%ecx,POINTER_SIZE), %r11
-        unbox_pointer_internal %r11, %r11
-        xor     %eax, %eax
-        call_fn *%r11
-        mov     port(%rsp), %rsi
-        default_arg TAG_PORT, %rax, %rsi
-
+        parameter_default_arg TAG_PORT, current_output_port_symbol, %rdi
         unbox_pointer_internal %rsi
         mov     byte(%rsp), %edi
         call_fn fputc, %rdi, %rax
@@ -1246,15 +1173,7 @@ write_u8:                       # byte, port
 
 flush_output_port:              # port
         minimal_prologue
-        mov     %rdi, %rbx
-        mov     current_output_port_symbol, %ecx
-        mov     symbol_table_values(,%ecx,POINTER_SIZE), %r11
-        unbox_pointer_internal %r11, %r11
-        xor     %eax, %eax
-        call_fn *%r11
-        mov     %rbx, %rdi
-        default_arg TAG_PORT, %rax, %rdi
-
+        parameter_default_arg TAG_PORT, current_output_port_symbol, %rdi
         unbox_pointer_internal %rdi
         call_fn fflush, %rax
         return  $VOID
