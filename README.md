@@ -55,6 +55,7 @@ trying again.
   * + R7RS `case`, `when`, `unless`, `parameterize`, `case-lambda` and
     `define-record-type`.
 * Basic support for `define-syntax` / `syntax-rules` and `quasiquote`.
+* Basic support for R7RS Exceptions.
 * NaN-boxed 32-bit integers and 64-bit doubles
 * Function application up to 6 named arguments with varargs support.
 * TCO for calls in tail position across functions.
