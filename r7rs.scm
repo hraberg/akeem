@@ -720,4 +720,4 @@
         (else #f)))
 
 (define (features)
-  '(r7rs exact-closed ieee-float posix gnu-linux x86-64 little-endian))
+  '(r7rs exact-closed ieee-float posix unix gnu-linux x86-64 little-endian akeem))
