@@ -657,21 +657,21 @@
           (lambda (a b) b)))
 ;; (assert (call-with-values * -))
 
-;; (assert (let ((path '())
-;;               (c #f))
+;; (assert (let ((path (list '()))
+;;               (c (list #f)))
 ;;           (let ((add (lambda (s)
-;;                        (set! path (cons s path)))))
+;;                        (set-car! path (cons s (car path))))))
 ;;             (dynamic-wind
 ;;               (lambda () (add 'connect))
 ;;               (lambda ()
 ;;                 (add (call-with-current-continuation
 ;;                       (lambda (c0)
-;;                         (set! c c0)
+;;                         (set-car! c c0)
 ;;                         'talk1))))
 ;;               (lambda () (add 'disconnect)))
-;;             (if (< (length path) 4)
-;;                 (c 'talk2)
-;;                 (reverse path)))))
+;;             (if (< (length (car path)) 4)
+;;                 ((car c) 'talk2)
+;;                 (reverse (car path))))))
 
 (spec ";;; 6.5. Eval")
 (assert (eval '(* 7 3) (scheme-report-environment 5)))
