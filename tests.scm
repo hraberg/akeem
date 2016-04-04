@@ -657,7 +657,7 @@
           (lambda (a b) b)))
 ;; (assert (call-with-values * -))
 
-;; (assert (let ((path (list '()))
+;; (assert (let ((path (list '())) ;; these should not be boxed
 ;;               (c (list #f)))
 ;;           (let ((add (lambda (s)
 ;;                        (set-car! path (cons s (car path))))))
