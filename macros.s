@@ -119,7 +119,8 @@
         .macro assert_tag tag, value, error
         has_tag \tag, \value, store=false
         je      .L_\@_1
-        mov     $error, %r11
+        mov     $internal_error, %r11
+        mov     $2, %eax
         call_fn *%r11, \error, \value
 .L_\@_1:
         .endm
@@ -130,8 +131,9 @@
         has_tag TAG_PAIR, \value, store=false
         je      .L_\@_2
 .L_\@_1:
-        mov     $error, %r11
-        call_fn *%r11, \error, \value
+        mov     $internal_error, %r10
+        mov     $2, %eax
+        call_fn *%r10, \error, \value
 .L_\@_2:
         .endm
 
@@ -145,7 +147,8 @@
         cmp     $\class, %ax
         je      .L_\@_2
 .L_\@_1:
-        mov     $error, %r11
+        mov     $internal_error, %r11
+        mov     $2, %eax
         call_fn *%r11, \error, \value
 .L_\@_2:
         .endm
