@@ -100,10 +100,10 @@
                                  `(cons (,(car p)) ,(car p)))
                                bindings))))
          (dynamic-wind
-             (lambda ()
-               ,@(map (lambda (p)
-                        `(,(car p) '<param-set!> ((,(car p) '<param-convert>) ,(cadr p))))
-                      bindings))
+           (lambda ()
+             ,@(map (lambda (p)
+                      `(,(car p) '<param-set!> ((,(car p) '<param-convert>) ,(cadr p))))
+                    bindings))
            (lambda ()
              ,@body)
            (lambda ()
@@ -602,6 +602,11 @@
 (define (error message . obj)
   (raise (make-error-object message obj)))
 
+;; 6.12. Environments and evaluation
+
+(define (environment . list)
+  (interaction-environment))
+
 ;; 6.13. Input and output
 
 ;; 6.13.1. Ports
@@ -620,19 +625,19 @@
   (let ((in (open-input-file string)))
     (parameterize ((current-input-port in))
       (dynamic-wind
-          (lambda ())
-          thunk
-          (lambda ()
-            (close-input-port in))))))
+        (lambda ())
+        thunk
+        (lambda ()
+          (close-input-port in))))))
 
 (define (with-output-to-file string thunk)
   (let ((out (open-output-file string)))
     (parameterize ((current-output-port out))
       (dynamic-wind
-          (lambda ())
-          thunk
-          (lambda ()
-            (close-output-port out))))))
+        (lambda ())
+        thunk
+        (lambda ()
+          (close-output-port out))))))
 
 (define open-binary-input-file open-input-file)
 (define open-binary-output-file open-output-file)

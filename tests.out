@@ -384,6 +384,5 @@ condition: an-error
 exception
 something went wrong
 an-error
-#<void>
 should be a number
 65

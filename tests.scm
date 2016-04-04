@@ -662,13 +662,13 @@
 ;;           (let ((add (lambda (s)
 ;;                        (set! path (cons s path)))))
 ;;             (dynamic-wind
-;;                 (lambda () (add 'connect))
-;;                 (lambda ()
-;;                   (add (call-with-current-continuation
-;;                         (lambda (c0)
-;;                           (set! c c0)
-;;                           'talk1))))
-;;                 (lambda () (add 'disconnect)))
+;;               (lambda () (add 'connect))
+;;               (lambda ()
+;;                 (add (call-with-current-continuation
+;;                       (lambda (c0)
+;;                         (set! c c0)
+;;                         'talk1))))
+;;               (lambda () (add 'disconnect)))
 ;;             (if (< (length path) 4)
 ;;                 (c 'talk2)
 ;;                 (reverse path)))))
@@ -744,12 +744,12 @@
 (assert (guard (condition
                 ((assq 'a condition) => cdr)
                 ((assq 'b condition)))
-               (raise (list (cons 'a 42)))))
+          (raise (list (cons 'a 42)))))
 
 (assert (guard (condition
                 ((assq 'a condition) => cdr)
                 ((assq 'b condition)))
-               (raise (list (cons 'b 23)))))
+          (raise (list (cons 'b 23)))))
 
 
 (spec ";;; 4.2.9. Case-lambda")
@@ -912,11 +912,11 @@ containing just one line")
             (lambda ()
               (+ 1 (raise 'an-error)))))))
 
-(assert (with-exception-handler
-         (lambda (x)
-           (display "something went wrong\n"))
-         (lambda ()
-           (+ 1 (raise 'an-error)))))
+(with-exception-handler
+ (lambda (x)
+   (display "something went wrong\n"))
+ (lambda ()
+   (+ 1 (raise 'an-error))))
 
 (assert (with-exception-handler
          (lambda (con)
