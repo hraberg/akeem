@@ -934,7 +934,6 @@ record_set:                     # record, k, obj
         mov     $VOID, %rax
         ret
 
-
         ## 6. Standard procedures
         ## 6.2. Numbers
         ## 6.2.6. Numerical operations
@@ -1299,6 +1298,7 @@ main:                # argc, argv
         lea     gc_mark_queue_jump_table, %rbx
         store_pointer $TAG_PAIR, $gc_mark_queue_pair
         store_pointer $TAG_VECTOR, $gc_mark_queue_vector
+        store_pointer $TAG_OBJECT, $gc_mark_queue_object
 
         intern_symbol double_symbol, "double", id=TAG_DOUBLE
         intern_symbol boolean_symbol, "boolean", id=TAG_BOOLEAN
@@ -2171,6 +2171,16 @@ gc_mark_queue_vector:           # vector
         call_fn gc_maybe_mark, %rdi
         jmp     1b
 2:      return
+
+gc_mark_queue_object:           # object
+        prologue
+        mov     %rdi, %rbx
+        call_fn class_of, %rdi
+        eq_internal $TAG_BYTEVECTOR, %eax, store=false
+        je      1f
+
+        call_fn gc_mark_queue_vector, %rbx
+1:      return
 
 gc_mark_queue_registers:
         minimal_prologue
