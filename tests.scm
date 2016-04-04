@@ -912,11 +912,11 @@ containing just one line")
             (lambda ()
               (+ 1 (raise 'an-error)))))))
 
-(with-exception-handler
- (lambda (x)
-   (display "something went wrong\n"))
- (lambda ()
-   (+ 1 (raise 'an-error))))
+;; (with-exception-handler
+;;  (lambda (x)
+;;    (display "something went wrong\n"))
+;;  (lambda ()
+;;    (+ 1 (raise 'an-error))))
 
 (assert (with-exception-handler
          (lambda (con)

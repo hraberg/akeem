@@ -382,7 +382,5 @@ c
 ;;; 6.11. Exceptions
 condition: an-error
 exception
-something went wrong
-an-error
 should be a number
 65

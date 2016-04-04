@@ -1061,7 +1061,6 @@ raise:                          # error
         unbox_pointer_internal %rax, %r11
         mov     $1, %eax
         call_fn *%r11, %rbx
-        return
 
 1:      cmp     $NULL, error_jmp_buffer
         je      2f
