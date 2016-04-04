@@ -94,20 +94,39 @@
 
 (define-syntax parameterize
   (lambda (form env)
-    `(let ((old (list ,@(map (lambda (p)
-                               `(cons (,(car p)) ,(car p)))
-                             (cadr form)))))
-       (dynamic-wind
-         (lambda ()
-           ,@(map (lambda (p)
-                    `(,(car p) '<param-set!> ((,(car p) '<param-convert>) ,(cadr p))))
-                  (cadr form)))
-         (lambda ()
-           ,@(cddr form))
-         (lambda ()
-           (for-each (lambda (p)
-                       ((cdr p) '<param-set!> (car p)))
-                     old))))))
+    (let ((bindings (cadr form))
+          (body (cddr form)))
+      `(let ((old (list ,@(map (lambda (p)
+                                 `(cons (,(car p)) ,(car p)))
+                               bindings))))
+         (dynamic-wind
+             (lambda ()
+               ,@(map (lambda (p)
+                        `(,(car p) '<param-set!> ((,(car p) '<param-convert>) ,(cadr p))))
+                      bindings))
+           (lambda ()
+             ,@body)
+           (lambda ()
+             (for-each (lambda (p)
+                         ((cdr p) '<param-set!> (car p)))
+                       old)))))))
+
+;;; 4.2.7. Exception handling
+
+(define-syntax guard
+  (lambda (form env)
+    (let ((condition (caadr form))
+          (guard (cdadr form))
+          (body (cddr form)))
+      `(call/cc (lambda (continue)
+                  (with-exception-handler
+                   (lambda (,condition)
+                     (let ((result (cond ,@guard)))
+                       (if result
+                           (continue result)
+                           (raise-continuable ,condition))))
+                   (lambda ()
+                     ,@body)))))))
 
 ;;; 4.2.9. Case-lambda
 

@@ -740,6 +740,18 @@
           (f 12)))
 (assert (f 12))
 
+(spec ";;; 4.2.7. Exception handling")
+(assert (guard (condition
+                ((assq 'a condition) => cdr)
+                ((assq 'b condition)))
+               (raise (list (cons 'a 42)))))
+
+(assert (guard (condition
+                ((assq 'a condition) => cdr)
+                ((assq 'b condition)))
+               (raise (list (cons 'b 23)))))
+
+
 (spec ";;; 4.2.9. Case-lambda")
 (define range
   (case-lambda

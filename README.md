@@ -52,8 +52,8 @@ trying again.
 * JIT for `if`, `lambda`, `set!`, `let`, `letrec` and `begin`
 * Syntax for `and`, `or`, `cond`, `case`, `let*`, "named `let`", `do`,
   `delay`, and `define`.
-  * + R7RS `case`, `when`, `unless`, `parameterize`, `case-lambda` and
-    `define-record-type`.
+  * + R7RS `case`, `when`, `unless`, `parameterize`, `guard`,
+    `case-lambda` and `define-record-type`.
 * Basic support for `define-syntax` / `syntax-rules` and `quasiquote`.
 * Basic support for R7RS Exceptions.
 * NaN-boxed 32-bit integers and 64-bit doubles

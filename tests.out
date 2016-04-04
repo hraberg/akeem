@@ -313,6 +313,9 @@ c
 "12"
 "c"
 "12"
+;;; 4.2.7. Exception handling
+42
+(b . 23)
 ;;; 4.2.9. Case-lambda
 (0 1 2)
 (3 4)
