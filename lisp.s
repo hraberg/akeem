@@ -693,22 +693,27 @@ apply_0:
         return
 
 call_with_current_continuation: # proc
-        prologue jmp_buffer
+        prologue ucp
         assert_tag TAG_PROCEDURE, %rdi, not_a_procedure_string
         unbox_pointer_internal %rdi, %rbx
-        call_fn malloc, $JMP_BUF_SIZE
+        call_fn malloc, $UCONTEXT_SIZE
         perror
-        mov     %rax, jmp_buffer(%rsp)
+        mov     %rax, ucp(%rsp)
+        mov     $C_FALSE, %rax
+        movq    %rax, %xmm1
 
-        call_fn setjmp, jmp_buffer(%rsp) # https://www.gnu.org/software/libc/manual/html_mono/libc.html#System-V-contexts
+        call_fn getcontext, ucp(%rsp)
+        perror  jge
+        movq    %xmm1, %rax
+        test    %eax, %eax
         jnz 1f
-        call_fn jit_call_with_current_continuation_escape_factory, jmp_buffer(%rsp)
+        call_fn jit_call_with_current_continuation_escape_factory, ucp(%rsp)
         tag     TAG_PROCEDURE, %rax
         mov     %rax, %r11
         mov     $1, %eax
         call_fn *%rbx, %r11
         return
-1:      call_fn free, jmp_buffer(%rsp)
+1:      call_fn free, ucp(%rsp)
         return  %xmm0
 
         ## 6.5. Eval
@@ -4107,14 +4112,16 @@ jit_define_syntax:              # form, c-stream, environment, register, tail
 
         ## 6.4. Control features
 
-jit_call_with_current_continuation_escape: # return, jmp-buffer
-        minimal_prologue
+jit_call_with_current_continuation_escape: # return, ucontext
+        prologue
         movq    %rdi, %xmm0
-        mov     %rsi, %rdi
-        call_fn longjmp, %rdi, $C_TRUE
+        movq    $C_TRUE, %rax
+        movq    %rax, %xmm1
+        call_fn setcontext, %rsi
+        perror
         return
 
-jit_call_with_current_continuation_escape_factory: # jmp-buffer
+jit_call_with_current_continuation_escape_factory: # ucontext
         prologue  code, size
         mov     %rdi, %r12
         lea     code(%rsp), %rdi

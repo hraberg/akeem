@@ -5,6 +5,9 @@
         ## setjmp.h
         .equ JMP_BUF_SIZE, 200
 
+        ## ucontext.h
+        .equ UCONTEXT_SIZE, 936
+
         ## sys/mman.h
         .equ PROT_READ, 0x1
         .equ PROT_WRITE, 0x2
