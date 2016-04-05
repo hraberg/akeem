@@ -657,21 +657,21 @@
           (lambda (a b) b)))
 ;; (assert (call-with-values * -))
 
-;; (assert (let ((path (list '())) ;; these should not be boxed
-;;               (c (list #f)))
-;;           (let ((add (lambda (s)
-;;                        (set-car! path (cons s (car path))))))
-;;             (dynamic-wind
-;;               (lambda () (add 'connect))
-;;               (lambda ()
-;;                 (add (call-with-current-continuation
-;;                       (lambda (c0)
-;;                         (set-car! c c0)
-;;                         'talk1))))
-;;               (lambda () (add 'disconnect)))
-;;             (if (< (length (car path)) 4)
-;;                 ((car c) 'talk2)
-;;                 (reverse (car path))))))
+(assert (let ((path (list '())) ;; these should not be boxed
+              (c (list #f)))
+          (let ((add (lambda (s)
+                       (set-car! path (cons s (car path))))))
+            (dynamic-wind
+              (lambda () (add 'connect))
+              (lambda ()
+                (add (call-with-current-continuation
+                      (lambda (c0)
+                        (set-car! c c0)
+                        'talk1))))
+              (lambda () (add 'disconnect)))
+            (if (< (length (car path)) 4)
+                ((car c) 'talk2)
+                (reverse (car path))))))
 
 (spec ";;; 6.5. Eval")
 (assert (eval '(* 7 3) (scheme-report-environment 5)))

@@ -617,7 +617,7 @@ list_to_vector:                 # list
         prologue vec
         mov     %rdi, %r12
         call_fn length, %r12
-        call_fn make_vector, %rax
+        call_fn make_vector, %rax, $VOID
         mov     %rax, vec(%rsp)
 
         xor     %ebx, %ebx
@@ -693,28 +693,50 @@ apply_0:
         return
 
 call_with_current_continuation: # proc
-        prologue ucp
+        prologue stack_depth, continuation, dynamic_extent, rbx, r12, rbp
+        mov     %rbx, rbx(%rsp)
+        mov     %r12, r12(%rsp)
+        mov     %rbp, rbp(%rsp)
         assert_tag TAG_PROCEDURE, %rdi, not_a_procedure_string
         unbox_pointer_internal %rdi, %rbx
-        call_fn malloc, $UCONTEXT_SIZE
-        perror
-        mov     %rax, ucp(%rsp)
-        mov     $C_FALSE, %rax
-        movq    %rax, %xmm1
 
-        call_fn getcontext, ucp(%rsp)
-        perror  jge
-        movq    %xmm1, %rax
-        test    %eax, %eax
-        jnz 1f
-        call_fn jit_call_with_current_continuation_escape_factory, ucp(%rsp)
+        mov     execution_stack_top, %rax
+        mov     %rsp, %r11
+        add     $stack_frame_size, %r11
+        sub     %r11, %rax
+        mov     %eax, stack_depth(%rsp)
+        shr     $POINTER_SIZE_SHIFT, %eax
+        add     $CONTINUATION_SAVED_VALUES, %eax
+        box_int_internal %eax
+        call_fn make_vector, %rax, $VOID
+        unbox_pointer_internal
+        movw    $TAG_CONTINUATION, header_object_type(%rax)
+        lea     header_size(%rax), %r12
+        tag     TAG_OBJECT, %rax
+        mov     %rax, continuation(%rsp)
+
+        parameter_value dynamic_extent_stack_symbol
+        call_fn reverse, %rax
+        mov     %rax, dynamic_extent(%rsp)
+
+        .irp saved_value, dynamic_extent, rbx, r12, rbp
+        mov     \saved_value(%rsp), %rax
+        mov     %rax, (%r12)
+        add     $POINTER_SIZE, %r12
+        .endr
+
+        mov     execution_stack_top, %r11
+        mov     stack_depth(%rsp), %eax
+        sub     %rax, %r11
+        call_fn memcpy, %r12, %r11, %rax
+        perror
+
+        call_fn jit_call_with_current_continuation_escape_factory, continuation(%rsp)
         tag     TAG_PROCEDURE, %rax
         mov     %rax, %r11
         mov     $1, %eax
         call_fn *%rbx, %r11
         return
-1:      call_fn free, ucp(%rsp)
-        return  %xmm0
 
         ## 6.5. Eval
 
@@ -1313,6 +1335,7 @@ main:                # argc, argv
         intern_symbol vector_symbol, "vector", id=TAG_VECTOR
         intern_symbol object_symbol, "object", id=TAG_OBJECT
         intern_symbol bytevector_symbol, "bytevector", id=TAG_BYTEVECTOR
+        intern_symbol continuation_symbol, "continuation", id=TAG_CONTINUATION
 
         intern_symbol quote_symbol, "quote"
         intern_symbol lambda_symbol, "lambda"
@@ -1362,6 +1385,7 @@ main:                # argc, argv
         intern_symbol eof_symbol, "eof"
         intern_symbol error_symbol, "error"
         intern_symbol exception_handler_stack_symbol, "exception-handler-stack"
+        intern_symbol dynamic_extent_stack_symbol, "dynamic-extent-stack"
 
         intern_symbol current_output_port_symbol, "current-output-port"
         intern_symbol current_input_port_symbol, "current-input-port"
@@ -4125,16 +4149,52 @@ jit_define_syntax:              # form, c-stream, environment, register, tail
 
         ## 6.4. Control features
 
-jit_call_with_current_continuation_escape: # return, ucontext
+jit_call_with_current_continuation_execute_dynamic_extent: # dynamic-extent
         prologue
-        movq    %rdi, %xmm0
-        movq    $C_TRUE, %rax
-        movq    %rax, %xmm1
-        call_fn setcontext, %rsi
-        perror
-        return
+        mov     %rdi, %rbx
+1:      is_nil_internal %rbx
+        je      2f
+        car     %rbx
+        unbox_pointer_internal %rax, %r11
+        xor     %eax, %eax
+        call    *%r11
+        cdr     %rbx, %rbx
+        jmp     1b
+2:      return
 
-jit_call_with_current_continuation_escape_factory: # ucontext
+jit_call_with_current_continuation_escape: # return, continuation
+        unbox_pointer_internal %rsi
+        lea     header_size(%rax), %r10
+
+        mov     header_object_size(%rax), %eax
+        sub     $(CONTINUATION_SAVED_VALUES * POINTER_SIZE), %eax
+        mov     execution_stack_top, %r11
+        sub     %rax, %r11
+        mov     %r11, %rsp
+
+        push    %rdi
+
+        mov     $CONTINUATION_SAVED_VALUES, %ecx
+1:      test    %ecx, %ecx
+        jz      2f
+        pushq   (%r10)
+        add     $POINTER_SIZE, %r10
+        dec     %ecx
+        jmp     1b
+
+2:      call_fn memcpy, %r11, %r10, %rax
+
+        pop     %rbp
+        pop     %r12
+        pop     %rbx
+        pop     %r11
+
+        call_fn jit_call_with_current_continuation_execute_dynamic_extent, %r11
+
+4:      pop     %rax
+        ret
+
+jit_call_with_current_continuation_escape_factory: # continuation
         prologue  code, size
         mov     %rdi, %r12
         lea     code(%rsp), %rdi
@@ -4328,6 +4388,8 @@ machine_readable_char_format:
         .string "#\\%c"
 machine_readable_escape_code_format:
         .string "\\%c"
+pointer_format:
+        .string "%lx\n"
 oct_format:
         .string "%o"
 int_format:

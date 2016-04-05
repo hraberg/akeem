@@ -555,6 +555,19 @@
   (done? promise-done? set-promise-done!)
   (value promise-value set-promise-value!))
 
+(define dynamic-extent-stack (make-parameter '()))
+
+(define (dynamic-wind before thunk after)
+  (before)
+  (let ((old-dynamic-extent-stack (dynamic-extent-stack))
+        (new-dynamic-extent-stack (dynamic-extent-stack '<param-set!>
+                                                        ((dynamic-extent-stack '<param-convert>)
+                                                         (cons before (dynamic-extent-stack)))))
+        (return (thunk)))
+    (after)
+    (dynamic-extent-stack '<param-set!> old-dynamic-extent-stack)
+    return))
+
 ;;; 6.11. Exceptions
 
 (define (default-exception-handler error)

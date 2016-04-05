@@ -55,7 +55,7 @@ trying again.
   * + R7RS `case`, `when`, `unless`, `parameterize`, `guard`,
     `case-lambda` and `define-record-type`.
 * Basic support for `define-syntax` / `syntax-rules` and `quasiquote`.
-* Basic support for R7RS Exceptions.
+* Basic support for R7RS Exceptions and `dynamic-wind`.
 * NaN-boxed 32-bit integers and 64-bit doubles
 * Function application up to 6 named arguments with varargs support.
 * TCO for calls in tail position across functions.
@@ -65,9 +65,7 @@ trying again.
 
 ## What Doesn't Work?
 
-* No `dynamic-wind`.
 * No `let-syntax` and `letrec-syntax`.
-* `call-with-current-continuation` only uses `setjmp`.
 * Max arity is currently 6, higher requires the use of the stack.
 * No register allocation.
 * No hygienic macro expansion.

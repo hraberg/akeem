@@ -294,6 +294,7 @@ mISSISSIppi
 4
 #f
 5
+(connect talk1 disconnect connect talk2 disconnect)
 ;;; 6.5. Eval
 21
 20

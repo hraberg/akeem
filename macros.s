@@ -381,14 +381,18 @@
         cmovne  \tmp, \value
         .endm
 
-        .macro parameter_default_arg tag, parameter, value, tmp=%r11, backup=%rbx
-        mov     \value, \backup
+        .macro parameter_value parameter, tmp=%r11
         mov     \parameter, \tmp
         unbox_pointer_internal \tmp, \tmp
         mov     symbol_table_values(,\tmp,POINTER_SIZE), \tmp
         unbox_pointer_internal \tmp, \tmp
         xor     %eax, %eax
         call_fn *\tmp
+        .endm
+
+        .macro parameter_default_arg tag, parameter, value, tmp=%r11, backup=%rbx
+        mov     \value, \backup
+        parameter_value \parameter, \tmp
         mov     \backup, \value
         default_arg \tag, %rax, \value, \tmp
         .endm

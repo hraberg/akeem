@@ -5,9 +5,6 @@
         ## setjmp.h
         .equ JMP_BUF_SIZE, 200
 
-        ## ucontext.h
-        .equ UCONTEXT_SIZE, 936
-
         ## sys/mman.h
         .equ PROT_READ, 0x1
         .equ PROT_WRITE, 0x2
@@ -68,6 +65,7 @@
         .equ TAG_OBJECT, 56
 
         .equ TAG_BYTEVECTOR, 64
+        .equ TAG_CONTINUATION, 65
 
         .equ C_TRUE, 1
         .equ C_FALSE, 0
@@ -110,6 +108,8 @@
         .equ MAX_REGISTER_ARGS, 6
 
         .equ MAX_CLOSURE_ENVIRONMENT_SIZE, 64
+
+        .equ CONTINUATION_SAVED_VALUES, 4
 
         .equ RET_SIZE, 1
 
