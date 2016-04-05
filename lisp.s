@@ -1479,6 +1479,7 @@ main:                # argc, argv
         .endr
         store_pointer $'+, $read_number_or_symbol
         store_pointer $'-, $read_number_or_symbol
+        store_pointer $'., $read_number_or_symbol
         store_pointer $'', $read_quote
         store_pointer $'`, $read_quasiquote
         store_pointer $',, $read_unquote
