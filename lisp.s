@@ -62,9 +62,13 @@ is_integer:                     # obj
         jne     1f
         mov     $TRUE, %rax
         ret
-1:      maybe_round_to_int
+1:      is_double_internal %rdi
+        jz      2f
+        maybe_round_to_int
         has_tag TAG_INT, %rax
         box_boolean_internal
+        ret
+2:      mov     $FALSE, %rax
         ret
 
 is_exact:                       # z
