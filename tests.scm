@@ -375,7 +375,7 @@
 ;; (assert (numerator (/ 6 4)))
 ;; (assert (denominator (/ 6 4)))
 ;; (assert (denominator
-;;          (exact->inexact (/ 6 4))))
+;;          (inexact (/ 6 4))))
 
 (assert (floor -4.3))
 (assert (ceiling -4.3))
@@ -389,7 +389,7 @@
 (assert (round 7))
 
 ;; (assert (rationalize
-;;          (inexact->exact .3) 1/10))
+;;          (exact .3) 1/10))
 ;; (assert (rationalize .3 1/10))
 
 (spec ";;; 6.2.6. Numerical input and output")
@@ -487,7 +487,7 @@
 
 (assert (list-ref '(a b c d) 2))
 (assert (list-ref '(a b c d)
-                  (inexact->exact (round 1.8))))
+                  (exact (round 1.8))))
 
 (assert (memq 'a '(a b c)))
 (assert (memq 'b '(a b c)))
@@ -558,7 +558,7 @@
 (assert (vector-ref '#(1 1 2 3 5 8 13 21)
                     (let ((i (round (* 2 (acos -1)))))
                       (if (inexact? i)
-                          (inexact->exact i)
+                          (exact i)
                           i))))
 
 (assert (let ((vec (vector 0 '(2 2 2 2) "Anna")))

@@ -2,7 +2,37 @@
 
         .text
 
-        ## R5RS
+        ## R7RS
+
+        ## 5.5. Record-type definitions
+
+make_record:                    # k, type
+        prologue
+        assert_tag TAG_PAIR, %rdi, not_a_pair_string
+        assert_tag TAG_SYMBOL, %rsi, not_a_symbol_string
+        mov     %rsi, %rbx
+        call_fn list_to_vector, %rdi
+        unbox_pointer_internal %rax
+        mov     %bx, header_object_type(%rax)
+        tag     TAG_OBJECT, %rax
+        return
+
+record_ref:                     # record, k
+        assert_tag TAG_OBJECT, %rdi, not_a_vector_string
+        assert_tag TAG_INT, %rsi, not_an_integer_string
+        unbox_pointer_internal %rdi
+        mov     %esi, %esi
+        mov     header_size(%rax,%rsi,POINTER_SIZE), %rax
+        ret
+
+record_set:                     # record, k, obj
+        assert_tag TAG_OBJECT, %rdi, not_a_vector_string
+        assert_tag TAG_INT, %rsi, not_an_integer_string
+        unbox_pointer_internal %rdi
+        mov     %esi, %esi
+        mov     %rdx, header_size(%rax,%rsi,POINTER_SIZE)
+        mov     $VOID, %rax
+        ret
 
         ## 6. Standard procedures
         ## 6.1. Equivalence predicates
@@ -14,7 +44,7 @@ is_eqv:                         # obj1, obj2
         ret
 
         ## 6.2. Numbers
-        ## 6.2.5. Numerical operations
+        ## 6.2.6. Numerical operations
 
 is_number:                      # obj
 is_complex:                     # obj
@@ -46,6 +76,28 @@ is_inexact:                     # z
         is_double_internal %rdi
         box_boolean_internal
         ret
+
+is_infinite:                    # z
+        minimal_prologue
+        is_double_internal %rdi
+        jz      1f
+        movq    %rdi, %xmm0
+        call    isinf
+        setnz   %al
+        box_boolean_internal
+        return
+1:      return  $FALSE
+
+is_nan:                         # z
+        minimal_prologue
+        is_double_internal %rdi
+        jz      1f
+        movq    %rdi, %xmm0
+        call    isnan
+        setnz   %al
+        box_boolean_internal
+        return
+1:      return  $FALSE
 
 equal:                          # z1, z2
         binary_comparsion equals, sete, sete
@@ -160,7 +212,7 @@ sqrt_:                          # z
 expt_:                          # z1, z2
         math_library_binary_call pow, round=true
 
-exact_to_inexact:               # z
+inexact:                        # z
         has_tag TAG_INT, %rdi, store=false
         jne     1f
         cvtsi2sd %edi, %xmm0
@@ -169,7 +221,7 @@ exact_to_inexact:               # z
 1:      mov     %rdi, %rax
         ret
 
-inexact_to_exact:               # z
+exact:                          # z
         has_tag TAG_INT, %rdi, store=false
         je      1f
         movq    %rdi, %xmm0
@@ -179,7 +231,7 @@ inexact_to_exact:               # z
 1:      mov     %rdi, %rax
         ret
 
-        ## 6.2.6. Numerical input and output
+        ## 6.2.7. Numerical input and output
 
 number_to_string:               # z, radix
         minimal_prologue
@@ -213,9 +265,7 @@ string_to_number:               # string, radix
 
 2:      return  $FALSE
 
-        ## 6.3. Other data types
-
-        ## 6.3.1. Booleans
+        ## 6.3. Booleans
 
 not:                            # obj
         mov     $FALSE, %rax
@@ -223,7 +273,7 @@ not:                            # obj
         box_boolean_internal
         ret
 
-        ## 6.3.2. Pairs and lists
+        ## 6.4. Pairs and lists
 
 is_pair:                        # obj
         is_nil_internal %rdi
@@ -332,7 +382,7 @@ reverse:                        # list
 
 2:      return  %r12
 
-        ## 6.3.3. Symbols
+        ## 6.5. Symbols
 
 is_symbol:                      # obj
         has_tag TAG_SYMBOL, %rdi
@@ -377,7 +427,7 @@ string_to_symbol:               # string
 3:      tag     TAG_SYMBOL, %rbx
         return
 
-        ## 6.3.4. Characters
+        ## 6.6. Characters
 
 is_char:                        # obj
         has_tag TAG_CHAR, %rdi
@@ -458,7 +508,7 @@ char_downcase:                  # char
         tag     TAG_CHAR, %rax
         return
 
-        ## 6.3.5. Strings
+        ## 6.7. Strings
 
 is_string:                      # obj
         has_tag TAG_STRING, %rdi
@@ -554,7 +604,7 @@ is_string_ci_less_than_or_equal: # string1, string2
 is_string_ci_greater_than_or_equal: # string1, string2
         string_comparator strcasecmp, setge
 
-        ## 6.3.6. Vectors
+        ## 6.8. Vectors
 
 is_vector:                      # obj
         has_tag TAG_VECTOR, %rdi
@@ -635,7 +685,93 @@ list_to_vector:                 # list
 
 2:      return  vec(%rsp)
 
-        ## 6.4. Control features
+        ## 6.9. Bytevectors
+
+is_bytevector:                  # obj
+        minimal_prologue
+        call_fn class_of, %rdi
+        eq_internal $TAG_BYTEVECTOR, %eax
+        box_boolean_internal %rax
+        return
+
+make_bytevector:                # k, byte
+        prologue
+        assert_tag TAG_INT, %rdi, not_an_integer_string
+        default_arg TAG_INT, $ZERO_INT , %rsi
+
+        mov     %rsi, %r12
+        mov     %edi, %ebx
+        add     $header_size, %edi
+        call_fn gc_allocate_memory, %rdi
+        movw    $TAG_BYTEVECTOR, header_object_type(%rax)
+        mov     %ebx, header_object_size(%rax)
+
+1:      test    %ebx, %ebx
+        jz      2f
+        dec     %ebx
+        mov     %r12b, header_size(%rax,%rbx)
+        jmp     1b
+
+2:      tag     TAG_OBJECT, %rax
+        register_for_gc
+        return
+
+bytevector_length:              # bytevector
+        assert_object %rdi, TAG_BYTEVECTOR, not_a_bytevector_string
+        unbox_pointer_internal %rdi
+        mov     header_object_size(%rax), %eax
+        box_int_internal
+        ret
+bytevector_length_size:
+        .quad   . - bytevector_length - RET_SIZE
+
+bytevector_u8_ref:              # bytevector, k
+        assert_object %rdi, TAG_BYTEVECTOR, not_a_bytevector_string
+        assert_tag TAG_INT, %rsi, not_an_integer_string
+        unbox_pointer_internal %rdi
+        mov     %esi, %esi
+        xor     %r11d, %r11d
+        mov     header_size(%rax,%rsi), %r11b
+        tag     TAG_INT, %r11
+        ret
+bytevector_u8_ref_size:
+        .quad   . - bytevector_u8_ref - RET_SIZE
+
+bytevector_u8_set:              # bytevector, k, byte
+        assert_object %rdi, TAG_BYTEVECTOR, not_a_bytevector_string
+        assert_tag TAG_INT, %rsi, not_an_integer_string
+        assert_tag TAG_INT, %rdx, not_an_integer_string
+        unbox_pointer_internal %rdi
+        mov     %esi, %esi
+        mov     %dl, header_size(%rax,%rsi)
+        mov     $VOID, %rax
+        ret
+bytevector_u8_set_size:
+        .quad   . - bytevector_u8_set - RET_SIZE
+
+list_to_bytevector:             # list
+        prologue vec
+        mov     %rdi, %r12
+        call_fn length, %r12
+        call_fn make_bytevector, %rax
+        mov     %rax, vec(%rsp)
+
+        xor     %ebx, %ebx
+1:      is_nil_internal %r12
+        je      2f
+
+        box_int_internal %ebx
+        mov     %rax, %rsi
+        car     %r12
+        call_fn bytevector_u8_set, vec(%rsp), %rsi, %rax
+        cdr     %r12, %r12
+
+        inc     %rbx
+        jmp     1b
+
+2:      return  vec(%rsp)
+
+        ## 6.10. Control features
 
 is_procedure:                   # obj
         has_tag TAG_PROCEDURE, %rdi
@@ -739,7 +875,39 @@ call_with_current_continuation: # proc
         call_fn *%rbx, %r11
         return
 
-        ## 6.5. Eval
+        ## 6.11. Exceptions
+
+raise:                          # error
+        prologue
+        mov     %rdi, %rbx
+
+        mov     exception_handler_stack_symbol, %ecx
+        mov     symbol_table_values(,%ecx,POINTER_SIZE), %r11
+        unbox_pointer_internal %r11, %r11
+        xor     %eax, %eax
+        call_fn *%r11
+
+        is_nil_internal %rax
+        je      1f
+
+        car     %rax
+        unbox_pointer_internal %rax, %r11
+        mov     $1, %eax
+        call_fn *%r11, %rbx
+
+1:      cmp     $NULL, error_jmp_buffer
+        je      2f
+        movq    %rbx, %xmm0
+        call_fn longjmp, error_jmp_buffer, $C_TRUE
+
+2:      call_fn exit, $1
+        return
+
+exception_handler_stack:
+        mov     $NIL, %rax
+        ret
+
+        ## 6.12. Environments and evaluation
 
 eval:                           # expression, environment-specifier
         prologue max_global_symbol
@@ -765,49 +933,21 @@ interaction_environment:
         box_int_internal $MAX_NUMBER_OF_SYMBOLS
         ret
 
-        ## 6.6. Input and output
-        ## 6.6.1. Ports
+        ## 6.13. Input and output
+        ## 6.13.1. Ports
 
-open_input_file:                # filename
-        minimal_prologue
-        assert_tag TAG_STRING, %rdi, not_a_string_string
-        unbox_pointer_internal %rdi
-        add     $header_size, %rax
-        call_fn fopen, %rax, $read_mode
-        perror
-        tag     TAG_PORT, %rax
-        return
-
-open_output_file:               # filename
-        minimal_prologue
-        assert_tag TAG_STRING, %rdi, not_a_string_string
-        unbox_pointer_internal %rdi
-        add     $header_size, %rax
-        call_fn fopen, %rax, $write_mode
-        perror
-        tag     TAG_PORT, %rax
-        return
-
-close_input_port:               # port
-close_output_port:              # port
-        minimal_prologue
+call_with_port:                 # port, proc
+        prologue
         assert_tag TAG_PORT, %rdi, not_a_port_string
-        call_fn close_port, %rdi
-        return
-
-with_input_from_file:           # filename, thunk
-        with_file_io_template input, stdin
-
-with_output_to_file:            # filename, thunk
-        with_file_io_template output, stdout
-
-current_output_port:
-        tag     TAG_PORT, stdout
-        ret
-
-current_input_port:
-        tag     TAG_PORT, stdin
-        ret
+        assert_tag TAG_PROCEDURE, %rsi, not_a_procedure_string
+        unbox_pointer_internal %rsi, %rbx
+        mov     %rdi, %r12
+        mov     %rax, %r11
+        mov     $1, %eax
+        call_fn *%rbx, %r11
+        mov     %rax, %rbx
+        call_fn close_port, %r12
+        return  %rbx
 
 is_input_port:                  # obj
         minimal_prologue
@@ -833,7 +973,68 @@ is_output_port:                 # obj
         return
 1:      return $FALSE
 
-        ## 6.6.2. Input
+with_input_from_file:           # filename, thunk
+        with_file_io_template input, stdin
+
+with_output_to_file:            # filename, thunk
+        with_file_io_template output, stdout
+
+open_input_file:                # filename
+        minimal_prologue
+        assert_tag TAG_STRING, %rdi, not_a_string_string
+        unbox_pointer_internal %rdi
+        add     $header_size, %rax
+        call_fn fopen, %rax, $read_mode
+        perror
+        tag     TAG_PORT, %rax
+        return
+
+open_output_file:               # filename
+        minimal_prologue
+        assert_tag TAG_STRING, %rdi, not_a_string_string
+        unbox_pointer_internal %rdi
+        add     $header_size, %rax
+        call_fn fopen, %rax, $write_mode
+        perror
+        tag     TAG_PORT, %rax
+        return
+
+current_output_port:
+        tag     TAG_PORT, stdout
+        ret
+
+current_input_port:
+        tag     TAG_PORT, stdin
+        ret
+
+current_error_port:
+        tag     TAG_PORT, stderr
+        ret
+
+close_port:                     # port
+        minimal_prologue
+        assert_tag TAG_PORT, %rdi, not_a_port_string
+        unbox_pointer_internal %rdi
+        call_fn fclose, %rax
+        test    %eax, %eax
+        setz    %al
+        box_boolean_internal
+        return
+
+close_input_port:               # port
+close_output_port:              # port
+        minimal_prologue
+        assert_tag TAG_PORT, %rdi, not_a_port_string
+        call_fn close_port, %rdi
+        return
+
+open_input_string:              # string
+        open_input_buffer_template $-1, TAG_STRING, not_a_string_string
+
+open_input_bytevector:          # bytevector
+        open_input_buffer_template $0, TAG_OBJECT, not_a_bytevector_string
+
+        ## 6.13.2. Input
 
 read:                           # port
         prologue
@@ -870,7 +1071,34 @@ is_eof_object:                  # obj
         box_boolean_internal
         ret
 
-        ## 6.6.3. Output
+eof_object:
+        mov     $EOF_OBJECT, %rax
+        ret
+
+read_u8:                        # port
+        prologue
+        parameter_default_arg TAG_PORT, current_input_port_symbol, %rsi
+        unbox_pointer_internal %rdi
+        call_fn fgetc, %rax
+        cmp     $EOF, %al
+        je      1f
+        tag     TAG_INT, %rax
+        return
+1:      return  $EOF_OBJECT
+
+peek_u8:                        # port
+        prologue
+        parameter_default_arg TAG_PORT, current_input_port_symbol, %rsi
+        unbox_pointer_internal %rdi, %rbx
+        call_fn fgetc, %rbx
+        call_fn ungetc, %rax, %rbx
+        cmp     $EOF, %al
+        je      1f
+        tag     TAG_INT, %rax
+        return
+1:      return  $EOF_OBJECT
+
+        ## 6.13.3. Output
 
 write:                          # obj, port
         prologue
@@ -914,260 +1142,6 @@ write_char:                     # char, port
         call_fn fputc, %rdi, %rax
         return  $VOID
 
-        ## 6.6.4. System interface
-
-load:                           # filename
-        prologue
-        assert_tag TAG_STRING, %rdi, not_a_string_string
-        call_fn open_input_file, %rdi
-        mov     %rax, %rbx
-        call_fn read_all, %rax
-        call_fn close_input_port, %rbx
-        return  $VOID
-
-        ## R7RS
-
-        ## 5.5. Record-type definitions
-
-make_record:                    # k, type
-        prologue
-        assert_tag TAG_PAIR, %rdi, not_a_pair_string
-        assert_tag TAG_SYMBOL, %rsi, not_a_symbol_string
-        mov     %rsi, %rbx
-        call_fn list_to_vector, %rdi
-        unbox_pointer_internal %rax
-        mov     %bx, header_object_type(%rax)
-        tag     TAG_OBJECT, %rax
-        return
-
-record_ref:                     # record, k
-        assert_tag TAG_OBJECT, %rdi, not_a_vector_string
-        assert_tag TAG_INT, %rsi, not_an_integer_string
-        unbox_pointer_internal %rdi
-        mov     %esi, %esi
-        mov     header_size(%rax,%rsi,POINTER_SIZE), %rax
-        ret
-
-record_set:                     # record, k, obj
-        assert_tag TAG_OBJECT, %rdi, not_a_vector_string
-        assert_tag TAG_INT, %rsi, not_an_integer_string
-        unbox_pointer_internal %rdi
-        mov     %esi, %esi
-        mov     %rdx, header_size(%rax,%rsi,POINTER_SIZE)
-        mov     $VOID, %rax
-        ret
-
-        ## 6. Standard procedures
-        ## 6.2. Numbers
-        ## 6.2.6. Numerical operations
-
-is_infinite:                    # z
-        minimal_prologue
-        is_double_internal %rdi
-        jz      1f
-        movq    %rdi, %xmm0
-        call    isinf
-        setnz   %al
-        box_boolean_internal
-        return
-1:      return  $FALSE
-
-is_nan:                         # z
-        minimal_prologue
-        is_double_internal %rdi
-        jz      1f
-        movq    %rdi, %xmm0
-        call    isnan
-        setnz   %al
-        box_boolean_internal
-        return
-1:      return  $FALSE
-
-        ## 6.9. Bytevectors
-
-is_bytevector:                  # obj
-        minimal_prologue
-        call_fn class_of, %rdi
-        eq_internal $TAG_BYTEVECTOR, %eax
-        box_boolean_internal %rax
-        return
-
-make_bytevector:                # k, byte
-        prologue
-        assert_tag TAG_INT, %rdi, not_an_integer_string
-        default_arg TAG_INT, $ZERO_INT , %rsi
-
-        mov     %rsi, %r12
-        mov     %edi, %ebx
-        add     $header_size, %edi
-        call_fn gc_allocate_memory, %rdi
-        movw    $TAG_BYTEVECTOR, header_object_type(%rax)
-        mov     %ebx, header_object_size(%rax)
-
-1:      test    %ebx, %ebx
-        jz      2f
-        dec     %ebx
-        mov     %r12b, header_size(%rax,%rbx)
-        jmp     1b
-
-2:      tag     TAG_OBJECT, %rax
-        register_for_gc
-        return
-
-bytevector_length:              # bytevector
-        assert_object %rdi, TAG_BYTEVECTOR, not_a_bytevector_string
-        unbox_pointer_internal %rdi
-        mov     header_object_size(%rax), %eax
-        box_int_internal
-        ret
-bytevector_length_size:
-        .quad   . - bytevector_length - RET_SIZE
-
-bytevector_u8_ref:              # bytevector, k
-        assert_object %rdi, TAG_BYTEVECTOR, not_a_bytevector_string
-        assert_tag TAG_INT, %rsi, not_an_integer_string
-        unbox_pointer_internal %rdi
-        mov     %esi, %esi
-        xor     %r11d, %r11d
-        mov     header_size(%rax,%rsi), %r11b
-        tag     TAG_INT, %r11
-        ret
-bytevector_u8_ref_size:
-        .quad   . - bytevector_u8_ref - RET_SIZE
-
-bytevector_u8_set:              # bytevector, k, byte
-        assert_object %rdi, TAG_BYTEVECTOR, not_a_bytevector_string
-        assert_tag TAG_INT, %rsi, not_an_integer_string
-        assert_tag TAG_INT, %rdx, not_an_integer_string
-        unbox_pointer_internal %rdi
-        mov     %esi, %esi
-        mov     %dl, header_size(%rax,%rsi)
-        mov     $VOID, %rax
-        ret
-bytevector_u8_set_size:
-        .quad   . - bytevector_u8_set - RET_SIZE
-
-list_to_bytevector:             # list
-        prologue vec
-        mov     %rdi, %r12
-        call_fn length, %r12
-        call_fn make_bytevector, %rax
-        mov     %rax, vec(%rsp)
-
-        xor     %ebx, %ebx
-1:      is_nil_internal %r12
-        je      2f
-
-        box_int_internal %ebx
-        mov     %rax, %rsi
-        car     %r12
-        call_fn bytevector_u8_set, vec(%rsp), %rsi, %rax
-        cdr     %r12, %r12
-
-        inc     %rbx
-        jmp     1b
-
-2:      return  vec(%rsp)
-
-        ## 6.11. Exceptions
-
-raise:                          # error
-        prologue
-        mov     %rdi, %rbx
-
-        mov     exception_handler_stack_symbol, %ecx
-        mov     symbol_table_values(,%ecx,POINTER_SIZE), %r11
-        unbox_pointer_internal %r11, %r11
-        xor     %eax, %eax
-        call_fn *%r11
-
-        is_nil_internal %rax
-        je      1f
-
-        car     %rax
-        unbox_pointer_internal %rax, %r11
-        mov     $1, %eax
-        call_fn *%r11, %rbx
-
-1:      cmp     $NULL, error_jmp_buffer
-        je      2f
-        movq    %rbx, %xmm0
-        call_fn longjmp, error_jmp_buffer, $C_TRUE
-
-2:      call_fn exit, $1
-        return
-
-exception_handler_stack:
-        mov     $NIL, %rax
-        ret
-
-        ## 6.13. Input and output
-        ## 6.13.1. Ports
-
-call_with_port:                 # port, proc
-        prologue
-        assert_tag TAG_PORT, %rdi, not_a_port_string
-        assert_tag TAG_PROCEDURE, %rsi, not_a_procedure_string
-        unbox_pointer_internal %rsi, %rbx
-        mov     %rdi, %r12
-        mov     %rax, %r11
-        mov     $1, %eax
-        call_fn *%rbx, %r11
-        mov     %rax, %rbx
-        call_fn close_port, %r12
-        return  %rbx
-
-current_error_port:
-        tag     TAG_PORT, stderr
-        ret
-
-close_port:                     # port
-        minimal_prologue
-        assert_tag TAG_PORT, %rdi, not_a_port_string
-        unbox_pointer_internal %rdi
-        call_fn fclose, %rax
-        test    %eax, %eax
-        setz    %al
-        box_boolean_internal
-        return
-
-open_input_string:              # string
-        open_input_buffer_template $-1, TAG_STRING, not_a_string_string
-
-open_input_bytevector:          # bytevector
-        open_input_buffer_template $0, TAG_OBJECT, not_a_bytevector_string
-
-        ## 6.13.2. Input
-
-eof_object:
-        mov     $EOF_OBJECT, %rax
-        ret
-
-read_u8:                        # port
-        prologue
-        parameter_default_arg TAG_PORT, current_input_port_symbol, %rsi
-        unbox_pointer_internal %rdi
-        call_fn fgetc, %rax
-        cmp     $EOF, %al
-        je      1f
-        tag     TAG_INT, %rax
-        return
-1:      return  $EOF_OBJECT
-
-peek_u8:                        # port
-        prologue
-        parameter_default_arg TAG_PORT, current_input_port_symbol, %rsi
-        unbox_pointer_internal %rdi, %rbx
-        call_fn fgetc, %rbx
-        call_fn ungetc, %rax, %rbx
-        cmp     $EOF, %al
-        je      1f
-        tag     TAG_INT, %rax
-        return
-1:      return  $EOF_OBJECT
-
-        ## 6.13.3. Output
-
 write_u8:                       # byte, port
         prologue byte
         mov     %edi, byte(%rsp)
@@ -1186,12 +1160,13 @@ flush_output_port:              # port
 
         ## 6.14. System interface
 
-delete_file:                    # filename
-        minimal_prologue
+load:                           # filename, environment-specifier
+        prologue
         assert_tag TAG_STRING, %rdi, not_a_string_string
-        call_fn unbox_string, %rdi
-        call_fn unlink, %rax
-        perror  jge
+        call_fn open_input_file, %rdi
+        mov     %rax, %rbx
+        call_fn read_all, %rax
+        call_fn close_input_port, %rbx
         return  $VOID
 
 is_file_exists:                 # filename
@@ -1204,6 +1179,14 @@ is_file_exists:                 # filename
         and     $C_TRUE, %rax
         box_boolean_internal
         return
+
+delete_file:                    # filename
+        minimal_prologue
+        assert_tag TAG_STRING, %rdi, not_a_string_string
+        call_fn unbox_string, %rdi
+        call_fn unlink, %rax
+        perror  jge
+        return  $VOID
 
 command_line:
         mov     command_line_arguments, %rax
@@ -1641,12 +1624,16 @@ main:                # argc, argv
         store_pointer $R9, jit_r9_to_local_size
         store_pointer $R11, jit_r11_to_local_size
 
+        define "make-record", $make_record
+        define "record-ref", $record_ref
+        define "record-set!", $record_set
+
         lea     jit_syntax_jump_table, %rbx
         .irp symbol, quote, if, set, lambda, begin, let, letrec, define_syntax
         store_pointer \symbol\()_symbol, $jit_\symbol
         .endr
 
-        .irp name, eq, eqv, number, complex, real, rational, integer, exact, inexact
+        .irp name, eq, eqv, number, complex, real, rational, integer, exact, inexact, infinite, nan
         define "\name?", $is_\name
         .endr
 
@@ -1669,8 +1656,8 @@ main:                # argc, argv
         define "\name", $\name\()_
         .endr
 
-        define "exact->inexact", $exact_to_inexact
-        define "inexact->exact", $inexact_to_exact
+        define "inexact", $inexact
+        define "exact", $exact
 
         define "number->string", $number_to_string
         define "string->number", $string_to_number
@@ -1730,49 +1717,6 @@ main:                # argc, argv
         define "vector-set!", $vector_set
         define "list->vector", $list_to_vector
 
-        define "procedure?", $is_procedure
-        define "apply", $apply
-        define "call-with-current-continuation", $call_with_current_continuation
-
-        define "eval", $eval
-        define "scheme-report-environment", $scheme_report_environment
-        define "null-environment", $null_environment
-        define "interaction-environment", $interaction_environment
-
-        define "input-port?", $is_input_port
-        define "output-port?", $is_output_port
-
-        define "current-input-port", $current_input_port
-        define "current-output-port", $current_output_port
-
-        define "with-input-from-file", $with_input_from_file
-        define "with-output-to-file", $with_output_to_file
-
-        define "open-input-file", $open_input_file
-        define "open-output-file", $open_output_file
-
-        define "close-input-port", $close_input_port
-        define "close-output-port", $close_output_port
-
-        define "read", $read
-        define "read-char", $read_char
-        define "peek-char", $peek_char
-        define "eof-object?", $is_eof_object
-
-        define "write", $write
-        define "display", $display
-        define "newline", $newline
-        define "write-char", $write_char
-
-        define "load", $load
-
-        define "make-record", $make_record
-        define "record-ref", $record_ref
-        define "record-set!", $record_set
-
-        define "infinite?", $is_infinite
-        define "nan?", $is_nan
-
         define "bytevector?", $is_bytevector
         define "make-bytevector", $make_bytevector
         define "bytevector-length", $bytevector_length
@@ -1780,24 +1724,52 @@ main:                # argc, argv
         define "bytevector-u8-set!", $bytevector_u8_set
         define "list->bytevector", $list_to_bytevector
 
+        define "procedure?", $is_procedure
+        define "apply", $apply
+        define "call-with-current-continuation", $call_with_current_continuation
+
         define "raise", $raise
         define "exception-handler_stack", $exception_handler_stack
 
+        define "eval", $eval
+        define "scheme-report-environment", $scheme_report_environment
+        define "null-environment", $null_environment
+        define "interaction-environment", $interaction_environment
+
         define "call-with-port", $call_with_port
+        define "input-port?", $is_input_port
+        define "output-port?", $is_output_port
+        define "current-input-port", $current_input_port
+        define "current-output-port", $current_output_port
         define "current-error-port", $current_error_port
+        define "with-input-from-file", $with_input_from_file
+        define "with-output-to-file", $with_output_to_file
+        define "open-input-file", $open_input_file
+        define "open-output-file", $open_output_file
         define "close-port", $close_port
+        define "close-input-port", $close_input_port
+        define "close-output-port", $close_output_port
         define "open-input-string", $open_input_string
         define "open-input-bytevector", $open_input_bytevector
 
+        define "read", $read
+        define "read-char", $read_char
+        define "peek-char", $peek_char
+        define "eof-object?", $is_eof_object
         define "eof-object", $eof_object
         define "read-u8", $read_u8
         define "peek-u8", $peek_u8
 
+        define "write", $write
+        define "display", $display
+        define "newline", $newline
+        define "write-char", $write_char
         define "write-u8", $write_u8
         define "flush-output-port", $flush_output_port
 
-        define "delete-file", $delete_file
+        define "load", $load
         define "file-exists?", $is_file_exists
+        define "delete-file", $delete_file
         define "command-line", $command_line
         define "exit", $exit_
         define "emergency-exit", $emergency_exit

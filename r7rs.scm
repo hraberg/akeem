@@ -345,10 +345,10 @@
 (define (min-max-aux test x1 x2)
   (if (test x1 x2)
       (if (inexact? x1)
-          (exact->inexact x2)
+          (inexact x2)
           x2)
       (if (inexact? x2)
-          (exact->inexact x1)
+          (inexact x1)
           x1)))
 
 (define (max x1 x2)
@@ -377,9 +377,6 @@
 (define (exact-integer-sqrt k)
   (let* ((s (exact (sqrt k))))
     (cons s (exact (- k (* s s))))))
-
-(define inexact exact->inexact)
-(define exact inexact->exact)
 
 ;;; 6.3. Booleans
 
