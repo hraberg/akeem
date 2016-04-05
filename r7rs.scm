@@ -564,8 +564,8 @@
                                                         ((dynamic-extent-stack '<param-convert>)
                                                          (cons before (dynamic-extent-stack)))))
         (return (thunk)))
-    (after)
     (dynamic-extent-stack '<param-set!> old-dynamic-extent-stack)
+    (after)
     return))
 
 ;;; 6.11. Exceptions
