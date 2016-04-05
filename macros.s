@@ -113,6 +113,7 @@
         .ifc \store, true
         setle   %al
         and     $C_TRUE, %eax
+        cmp     $C_TRUE, %eax
         .endif
         .endm
 

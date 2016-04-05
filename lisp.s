@@ -51,7 +51,7 @@ is_complex:                     # obj
 is_real:                        # obj
 is_rational:                    # obj
         is_double_internal %rdi
-        jnz     1f
+        je      1f
         has_tag TAG_INT, %rdi
 1:      box_boolean_internal
         ret
@@ -63,7 +63,7 @@ is_integer:                     # obj
         mov     $TRUE, %rax
         ret
 1:      is_double_internal %rdi
-        jz      2f
+        jne     2f
         maybe_round_to_int
         has_tag TAG_INT, %rax
         box_boolean_internal
@@ -84,7 +84,7 @@ is_inexact:                     # z
 is_infinite:                    # z
         minimal_prologue
         is_double_internal %rdi
-        jz      1f
+        jne     1f
         movq    %rdi, %xmm0
         call    isinf
         setnz   %al
@@ -95,7 +95,7 @@ is_infinite:                    # z
 is_nan:                         # z
         minimal_prologue
         is_double_internal %rdi
-        jz      1f
+        jne     1f
         movq    %rdi, %xmm0
         call    isnan
         setnz   %al
@@ -1998,7 +1998,7 @@ box_string:                     # c-string
 
 1:      open_string_buffer str(%rsp), size(%rsp), %r12
         cmpb    $0, (%rbx)
-        jz      2f
+        je      2f
         xor     %al, %al
         call_fn fprintf, %r12, $string_format, %rbx
 2:      string_buffer_to_string str(%rsp), size(%rsp), %r12
@@ -3171,7 +3171,7 @@ jit_procedure_call:             # form, c-stream, environment, register, tail
         decl    len(%rsp)
 
 5:      is_nil_internal %rbx
-        jz      8f
+        je      8f
         decl    len(%rsp)
         mov     len(%rsp), %ecx
 
