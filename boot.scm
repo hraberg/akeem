@@ -175,7 +175,7 @@
               (syntax-rules (cdr (cdr transformer-spec))))
           (let ((transformed (transform-syntax-rules literals syntax-rules (cdr form) env)))
             (if (eq? 'transform-failure transformed)
-                (error "Bad syntax: " form)
+                (error "Bad syntax:" form)
                 transformed)))))
 
 (define-syntax syntax-rules

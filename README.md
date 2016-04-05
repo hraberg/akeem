@@ -70,7 +70,7 @@ trying again.
 * No register allocation.
 * No `let-syntax`, `letrec-syntax`, `letrec*`, `let-values` or
   `let*-values`.
-* No `define-library` or `cond-expand`.
+* No `define-library`.
 * The JIT is static, once a function is generated its done.
 * Not full support for Scheme numbers in the reader.
 * No support for converting internal `define` to `letrec`.
