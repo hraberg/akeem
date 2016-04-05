@@ -28,10 +28,12 @@
 (spec ";;; 4. Expressions")
 (spec ";;; 4.1. Primitive expression types")
 (spec ";;; 4.1.1. Variable references")
+
 (define x 28)
 (assert x)
 
 (spec ";;; 4.1.2. Literal expressions")
+
 (assert (quote a))
 (assert (quote #(a b c)))
 (assert (quote (+ 1 2)))
@@ -57,10 +59,12 @@
 (assert #t)
 
 (spec ";;; 4.1.3. Procedure calls")
+
 (assert (+ 3 4))
 (assert ((if #f + *) 3 4))
 
 (spec ";;; 4.1.4. Procedures")
+
 (assert (lambda (x) (+ x x)))
 (assert ((lambda (x) (+ x x)) 4))
 
@@ -78,6 +82,7 @@
          3 4 5 6))
 
 (spec ";;; 4.1.5. Conditionals")
+
 (assert (if (> 3 2) 'yes 'no))
 (assert (if (> 2 3) 'yes 'no))
 (assert (if (> 3 2)
@@ -85,6 +90,7 @@
             (+ 3 2)))
 
 (spec ";;; 4.1.6. Assignments")
+
 (define x 2)
 (assert (+ x 1))
 (assert (set! x 4))
@@ -92,6 +98,7 @@
 
 (spec ";;; 4.2. Derived expression types")
 (spec ";;; 4.2.1. Conditionals")
+
 (assert (cond ((> 3 2) 'greater)
               ((< 3 2) 'less)))
 (assert (cond ((> 3 3) 'greater)
@@ -133,6 +140,7 @@
           (newline)))
 
 (spec ";;; 4.2.2. Binding constructs")
+
 (assert (let ((x 2) (y 3))
           (* x y)))
 
@@ -179,6 +187,7 @@
 ;;             (list a b x y))))
 
 (spec ";;; 4.2.3. Sequencing")
+
 (define x 0)
 (assert (begin (set! x 5)
                (+ x 1)))
@@ -187,6 +196,7 @@
 (newline)
 
 (spec ";;; 4.2.4. Iteration")
+
 (assert (do ((vec (make-vector 5))
              (i 0 (+ i 1)))
             ((= i 5) vec)
@@ -211,6 +221,7 @@
                        (cons (car numbers) neg))))))
 
 (spec ";;; 4.2.5. Delayed evaluation")
+
 (assert (force (delay (+ 1 2))))
 (assert (let ((p (delay (+ 1 2))))
           (list (force p) (force p))))
@@ -257,6 +268,7 @@
          (list (delay (* 3 7)) 13)))
 
 (spec ";;; 4.2.6. Dynamic bindings")
+
 (define radix
   (make-parameter
    10
@@ -273,6 +285,7 @@
 (assert (f 12))
 
 (spec ";;; 4.2.7. Exception handling")
+
 (assert (guard (condition
                 ((assq 'a condition) => cdr)
                 ((assq 'b condition)))
@@ -284,6 +297,7 @@
           (raise (list (cons 'b 23)))))
 
 (spec ";;; 4.2.8. Quasiquotation")
+
 (assert `(list ,(+ 1 2) 4))
 (assert (let ((name 'a)) `(list ,name ',name)))
 (assert `(a ,(+ 1 2) ,@(map abs '(4 -5 6)) b))
@@ -299,6 +313,7 @@
 (assert '(quasiquote (list (unquote (+ 1 2)) 4)))
 
 (spec ";;; 4.2.9. Case-lambda")
+
 (define range
   (case-lambda
    ((e) (range 0 e))
@@ -311,6 +326,7 @@
 
 (spec ";;; 4.3. Macros")
 (spec ";;; 4.3.1. Binding constructs for syntactic keywords")
+
 ;; (assert (let-syntax ((when (syntax-rules ()
 ;;                              ((when test stmt1 stmt2 ...)
 ;;                               (if test
@@ -353,6 +369,7 @@
 (spec ";;; 5.1. Programs")
 (spec ";;; 5.3. Variable definitions")
 (spec ";;; 5.3.1. Top level definitions")
+
 (define add3
   (lambda (x) (+ x 3)))
 (assert (add3 3))
@@ -366,6 +383,7 @@
 ;;           (foo (+ x 3))))
 
 (spec ";;; 5.5. Record-type definitions")
+
 (define-record-type <pare>
   (kons x y)
   pare?
@@ -382,6 +400,7 @@
 
 (spec ";;; 6. Standard procedures")
 (spec ";;; 6.1. Equivalence predicates")
+
 (assert (string=? (symbol->string 'foo)
                   (symbol->string 'foo)))
 
@@ -468,6 +487,7 @@
 
 (spec ";;; 6.2. Numbers")
 (spec ";;; 6.2.6. Numerical operations")
+
 ;; (assert (complex? 3+4i))
 (assert (complex? 3))
 (assert (real? 3))
@@ -561,6 +581,7 @@
 (assert (exact-integer-sqrt 5))
 
 (spec ";;; 6.2.7. Numerical input and output")
+
 (assert (let ((number 20)
               (radix 16))
           (eqv? number
@@ -574,6 +595,7 @@
 ;; (assert (string->number "15##"))
 
 (spec ";;; 6.3. Booleans")
+
 (assert #t)
 (assert #f)
 (assert '#f)
@@ -591,6 +613,7 @@
 (assert (boolean? '()))
 
 (spec ";;; 6.4. Pairs and lists")
+
 (define x (list 'a 'b 'c))
 (define y x)
 (assert y)
@@ -691,6 +714,7 @@
 (assert a)
 
 (spec ";;; 6.5. Symbols")
+
 (assert (symbol? 'foo))
 (assert (symbol? (car '(a b))))
 (assert (symbol? "bar"))
@@ -713,6 +737,7 @@
                    (string->symbol "K. Harper, M.D."))))
 
 (spec ";;; 6.6. Characters")
+
 (assert (char-ci=? #\A #\a))
 
 (assert (digit-value #\3))
@@ -721,6 +746,7 @@
 (assert (digit-value #\a)) ;; should be #\x0EA6
 
 (spec ";;; 6.7. Strings")
+
 (assert "The word \"recursion\" has many meanings.")
 (assert "Another example:\ntwo lines of text")
 (assert "Here's text \
@@ -742,6 +768,7 @@ containing just one line")
 (assert b)
 
 (spec ";;; 6.8. Vectors")
+
 (assert '#(0 (2 2 2 2) "Anna"))
 
 (assert (vector 'a 'b 'c))
@@ -787,6 +814,7 @@ containing just one line")
 (assert a)
 
 (spec ";;; 6.9. Bytevectors")
+
 (assert (make-bytevector 2 12))
 
 (assert (bytevector 1 3 5 1 3 5))
@@ -812,6 +840,7 @@ containing just one line")
 (assert (string->utf8 "A")) ;; should be λ
 
 (spec ";;; 6.10. Control features")
+
 (assert (procedure? car))
 (assert (procedure? 'car))
 (assert (procedure? (lambda (x) (* x x))))
@@ -908,6 +937,7 @@ containing just one line")
                 (reverse (car path))))))
 
 (spec ";;; 6.11. Exceptions")
+
 (assert (call-with-current-continuation
          (lambda (k)
            (with-exception-handler
@@ -938,6 +968,7 @@ containing just one line")
               23))))
 
 (spec ";;; 6.12. Environments and evaluation")
+
 (assert (eval '(* 7 3) (environment '(scheme base))))
 (assert (let ((f (eval '(lambda (f x) (f x x))
                        (environment '(scheme base)))))
