@@ -206,6 +206,9 @@ round_:                         # z
         math_library_unary_call \name
         .endr
 
+atan2_:                         # y, x
+        math_library_binary_call atan2
+
 sqrt_:                          # z
         math_library_unary_call sqrt, round=true
 
@@ -1649,7 +1652,7 @@ main:                # argc, argv
         define "remainder", $remainder
         define "modulo", $modulo
 
-        .irp name, ceiling, truncate, round, floor, exp, log, sin, cos, tan, asin, acos, atan, sqrt, expt
+        .irp name, ceiling, truncate, round, floor, exp, log, sin, cos, tan, asin, acos, atan, atan2, sqrt, expt
         define "\name", $\name\()_
         .endr
 

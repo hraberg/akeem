@@ -373,8 +373,7 @@
 (define (floor-quotient n1 n2)
   (floor (quotient n1 n2)))
 
-(define (floor-remainder n1 n2)
-  (floor (remainder n1 n2)))
+(define floor-remainder modulo)
 
 (define (truncate/ n1 n2)
   (let* ((nq (truncate (/ n1 n2)))
@@ -383,11 +382,9 @@
         (cons (exact nq) (exact nr))
         (cons (inexact nq) (inexact nr)))))
 
-(define (truncate-quotient n1 n2)
-  (truncate (quotient n1 n2)))
+(define truncate-quotient quotient)
 
-(define (truncate-remainder n1 n2)
-  (truncate (remainder n1 n2)))
+(define truncate-remainder remainder)
 
 (define gcd
   (case-lambda
@@ -404,12 +401,22 @@
     (/ (abs (* n1 n2))
        (gcd n1 n2)))))
 
+(define atan1 atan)
+
+(define atan
+  (case-lambda
+   ((z)
+    (atan1 z))
+   ((y x)
+    (atan2 y x))))
+
 (define (square z)
   (* z z))
 
 (define (exact-integer-sqrt k)
-  (let ((s (exact (sqrt k))))
-    (cons s (exact (- k (* s s))))))
+  (let* ((s (exact (sqrt k)))
+         (r (exact (- k (* s s)))))
+    (cons s r)))
 
 ;;; 6.3. Booleans
 
