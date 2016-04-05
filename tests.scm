@@ -950,10 +950,10 @@ containing just one line")
                           initial-state
                           h)
   (let ((next (runge-kutta-4 system-derivative h)))
-    (letrec ((states
-              (cons initial-state
-                    (delay (map-streams next
-                                        states)))))
+    (letrec ((states (list initial-state))) ;; should be one line without set-cdr!
+      (set-cdr! states
+                (delay (map-streams next
+                                    states)))
       states)))
 
 (define (runge-kutta-4 f h)
@@ -968,10 +968,10 @@ containing just one line")
              (k2 (*h (f (add-vectors y (*1/2 k1)))))
              (k3 (*h (f (add-vectors y k2)))))
         (add-vectors y
-                     (*1/6 (add-vectors k0
-                                        (*2 k1)
-                                        (*2 k2)
-                                        k3)))))))
+                     (*1/6 (add-vectors (add-vectors k0 ;; should be single add-vectors
+                                                     (*2 k1))
+                                        (add-vectors (*2 k2)
+                                                     k3))))))))
 
 (define (elementwise f)
   (lambda vectors
@@ -1017,3 +1017,7 @@ containing just one line")
    (damped-oscillator 10000 1000 .001)
    '#(1 0)
    .01))
+
+(assert (head the-states))
+(assert (head (tail the-states)))
+(assert (head (tail (tail the-states))))
