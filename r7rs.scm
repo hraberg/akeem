@@ -214,6 +214,8 @@
         (set-car! value (cadr args)))
        ((eq? (car args) '<param-convert>)
         converter)
+       ((eq? 1 (length args))
+        (set-car! value (converter (car args))))
        (else
         (error "bad parameter syntax"))))))
 
