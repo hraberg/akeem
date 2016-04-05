@@ -363,20 +363,52 @@
       (- 0 x)
       x))
 
-(define (gcd n1 n2)
-  (if (zero? n2)
-      (abs n1)
-      (gcd n2 (modulo n1 n2))))
+(define (floor/ n1 n2)
+  (let* ((nq (floor (/ n1 n2)))
+         (nr (- n1 (* nq n2))))
+    (if (and (exact? n1) (exact? n2))
+        (cons (exact nq) (exact nr))
+        (cons (inexact nq) (inexact nr)))))
 
-(define (lcm n1 n2)
-  (/ (abs (* n1 n2))
-     (gcd n1 n2)))
+(define (floor-quotient n1 n2)
+  (floor (quotient n1 n2)))
+
+(define (floor-remainder n1 n2)
+  (floor (remainder n1 n2)))
+
+(define (truncate/ n1 n2)
+  (let* ((nq (truncate (/ n1 n2)))
+         (nr (- n1 (* nq n2))))
+    (if (and (exact? n1) (exact? n2))
+        (cons (exact nq) (exact nr))
+        (cons (inexact nq) (inexact nr)))))
+
+(define (truncate-quotient n1 n2)
+  (truncate (quotient n1 n2)))
+
+(define (truncate-remainder n1 n2)
+  (truncate (remainder n1 n2)))
+
+(define gcd
+  (case-lambda
+   (() 0)
+   ((n1 n2)
+    (if (zero? n2)
+        (abs n1)
+        (gcd n2 (modulo n1 n2))))))
+
+(define lcm
+  (case-lambda
+   (() 1)
+   ((n1 n2)
+    (/ (abs (* n1 n2))
+       (gcd n1 n2)))))
 
 (define (square z)
   (* z z))
 
 (define (exact-integer-sqrt k)
-  (let* ((s (exact (sqrt k))))
+  (let ((s (exact (sqrt k))))
     (cons s (exact (- k (* s s))))))
 
 ;;; 6.3. Booleans

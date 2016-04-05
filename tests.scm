@@ -548,11 +548,21 @@
 (assert (remainder -13 -4))
 (assert (remainder -13 -4.0))
 
+(assert (floor/ 5 2))
+(assert (floor/ -5 2))
+(assert (floor/ 5 -2))
+(assert (floor/ -5 -2))
+(assert (truncate/ 5 2))
+(assert (truncate/ -5 2))
+(assert (truncate/ 5 -2))
+(assert (truncate/ -5 -2))
+(assert (truncate/ -5.0 -2))
+
 (assert (gcd 32 -36))
-;; (assert (gcd))
+(assert (gcd))
 (assert (lcm 32 -36))
 (assert (lcm 32.0 -36))
-;; (assert (lcm))
+(assert (lcm))
 
 ;; (assert (numerator (/ 6 4)))
 ;; (assert (denominator (/ 6 4)))
