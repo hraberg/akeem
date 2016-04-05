@@ -64,10 +64,10 @@ trying again.
 
 ## What Doesn't Work?
 
-* No register allocation.
 * No hygienic macro expansion.
 * No GC for functions or their constant literals.
 * Max arity is currently 6, higher requires the use of the stack.
+* No register allocation.
 * No `let-syntax` and `letrec-syntax`.
 * No Scheme library system.
 * The JIT is static, once a function is generated its done.
