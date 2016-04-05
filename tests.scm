@@ -6,7 +6,7 @@
   (display x)
   (newline))
 
-(spec ";;; R5RS")
+(spec ";;; R7RS")
 (spec ";;; 1. Overview of Scheme")
 (spec ";;; 1.3. Notation and terminology")
 (spec ";;; 1.3.4. Evaluation examples")
@@ -43,10 +43,16 @@
 (assert '(quote a))
 (assert ''a)
 
-(assert '"abc")
-(assert "abc")
 (assert '145932)
 (assert 145932)
+(assert '"abc")
+(assert "abc")
+;; (assert '#)
+;; (assert #)
+(assert '#(a 10))
+(assert #(a 10))
+(assert '#u8(64 65))
+(assert #u8(64 65))
 (assert '#t)
 (assert #t)
 
@@ -66,6 +72,10 @@
   (let ((x 4))
     (lambda (y) (+ x y))))
 (assert (add4 6))
+
+(assert ((lambda x x) 3 4 5 6))
+(assert ((lambda (x y . z) z)
+         3 4 5 6))
 
 (spec ";;; 4.1.5. Conditionals")
 (assert (if (> 3 2) 'yes 'no))
@@ -99,7 +109,7 @@
 (assert (case (car '(c d))
           ((a e i o u) 'vowel)
           ((w y) 'semivowel)
-          (else 'consonant)))
+          (else => (lambda (x) x))))
 
 (assert (and (= 2 2) (> 2 1)))
 (assert (and (= 2 2) (< 2 1)))
@@ -112,17 +122,30 @@
 (assert (or (memq 'b '(a b c))
             (/ 3 0)))
 
+(assert (when (= 1 1.0)
+          (display "1")
+          (display "2")
+          (newline)))
+
+(assert (unless (= 1 1.0)
+          (display "1")
+          (display "2")
+          (newline)))
+
 (spec ";;; 4.2.2. Binding constructs")
 (assert (let ((x 2) (y 3))
           (* x y)))
+
 (assert (let ((x 2) (y 3))
           (let ((x 7)
                 (z (+ x y)))
             (* z x))))
+
 (assert (let ((x 2) (y 3))
           (let* ((x 7)
                  (z (+ x y)))
             (* z x))))
+
 (assert (letrec ((even?
                   (lambda (n)
                     (if (zero? n)
@@ -135,6 +158,26 @@
                         (even? (- n 1))))))
           (even? 88)))
 
+;; (assert (letrec* ((p
+;;                    (lambda (x)
+;;                      (+ 1 (q (- x 1)))))
+;;                   (q
+;;                    (lambda (y)
+;;                      (if (zero? y)
+;;                          0
+;;                          (+ 1 (p (- y 1))))))
+;;                   (x (p 5))
+;;                   (y x))
+;;                  y))
+
+;; (assert (let-values (((root rem) (exact-integer-sqrt 32)))
+;;           (* root rem)))
+
+;; (assert (let ((a ’a) (b ’b) (x ’x) (y ’y))
+;;           (let*-values (((a b) (values x y))
+;;                         ((x y) (values a b)))
+;;             (list a b x y))))
+
 (spec ";;; 4.2.3. Sequencing")
 (define x 0)
 (assert (begin (set! x 5)
@@ -143,10 +186,12 @@
        (display (+ 4 1)))
 (newline)
 
+(spec ";;; 4.2.4. Iteration")
 (assert (do ((vec (make-vector 5))
              (i 0 (+ i 1)))
             ((= i 5) vec)
           (vector-set! vec i i)))
+
 (assert (let ((x '(1 3 5 7 9)))
           (do ((x x (cdr x))
                (sum 0 (+ sum (car x))))
@@ -165,7 +210,80 @@
                        nonneg
                        (cons (car numbers) neg))))))
 
-(spec ";;; 4.2.6. Quasiquotation")
+(spec ";;; 4.2.5. Delayed evaluation")
+(assert (force (delay (+ 1 2))))
+(assert (let ((p (delay (+ 1 2))))
+          (list (force p) (force p))))
+
+(define integers
+  (letrec ((next
+            (lambda (n)
+              (delay (cons n (next (+ n 1)))))))
+    (next 0)))
+(define head
+  (lambda (stream) (car (force stream))))
+(define tail
+  (lambda (stream) (cdr (force stream))))
+(assert (head (tail (tail integers))))
+
+(define (stream-filter p? s)
+  (delay-force
+   (if (null? (force s))
+       (delay '())
+       (let ((h (car (force s)))
+             (t (cdr (force s))))
+         (if (p? h)
+             (delay (cons h (stream-filter p? t)))
+             (stream-filter p? t))))))
+(assert (head (tail (tail (stream-filter odd? integers)))))
+
+(define count 0)
+(define p
+  (delay (begin (set! count (+ count 1))
+                (if (> count x)
+                    count
+                    (force p)))))
+(define x 5)
+(assert p)
+(assert (force p))
+(assert p)
+(assert (begin (set! x 10)
+               (force p)))
+
+(assert (eqv? (delay 1) 1))
+(assert (pair? (delay (cons 1 2))))
+
+(assert (car
+         (list (delay (* 3 7)) 13)))
+
+(spec ";;; 4.2.6. Dynamic bindings")
+(define radix
+  (make-parameter
+   10
+   (lambda (x)
+     (if (and (exact-integer? x) (<= 2 x 16))
+         x
+         (error "invalid radix")))))
+
+(define (f n) (number->string n (radix)))
+
+(assert (f 12))
+(assert (parameterize ((radix 16)) ;;; should be 2
+          (f 12)))
+(assert (f 12))
+
+(spec ";;; 4.2.7. Exception handling")
+(assert (guard (condition
+                ((assq 'a condition) => cdr)
+                ((assq 'b condition)))
+          (raise (list (cons 'a 42)))))
+
+(assert (guard (condition
+                ((assq 'a condition) => cdr)
+                ((assq 'b condition)))
+          (raise (list (cons 'b 23)))))
+
+(spec ";;; 4.2.8. Quasiquotation")
 (assert `(list ,(+ 1 2) 4))
 (assert (let ((name 'a)) `(list ,name ',name)))
 (assert `(a ,(+ 1 2) ,@(map abs '(4 -5 6)) b))
@@ -179,6 +297,17 @@
 
 (assert (quasiquote (list (unquote (+ 1 2)) 4)))
 (assert '(quasiquote (list (unquote (+ 1 2)) 4)))
+
+(spec ";;; 4.2.9. Case-lambda")
+(define range
+  (case-lambda
+   ((e) (range 0 e))
+   ((b e) (do ((r '() (cons e r))
+               (e (- e 1) (- e 1)))
+              ((< e b) r)))))
+
+(assert (range 3))
+(assert (range 3 5))
 
 (spec ";;; 4.3. Macros")
 (spec ";;; 4.3.1. Binding constructs for syntactic keywords")
@@ -222,19 +351,34 @@
 
 (spec ";;; 5. Program structure")
 (spec ";;; 5.1. Programs")
-(spec ";;; 5.2. Definitions")
-(spec ";;; 5.2.1. Top level definitions")
+(spec ";;; 5.3. Variable definitions")
+(spec ";;; 5.3.1. Top level definitions")
 (define add3
   (lambda (x) (+ x 3)))
 (assert (add3 3))
 (define first car)
 (assert (first '(1 2)))
 
-;; (assert ";;;5.2.2. Internal definitions")
+;; (assert ";;;5.3.2. Internal definitions")
 ;; (assert (let ((x 5))
 ;;           (define foo (lambda (y) (bar x y)))
 ;;           (define bar (lambda (a b) (+ (* a b) a)))
 ;;           (foo (+ x 3))))
+
+(spec ";;; 5.5. Record-type definitions")
+(define-record-type <pare>
+  (kons x y)
+  pare?
+  (x kar set-kar!)
+  (y kdr))
+
+(assert (pare? (kons 1 2)))
+(assert (pare? (cons 1 2)))
+(assert (kar (kons 1 2)))
+(assert (kdr (kons 1 2)))
+(assert (let ((k (kons 1 2)))
+          (set-kar! k 3)
+          (kar k)))
 
 (spec ";;; 6. Standard procedures")
 (spec ";;; 6.1. Equivalence predicates")
@@ -252,9 +396,9 @@
 (assert (eqv? (cons 1 2) (cons 1 2)))
 (assert (eqv? (lambda () 1)
               (lambda () 2)))
-(assert (eqv? #f 'nil))
 (assert (let ((p (lambda (x) x)))
           (eqv? p p)))
+(assert (eqv? #f 'nil))
 
 (assert (eqv? "" ""))
 (assert (eqv? '#() '#()))
@@ -323,7 +467,7 @@
                 (lambda (y) y)))
 
 (spec ";;; 6.2. Numbers")
-(spec ";;; 6.2.5. Numerical operations")
+(spec ";;; 6.2.6. Numerical operations")
 ;; (assert (complex? 3+4i))
 (assert (complex? 3))
 (assert (real? 3))
@@ -334,6 +478,23 @@
 ;; (assert (integer? 3+0i))
 (assert (integer? 3.0))
 ;; (assert (integer? 8/4))
+
+(assert (exact-integer? 32))
+(assert (exact-integer? 32.0))
+
+(assert (finite? 3))
+(assert (finite? (/ 1.0 0.0))) ;; should be +inf.0
+;; (assert (finite? 3.0+inf.0i))
+
+(assert (infinite? 3))
+(assert (infinite? (/ 1.0 0.0))) ;; should be +inf.0
+(assert (infinite? (/ 0.0 0.0))) ;; should be +nan.0
+;; (assert (infinite? 3.0+inf.0i))
+
+(assert (nan? (/ 0.0 0.0))) ;; should be +nan.0
+(assert (nan? 32))
+;; (assert (nan? +nan.0+5.0i))
+;; (assert (nan? 1+2i))
 
 (assert (max 3 4))
 (assert (max 3.9 4))
@@ -352,6 +513,7 @@
 
 (assert (abs -7))
 
+;;; These are from R5RS, R7RS specifies truncate-remainder, floor/ etc.
 (assert (let ((n1 2) (n2 4))
           (= n1 (+ (* n2 (quotient n1 n2))
                    (remainder n1 n2)))))
@@ -392,7 +554,13 @@
 ;;          (exact .3) 1/10))
 ;; (assert (rationalize .3 1/10))
 
-(spec ";;; 6.2.6. Numerical input and output")
+(assert (square 42))
+(assert (square 2.0))
+
+(assert (exact-integer-sqrt 4))
+(assert (exact-integer-sqrt 5))
+
+(spec ";;; 6.2.7. Numerical input and output")
 (assert (let ((number 20)
               (radix 16))
           (eqv? number
@@ -405,8 +573,7 @@
 (assert (string->number "1e2"))
 ;; (assert (string->number "15##"))
 
-(spec ";;; 6.3. Other data types")
-(spec ";;; 6.3.1. Booleans")
+(spec ";;; 6.3. Booleans")
 (assert #t)
 (assert #f)
 (assert '#f)
@@ -423,7 +590,7 @@
 (assert (boolean? 0))
 (assert (boolean? '()))
 
-(spec ";;; 6.3.2. Pairs and lists")
+(spec ";;; 6.4. Pairs and lists")
 (define x (list 'a 'b 'c))
 (define y x)
 (assert y)
@@ -468,6 +635,8 @@
 ;;           (set-cdr! x x)
 ;;           (list? x)))
 
+(assert (make-list 2 3))
+
 (assert (list 'a (+ 3 4) 'c))
 (assert (list))
 
@@ -489,12 +658,19 @@
 (assert (list-ref '(a b c d)
                   (exact (round 1.8))))
 
+(assert (let ((ls (list 'one 'two 'five!)))
+          (list-set! ls 2 'three)
+          ls))
+
 (assert (memq 'a '(a b c)))
 (assert (memq 'b '(a b c)))
 (assert (memq 'a '(b c d)))
 (assert (memq (list 'a) '(b (a) c)))
 (assert (member (list 'a)
                 '(b (a) c)))
+(assert (member "B"
+                '("a" "b" "c")
+                string-ci=?))
 (assert (memq 101 '(100 101 102)))
 (assert (memv 101 '(100 101 102)))
 
@@ -504,10 +680,17 @@
 (assert (assq 'd e))
 (assert (assq (list 'a) '(((a)) ((b)) ((c)))))
 (assert (assoc (list 'a) '(((a)) ((b)) ((c)))))
+(assert (assoc 2.0 '((1 1) (2 4) (3 9)) =))
 (assert (assq 5 '((2 3) (5 7) (11 13))))
 (assert (assv 5 '((2 3) (5 7) (11 13))))
 
-(spec ";;; 6.3.3. Symbols")
+(define a '(1 8 2 8))
+(define b (list-copy a))
+(set-car! b 3)
+(assert b)
+(assert a)
+
+(spec ";;; 6.5. Symbols")
 (assert (symbol? 'foo))
 (assert (symbol? (car '(a b))))
 (assert (symbol? "bar"))
@@ -520,8 +703,6 @@
 (assert (symbol->string
          (string->symbol "Malvina")))
 
-(assert (eq? 'mISSISSIppi 'mississippi))
-
 (assert (string->symbol "mISSISSIppi"))
 (assert (eq? 'bitBlt (string->symbol "bitBlt")))
 (assert (eq? 'JollyWog
@@ -531,14 +712,21 @@
                   (symbol->string
                    (string->symbol "K. Harper, M.D."))))
 
-(spec ";;; 6.3.4. Characters")
-(assert (<= (char->integer #\a)
-            (char->integer #\b)))
-(assert (char<=? (integer->char 97)
-                 (integer->char 98)))
+(spec ";;; 6.6. Characters")
+(assert (char-ci=? #\A #\a))
 
-(spec ";;; 6.3.5. Strings")
+(assert (digit-value #\3))
+;; (assert (digit-value #\x0664))
+;; (assert (digit-value #\x0AE6))
+(assert (digit-value #\a)) ;; should be #\x0EA6
+
+(spec ";;; 6.7. Strings")
 (assert "The word \"recursion\" has many meanings.")
+(assert "Another example:\ntwo lines of text")
+(assert "Here's text \
+containing just one line")
+(assert "\x061; is named GREEK SMALL LETTER ALPHA.") ;; should be \x03B1;
+
 
 (define (f) (make-string 3 #\*))
 ;; (define (g) "***")
@@ -548,7 +736,12 @@
 ;;                      0
 ;;                      #\?))
 
-(spec ";;; 6.3.6. Vectors")
+(define a "12345")
+(define b (string-copy "abcde"))
+(string-copy! b 1 a 0 2)
+(assert b)
+
+(spec ";;; 6.8. Vectors")
 (assert '#(0 (2 2 2 2) "Anna"))
 
 (assert (vector 'a 'b 'c))
@@ -567,280 +760,8 @@
 ;; (assert (vector-set! '#(0 1 2) 1 "doe"))
 
 (assert (vector->list '#(dah dah didah)))
-(assert (list->vector '(dididit dah)))
-
-(spec ";;; 6.4. Control features")
-(assert (procedure? car))
-(assert (procedure? 'car))
-(assert (procedure? (lambda (x) (* x x))))
-(assert (procedure? '(lambda (x) (* x x))))
-(assert (call-with-current-continuation procedure?))
-
-(assert (apply + '(3 4)))
-(define compose
-  (lambda (f g)
-    (lambda args
-      (f (apply g args)))))
-(assert ((compose sqrt *) 12 75))
-
-(assert (map cadr '((a b) (d e) (g h))))
-
-(assert (map (lambda (n) (expt n n))
-             '(1 2 3 4 5)))
-;; (assert (map + '(1 2 3) '(4 5 6)))
-;; (assert (let ((count 0))
-;;           (map (lambda (ignored)
-;;                  (set! count (+ count 1))
-;;                  count)
-;;                '(a b))))
-
-(assert (let ((v (make-vector 5)))
-          (for-each (lambda (i)
-                      (vector-set! v i (* i i)))
-                    '(0 1 2 3 4))
-          v))
-
-(assert (force (delay (+ 1 2))))
-(assert (let ((p (delay (+ 1 2))))
-          (cons (force p) (list (force p)))))
-(define a-stream
-  (letrec ((next
-            (lambda (n)
-              (cons n (delay (next (+ n 1)))))))
-    (next 0)))
-(define head car)
-(define tail
-  (lambda (stream) (force (cdr stream))))
-(assert (head (tail (tail a-stream))))
-
-(define count 0)
-(define p
-  (delay (begin (set! count (+ count 1))
-                (if (> count x)
-                    count
-                    (force p)))))
-(define x 5)
-(assert p)
-(assert (force p))
-(assert p)
-(assert (begin (set! x 10)
-               (force p)))
-
-(assert (eqv? (delay 1) 1))
-(assert (pair? (delay (cons 1 2))))
-
-;; (assert (+ (delay (* 3 7)) 13))
-
-(assert (call-with-current-continuation
-         (lambda (exit)
-           (for-each (lambda (x)
-                       (if (negative? x)
-                           (exit x)))
-                     '(54 0 37 -3 245 19))
-           #t)))
-
-(define list-length
-  (lambda (obj)
-    (call-with-current-continuation
-     (lambda (return)
-       (letrec ((r
-                 (lambda (obj)
-                   (cond ((null? obj) 0)
-                         ((pair? obj)
-                          (+ (r (cdr obj)) 1))
-                         (else (return #f))))))
-         (r obj))))))
-(assert (list-length '(1 2 3 4)))
-(assert (list-length '(a b . c)))
-
-(assert (call-with-values (lambda () (values 4 5))
-          (lambda (a b) b)))
-;; (assert (call-with-values * -))
-
-(assert (let ((path (list '())) ;; these should not be boxed
-              (c (list #f)))
-          (let ((add (lambda (s)
-                       (set-car! path (cons s (car path))))))
-            (dynamic-wind
-              (lambda () (add 'connect))
-              (lambda ()
-                (add (call-with-current-continuation
-                      (lambda (c0)
-                        (set-car! c c0)
-                        'talk1))))
-              (lambda () (add 'disconnect)))
-            (if (< (length (car path)) 4)
-                ((car c) 'talk2)
-                (reverse (car path))))))
-
-(spec ";;; 6.5. Eval")
-(assert (eval '(* 7 3) (scheme-report-environment 5)))
-(assert (let ((f (eval '(lambda (f x) (f x x))
-                       (null-environment 5))))
-          (f + 10)))
-
-(spec ";;; R7RS")
-(spec ";;; 4. Expressions")
-(spec ";;; 4.2. Derived expression types")
-(spec ";;; 4.2.1. Conditionals")
-(assert (case (car '(c d))
-          ((a e i o u) 'vowel)
-          ((w y) 'semivowel)
-          (else => (lambda (x) x))))
-
-(assert (when (= 1 1.0)
-          (display "1")
-          (display "2")
-          (newline)))
-
-(assert (unless (= 1 1.0)
-          (display "1")
-          (display "2")
-          (newline)))
-
-(spec ";;; 4.2.5. Delayed evaluation")
-(define integers
-  (letrec ((next
-            (lambda (n)
-              (delay (cons n (next (+ n 1)))))))
-    (next 0)))
-(define head
-  (lambda (stream) (car (force stream))))
-(define tail
-  (lambda (stream) (cdr (force stream))))
-(assert (head (tail (tail integers))))
-
-(define (stream-filter p? s)
-  (delay-force
-   (if (null? (force s))
-       (delay '())
-       (let ((h (car (force s)))
-             (t (cdr (force s))))
-         (if (p? h)
-             (delay (cons h (stream-filter p? t)))
-             (stream-filter p? t))))))
-(assert (head (tail (tail (stream-filter odd? integers)))))
-
-(assert (car
-         (list (delay (* 3 7)) 13)))
-
-(spec ";;; 4.2.6. Dynamic bindings")
-(define radix
-  (make-parameter
-   10
-   (lambda (x)
-     (if (and (exact-integer? x) (<= 2 x 16))
-         x
-         (error "invalid radix")))))
-
-(define (f n) (number->string n (radix)))
-
-(assert (f 12))
-(assert (parameterize ((radix 16)) ;;; should be 2
-          (f 12)))
-(assert (f 12))
-
-(spec ";;; 4.2.7. Exception handling")
-(assert (guard (condition
-                ((assq 'a condition) => cdr)
-                ((assq 'b condition)))
-          (raise (list (cons 'a 42)))))
-
-(assert (guard (condition
-                ((assq 'a condition) => cdr)
-                ((assq 'b condition)))
-          (raise (list (cons 'b 23)))))
-
-
-(spec ";;; 4.2.9. Case-lambda")
-(define range
-  (case-lambda
-   ((e) (range 0 e))
-   ((b e) (do ((r '() (cons e r))
-               (e (- e 1) (- e 1)))
-              ((< e b) r)))))
-
-(assert (range 3))
-(assert (range 3 5))
-
-(spec ";;; 5.5. Record-type definitions")
-(define-record-type <pare>
-  (kons x y)
-  pare?
-  (x kar set-kar!)
-  (y kdr))
-
-(assert (pare? (kons 1 2)))
-(assert (pare? (cons 1 2)))
-(assert (kar (kons 1 2)))
-(assert (kdr (kons 1 2)))
-(assert (let ((k (kons 1 2)))
-          (set-kar! k 3)
-          (kar k)))
-
-(spec ";;; 6.2. Numbers")
-(spec ";;; 6.2.6. Numerical operations")
-(assert (exact-integer? 32))
-(assert (exact-integer? 32.0))
-
-(assert (finite? 3))
-(assert (finite? (/ 1.0 0.0))) ;; should be +inf.0
-;; (assert (finite? 3.0+inf.0i))
-
-(assert (infinite? 3))
-(assert (infinite? (/ 1.0 0.0))) ;; should be +inf.0
-(assert (infinite? (/ 0.0 0.0))) ;; should be +nan.0
-;; (assert (infinite? 3.0+inf.0i))
-
-(assert (nan? (/ 0.0 0.0))) ;; should be +nan.0
-(assert (nan? 32))
-;; (assert (nan? +nan.0+5.0i))
-;; (assert (nan? 1+2i))
-
-(assert (square 42))
-(assert (square 2.0))
-
-(assert (exact-integer-sqrt 4))
-(assert (exact-integer-sqrt 5))
-
-(spec ";;; 6.4. Pairs and lists")
-(assert (make-list 2 3))
-
-(assert (let ((ls (list 'one 'two 'five!)))
-          (list-set! ls 2 'three)
-          ls))
-
-(assert (member "B"
-                '("a" "b" "c")
-                string-ci=?))
-
-(assert (assoc 2.0 '((1 1) (2 4) (3 9)) =))
-
-(define a '(1 8 2 8))
-(define b (list-copy a))
-(set-car! b 3)
-(assert b)
-(assert a)
-
-(spec ";;; 6.6. Characters")
-(assert (digit-value #\3))
-;; (assert (digit-value #\x0664))
-;; (assert (digit-value #\x0AE6))
-(assert (digit-value #\a)) ;; should be #\x0EA6
-
-(spec ";;; 6.7. Strings")
-(assert "Another example:\ntwo lines of text")
-(assert "Here's text \
-containing just one line")
-(assert "\x061; is named GREEK SMALL LETTER ALPHA.") ;; should be \x03B1;
-
-(define a "12345")
-(define b (string-copy "abcde"))
-(string-copy! b 1 a 0 2)
-(assert b)
-
-(spec ";;; 6.8. Vectors")
 (assert (vector->list '#(dah dah didah) 1 2))
+(assert (list->vector '(dididit dah)))
 
 (assert (string->vector "ABC"))
 (assert (vector->string
@@ -891,6 +812,30 @@ containing just one line")
 (assert (string->utf8 "A")) ;; should be λ
 
 (spec ";;; 6.10. Control features")
+(assert (procedure? car))
+(assert (procedure? 'car))
+(assert (procedure? (lambda (x) (* x x))))
+(assert (procedure? '(lambda (x) (* x x))))
+(assert (call-with-current-continuation procedure?))
+
+(assert (apply + '(3 4)))
+(define compose
+  (lambda (f g)
+    (lambda args
+      (f (apply g args)))))
+(assert ((compose sqrt *) 12 75))
+
+(assert (map cadr '((a b) (d e) (g h))))
+
+(assert (map (lambda (n) (expt n n))
+             '(1 2 3 4 5)))
+;; (assert (map + '(1 2 3) '(4 5 6)))
+;; (assert (let ((count 0))
+;;           (map (lambda (ignored)
+;;                  (set! count (+ count 1))
+;;                  count)
+;;                '(a b))))
+
 (assert (string-map
          (lambda (c) (integer->char (+ 1 (char->integer c))))
          "HAL"))
@@ -899,6 +844,68 @@ containing just one line")
 
 (assert (vector-map (lambda (n) (expt n n))
                     '#(1 2 3 4 5)))
+
+(assert (let ((v (make-vector 5)))
+          (for-each (lambda (i)
+                      (vector-set! v i (* i i)))
+                    '(0 1 2 3 4))
+          v))
+
+(assert (let ((v (list '()))) ;; should be '()
+          (string-for-each
+           (lambda (c) (set-car! v (cons (char->integer c) (car v))))
+           "abcde")
+          (car v)))
+
+(assert (let ((v (make-list 5)))
+          (vector-for-each
+           (lambda (i) (list-set! v i (* i i)))
+           '#(0 1 2 3 4))
+          v))
+
+;; (assert (+ (delay (* 3 7)) 13))
+
+(assert (call-with-current-continuation
+         (lambda (exit)
+           (for-each (lambda (x)
+                       (if (negative? x)
+                           (exit x)))
+                     '(54 0 37 -3 245 19))
+           #t)))
+
+(define list-length
+  (lambda (obj)
+    (call-with-current-continuation
+     (lambda (return)
+       (letrec ((r
+                 (lambda (obj)
+                   (cond ((null? obj) 0)
+                         ((pair? obj)
+                          (+ (r (cdr obj)) 1))
+                         (else (return #f))))))
+         (r obj))))))
+(assert (list-length '(1 2 3 4)))
+(assert (list-length '(a b . c)))
+
+(assert (call-with-values (lambda () (values 4 5))
+          (lambda (a b) b)))
+;; (assert (call-with-values * -))
+
+(assert (let ((path (list '())) ;; these should not be boxed
+              (c (list #f)))
+          (let ((add (lambda (s)
+                       (set-car! path (cons s (car path))))))
+            (dynamic-wind
+              (lambda () (add 'connect))
+              (lambda ()
+                (add (call-with-current-continuation
+                      (lambda (c0)
+                        (set-car! c c0)
+                        'talk1))))
+              (lambda () (add 'disconnect)))
+            (if (< (length (car path)) 4)
+                ((car c) 'talk2)
+                (reverse (car path))))))
 
 (spec ";;; 6.11. Exceptions")
 (assert (call-with-current-continuation
@@ -929,3 +936,9 @@ containing just one line")
          (lambda ()
            (+ (raise-continuable "should be a number\n")
               23))))
+
+(spec ";;; 6.12. Environments and evaluation")
+(assert (eval '(* 7 3) (environment '(scheme base))))
+(assert (let ((f (eval '(lambda (f x) (f x x))
+                       (environment '(scheme base)))))
+          (f + 10)))

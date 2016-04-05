@@ -2602,25 +2602,14 @@ read_symbol:                    # c-stream, c-char
         mov     %rax, %rbx
 
         cmpb    $0, (%rbx)
-        je      3f
+        je      1f
 
-        xor     %r12d, %r12d
-        xor     %eax, %eax
-1:      mov     (%rbx,%r12), %al
-        test    %al, %al
-        jz      2f
-
-        call_fn tolower, %rax
-        movb    %al, (%rbx,%r12)
-        inc     %r12d
-        jmp     1b
-
-2:      call_fn string_to_symbol, str(%rsp)
+        call_fn string_to_symbol, str(%rsp)
         mov     %rax, %rbx
         register_for_gc str(%rsp)
         return  %rbx
 
-3:      return  $VOID
+1:      return  $VOID
 
 read_number:                    # c-stream, c-char
         read_number_template $DECIMAL_RADIX_INT, unget=true

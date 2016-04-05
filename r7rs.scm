@@ -383,6 +383,8 @@
 (define (boolean? obj)
   (or (eq? #t obj) (eq? #f obj)))
 
+(define boolean=? eqv?)
+
 ;;; 6.4. Pairs and lists
 
 (define (caar obj)
