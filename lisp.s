@@ -2825,6 +2825,8 @@ read_list:                      # c-stream, c-char
 1:      mov     $NIL, %r12
         mov     %r12, head(%rsp)
 2:      call_fn read_whitespace, %rbx
+        call_fn read_comment, %rbx
+        call_fn read_whitespace, %rbx
         call_fn fgetc, %rbx
         cmp     closing(%rsp), %al
         je      5f
@@ -2850,6 +2852,8 @@ read_list:                      # c-stream, c-char
 4:      call_fn read_datum, %rbx
         call_fn set_cdr, %r12, %rax
 
+        call_fn read_whitespace, %rbx
+        call_fn read_comment, %rbx
         call_fn read_whitespace, %rbx
         call_fn fgetc, %rbx
         cmp     closing(%rsp), %al
