@@ -23,7 +23,7 @@
        (display " gc time: ")
        (display gc-time)
        (newline)
-       (unless (eq? (void) result)
+       (unless (eq? (if #f #f) result)
          (display result)
          (newline))
        result))))
