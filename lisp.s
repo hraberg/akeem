@@ -1358,7 +1358,7 @@ main:                # argc, argv
         mov     symbol_next_id, %rax
         mov     %rax, max_null_environment_symbol
 
-        intern_symbol r5rs_let_symbol, "r5rs-let"
+        intern_symbol r7rs_let_symbol, "r7rs-let"
 
         intern_symbol dot_symbol, "."
         intern_symbol void_symbol, "void"
@@ -3944,7 +3944,7 @@ jit_let:                        # form, c-stream, environment, register, tail
         has_tag TAG_SYMBOL, %rax, store=false
         jne     1f
 
-        call_fn cons, r5rs_let_symbol, %rbx
+        call_fn cons, r7rs_let_symbol, %rbx
         call_fn jit_datum, %rax, %r12, env(%rsp), register(%rsp), tail(%rsp)
         update_max_locals max_locals(%rsp)
         return

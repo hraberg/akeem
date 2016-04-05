@@ -94,7 +94,7 @@
 
 ;;; 4.2.2. Binding constructs
 
-(define-syntax r5rs-let
+(define-syntax r7rs-let
   (syntax-rules ()
     ((let ((name val) ...) body1 body2 ...)
      ((lambda (name ...) body1 body2 ...)
@@ -102,7 +102,8 @@
     ((let tag ((name val) ...) body1 body2 ...)
      ((letrec ((tag (lambda (name ...)
                       body1 body2 ...)))
-        tag) val ...))))
+        tag)
+      val ...))))
 
 (define-syntax let*
   (syntax-rules ()
