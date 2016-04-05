@@ -1371,6 +1371,7 @@ main:                # argc, argv
         intern_symbol void_symbol, "void"
         intern_symbol eof_symbol, "eof"
         intern_symbol error_symbol, "error"
+        intern_symbol values_symbol, "values"
         intern_symbol exception_handler_stack_symbol, "exception-handler-stack"
         intern_symbol dynamic_extent_stack_symbol, "dynamic-extent-stack"
 
@@ -4125,8 +4126,20 @@ jit_call_with_current_continuation_execute_dynamic_extent: # dynamic-extent
         jmp     1b
 2:      return
 
-jit_call_with_current_continuation_escape: # return, continuation
-        unbox_pointer_internal %rsi
+jit_call_with_current_continuation_escape: # return ..., continuation in %r10
+        cmp     $1, %al
+        je      1f
+
+        mov     values_symbol, %r11
+        unbox_pointer_internal %r11, %r11
+        mov     symbol_table_values(,%r11,POINTER_SIZE), %r11
+        unbox_pointer_internal %r11, %r11
+        movq    %r10, %xmm15
+        call_fn *%r11
+        mov     %rax, %rdi
+        movq    %xmm15, %r10
+
+1:      unbox_pointer_internal %r10
         lea     header_size(%rax), %rsi
 
         mov     header_object_size(%rax), %edx
@@ -4138,14 +4151,14 @@ jit_call_with_current_continuation_escape: # return, continuation
         push    %rdi
 
         mov     $CONTINUATION_SAVED_VALUES, %ecx
-1:      test    %ecx, %ecx
-        jz      2f
+2:      test    %ecx, %ecx
+        jz      3f
         pushq   (%rsi)
         add     $POINTER_SIZE, %rsi
         dec     %ecx
-        jmp     1b
+        jmp     2b
 
-2:      call_fn memcpy, %r11, %rsi, %rdx
+3:      call_fn memcpy, %r11, %rsi, %rdx
 
         pop     %rbp
         pop     %r12
@@ -4166,10 +4179,9 @@ jit_call_with_current_continuation_escape_factory: # continuation
         perror
         mov     %rax, %rbx
 
-        call_fn jit_literal, %r12, %rbx, $NIL, $RSI, $C_FALSE
-
-        call_fn jit_literal, $jit_call_with_current_continuation_escape, %rbx, $NIL, $RAX, $C_FALSE
-        call_fn fwrite, $jit_jump_rax, $1, jit_jump_rax_size, %rbx
+        call_fn jit_literal, %r12, %rbx, $NIL, $R10, $C_FALSE
+        call_fn jit_literal, $jit_call_with_current_continuation_escape, %rbx, $NIL, $R11, $C_FALSE
+        call_fn fwrite, $jit_jump_r11, $1, jit_jump_r11_size, %rbx
 
         call_fn fclose, %rbx
         perror  je
