@@ -4165,34 +4165,34 @@ jit_call_with_current_continuation_execute_dynamic_extent: # dynamic-extent
 
 jit_call_with_current_continuation_escape: # return, continuation
         unbox_pointer_internal %rsi
-        lea     header_size(%rax), %r10
+        lea     header_size(%rax), %rsi
 
-        mov     header_object_size(%rax), %eax
-        sub     $(CONTINUATION_SAVED_VALUES * POINTER_SIZE), %eax
-        mov     execution_stack_top, %r11
-        sub     %rax, %r11
-        mov     %r11, %rsp
+        mov     header_object_size(%rax), %edx
+        sub     $(CONTINUATION_SAVED_VALUES * POINTER_SIZE), %edx
+        mov     execution_stack_top, %rsp
+        sub     %rdx, %rsp
+        mov     %rsp, %r11
 
         push    %rdi
 
         mov     $CONTINUATION_SAVED_VALUES, %ecx
 1:      test    %ecx, %ecx
         jz      2f
-        pushq   (%r10)
-        add     $POINTER_SIZE, %r10
+        pushq   (%rsi)
+        add     $POINTER_SIZE, %rsi
         dec     %ecx
         jmp     1b
 
-2:      call_fn memcpy, %r11, %r10, %rax
+2:      call_fn memcpy, %r11, %rsi, %rdx
 
         pop     %rbp
         pop     %r12
         pop     %rbx
-        pop     %r11
 
-        call_fn jit_call_with_current_continuation_execute_dynamic_extent, %r11
+        pop     %rdi
+        call_fn jit_call_with_current_continuation_execute_dynamic_extent, %rdi
 
-4:      pop     %rax
+        pop     %rax
         ret
 
 jit_call_with_current_continuation_escape_factory: # continuation
