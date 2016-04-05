@@ -3076,6 +3076,8 @@ jit_pair:                       # form, c-stream, environment, register, tail
         mov     %rdx, env(%rsp)
         mov     %rcx, register(%rsp)
         mov     %r8, tail(%rsp)
+        is_nil_internal %rbx
+        je      6f
 
         car     %rbx
         mov     %rax, symbol(%rsp)
@@ -3108,6 +3110,9 @@ jit_pair:                       # form, c-stream, environment, register, tail
         mov     $2, %eax
         call_fn *%r11, %rbx, env(%rsp)
         call_fn jit_datum, %rax, %r12, env(%rsp), register(%rsp), tail(%rsp)
+        return
+
+6:      call_fn jit_literal, $NIL, %r12, $NIL, register(%rsp), $C_FALSE
         return
 
         ## 4.1.3. Procedure calls

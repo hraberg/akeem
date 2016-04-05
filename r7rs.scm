@@ -288,12 +288,18 @@
         (field-name accessor modifier ...) ...)
 
      (define (constructor fields ...)
-       (make-record (list fields ...) 'name))
+       (make-record
+        (let ((arguments (list (cons 'fields fields) ...)))
+          (map (lambda (x)
+                 (let ((v (assoc x arguments)))
+                   (if v (cdr v) #f)))
+               '(field-name ...)))
+        'name))
 
      (define (pred obj)
        (eq? 'name (class-of obj)))
 
-     (let ((fs '(fields ...))
+     (let ((fs '(field-name ...))
            (type 'name))
        (define-record-type "field" fs type (field-name accessor modifier ...)) ...))
 
