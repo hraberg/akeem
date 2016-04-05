@@ -714,6 +714,7 @@ call_with_current_continuation: # proc
         lea     header_size(%rax), %r12
         tag     TAG_OBJECT, %rax
         mov     %rax, continuation(%rsp)
+        call_fn jit_maybe_add_to_constant_pool, %rax
 
         parameter_value dynamic_extent_stack_symbol
         call_fn reverse, %rax
