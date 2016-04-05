@@ -903,10 +903,6 @@ raise:                          # error
 2:      call_fn exit, $1
         return
 
-exception_handler_stack:
-        mov     $NIL, %rax
-        ret
-
         ## 6.12. Environments and evaluation
 
 eval:                           # expression, environment-specifier
@@ -1729,7 +1725,6 @@ main:                # argc, argv
         define "call-with-current-continuation", $call_with_current_continuation
 
         define "raise", $raise
-        define "exception-handler_stack", $exception_handler_stack
 
         define "eval", $eval
         define "scheme-report-environment", $scheme_report_environment
