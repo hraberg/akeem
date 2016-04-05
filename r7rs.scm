@@ -1164,4 +1164,5 @@
         (else #f)))
 
 (define (features)
-  '(r7rs exact-closed ieee-float posix unix gnu-linux x86-64 little-endian akeem srfi-0 srfi-9 srfi-23 srfi-34 srfi-87 srfi-98))
+  '(r7rs exact-closed ieee-float posix unix gnu-linux x86-64 little-endian akeem
+         srfi-0 srfi-9 srfi-23 srfi-34 srfi-39 srfi-87 srfi-98))
