@@ -1766,31 +1766,6 @@ main:                # argc, argv
 
         define "load", $load
 
-        ## .irp symbol, plus, minus, multiply, divide, equal, less_than, less_than_or_equal, greater_than, greater_than_or_equal
-        ## lea     jit_inline_table, %rbx
-        ## store_pointer \symbol\()_symbol, $\symbol
-        ## lea     jit_inline_size_table, %rbx
-        ## store_pointer \symbol\()_symbol, \symbol\()_size
-        ## .endr
-
-        .irp symbol, car, cdr, string_length, string_ref, string_set, vector_length, vector_ref, vector_set
-        lea     jit_inline_table, %rbx
-        store_pointer \symbol\()_symbol, $\symbol
-        lea     jit_inline_size_table, %rbx
-        store_pointer \symbol\()_symbol, \symbol\()_size
-        .endr
-
-        call_fn box_string, $boot_scm
-        call_fn open_input_string, %rax
-        call_fn read_all, %rax
-
-        call_fn box_string, $r5rs_scm
-        call_fn open_input_string, %rax
-        call_fn read_all, %rax
-
-        mov     symbol_next_id, %rax
-        mov     %rax, max_scheme_report_environment_symbol
-
         define "make-record", $make_record
         define "record-ref", $record_ref
         define "record-set!", $record_set
@@ -1831,6 +1806,20 @@ main:                # argc, argv
         define "current-jiffy", $current_jiffy
         define "jiffies-per-second", $jiffies_per_second
 
+        ## .irp symbol, plus, minus, multiply, divide, equal, less_than, less_than_or_equal, greater_than, greater_than_or_equal
+        ## lea     jit_inline_table, %rbx
+        ## store_pointer \symbol\()_symbol, $\symbol
+        ## lea     jit_inline_size_table, %rbx
+        ## store_pointer \symbol\()_symbol, \symbol\()_size
+        ## .endr
+
+        .irp symbol, car, cdr, string_length, string_ref, string_set, vector_length, vector_ref, vector_set
+        lea     jit_inline_table, %rbx
+        store_pointer \symbol\()_symbol, $\symbol
+        lea     jit_inline_size_table, %rbx
+        store_pointer \symbol\()_symbol, \symbol\()_size
+        .endr
+
         .irp symbol, bytevector_length, bytevector_u8_ref, bytevector_u8_set
         lea     jit_inline_table, %rbx
         store_pointer \symbol\()_symbol, $\symbol
@@ -1838,9 +1827,16 @@ main:                # argc, argv
         store_pointer \symbol\()_symbol, \symbol\()_size
         .endr
 
+        call_fn box_string, $boot_scm
+        call_fn open_input_string, %rax
+        call_fn read_all, %rax
+
         call_fn box_string, $r7rs_scm
         call_fn open_input_string, %rax
         call_fn read_all, %rax
+
+        mov     symbol_next_id, %rax
+        mov     %rax, max_scheme_report_environment_symbol
 
         define "read-all", $read_all
         define "gc", $gc
@@ -4582,7 +4578,7 @@ jit_arity_to_al:
 jit_arity_to_al_size:
         .quad   (. - jit_arity_to_al) - BYTE_SIZE
 
-        .irp file, boot, r5rs, r7rs, init
+        .irp file, boot, r7rs, init
         .align  16
 \file\()_scm:
         .incbin "\file\().scm"

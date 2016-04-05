@@ -12,7 +12,7 @@ RUN_RACKET_BENCHMARKS = true
 
 default: akeem
 
-%.o: %.s constants.s macros.s boot.scm r5rs.scm r7rs.scm init.scm Makefile
+%.o: %.s constants.s macros.s boot.scm r7rs.scm init.scm Makefile
 	$(AS) $< $(ASFLAGS) -o $@
 
 akeem: lisp.o

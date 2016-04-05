@@ -1,6 +1,10 @@
-;;; 4.3. Macros
+;;; R7RS Boot
 
-;;; 4.3.2. Pattern language
+;;; 4. Expressions
+
+;;; 4.2. Derived expression types
+
+;;; 4.2.1. Conditionals
 
 (define-syntax and
   (lambda (form env)
@@ -10,6 +14,32 @@
   (lambda (form env)
     (let ((form (cdr form)))
       (cons 'if (cons (car form) (cons #t (cdr form)))))))
+
+;;; 4.2.8. Quasiquotation
+
+(set! list (lambda obj obj))
+
+;; Based on https://github.com/mishoo/SLip/blob/master/lisp/compiler.lisp#L25
+(define-syntax quasiquote
+  (lambda (qq-template env)
+    (letrec ((qq (lambda (x)
+                   (if (pair? x)
+                       (if (eq? 'unquote (car x))
+                           (car (cdr x))
+                           (if (eq? 'quasiquote (car x))
+                               (qq (qq (car (cdr x))))
+                               (if (and (pair? (car x))
+                                        (eq? 'unquote-splicing (car (car x))))
+                                   (list 'append (car (cdr (car x))) (qq (cdr x)))
+                                   (list 'cons (qq (car x)) (qq (cdr x))))))
+                       (if (vector? x)
+                           (list 'list->vector (qq (vector->list x)))
+                           (list 'quote x))))))
+      (qq (car (cdr qq-template))))))
+
+;;; 4.3. Macros
+
+;;; 4.3.2. Pattern language
 
 (set! equal?
       (lambda (obj1 obj2)
@@ -155,3 +185,16 @@
                                     (cons (cons 'quote (cons transformer-spec '()))
                                           (cons 'form (cons 'env '()))))
                               '())))))
+
+;;; 5. Program structure
+
+;;; 5.3. Variable definitions
+
+(define-syntax define
+  (syntax-rules ()
+    ((define (variable . formal) body ...)
+     (define variable (lambda formal body ...)))
+    ((define (variable formals ...) body ...)
+     (define variable (lambda (formals ...) body ...)))
+    ((define variable expression)
+     (set! variable expression))))

@@ -1,6 +1,36 @@
 ;;; R7RS
 
+;;; 4. Expressions
+
+;;; 4.2. Derived expression types
+
 ;;; 4.2.1. Conditionals
+
+(define-syntax cond
+  (syntax-rules (else =>)
+    ((cond (else result1 result2 ...))
+     (begin result1 result2 ...))
+    ((cond (test => result))
+     (let ((temp test))
+       (if temp (result temp))))
+    ((cond (test => result) clause1 clause2 ...)
+     (let ((temp test))
+       (if temp
+           (result temp)
+           (cond clause1 clause2 ...))))
+    ((cond (test)) test)
+    ((cond (test) clause1 clause2 ...)
+     (let ((temp test))
+       (if temp
+           temp
+           (cond clause1 clause2 ...))))
+    ((cond (test result1 result2 ...))
+     (if test (begin result1 result2 ...)))
+    ((cond (test result1 result2 ...)
+           clause1 clause2 ...)
+     (if test
+         (begin result1 result2 ...)
+         (cond clause1 clause2 ...)))))
 
 (define-syntax case
   (syntax-rules (else =>)
@@ -35,6 +65,21 @@
          (begin result1 result2 ...)
          (case key clause clauses ...)))))
 
+(define-syntax and
+  (syntax-rules ()
+    ((and) #t)
+    ((and test) test)
+    ((and test1 test2 ...)
+     (if test1 (and test2 ...) #f))))
+
+(define-syntax or
+  (syntax-rules ()
+    ((or) #f)
+    ((or test) test)
+    ((or test1 test2 ...)
+     (let ((x test1))
+       (if x x (or test2 ...))))))
+
 (define-syntax when
   (syntax-rules ()
     ((when test result1 result2 ...)
@@ -46,6 +91,50 @@
     ((unless test result1 result2 ...)
      (if (not test)
          (begin result1 result2 ...)))))
+
+;;; 4.2.2. Binding constructs
+
+(define-syntax r5rs-let
+  (syntax-rules ()
+    ((let ((name val) ...) body1 body2 ...)
+     ((lambda (name ...) body1 body2 ...)
+      val ...))
+    ((let tag ((name val) ...) body1 body2 ...)
+     ((letrec ((tag (lambda (name ...)
+                      body1 body2 ...)))
+        tag) val ...))))
+
+(define-syntax let*
+  (syntax-rules ()
+    ((let* () body1 body2 ...)
+     (let () body1 body2 ...))
+    ((let* ((name1 val1) (name2 val2) ...)
+       body1 body2 ...)
+     (let ((name1 val1))
+       (let* ((name2 val2) ...)
+         body1 body2 ...)))))
+
+;;; 4.2.4. Iteration
+
+(define-syntax do
+  (syntax-rules ()
+    ((do ((var init step ...) ...)
+         (test expr ...)
+       command ...)
+     (let loop ((var init) ...)
+       (if test
+           (begin
+             (if #f #f)
+             expr ...)
+           (begin
+             command
+             ...
+             (loop (do "step" var step ...)
+                   ...)))))
+    ((do "step" x)
+     x)
+    ((do "step" x y)
+     y)))
 
 ;;; 4.2.5. Delayed evaluation
 
@@ -90,7 +179,6 @@
         converter)
        (else
         (error "bad parameter syntax"))))))
-
 
 (define-syntax parameterize
   (lambda (form env)
@@ -187,6 +275,8 @@
              (record-set! record field-idx value)
              (error (string-append "Not a " (symbol->string type) ":") record)))))))
 
+;;; 6. Standard procedures
+
 ;;; 6.1. Equivalence predicates
 
 (define (pair=? pair1 pair2)
@@ -226,26 +316,167 @@
          (bytevector=? obj1 obj2))
         (else (eqv? obj1 obj2))))
 
+;;; 6.2. Numbers
+
 ;;; 6.2.6. Numerical operations
 
 (define (exact-integer? z)
   (and (integer? z) (exact? z)))
 
-(define (square z)
-  (* z z))
-
-(define inexact exact->inexact)
-(define exact inexact->exact)
-
 (define (finite? z)
   (and (number? z)
        (not (or (nan? z) (infinite? z)))))
+
+(define (zero? x)
+  (= 0 x))
+
+(define (positive? x)
+  (> x 0))
+
+(define (negative? x)
+  (< x 0))
+
+(define (odd? n)
+  (not (even? n)))
+
+(define (even? n)
+  (zero? (modulo n 2)))
+
+(define (min-max-aux test x1 x2)
+  (if (test x1 x2)
+      (if (inexact? x1)
+          (exact->inexact x2)
+          x2)
+      (if (inexact? x2)
+          (exact->inexact x1)
+          x1)))
+
+(define (max x1 x2)
+  (min-max-aux < x1 x2))
+
+(define (min x1 x2)
+  (min-max-aux > x1 x2))
+
+(define (abs x)
+  (if (negative? x)
+      (- 0 x)
+      x))
+
+(define (gcd n1 n2)
+  (if (zero? n2)
+      (abs n1)
+      (gcd n2 (modulo n1 n2))))
+
+(define (lcm n1 n2)
+  (/ (abs (* n1 n2))
+     (gcd n1 n2)))
+
+(define (square z)
+  (* z z))
 
 (define (exact-integer-sqrt k)
   (let* ((s (exact (sqrt k))))
     (cons s (exact (- k (* s s))))))
 
+(define inexact exact->inexact)
+(define exact inexact->exact)
+
+;;; 6.3. Booleans
+
+(define (boolean? obj)
+  (or (eq? #t obj) (eq? #f obj)))
+
 ;;; 6.4. Pairs and lists
+
+(define (caar obj)
+  (car (car obj)))
+
+(define (cadr obj)
+  (car (cdr obj)))
+
+(define (cdar obj)
+  (cdr (car obj)))
+
+(define (cddr obj)
+  (cdr (cdr obj)))
+
+(define (caaar obj)
+  (car (caar obj)))
+
+(define (caadr obj)
+  (car (cadr obj)))
+
+(define (cadar obj)
+  (car (cdar obj)))
+
+(define (caddr obj)
+  (car (cddr obj)))
+
+(define (cdaar obj)
+  (cdr (caar obj)))
+
+(define (cdadr obj)
+  (cdr (cadr obj)))
+
+(define (cddar obj)
+  (cdr (cdar obj)))
+
+(define (cdddr obj)
+  (cdr (cddr obj)))
+
+(define (caaaar obj)
+  (car (caaar obj)))
+
+(define (caaadr obj)
+  (car (caadr obj)))
+
+(define (caadar obj)
+  (car (cadar obj)))
+
+(define (caaddr obj)
+  (car (caddr obj)))
+
+(define (cadaar obj)
+  (car (cdaar obj)))
+
+(define (cadadr obj)
+  (car (cdadr obj)))
+
+(define (caddar obj)
+  (car (cddar obj)))
+
+(define (cadddr obj)
+  (car (cdddr obj)))
+
+(define (cdaaar obj)
+  (cdr (caaar obj)))
+
+(define (cdaadr obj)
+  (cdr (caadr obj)))
+
+(define (cdadar obj)
+  (cdr (cadar obj)))
+
+(define (cdaddr obj)
+  (cdr (caddr obj)))
+
+(define (cddaar obj)
+  (cdr (cdaar obj)))
+
+(define (cddadr obj)
+  (cdr (cdadr obj)))
+
+(define (cdddar obj)
+  (cdr (cddar obj)))
+
+(define (cddddr obj)
+  (cdr (cdddr obj)))
+
+(define (list? obj)
+  (let loop ((obj obj))
+    (cond ((null? obj) #t)
+          ((pair? obj) (loop (cdr obj)))
+          (else #f))))
 
 (define make-list
   (case-lambda
@@ -256,11 +487,32 @@
          (idx 0 (+ idx 1)))
         ((= idx k) acc)))))
 
+(define (list . obj)
+  obj)
+
+(define append-internal append)
+
+(define (append . lists)
+  (cond ((null? lists)
+         '())
+        ((null? (cdr lists))
+         (car lists))
+        (else
+         (append-internal (car lists)
+                          (apply append (cdr lists))))))
+
+(define (list-tail list k)
+  (let loop ((list list)
+             (k k))
+    (if (zero? k)
+        list
+        (loop (cdr list) (- k 1)))))
+
+(define (list-ref list k)
+  (car (list-tail list k)))
+
 (define (list-set! list k obj)
   (set-car! (list-tail list k) obj))
-
-(define (list-copy obj)
-  (map (lambda (x) x) obj))
 
 (define member
   (case-lambda
@@ -294,12 +546,45 @@
             ((compare obj (caar alist)) (car alist))
             (else (loop (cdr alist))))))))
 
+(define (list-copy obj)
+  (map (lambda (x) x) obj))
+
 ;;; 6.5. Symbols
 
 (define (symbol=? symbol1 symbol2)
   (equal? (symbol->string symbol1) (symbol->string symbol2)))
 
 ;;; 6.6. Characters
+
+(define (char=? char1 char2)
+  (= (char->integer char1) (char->integer char2)))
+
+(define (char<? char1 char2)
+  (< (char->integer char1) (char->integer char2)))
+
+(define (char>? char1 char2)
+  (> (char->integer char1) (char->integer char2)))
+
+(define (char<=? char1 char2)
+  (<= (char->integer char1) (char->integer char2)))
+
+(define (char>=? char1 char2)
+  (>= (char->integer char1) (char->integer char2)))
+
+(define (char-ci=? char1 char2)
+  (= (char->integer (char-downcase char1)) (char->integer (char-downcase char2))))
+
+(define (char-ci<? char1 char2)
+  (< (char->integer (char-downcase char1)) (char->integer (char-downcase char2))))
+
+(define (char-ci>? char1 char2)
+  (> (char->integer (char-downcase char1)) (char->integer (char-downcase char2))))
+
+(define (char-ci<=? char1 char2)
+  (<= (char->integer (char-downcase char1)) (char->integer (char-downcase char2))))
+
+(define (char-ci>=? char1 char2)
+  (>= (char->integer (char-downcase char1)) (char->integer (char-downcase char2))))
 
 (define (digit-value char)
   (if (char-numeric? char)
@@ -310,6 +595,9 @@
 
 ;;; 6.7. Strings
 
+(define (string . char)
+  (list->string char))
+
 (define (string-upcase string)
   (string-map char-upcase string))
 
@@ -318,6 +606,28 @@
 
 (define (string-foldcase string)
   (string-map char-foldcase string))
+
+(define (substring string start end)
+  (do ((copy (make-string (- end start)))
+       (idx start (+ idx 1)))
+      ((= idx end) copy)
+    (string-set! copy (- idx start) (string-ref string idx))))
+
+(define (string-append . strings)
+  (if (null? strings)
+      ""
+      (let* ((string1 (car strings))
+             (string2 (apply string-append (cdr strings)))
+             (length1 (string-length string1))
+             (length2 (string-length string2))
+             (acc (make-string (+ length1 length2))))
+        (do ((idx 0 (+ idx 1)))
+            ((= idx length1))
+          (string-set! acc idx (string-ref string1 idx)))
+        (do ((idx 0 (+ idx 1)))
+            ((= idx length2))
+          (string-set! acc (+ idx length1) (string-ref string2 idx)))
+        acc)))
 
 (define string->list
   (case-lambda
@@ -329,6 +639,13 @@
     (do ((list '() (cons (string-ref string idx) list))
          (idx (- end 1) (- idx 1)))
         ((< idx start) list)))))
+
+(define (list->string list)
+  (do ((list list (cdr list))
+       (string (make-string (length list)))
+       (idx 0 (+ idx 1)))
+      ((null? list) string)
+    (string-set! string idx (car list))))
 
 (define string-copy
   (case-lambda
@@ -371,6 +688,9 @@
     (make-vector k (if #f #f)))
    ((k fill)
     (make-vector-internal k fill))))
+
+(define (vector . obj)
+  (list->vector obj))
 
 (define vector->list
   (case-lambda
@@ -521,6 +841,25 @@
 
 ;;; 6.10. Control features
 
+(define apply-internal apply)
+
+(define (apply proc . args)
+  (let* ((args (reverse args))
+         (flat-args (car args)))
+    (if (list? flat-args)
+        (do ((args (cdr args) (cdr args))
+             (flat-args flat-args (cons (car args) flat-args)))
+            ((null? args) (apply-internal proc flat-args)))
+        (error "Not a list:" flat-args))))
+
+(define (map proc list)
+  (let* ((length (length list))
+         (acc (make-list length)))
+    (do ((from list (cdr from))
+         (to acc (cdr to)))
+        ((null? from) acc)
+      (set-car! to (proc (car from))))))
+
 (define (string-map proc string)
   (let ((length (string-length string)))
     (do ((acc (make-string length))
@@ -534,6 +873,11 @@
          (idx 0 (+ idx 1)))
         ((= idx length) acc)
       (vector-set! acc idx (proc (vector-ref vector idx))))))
+
+(define (for-each proc list)
+  (do ((list list (cdr list)))
+      ((null? list))
+    (proc (car list))))
 
 (define (string-for-each proc string)
   (let ((length (string-length string)))
@@ -554,6 +898,12 @@
   promise?
   (done? promise-done? set-promise-done!)
   (value promise-value set-promise-value!))
+
+(define (values . things)
+  (lambda (cont) (apply cont things)))
+
+(define (call-with-values producer consumer)
+  ((producer) consumer))
 
 (define dynamic-extent-stack (make-parameter '()))
 
@@ -623,6 +973,12 @@
 ;; 6.13. Input and output
 
 ;; 6.13.1. Ports
+
+(define (call-with-input-file string proc)
+  (call-with-port (open-input-file string) proc))
+
+(define (call-with-output-file string proc)
+  (call-with-port (open-output-file string) proc))
 
 (define (port? obj)
   (or (input-port? obj) (output-port? obj)))
