@@ -4041,6 +4041,9 @@ jit_letrec:                     # form, c-stream, environment, register, tail
         car     %rax
         call_fn jit_lambda_flatten_arguments, %rax
         call_fn jit_lambda_closure_environment_bitmask, lambda(%rsp), full_env(%rsp), %rax, $0
+        test    %rax, %rax
+        jz      2f
+
         call_fn jit_literal, %rax, %r12, $NIL, $RSI, $C_FALSE
 
         mov     $jit_lambda_patch_factory, %rax
