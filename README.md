@@ -4,8 +4,8 @@
 [Prince Akeem of Zamunda](http://www.imdb.com/title/tt0094898/)
 
 Akeem is a small JIT-ed subset of
-[R5RS Scheme](http://www.schemers.org/Documents/Standards/R5RS/)
-written in x86-64 assembler as an experiment.
+[R7RS Scheme](http://trac.sacrideo.us/wg/raw-attachment/wiki/WikiStart/r7rs.pdf)
+("small") written in x86-64 assembler as an experiment.
 
 Written in [GNU Assembler](https://sourceware.org/binutils/docs/as/)
 using AT&T syntax. Only builds on Linux as Apple has their own version
@@ -48,12 +48,11 @@ trying again.
 
 ## What Works?
 
-* Subset of R5RS and R7RS "small" procedures.
+* Subset of R7RS "small" procedures.
 * JIT for `if`, `lambda`, `set!`, `let`, `letrec` and `begin`
-* Syntax for `and`, `or`, `cond`, `case`, `let*`, "named `let`", `do`,
-  `delay`, and `define`.
-  * + R7RS `case`, `when`, `unless`, `parameterize`, `guard`,
-    `case-lambda` and `define-record-type`.
+* Syntax for `and`, `or`, `cond`, `case`, `when`, `unless`, `let*`,
+  "named `let`", `do`, `delay`, `define`, `parameterize`, `guard`,
+  `case-lambda` and `define-record-type`.
 * Basic support for `define-syntax` / `syntax-rules` and `quasiquote`.
 * Basic support for R7RS Exceptions and `dynamic-wind`.
 * NaN-boxed 32-bit integers and 64-bit doubles
@@ -70,6 +69,7 @@ trying again.
 * No register allocation.
 * No hygienic macro expansion.
 * No GC for functions or their constant literals.
+* No Scheme library system.
 * The JIT is static, once a function is generated its done.
 * Not full support for Scheme numbers in the reader.
 * No support for converting internal `define` to `letrec`.
@@ -80,7 +80,7 @@ trying again.
 
 Most of the above is intended to be solved at some point, in roughly
 the order listed. The focus is slightly geared towards hacking on and
-exploring the JIT more than aiming for full R5RS / R7RS compliance.
+exploring the JIT more than aiming for full R7RS compliance.
 
 
 ## Implementation Notes
@@ -127,7 +127,6 @@ make retest
 
 Parts of the implementation are in
 [`boot.scm`](https://github.com/hraberg/akeem/blob/master/boot.scm),
-[`r5rs.scm`](https://github.com/hraberg/akeem/blob/master/r5rs.scm),
 [`r7rs.scm`](https://github.com/hraberg/akeem/blob/master/r7rs.scm)
 and
 [`init.scm`](https://github.com/hraberg/akeem/blob/master/init.scm),
