@@ -2526,11 +2526,17 @@ read_whitespace:                # c-stream
         call_fn isspace, %rax
         jnz     1b
 
+        cmp     $';, %r12b
+        je      3f
         call_fn ungetc, %r12, %rbx
         return
 
 2:      tag     TAG_CHAR, %rax
         return
+
+3:      call_fn ungetc, %r12, %rbx
+        call_fn read_comment, %rbx
+        jmp     1b
 
 read_comment:                   # c-stream
         prologue
@@ -2567,11 +2573,7 @@ read_datum:                     # c-stream
         je      1f
         call_fn ungetc, %rax, %rbx
 
-        call_fn read_comment, %rbx
         call_fn read_whitespace, %rbx
-        cmp     $EOF, %eax
-        je      1f
-        call_fn read_comment, %rbx
         call_fn fgetc, %rbx
         cmp     $EOF, %eax
         je      1f
@@ -2829,8 +2831,6 @@ read_list:                      # c-stream, c-char
 1:      mov     $NIL, %r12
         mov     %r12, head(%rsp)
 2:      call_fn read_whitespace, %rbx
-        call_fn read_comment, %rbx
-        call_fn read_whitespace, %rbx
         call_fn fgetc, %rbx
         cmp     closing(%rsp), %al
         je      5f
@@ -2856,8 +2856,6 @@ read_list:                      # c-stream, c-char
 4:      call_fn read_datum, %rbx
         call_fn set_cdr, %r12, %rax
 
-        call_fn read_whitespace, %rbx
-        call_fn read_comment, %rbx
         call_fn read_whitespace, %rbx
         call_fn fgetc, %rbx
         cmp     closing(%rsp), %al
