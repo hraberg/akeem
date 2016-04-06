@@ -3635,7 +3635,7 @@ jit_lambda_arity_check_error:   # arity in al, expected-arity in r10b
         call_fn internal_error, arity_check_error_string, %rdi, %rsi
         return
 
-jit_lambda_collect_varargs:     # arity in rax, varargs_idx in r10
+jit_lambda_collect_varargs:     # arity in rax, varargs-idx in r10
         .irp reg, rbx, r12, r13, r14
         push    %\reg
         .endr
@@ -4154,7 +4154,7 @@ jit_call_with_current_continuation_execute_dynamic_extent: # dynamic-extent
         jmp     1b
 2:      return
 
-jit_call_with_current_continuation_escape: # return ..., continuation in %r10
+jit_call_with_current_continuation_escape: # obj ..., continuation in r10
         mov     %r10, %rbx
         xor     %r10d, %r10d
         call_fn jit_lambda_collect_varargs

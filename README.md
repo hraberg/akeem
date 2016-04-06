@@ -175,6 +175,27 @@ make RACKET_BENCHMARKS=nqueens profile
 Only functions written in assembler will show up in the profile
 report.
 
+### Calling Conventions
+
+In general Akeem uses the normal
+[x86-64 ABI](http://www.x86-64.org/documentation/abi.pdf), with a few
+extensions.
+
+All compiled calls use `al` to pass the number of arguments down to
+enable variable argument lists and arity checking to work. This is
+inspired by the way the ABI uses `al` to pass the number of floating
+point arguments.
+
+Some internal calls, like during `call/cc`, when checking arity and
+when collecting variable arguments use `rax` (for arity) and `r10`
+between calls to pass extra information about how to deal with the
+actual arguments without clobbering them.
+
+When returning multiple values from a continuation, the first value is
+placed in `rax` and the tail is placed in `rdx`, and normally
+ignored. `call-with-values` will recreate the full argument list by
+consing `rax` to `rdx` and passing the result to its consumer.
+
 
 ## References
 
