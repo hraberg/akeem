@@ -1069,6 +1069,9 @@
 (define textual-port? port?)
 (define binary-port? port?)
 
+(define input-port-open? input-port?)
+(define output-port-open? output-port?)
+
 (define current-input-port (make-parameter (current-input-port)))
 (define current-output-port (make-parameter (current-output-port)))
 (define current-error-port (make-parameter (current-error-port)))
