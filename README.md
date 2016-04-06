@@ -176,7 +176,10 @@ make RACKET_BENCHMARKS=nqueens profile
 Only functions written in assembler will show up in the profile
 report.
 
-### Calling Conventions
+
+### Implementation
+
+#### Calling Conventions
 
 In general Akeem uses the normal
 [x86-64 ABI](http://www.x86-64.org/documentation/abi.pdf), with a few
@@ -199,7 +202,7 @@ and normally ignored. `call-with-values` will recreate the full
 argument list by consing `rax` to `rdx` and applying the result to its
 consumer.
 
-### Use of Registers and Stack
+#### Use of Registers and Stack
 
 See
 [Stack frame layout on x86-64 ](http://eli.thegreenplace.net/2011/09/06/stack-frame-layout-on-x86-64/)
