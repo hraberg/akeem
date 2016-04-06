@@ -12,8 +12,7 @@ make_record:                    # k, type
         assert_tag TAG_PAIR, %rdi, not_a_pair_string
         assert_tag TAG_SYMBOL, %rsi, not_a_symbol_string
         mov     %rsi, %rbx
-        mov     $1, %eax
-        call_fn list_to_vector, %rdi
+        call_scm list_to_vector, %rdi
         unbox_pointer_internal %rax
         mov     %bx, header_object_type(%rax)
         tag     TAG_OBJECT, %rax
@@ -389,15 +388,13 @@ append:                        # list1, list2
         prologue
         arity_check $2
         mov     %rsi, %r12
-        mov     $1, %eax
-        call_fn reverse, %rdi
+        call_scm reverse, %rdi
         mov     %rax, %rbx
 1:      is_nil_internal %rbx
         je      2f
 
         car     %rbx, %rdi
-        mov     $2, %eax
-        call_fn cons, %rdi, %r12
+        call_scm cons, %rdi, %r12
         mov     %rax, %r12
 
         cdr     %rbx, %rbx
@@ -414,8 +411,7 @@ reverse:                        # list
         je      2f
 
         car     %rbx, %rdi
-        mov     $2, %eax
-        call_fn cons, %rdi, %r12
+        call_scm cons, %rdi, %r12
         mov     %rax, %r12
 
         cdr     %rbx, %rbx
@@ -735,11 +731,9 @@ list_to_vector:                 # list
         prologue vec
         arity_check $1
         mov     %rdi, %r12
-        mov     $1, %eax
-        call_fn length, %r12
+        call_scm length, %rdi
         mov     %rax, %rdi
-        mov     $2, %eax
-        call_fn make_vector, %rdi, $VOID
+        call_scm make_vector, %rdi, $VOID
         mov     %rax, vec(%rsp)
 
         xor     %ebx, %ebx
@@ -749,8 +743,7 @@ list_to_vector:                 # list
         box_int_internal %ebx
         mov     %rax, %rsi
         car     %r12, %rdx
-        mov     $3, %eax
-        call_fn vector_set, vec(%rsp), %rsi, %rdx
+        call_scm vector_set, vec(%rsp), %rsi, %rdx
         cdr     %r12, %r12
 
         inc     %rbx
@@ -763,8 +756,7 @@ list_to_vector:                 # list
 is_bytevector:                  # obj
         minimal_prologue
         arity_check $1
-        mov     $1, %eax
-        call_fn class_of, %rdi
+        call_scm class_of, %rdi
         eq_internal $TAG_BYTEVECTOR, %eax
         box_boolean_internal %rax
         return
@@ -832,11 +824,8 @@ list_to_bytevector:             # list
         prologue vec
         arity_check $1
         mov     %rdi, %r12
-        mov     $1, %eax
-        call_fn length, %r12
-        mov     %rax, %rdi
-        mov     $2, %eax
-        call_fn make_bytevector, %rdi, $0
+        call_scm length, %rdi
+        call_scm make_bytevector, %rax, $0
         mov     %rax, vec(%rsp)
 
         xor     %ebx, %ebx
@@ -844,10 +833,8 @@ list_to_bytevector:             # list
         je      2f
 
         box_int_internal %ebx
-        mov     %rax, %rsi
         car     %r12, %rdx
-        mov     $3, %eax
-        call_fn bytevector_u8_set, vec(%rsp), %rsi, %rdx
+        call_scm bytevector_u8_set, vec(%rsp), %rax, %rdx
         cdr     %r12, %r12
 
         inc     %rbx
@@ -871,8 +858,7 @@ apply:                          # proc, args
         push    %rax
 
         mov     %rsi, %r12
-        mov     $1, %eax
-        call_fn length, %r12
+        call_scm length, %r12
         push    %rax
         mov     %eax, %ebx
 
@@ -932,9 +918,7 @@ call_with_current_continuation: # proc
         shr     $POINTER_SIZE_SHIFT, %eax
         add     $CONTINUATION_SAVED_VALUES, %eax
         box_int_internal %eax
-        mov     %rax, %rdi
-        mov     $2, %eax
-        call_fn make_vector, %rdi, $VOID
+        call_scm make_vector, %rax, $VOID
         unbox_pointer_internal
         movw    $TAG_CONTINUATION, header_object_type(%rax)
         lea     header_size(%rax), %r12
@@ -943,9 +927,7 @@ call_with_current_continuation: # proc
         call_fn jit_maybe_add_to_constant_pool, %rax
 
         parameter_value dynamic_extent_stack_symbol
-        mov     %rax, %rdi
-        mov     $1, %eax
-        call_fn reverse, %rdi
+        call_scm reverse, %rax
         mov     %rax, dynamic_extent(%rsp)
 
         .irp saved_value, dynamic_extent, rbx, r12, rbp
@@ -963,8 +945,7 @@ call_with_current_continuation: # proc
         call_fn jit_call_with_current_continuation_escape_factory, continuation(%rsp)
         tag     TAG_PROCEDURE, %rax
         mov     %rax, %r11
-        mov     $1, %eax
-        call_fn *%rbx, %r11
+        call_scm *%rbx, %r11
         return
 
 values:                         # obj ...
@@ -989,18 +970,14 @@ call_with_values:               # producer, consumer
         unbox_pointer_internal %rdi, %rbx
         mov     %rsi, %r12
 
-        xor     %eax, %eax
         xor     %edx, %edx
-        call_fn *%rbx
+        call_scm *%rbx
         mov     %rax, %r11
         has_tag TAG_PAIR, %rdx, store=false
         je      1f
         mov     $NIL, %rdx
-1:      mov     $2, %eax
-        call_fn cons, %r11, %rdx
-        mov     %rax, %rsi
-        mov     $2, %eax
-        call_fn apply, %r12, %rsi
+1:      call_scm cons, %r11, %rdx
+        call_scm apply, %r12, %rax
         return
 
         ## 6.11. Exceptions
@@ -1016,8 +993,7 @@ raise:                          # error
 
         car     %rax
         unbox_pointer_internal %rax, %r11
-        mov     $1, %eax
-        call_fn *%r11, %rbx
+        call_scm *%r11, %rbx
 
 1:      cmp     $NULL, error_jmp_buffer
         je      2f
@@ -1067,12 +1043,9 @@ call_with_port:                 # port, proc
         assert_tag TAG_PROCEDURE, %rsi, not_a_procedure_string
         unbox_pointer_internal %rsi, %rbx
         mov     %rdi, %r12
-        mov     %rax, %r11
-        mov     $1, %eax
-        call_fn *%rbx, %r11
+        call_scm *%rbx, %r12
         mov     %rax, %rbx
-        mov     $1, %eax
-        call_fn close_port, %r12
+        call_scm close_port, %r12
         return  %rbx
 
 is_input_port:                  # obj
@@ -1154,8 +1127,7 @@ close_output_port:              # port
         minimal_prologue
         arity_check $1
         assert_tag TAG_PORT, %rdi, not_a_port_string
-        mov     $1, %eax
-        call_fn close_port, %rdi
+        call_scm close_port, %rdi
         return
 
 open_input_string:              # string
@@ -1244,8 +1216,7 @@ write:                          # obj, port
         store_pointer $TAG_CHAR, $char_to_machine_readable_string
         store_pointer $TAG_STRING, $string_to_machine_readable_string
 
-        mov     $2, %eax
-        call_fn display, %rdi, %rsi
+        call_scm display, %rdi, %rsi
 
         store_pointer $TAG_CHAR, $char_to_string
         store_pointer $TAG_STRING, $string_to_string
@@ -1269,8 +1240,7 @@ display:                        # obj, port
 newline:                        # port
         minimal_prologue
         arity_check $1, jle
-        mov     $2, %eax
-        call_fn write_char, $NEWLINE_CHAR, %rdi
+        call_scm write_char, $NEWLINE_CHAR, %rdi
         return
 
 write_char:                     # char, port
@@ -1308,13 +1278,10 @@ load:                           # filename, environment-specifier
         prologue
         arity_check $2, jle
         assert_tag TAG_STRING, %rdi, not_a_string_string
-        mov     $1, %eax
-        call_fn open_input_file, %rdi
+        call_scm open_input_file, %rdi
         mov     %rax, %rbx
-        mov     $1, %eax
-        call_fn read_all, %rbx
-        mov     $1, %eax
-        call_fn close_input_port, %rbx
+        call_scm read_all, %rbx
+        call_scm close_input_port, %rbx
         return  $VOID
 
 is_file_exists:                 # filename
@@ -1957,20 +1924,12 @@ main:                # argc, argv
         ## .endr
 
         call_fn box_string, $boot_scm
-        mov     %rax, %rdi
-        mov     $1, %eax
-        call_fn open_input_string, %rdi
-        mov     %rax, %rdi
-        mov     $1, %eax
-        call_fn read_all, %rdi
+        call_scm open_input_string, %rax
+        call_scm read_all, %rax
 
         call_fn box_string, $r7rs_scm
-        mov     %rax, %rdi
-        mov     $1, %eax
-        call_fn open_input_string, %rdi
-        mov     %rax, %rdi
-        mov     $1, %eax
-        call_fn read_all, %rdi
+        call_scm open_input_string, %rax
+        call_scm read_all, %rax
 
         mov     symbol_next_id, %rax
         mov     %rax, max_scheme_report_environment_symbol
@@ -1987,19 +1946,16 @@ main:                # argc, argv
         call_fn build_environment_alist, %rax
         mov     %rax, environment_alist
 
-        call_fn gc
+        call_scm gc
 
-        mov     $1, %eax
-        call_fn length, command_line_arguments
+        call_scm length, command_line_arguments
         cmp     $1, %eax
         jg      1f
 
         call_fn signal, $SIGSEGV, $segv_handler
 
-        mov     $1, %eax
-        call_fn display, welcome_message_string
-        mov     $0, %eax
-        call_fn newline
+        call_scm display, welcome_message_string
+        call_scm newline
 
         call_fn malloc, $JMP_BUF_SIZE
         perror
@@ -2007,22 +1963,16 @@ main:                # argc, argv
         call_fn setjmp, error_jmp_buffer
 
 1:      call_fn box_string, $init_scm
-        mov     %rax, %rdi
-        mov     $1, %eax
-        call_fn open_input_string, %rdi
-        mov     %rax, %rdi
-        mov     $1, %eax
-        call_fn read_all, %rdi
+        call_scm open_input_string, %rax
+        call_scm read_all, %rax
 
         return  $0
 
 segv_handler:                   # signal
         prologue stacktrace
 
-        mov     $1, %eax
-        call_fn display, segfault_error_string
-        mov     $0, %eax
-        call_fn newline
+        call_scm display, segfault_error_string
+        call_scm newline
 
         call_fn malloc, $(POINTER_SIZE * STACKTRACE_SIZE)
         perror
@@ -2050,13 +2000,10 @@ internal_error:                 # message, irritants
         call_fn longjmp, error_jmp_buffer, $C_TRUE
 
 1:      mov     %rdi, %rbx
-        xor     %eax, %eax
-        call_fn current_error_port
+        call_scm current_error_port
         mov     %rax, %r12
-        mov     $2, %eax
-        call_fn display, %rbx, %r12
-        mov     $1, %eax
-        call_fn newline, %r12
+        call_scm display, %rbx, %r12
+        call_scm newline, %r12
         call_fn exit, $1
         return
 
@@ -2073,16 +2020,13 @@ box_string_array_as_list:       # c-string-array
         jz      2f
 
         call_fn box_string, %rax
-        mov     %rax, %rdi
-        mov     $2, %eax
-        call_fn cons, %rdi, strings(%rsp)
+        call_scm cons, %rax, strings(%rsp)
         mov     %rax, strings(%rsp)
 
         inc     %ebx
         jmp     1b
 
-2:      mov     $1, %eax
-        call_fn reverse, strings(%rsp)
+2:      call_scm reverse, strings(%rsp)
         call_fn jit_maybe_add_to_constant_pool, %rax
         return  %rax
 
@@ -2111,12 +2055,8 @@ build_environment_alist:        # list
         mov     $empty_string_c, %rax
 
 2:      call_fn box_string, %rax
-        mov     %rax, %rsi
-        mov     $2, %eax
-        call_fn cons, env_var_name(%rsp), %rsi
-        mov     %rax, %rsi
-        mov     $2, %eax
-        call_fn set_car, %r12, %rsi
+        call_scm cons, env_var_name(%rsp), %rax
+        call_scm set_car, %r12, %rax
 
         call_fn free, env_var(%rsp)
 
@@ -2129,19 +2069,18 @@ build_environment_alist:        # list
 
 read_all:                       # port
         prologue
+        arity_check $1
         mov     %rdi, %rbx
-1:      mov     $1, %eax
-        call_fn read, %rbx
+1:      call_scm read, %rbx
         is_eof_object_internal %rax
         je      2f
-        mov     %rax, %rdi
-        mov     $2, %eax
-        call_fn eval, %rdi, $MAX_NUMBER_OF_SYMBOLS
+        call_scm eval, %rax, $MAX_NUMBER_OF_SYMBOLS
         jmp     1b
 2:      return  $TRUE
 
 class_of:                       # obj
         prologue
+        arity_check $1
         mov     %rdi, %rbx
         extract_tag
         cmp     $TAG_OBJECT, %rax
@@ -2158,6 +2097,7 @@ class_of:                       # obj
 2:      return  void_symbol
 
 object_space_size:
+        arity_check $0
         mov     stack_top_offset + object_space, %rax
         shr     $POINTER_SIZE_SHIFT, %rax
         box_int_internal
@@ -2287,7 +2227,7 @@ gc_allocate_memory:             # c-size
         call_fn malloc, %rbx
         cmp    $NULL, %rax
         jg     1f
-        call_fn gc
+        call_scm gc
         call_fn malloc, %rbx
         perror
 1:      mov     %rax, %r12
@@ -2356,8 +2296,7 @@ gc_mark_queue_vector:           # vector
 gc_mark_queue_object:           # object
         prologue
         mov     %rdi, %rbx
-        mov     $1, %eax
-        call_fn class_of, %rdi
+        call_scm class_of, %rdi
         eq_internal $TAG_BYTEVECTOR, %eax, store=false
         je      1f
 
@@ -2456,10 +2395,11 @@ gc_sweep:
 
 gc:
         prologue
+        arity_check $0
         call_fn gc_mark
         call_fn gc_sweep
 
-        call_fn object_space_size
+        call_scm object_space_size
         return
 
         ## Printer
@@ -2679,8 +2619,7 @@ string_to_machine_readable_string: # string
 object_to_string:               # obj
         prologue obj, str, size
         mov     %rdi, obj(%rsp)
-        mov     $1, %eax
-        call_fn class_of, %rdi
+        call_scm class_of, %rdi
         mov     %rax, %rbx
         mov     to_string_jump_table(,%eax,POINTER_SIZE), %r11
         cmp     $object_to_string, %r11
@@ -2806,8 +2745,7 @@ read_symbol:                    # c-stream, c-char
         cmpb    $0, (%rbx)
         je      1f
 
-        mov     $1, %eax
-        call_fn string_to_symbol, str(%rsp)
+        call_scm string_to_symbol, str(%rsp)
         mov     %rax, %rbx
         register_for_gc str(%rsp)
         return  %rbx
@@ -2917,8 +2855,7 @@ read_character:                 # c-stream, c-char
         call_fn read_token, %rbx
         register_for_gc
         mov     %rax, %r12
-        mov     $1, %eax
-        call_fn string_length, %r12
+        call_scm string_length, %r12
         cmp     $1, %eax
         je      4f
 
@@ -2956,30 +2893,21 @@ read_character:                 # c-stream, c-char
         call_fn read_error, %rax
         return
 
-4:      mov     $2, %eax
-        call_fn string_ref, %r12, $ZERO_INT
+4:      call_scm string_ref, %r12, $ZERO_INT
         return
 
 read_quote:                     # c-stream
         minimal_prologue
         call_fn read_datum, %rdi
-        mov     %rax, %rdi
-        mov     $2, %eax
-        call_fn cons, %rdi, $NIL
-        mov     %rax, %rsi
-        mov     $2, %eax
-        call_fn cons, quote_symbol, %rsi
+        call_scm cons, %rax, $NIL
+        call_scm cons, quote_symbol, %rax
         return
 
 read_quasiquote:                # c-stream
         minimal_prologue
         call_fn read_datum, %rdi
-        mov     %rax, %rdi
-        mov     $2, %eax
-        call_fn cons, %rdi, $NIL
-        mov     %rax, %rsi
-        mov     $2, %eax
-        call_fn cons, quasiquote_symbol, %rsi
+        call_scm cons, %rax, $NIL
+        call_scm cons, quasiquote_symbol, %rax
         return
 
 read_unquote:                   # c-stream
@@ -2993,20 +2921,14 @@ read_unquote:                   # c-stream
         jmp     2f
 1:      mov     unquote_splicing_symbol, %r12
 2:      call_fn read_datum, %rbx
-        mov     %rax, %rdi
-        mov     $2, %eax
-        call_fn cons, %rdi, $NIL
-        mov     %rax, %rsi
-        mov     $2, %eax
-        call_fn cons, %r12, %rsi
+        call_scm cons, %rax, $NIL
+        call_scm cons, %r12, %rax
         return
 
 read_vector:                    # c-stream
         prologue
         call_fn read_list, %rdi, $'(
-        mov     %rax, %rdi
-        mov     $1, %eax
-        call_fn list_to_vector, %rdi
+        call_scm list_to_vector, %rax
         return
 
 read_bytevector:                # c-stream
@@ -3020,9 +2942,7 @@ read_bytevector:                # c-stream
         jne     1f
 
         call_fn read_list, %rbx, $'(
-        mov     %rax, %rdi
-        mov     $1, %eax
-        call_fn list_to_bytevector, %rdi
+        call_scm list_to_bytevector, %rax
         return
 
 1:      tag     TAG_CHAR, %rax
@@ -3052,25 +2972,20 @@ read_list:                      # c-stream, c-char
         cmp     dot_symbol, %rax
         je      4f
 
-        mov     %rax, %rdi
-        mov     $2, %eax
-        call_fn cons, %rdi, $NIL
+        call_scm cons, %rax, $NIL
         is_nil_internal %r12
         jne     3f
         mov     %rax, %r12
         mov     %r12, head(%rsp)
         jmp     2b
 
-3:      mov     %r12, %r11
+3:      mov     %r12, %rdi
         mov     %rax, %r12
-        mov     $2, %eax
-        call_fn set_cdr, %r11, %r12
+        call_scm set_cdr, %rdi, %r12
         jmp     2b
 
 4:      call_fn read_datum, %rbx
-        mov     %rax, %rsi
-        mov     $2, %eax
-        call_fn set_cdr, %r12, %rsi
+        call_scm set_cdr, %r12, %rax
 
         call_fn read_whitespace, %rbx
         call_fn fgetc, %rbx
@@ -3083,8 +2998,7 @@ read_list:                      # c-stream, c-char
 
 read_error:                     # error
         minimal_prologue
-        mov     $2, %eax
-        call_fn internal_error, read_error_string, %rdi
+        call_scm internal_error, read_error_string, %rdi
         return
 
         ## JIT
@@ -3138,9 +3052,7 @@ jit_allocate_code:              # c-code, c-size
 1:      mov     jit_code_space_next_address, %rax
         sub     jit_code_space, %rax
         box_int_internal
-        mov     %rax, %rdi
-        mov     $2, %eax
-        call_fn internal_error, code_space_error_string, %rdi
+        call_scm internal_error, code_space_error_string, %rax
         return
 
 jit_code:                       # form, environment, arguments
@@ -3208,8 +3120,7 @@ jit_symbol:                     # symbol, c-stream, environment, register, tail
         jmp     4f
 
 3:      mov     %rax, %rbx
-        mov     $1, %eax
-        call_fn length, env(%rsp)
+        call_scm length, env(%rsp)
         sub     %eax, %ebx
         neg     %ebx
         shl     $POINTER_SIZE_SHIFT, %ebx
@@ -3222,8 +3133,7 @@ jit_symbol:                     # symbol, c-stream, environment, register, tail
         lea     local(%rsp), %rax
         call_fn fwrite, %rax, $1, $INT_SIZE, %r12
 
-4:      mov     $1, %eax
-        call_fn length, env(%rsp)
+4:      call_scm length, env(%rsp)
         return
 
         ## 4.1.2. Literal expressions
@@ -3313,14 +3223,12 @@ jit_pair:                       # form, c-stream, environment, register, tail
         je      5f
         unbox_pointer_internal syntax(%rsp)
         mov     %rax, %r11
-        mov     $5, %eax
-        call_fn *%r11, %rbx, %r12, env(%rsp), register(%rsp), tail(%rsp)
+        call_scm *%r11, %rbx, %r12, env(%rsp), register(%rsp), tail(%rsp)
         return
 
 5:      unbox_pointer_internal syntax(%rsp)
         mov     %rax, %r11
-        mov     $2, %eax
-        call_fn *%r11, %rbx, env(%rsp)
+        call_scm *%r11, %rbx, env(%rsp)
         call_fn jit_datum, %rax, %r12, env(%rsp), register(%rsp), tail(%rsp)
         return
 
@@ -3341,8 +3249,7 @@ jit_procedure_call:             # form, c-stream, environment, register, tail
         movl    $0, pushed_args_size(%rsp)
         movq    $0, max_locals(%rsp)
 
-        mov     $1, %eax
-        call_fn length, %rbx
+        call_scm length, %rbx
         mov     %rax, len(%rsp)
         dec     %eax
         mov     %al, arity(%rsp)
@@ -3382,11 +3289,8 @@ jit_procedure_call:             # form, c-stream, environment, register, tail
         incl    argc(%rsp)
         jmp     1b
 
-4:      mov     $1, %eax
-        call_fn cdr, form(%rsp)
-        mov     %rax, %rdi
-        mov     $1, %eax
-        call_fn reverse, %rdi
+4:      call_scm cdr, form(%rsp)
+        call_scm reverse, %rax
         mov     %rax, %rbx
         decl    len(%rsp)
 
@@ -3480,8 +3384,7 @@ jit_procedure_call:             # form, c-stream, environment, register, tail
         mov     arity(%rsp), %r11b
         movl    %r11d, argc(%rsp)
         cdr     %rbx, %rdi
-        mov     $1, %eax
-        call_fn reverse, %rdi
+        call_scm reverse, %rdi
         mov     %rax, %rbx
 
 16:     is_nil_internal %rbx
@@ -3524,12 +3427,10 @@ jit_procedure:                  # form, c-stream, environment, arguments
         call_fn jit_lambda_varargs_index, args(%rsp)
         mov     %eax, varargs_idx(%rsp)
 
-        mov     $1, %eax
-        call_fn length, env(%rsp)
+        call_scm length, env(%rsp)
         mov     %eax, env_size(%rsp)
 
-        mov     $1, %eax
-        call_fn length, flat_args(%rsp)
+        call_scm length, flat_args(%rsp)
         mov     %eax, arity(%rsp)
 
         call_fn fwrite, $jit_prologue, $1, jit_prologue_size, %r12
@@ -3561,11 +3462,8 @@ jit_procedure:                  # form, c-stream, environment, arguments
         incl    local_idx(%rsp)
         jmp     1b
 
-3:      mov     $1, %eax
-        call_fn reverse, flat_args(%rsp)
-        mov     %rax, %rdi
-        mov     $2, %eax
-        call_fn append, %rdi, env(%rsp)
+3:      call_scm reverse, flat_args(%rsp)
+        call_scm append, %rax, env(%rsp)
         call_fn jit_datum, %rbx, %r12, %rax, $RAX, $C_TRUE
 
         shl     $POINTER_SIZE_SHIFT, %eax
@@ -3647,8 +3545,7 @@ jit_lambda_closure_environment: # environment, closure_bitmask
         movq    $0, local_idx(%rsp)
         mov     $NIL, %rax
         mov     %rax, env(%rsp)
-        mov     $1, %eax
-        call_fn reverse, %rdi
+        call_scm reverse, %rdi
         mov     %rax, %rbx
 
 1:      is_nil_internal %rbx
@@ -3659,8 +3556,7 @@ jit_lambda_closure_environment: # environment, closure_bitmask
         jnc     2f
 
         car     %rbx, %rdi
-        mov     $2, %eax
-        call_fn cons, %rdi, env(%rsp)
+        call_scm cons, %rdi, env(%rsp)
         mov     %rax, env(%rsp)
 
 2:      cdr     %rbx, %rbx
@@ -3674,8 +3570,7 @@ jit_lambda_bit_of_closed_over_variable: # symbol, environment, closure_environme
         mov     %rdi, %rbx
         mov     %rsi, env(%rsp)
         mov     %rdx, closure_env(%rsp)
-        mov     $1, %eax
-        call_fn length, env(%rsp)
+        call_scm length, env(%rsp)
         dec     %eax
         mov     %rax, env_size(%rsp)
 
@@ -3743,19 +3638,16 @@ jit_lambda_flatten_arguments:   # arguments
         jne     3f
 
         car     %rbx, %rdi
-        mov     $2, %eax
-        call_fn cons, %rdi, %r12
+        call_scm cons, %rdi, %r12
         mov     %rax, %r12
 
         cdr     %rbx, %rbx
         jmp     1b
 
-2:      mov     $1, %eax
-        call_fn reverse, %r12
+2:      call_scm reverse, %r12
         return
 
-3:      mov     $2, %eax
-        call_fn cons, %rbx, %r12
+3:      call_scm cons, %rbx, %r12
         mov     %rax, %r12
         jmp     2b
 
@@ -3795,8 +3687,7 @@ jit_lambda:                     # form, c-stream, environment, register, tail
 
         cdr     %rbx, %rbx
         cdr     %rbx, %rsi
-        mov     $2, %eax
-        call_fn cons, begin_symbol, %rsi
+        call_scm cons, begin_symbol, %rsi
         mov     %rax, %rbx
 
         call_fn jit_lambda_closure_environment, env(%rsp), closure_env_bitmask(%rsp)
@@ -3816,8 +3707,7 @@ jit_lambda:                     # form, c-stream, environment, register, tail
         mov     jit_rax_to_register_size_table(,%rbx,POINTER_SIZE), %r11
         call_fn fwrite, %rax, $1, %r11, %r12
 
-        mov     $1, %eax
-        call_fn length, env(%rsp)
+        call_scm length, env(%rsp)
         return
 
 1:      tag     TAG_PROCEDURE, lambda(%rsp)
@@ -3871,8 +3761,7 @@ jit_set_with_rax_as_value:      # symbol, c-stream, environment
         mov     %rdi, symbol(%rsp)
         mov     %rsi, %r12
         mov     %rdx, env(%rsp)
-        mov     $1, %eax
-        call_fn length, %rdx
+        call_scm length, %rdx
         mov     %rax, env_size(%rsp)
 
         call_fn jit_index_of_local, env(%rsp), symbol(%rsp)
@@ -3930,8 +3819,7 @@ jit_let_collect_bindings:       # bindings
         je      2f
         car     %rbx
         car     %rax, %rdi
-        mov     $2, %eax
-        call_fn cons, %rdi, %r12
+        call_scm cons, %rdi, %r12
         mov     %rax, %r12
 
         cdr     %rbx
@@ -3954,8 +3842,7 @@ jit_let_bindings:               # bindings, c-stream, environment, bindings-envi
 
         car     %rbx
         car     %rax, %rdi
-        mov     $2, %eax
-        call_fn cons, %rdi, env(%rsp)
+        call_scm cons, %rdi, env(%rsp)
         mov     %rax, env(%rsp)
 
         cmp     $C_TRUE, init_to_void(%rsp)
@@ -3993,8 +3880,7 @@ jit_let:                        # form, c-stream, environment, register, tail
         has_tag TAG_SYMBOL, %rax, store=false
         jne     1f
 
-        mov     $2, %eax
-        call_fn cons, r7rs_let_symbol, %rbx
+        call_scm cons, r7rs_let_symbol, %rbx
         call_fn jit_datum, %rax, %r12, env(%rsp), register(%rsp), tail(%rsp)
         update_max_locals max_locals(%rsp)
         return
@@ -4005,14 +3891,11 @@ jit_let:                        # form, c-stream, environment, register, tail
 
         car     %rbx
         call_fn jit_let_collect_bindings, %rax
-        movq    %rax, %rdi
-        mov     $2, %eax
-        call_fn append, %rdi, env(%rsp)
+        call_scm append, %rax, env(%rsp)
         mov    %rax, env(%rsp)
 
         cdr     %rbx, %rsi
-        mov     $2, %eax
-        call_fn cons, begin_symbol, %rsi
+        call_scm cons, begin_symbol, %rsi
         call_fn jit_datum, %rax, %r12, env(%rsp), register(%rsp), tail(%rsp)
         update_max_locals max_locals(%rsp)
         return  max_locals(%rsp)
@@ -4041,9 +3924,7 @@ jit_letrec:                     # form, c-stream, environment, register, tail
 
         car     %rbx, %rbx
         call_fn jit_let_collect_bindings, %rbx
-        mov     %rax, %rdi
-        mov     $2, %eax
-        call_fn append, %rdi, env(%rsp)
+        call_scm append, %rax, env(%rsp)
         mov    %rax, full_env(%rsp)
 
         call_fn jit_let_bindings %rbx, %r12, env(%rsp), full_env(%rsp), $C_TRUE
@@ -4083,11 +3964,8 @@ jit_letrec:                     # form, c-stream, environment, register, tail
 2:      cdr     %rbx, %rbx
         jmp     1b
 
-3:      mov     $1, %eax
-        call_fn cdr, form(%rsp)
-        mov     %rax, %rsi
-        mov     $2, %eax
-        call_fn cons, begin_symbol, %rsi
+3:      call_scm cdr, form(%rsp)
+        call_scm cons, begin_symbol, %rax
         call_fn jit_datum, %rax, %r12, full_env(%rsp), register(%rsp), tail(%rsp)
         update_max_locals max_locals(%rsp)
         return  max_locals(%rsp)
@@ -4107,8 +3985,7 @@ jit_begin:                     # form, c-stream, environment, register, tail
         is_nil_internal %rbx
         jne     2f
 
-        mov     $2, %eax
-        call_fn cons, $VOID, $NIL
+        call_scm cons, $VOID, $NIL
         mov     %rax, %rbx
 
 2:      is_nil_internal %rbx
@@ -4198,8 +4075,7 @@ jit_call_with_current_continuation_escape_factory: # continuation
 
 jit_rt_symbol_not_defined:      # symbol
         minimal_prologue
-        mov     $2, %eax
-        call_fn internal_error, symbol_not_defined_string, %rdi
+        call_scm internal_error, symbol_not_defined_string, %rdi
         return
 
 jit_rt_lambda_factory:          # lambda, closure-bitmask
@@ -4260,8 +4136,7 @@ jit_rt_lambda_arity_check_error: # arity in al, expected-arity in r10b
         box_int_internal %esi
         mov     %rax, %rsi
 
-        mov     $3, %eax
-        call_fn internal_error, arity_check_error_string, %rdi, %rsi
+        call_scm internal_error, arity_check_error_string, %rdi, %rsi
         return
 
 jit_rt_lambda_collect_varargs:  # arity in rax, varargs-idx in r10
@@ -4288,8 +4163,7 @@ jit_rt_lambda_collect_varargs:  # arity in rax, varargs-idx in r10
         inc     %rcx
         mov     (%rbp,%rcx,POINTER_SIZE), %rdi
 
-        mov     $2, %eax
-        call_fn cons, %rdi, %rbx
+        call_scm cons, %rdi, %rbx
         mov     %rax, %rbx
 
         dec     %r12d
@@ -4357,8 +4231,7 @@ varargs_load_5:
         je      5f
 
         pop     %rdi
-        mov     $2, %eax
-        call_fn cons, %rdi, %rbx
+        call_scm cons, %rdi, %rbx
         mov     %rax, %rbx
 
         inc     %r12d

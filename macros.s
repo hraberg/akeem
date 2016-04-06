@@ -2,6 +2,7 @@
 
         .macro mov_reg from, to
         .ifnb \from
+        .equ current_arity, current_arity + 1
         .ifnc \from, \to
         movq   \from, \to
         .endif
@@ -9,12 +10,25 @@
         .endm
 
         .macro call_fn fn, arg1, arg2, arg3, arg4, arg5, arg6
+        .equ current_arity, 0
         mov_reg \arg6, %r9
         mov_reg \arg5, %r8
         mov_reg \arg4, %rcx
         mov_reg \arg3, %rdx
         mov_reg \arg2, %rsi
         mov_reg \arg1, %rdi
+        call \fn
+        .endm
+
+        .macro call_scm fn, arg1, arg2, arg3, arg4, arg5, arg6
+        .equ current_arity, 0
+        mov_reg \arg6, %r9
+        mov_reg \arg5, %r8
+        mov_reg \arg4, %rcx
+        mov_reg \arg3, %rdx
+        mov_reg \arg2, %rsi
+        mov_reg \arg1, %rdi
+        mov     $current_arity, %eax
         call \fn
         .endm
 
@@ -121,8 +135,7 @@
         has_tag \tag, \value, store=false
         je      .L_\@_1
         mov     $internal_error, %r11
-        mov     $2, %eax
-        call_fn *%r11, \error, \value
+        call_scm *%r11, \error, \value
 .L_\@_1:
         .endm
 
@@ -133,8 +146,7 @@
         je      .L_\@_2
 .L_\@_1:
         mov     $internal_error, %r11
-        mov     $2, %eax
-        call_fn *%r11, \error, \value
+        call_scm *%r11, \error, \value
 .L_\@_2:
         .endm
 
@@ -149,8 +161,7 @@
         je      .L_\@_2
 .L_\@_1:
         mov     $internal_error, %r11
-        mov     $2, %eax
-        call_fn *%r11, \error, \value
+        call_scm *%r11, \error, \value
 .L_\@_2:
         .endm
 
@@ -374,8 +385,7 @@
         unbox_pointer_internal \tmp, \tmp
         mov     symbol_table_values(,\tmp,POINTER_SIZE), \tmp
         unbox_pointer_internal \tmp, \tmp
-        xor     %eax, %eax
-        call_fn *\tmp
+        call_scm *\tmp
         .endm
 
         .macro parameter_default_arg tag, parameter, value, tmp=%r11, backup=%rbx
@@ -419,9 +429,7 @@
         .endif
         call_fn read_token, %rbx
         register_for_gc
-        mov     %rax, %rdi
-        mov     $2, %eax
-        call_fn string_to_number, %rdi, \radix
+        call_scm string_to_number, %rax, \radix
         return
         .endm
 
@@ -478,9 +486,7 @@
         mov     $\id, %r11
         mov     %rax, symbol_table_names(,%r11,POINTER_SIZE)
         .endif
-        mov     %rax, %rdi
-        mov     $1, %eax
-        call_fn string_to_symbol, %rdi
+        call_scm string_to_symbol, %rax
         mov     %rax, \var
         .endm
 
@@ -491,9 +497,7 @@ tmp_string_\@:
         .string "\name"
         .text
         call_fn box_string, $tmp_string_\@
-        mov     %rax, %rdi
-        mov     $1, %eax
-        call_fn string_to_symbol, %rdi
+        call_scm string_to_symbol, %rax
         .ifnb \tag
         tag    \tag, \value, target=%rcx
         .endif
