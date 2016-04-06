@@ -1489,9 +1489,7 @@ main:                # argc, argv
 
         intern_string empty_string, ""
 
-        intern_string welcome_message_string, "Welcome to Akeem Scheme."
-
-        intern_string segfault_error_string, "Segmentation fault:"
+        intern_string signal_error_string, "Signal:"
         intern_string read_error_string, "Unexpected input:"
         intern_string code_space_error_string, "Code space exceeded:"
         intern_string not_a_character_string, "Not a character:"
@@ -1935,22 +1933,24 @@ main:                # argc, argv
         mov     %rax, environment_alist
 
         call_scm gc
+        call_fn signal, $SIGSEGV, $segv_handler
 
         call_scm length, command_line_arguments
         cmp     $1, %eax
-        jg      1f
-
-        call_scm display, welcome_message_string
-        call_scm newline
-
-        call_fn signal, $SIGSEGV, $segv_handler
+        jg      2f
 
         call_fn malloc, $JMP_BUF_SIZE
         perror
         mov     %rax, segv_jmp_buffer
         call_fn setjmp, segv_jmp_buffer
+        test    %eax, %eax
+        jz      2f
 
-1:      call_fn box_string, $init_scm
+        box_int_internal %eax
+        call_scm internal_error, signal_error_string, %rax
+        return  $1
+
+2:      call_fn box_string, $init_scm
         call_scm open_input_string, %rax
         call_scm read_all, %rax
 
@@ -1958,21 +1958,19 @@ main:                # argc, argv
 
 segv_handler:                   # signal
         prologue stacktrace
-
-        parameter_value current_error_port_symbol
-        call_scm display, segfault_error_string, %rax
-        parameter_value current_error_port_symbol
-        call_scm newline, %rax
+        mov     %rdi, %rbx
 
         call_fn malloc, $(POINTER_SIZE * STACKTRACE_SIZE)
         perror
         mov     %rax, stacktrace(%rsp)
         call_fn backtrace, stacktrace(%rsp), $STACKTRACE_SIZE
         call_fn backtrace_symbols_fd, stacktrace(%rsp), $STACKTRACE_SIZE, $STDERR_FILENO
-
         call_fn free, stacktrace(%rsp)
 
-        call_fn longjmp, segv_jmp_buffer, $C_TRUE
+        cmp     $NULL, segv_jmp_buffer
+        je      1f
+        call_fn longjmp, segv_jmp_buffer, %rbx
+1:      call_fn exit, $1
         return
 
 internal_error:                 # message, irritants
