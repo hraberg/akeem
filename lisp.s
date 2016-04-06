@@ -950,15 +950,10 @@ call_with_current_continuation: # proc
 
 values:                         # obj ...
         arity_check $1, jge
-        xor     %r10d, %r10d
+        mov     $1, %r10d
         call_fn jit_rt_lambda_collect_varargs
-        push    %rax
-        cdr     %rax
-        mov     %rax, %rdx
-        pop     %rax
-        push    %rdx
-        car     %rax
-        pop     %rdx
+        mov     %rdi, %rax
+        mov     %rsi, %rdx
         ret
 
 call_with_values:               # producer, consumer
@@ -4280,24 +4275,23 @@ varargs_store_5:
 jit_rt_call_with_current_continuation_escape: # obj ..., continuation in r10
         arity_check $1, jge
         mov     %r10, %rbx
-        xor     %r10d, %r10d
+        mov     $1, %r10d
         call_fn jit_rt_lambda_collect_varargs
         mov     %rbx, %r10
         mov     %rdi, %rbx
+        mov     %rsi, %r12
 
-1:      unbox_pointer_internal %r10
-        lea     header_size(%rax), %rsi
+1:      unbox_pointer_internal %r10, %r11
+        lea     header_size(%r11), %rsi
 
-        mov     header_object_size(%rax), %edx
+        mov     header_object_size(%r11), %edx
         sub     $(CONTINUATION_SAVED_VALUES * POINTER_SIZE), %edx
         mov     execution_stack_top, %rsp
         sub     %rdx, %rsp
-        mov     %rsp, %r11
+        mov     %rsp, %rdi
 
-        car     %rbx
-        push    %rax
-        cdr     %rbx
-        push    %rax
+        push    %rbx
+        push    %r12
 
         mov     $CONTINUATION_SAVED_VALUES, %ecx
 2:      test    %ecx, %ecx
@@ -4307,7 +4301,7 @@ jit_rt_call_with_current_continuation_escape: # obj ..., continuation in r10
         dec     %ecx
         jmp     2b
 
-3:      call_fn memcpy, %r11, %rsi, %rdx
+3:      call_fn memcpy, %rdi, %rsi, %rdx
 
         pop     %rbp
         pop     %r12
