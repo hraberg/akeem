@@ -871,31 +871,17 @@ apply:                          # proc, args
 
 2:      mov     $MAX_REGISTER_ARGS, %eax
         sub     %ebx, %eax
-        js      apply_6
-        lea     apply_6(,%eax,APPLY_JUMP_ALIGNMENT), %rax
+        js      apply_pop
+        lea     apply_pop(,%eax,APPLY_JUMP_ALIGNMENT), %rax
         jmp     *%rax
 
         .align  16
-apply_6:
-        pop      %r9
+apply_pop:
+        .irp reg, r9, r8, rcx, rdx, rsi, rdi, rax
+        pop      %\reg
         .align  APPLY_JUMP_ALIGNMENT
-apply_5:
-        pop      %r8
-        .align  APPLY_JUMP_ALIGNMENT
-apply_4:
-        pop      %rcx
-        .align  APPLY_JUMP_ALIGNMENT
-apply_3:
-        pop      %rdx
-        .align  APPLY_JUMP_ALIGNMENT
-apply_2:
-        pop      %rsi
-        .align  APPLY_JUMP_ALIGNMENT
-apply_1:
-        pop      %rdi
-        .align  APPLY_JUMP_ALIGNMENT
-apply_0:
-        pop     %rax
+        .endr
+
         mov     %eax, %eax
         pop     %r11
         call    *%r11
@@ -4177,46 +4163,18 @@ jit_rt_lambda_collect_varargs:  # arity in rax, varargs-idx in r10
 
         mov     %r14, %r11
         shl     $VARARGS_JUMP_ALIGNMENT_SHIFT, %r11
-        add     $varargs_load_0, %r11
+        add     $varargs_load, %r11
         jmp     *%r11
 
-        .align  16
-varargs_load_0:
+        .align  VARARGS_JUMP_ALIGNMENT
+varargs_load:
+        .irp    reg, rdi, rsi, rdx, rcx, r8, r9
         test    %r12d, %r12d
         jz      3f
-        push    %rdi
+        push    %\reg
         dec     %r12d
         .align  VARARGS_JUMP_ALIGNMENT
-varargs_load_1:
-        test    %r12d, %r12d
-        jz      3f
-        push    %rsi
-        dec     %r12d
-        .align  VARARGS_JUMP_ALIGNMENT
-varargs_load_2:
-        test    %r12d, %r12d
-        jz      3f
-        push    %rdx
-        dec     %r12d
-        .align  VARARGS_JUMP_ALIGNMENT
-varargs_load_3:
-        test    %r12d, %r12d
-        jz      3f
-        push    %rcx
-        dec     %r12d
-        .align  VARARGS_JUMP_ALIGNMENT
-varargs_load_4:
-        test    %r12d, %r12d
-        jz      3f
-        push    %r8
-        dec     %r12d
-        .align  VARARGS_JUMP_ALIGNMENT
-varargs_load_5:
-        test    %r12d, %r12d
-        jz      3f
-        push    %r9
-        dec     %r12d
-        .align  VARARGS_JUMP_ALIGNMENT
+        .endr
 
 3:      mov     %r14, %r12
 
@@ -4238,34 +4196,16 @@ varargs_load_5:
 
         mov     %r14, %r11
         shl     $VARARGS_JUMP_ALIGNMENT_SHIFT, %r11
-        add     $varargs_store_0, %r11
+        add     $varargs_store, %r11
         jmp     *%r11
 
-        .align  16
-varargs_store_0:
-        mov     %rbx, %rdi
+        .align  VARARGS_JUMP_ALIGNMENT
+varargs_store:
+        .irp    reg, rdi, rsi, rdx, rcx, r8, r9
+        mov     %rbx, %\reg
         jmp     6f
         .align  VARARGS_JUMP_ALIGNMENT
-varargs_store_1:
-        mov     %rbx, %rsi
-        jmp     6f
-        .align  VARARGS_JUMP_ALIGNMENT
-varargs_store_2:
-        mov     %rbx, %rdx
-        jmp     6f
-        .align  VARARGS_JUMP_ALIGNMENT
-varargs_store_3:
-        mov     %rbx, %rcx
-        jmp     6f
-        .align  VARARGS_JUMP_ALIGNMENT
-varargs_store_4:
-        mov     %rbx, %r8
-        jmp     6f
-        .align  VARARGS_JUMP_ALIGNMENT
-varargs_store_5:
-        mov     %rbx, %r9
-        jmp     6f
-        .align  VARARGS_JUMP_ALIGNMENT
+        .endr
 
 6:      .irp reg, r14, r13, r12, rbx
         pop    %\reg
