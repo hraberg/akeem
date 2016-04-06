@@ -198,6 +198,37 @@ register according to the ABI), and normally
 ignored. `call-with-values` will recreate the full argument list by
 consing `rax` to `rdx` and applying the result to its consumer.
 
+### Use of Registers and Stack
+
+See
+[Stack frame layout on x86-64 ](http://eli.thegreenplace.net/2011/09/06/stack-frame-layout-on-x86-64/)
+for a better explanation. Akeem uses two different styles.
+
+The handwritten parts of Akeem itself refers to local variables
+allocated above of `rsp` and doesn't use `rbp` to establish a
+frame. Only in some cases it will push and pop the actual stack, and
+in then there will be no local variables in use, as there's no stable
+reference point to them. The code uses `rbx` and `r12` as callee saved
+registers. Some simpler functions are written without or with a
+minimal prologue or epilogue that doesn't use or save `rbx` and `r12`.
+
+The generated code does establish a frame base pointer in `rbp` and
+refers to local variables relative below of `rbp`. `rsp` initially
+sits below the local variables and is free to move during
+execution. The generated code must use the stack to load the registers
+for calls properly without clobbering them. There's no register
+allocation implemented, all locals live on the stack.
+
+When calling a function, the non-literal arguments are evaluated
+first, and pushed onto the stack, after which the literal arguments
+are loaded directly into their argument registers and the results on
+the stack are popped into the right place. Arguments above 6 always go
+on the stack as per the ABI.
+
+For floating point operations, the `xmm0` to `xmm2` registers are used
+for calculations, but all values are passed using regular registers
+between functions.
+
 
 ## References
 
