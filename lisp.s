@@ -3341,8 +3341,8 @@ jit_procedure:                  # form, c-stream, environment, arguments
         jne     4f
 
         mov     arity(%rsp), %eax
-        call_fn jit_literal, %rax, %r12, $NIL, $R11, $C_FALSE
-        call_fn fwrite, $jit_arity_check_r11b_with_al, $1, jit_arity_check_r11b_with_al_size, %r12
+        call_fn jit_literal, %rax, %r12, $NIL, $R10, $C_FALSE
+        call_fn fwrite, $jit_arity_check_r10b_with_al, $1, jit_arity_check_r10b_with_al_size, %r12
 
 1:      mov     local_idx(%rsp), %ecx
         cmp     %ecx, arity(%rsp)
@@ -3390,8 +3390,8 @@ jit_procedure:                  # form, c-stream, environment, arguments
 
 4:      mov     arity(%rsp), %eax
         dec     %eax
-        call_fn jit_literal, %rax, %r12, $NIL, $R11, $C_FALSE
-        call_fn fwrite, $jit_varargs_arity_check_r11b_with_al, $1, jit_varargs_arity_check_r11b_with_al_size, %r12
+        call_fn jit_literal, %rax, %r12, $NIL, $R10, $C_FALSE
+        call_fn fwrite, $jit_varargs_arity_check_r10b_with_al, $1, jit_varargs_arity_check_r10b_with_al_size, %r12
 
         mov     varargs_idx(%rsp), %eax
         call_fn jit_literal, %rax, %r12, $NIL, $R10, $C_FALSE
@@ -3621,10 +3621,10 @@ jit_lambda_varargs_index:       # arguments
 
 3:      return  %r12
 
-jit_lambda_arity_check_error:   # arity in al, expected-arity in r11b
+jit_lambda_arity_check_error:   # arity in al, expected-arity in r10b
         minimal_prologue
         mov     %rax, %rdi
-        mov     %r11d, %esi
+        mov     %r10d, %esi
 
         box_int_internal %edi
         mov     %rax, %rdi
@@ -4155,10 +4155,10 @@ jit_call_with_current_continuation_execute_dynamic_extent: # dynamic-extent
 2:      return
 
 jit_call_with_current_continuation_escape: # return ..., continuation in %r10
-        movq    %r10, %rbx
+        mov     %r10, %rbx
         xor     %r10d, %r10d
         call_fn jit_lambda_collect_varargs
-        movq    %rbx, %r10
+        mov     %rbx, %r10
         mov     %rdi, %rbx
 
 1:      unbox_pointer_internal %r10
@@ -4430,24 +4430,24 @@ jit_epilogue_size:
         .quad   . - jit_epilogue
 
         .align  16
-jit_arity_check_r11b_with_al:
-        cmp     %r11b, %al
+jit_arity_check_r10b_with_al:
+        cmp     %r10b, %al
         je      1f
-        mov     $jit_lambda_arity_check_error, %r10
-        call   *%r10
+        mov     $jit_lambda_arity_check_error, %r11
+        call   *%r11
 1:
-jit_arity_check_r11b_with_al_size:
-        .quad   (. - jit_arity_check_r11b_with_al)
+jit_arity_check_r10b_with_al_size:
+        .quad   (. - jit_arity_check_r10b_with_al)
 
         .align  16
-jit_varargs_arity_check_r11b_with_al:
-        cmp     %r11b, %al
+jit_varargs_arity_check_r10b_with_al:
+        cmp     %r10b, %al
         jge     1f
-        mov     $jit_lambda_arity_check_error, %r10
-        call   *%r10
+        mov     $jit_lambda_arity_check_error, %r11
+        call   *%r11
 1:
-jit_varargs_arity_check_r11b_with_al_size:
-        .quad   (. - jit_varargs_arity_check_r11b_with_al)
+jit_varargs_arity_check_r10b_with_al_size:
+        .quad   (. - jit_varargs_arity_check_r10b_with_al)
 
         .align  16
 jit_clear_multiple_returns_in_rdx:
