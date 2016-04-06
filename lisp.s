@@ -3256,11 +3256,11 @@ jit_procedure_call:             # form, c-stream, environment, register, tail
 
         return  max_locals(%rsp)
 
-13:     mov     register(%rsp), %rbx
+13:     call_fn fwrite, $jit_clear_multiple_returns_in_rdx, $1, jit_clear_multiple_returns_in_rdx_size, %r12
+        mov     register(%rsp), %rbx
         mov     jit_rax_to_register_table(,%rbx,POINTER_SIZE), %rax
         mov     jit_rax_to_register_size_table(,%rbx,POINTER_SIZE), %r11
         call_fn fwrite, %rax, $1, %r11, %r12
-
         return  max_locals(%rsp)
 
 14:     unbox_pointer_internal operand(%rsp), %rbx
@@ -4444,6 +4444,12 @@ jit_varargs_arity_check_r11b_with_al:
 1:
 jit_varargs_arity_check_r11b_with_al_size:
         .quad   (. - jit_varargs_arity_check_r11b_with_al)
+
+        .align  16
+jit_clear_multiple_returns_in_rdx:
+        xor     %edx, %edx
+jit_clear_multiple_returns_in_rdx_size:
+        .quad   . - jit_clear_multiple_returns_in_rdx
 
         .align  16
 jit_return:
