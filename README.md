@@ -192,9 +192,10 @@ between calls to pass extra information about how to deal with the
 actual arguments without clobbering them.
 
 When returning multiple values from a continuation, the first value is
-placed in `rax` and the tail is placed in `rdx`, and normally
+placed in `rax` and the tail is placed in `rdx` (the second return
+register according to the ABI), and normally
 ignored. `call-with-values` will recreate the full argument list by
-consing `rax` to `rdx` and passing the result to its consumer.
+consing `rax` to `rdx` and applying the result to its consumer.
 
 
 ## References
