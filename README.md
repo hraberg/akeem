@@ -50,9 +50,9 @@ trying again.
 
 * Subset of R7RS "small" procedures.
 * JIT for `if`, `lambda`, `set!`, `let`, `letrec` and `begin`
-* Syntax for `and`, `or`, `cond`, `case`, `when`, `unless`, `let*`,
-  "named `let`", `do`, `delay`, `define`, `parameterize`, `guard`,
-  `case-lambda` and `define-record-type`.
+* Syntax for `and`, `or`, `cond`, `case`, `when`, `unless`,
+  `cond-expand`, `let*`, "named `let`", `do`, `delay`, `define`,
+  `parameterize`, `guard`, `case-lambda` and `define-record-type`.
 * Basic support for `define-syntax` / `syntax-rules` and `quasiquote`.
 * Basic support for R7RS Exceptions and `dynamic-wind`.
 * NaN-boxed 32-bit integers and 64-bit doubles
