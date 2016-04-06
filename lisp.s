@@ -984,12 +984,7 @@ raise:                          # error
         unbox_pointer_internal %rax, %r11
         call_scm *%r11, %rbx
 
-1:      cmp     $NULL, error_jmp_buffer
-        je      2f
-        movq    %rbx, %xmm0
-        call_fn longjmp, error_jmp_buffer, $C_TRUE
-
-2:      call_fn exit, $1
+1:      call_fn exit, $1
         return
 
         ## 6.12. Environments and evaluation
@@ -1945,15 +1940,15 @@ main:                # argc, argv
         cmp     $1, %eax
         jg      1f
 
-        call_fn signal, $SIGSEGV, $segv_handler
-
         call_scm display, welcome_message_string
         call_scm newline
 
+        call_fn signal, $SIGSEGV, $segv_handler
+
         call_fn malloc, $JMP_BUF_SIZE
         perror
-        mov     %rax, error_jmp_buffer
-        call_fn setjmp, error_jmp_buffer
+        mov     %rax, segv_jmp_buffer
+        call_fn setjmp, segv_jmp_buffer
 
 1:      call_fn box_string, $init_scm
         call_scm open_input_string, %rax
@@ -1964,8 +1959,10 @@ main:                # argc, argv
 segv_handler:                   # signal
         prologue stacktrace
 
-        call_scm display, segfault_error_string
-        call_scm newline
+        parameter_value current_error_port_symbol
+        call_scm display, segfault_error_string, %rax
+        parameter_value current_error_port_symbol
+        call_scm newline, %rax
 
         call_fn malloc, $(POINTER_SIZE * STACKTRACE_SIZE)
         perror
@@ -1975,7 +1972,7 @@ segv_handler:                   # signal
 
         call_fn free, stacktrace(%rsp)
 
-        call_fn longjmp, error_jmp_buffer, $C_TRUE
+        call_fn longjmp, segv_jmp_buffer, $C_TRUE
         return
 
 internal_error:                 # message, irritants
@@ -1986,18 +1983,6 @@ internal_error:                 # message, irritants
         cmp     $NULL, %r11
         je      1f
         call   *%r11
-
-        cmp     $NULL, error_jmp_buffer
-        je      1f
-        movq    %rbx, %xmm0
-        call_fn longjmp, error_jmp_buffer, $C_TRUE
-
-1:      mov     %rdi, %rbx
-        call_scm current_error_port
-        mov     %rax, %r12
-        call_scm display, %rbx, %r12
-        call_scm newline, %r12
-        call_fn exit, $1
         return
 
 box_string_array_as_list:       # c-string-array
@@ -4396,7 +4381,7 @@ gc_mark_stack:
         .zero   stack_size
 constant_pool:
         .zero   stack_size
-error_jmp_buffer:
+segv_jmp_buffer:
         .quad   0
 
         .align  16
