@@ -999,12 +999,6 @@ is_output_port:                 # obj
         return
 1:      return $FALSE
 
-with_input_from_file:           # filename, thunk
-        with_file_io_template input, stdin
-
-with_output_to_file:            # filename, thunk
-        with_file_io_template output, stdout
-
 open_input_file:                # filename
         minimal_prologue
         assert_tag TAG_STRING, %rdi, not_a_string_string
@@ -1769,8 +1763,6 @@ main:                # argc, argv
         define "current-input-port", $current_input_port
         define "current-output-port", $current_output_port
         define "current-error-port", $current_error_port
-        define "with-input-from-file", $with_input_from_file
-        define "with-output-to-file", $with_output_to_file
         define "open-input-file", $open_input_file
         define "open-output-file", $open_output_file
         define "close-port", $close_port
@@ -2077,6 +2069,7 @@ unbox:                          # value
         ## Runtime Internals
 
         ## Stack ADT
+
 init_pointer_stack:             # a-stack, c-size
         prologue
         mov     %rdi, %rbx
@@ -2301,6 +2294,7 @@ gc:
         return
 
         ## Printer
+
 vector_to_string:               # vector
         prologue str, stream, size
         unbox_pointer_internal %rdi, %rbx
@@ -4113,7 +4107,7 @@ jit_begin:                     # form, c-stream, environment, register, tail
 
 5:      return  max_locals(%rsp)
 
-        ## 5.3. Syntax definitions
+        ## 5.4. Syntax definitions
 
 jit_define_syntax:              # form, c-stream, environment, register, tail
         prologue env, max_locals, syntax_address
@@ -4139,7 +4133,7 @@ jit_define_syntax:              # form, c-stream, environment, register, tail
         call_fn fwrite, $jit_void_to_rax, $1, jit_void_to_rax_size, %r12
         return  max_locals(%rsp)
 
-        ## 6.4. Control features
+        ## 6.10. Control features
 
 jit_call_with_current_continuation_execute_dynamic_extent: # dynamic-extent
         prologue

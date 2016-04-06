@@ -322,24 +322,6 @@
         return
         .endm
 
-        .macro with_file_io_template name, stream
-        prologue previous_port
-        assert_tag TAG_STRING, %rdi, not_a_string_string
-        assert_tag TAG_PROCEDURE, %rsi, not_a_procedure_string
-        unbox_pointer_internal %rsi, %rbx
-        mov     \stream, %rax
-        mov     %rax, previous_port(%rsp)
-        call_fn open_\name\()_file, %rdi
-        mov     %rax, \stream
-        xor     %eax, %eax
-        call_fn *%rbx
-        mov     %rax, %rbx
-        call_fn close_\name\()_port, \stream
-        mov     previous_port(%rsp), %rax
-        mov     %rax, \stream
-        return  %rbx
-        .endm
-
         .macro open_input_buffer_template size_adjust, tag, error
         prologue empty_stream, empty_stream_size
         assert_tag \tag, %rdi, \error
