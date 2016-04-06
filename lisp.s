@@ -886,6 +886,24 @@ call_with_current_continuation: # proc
         call_fn *%rbx, %r11
         return
 
+values:                         # obj ...
+        xor     %r10d, %r10d
+        call_fn jit_rt_lambda_collect_varargs
+        is_nil_internal %rdi, store=false
+        je      2f
+        push    %rax
+        cdr     %rax
+        mov     %rax, %rdx
+        pop     %rax
+        push    %rdx
+        car     %rax
+        pop     %rdx
+        ret
+
+2:      mov     $VOID, %rax
+        mov     $VOID, %rdx
+        ret
+
 call_with_values:               # producer, consumer
         prologue
         assert_tag TAG_PROCEDURE, %rdi, not_a_procedure_string
@@ -1748,6 +1766,7 @@ main:                # argc, argv
         define "procedure?", $is_procedure
         define "apply", $apply
         define "call-with-current-continuation", $call_with_current_continuation
+        define "values", $values
         define "call-with-values", $call_with_values
 
         define "raise", $raise
@@ -4186,20 +4205,28 @@ jit_rt_call_with_current_continuation_escape: # obj ..., continuation in r10
         sub     %rdx, %rsp
         mov     %rsp, %r11
 
-        car     %rbx
+        is_nil_internal %rbx, tmp=%rax, store=false
+        jne     2f
+
+        mov     $VOID, %rax
+        push    %rax
+        push    %rax
+        jmp     3f
+
+2:      car     %rbx
         push    %rax
         cdr     %rbx
         push    %rax
 
-        mov     $CONTINUATION_SAVED_VALUES, %ecx
-2:      test    %ecx, %ecx
-        jz      3f
+3:      mov     $CONTINUATION_SAVED_VALUES, %ecx
+4:      test    %ecx, %ecx
+        jz      5f
         pushq   (%rsi)
         add     $POINTER_SIZE, %rsi
         dec     %ecx
-        jmp     2b
+        jmp     4b
 
-3:      call_fn memcpy, %r11, %rsi, %rdx
+5:      call_fn memcpy, %r11, %rsi, %rdx
 
         pop     %rbp
         pop     %r12

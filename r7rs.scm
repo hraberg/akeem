@@ -998,10 +998,6 @@
   (done? promise-done? set-promise-done!)
   (value promise-value set-promise-value!))
 
-(define (values . things)
-  (call-with-current-continuation
-   (lambda (cont) (apply cont things))))
-
 (define dynamic-extent-stack (make-parameter '()))
 
 (define (dynamic-wind before thunk after)
