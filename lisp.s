@@ -882,6 +882,25 @@ call_with_current_continuation: # proc
         call_fn *%rbx, %r11
         return
 
+call_with_values:               # producer, consumer
+        prologue
+        assert_tag TAG_PROCEDURE, %rdi, not_a_procedure_string
+        assert_tag TAG_PROCEDURE, %rsi, not_a_procedure_string
+
+        unbox_pointer_internal %rdi, %rbx
+        mov     %rsi, %r12
+
+        xor     %eax, %eax
+        xor     %edx, %edx
+        call_fn *%rbx
+        mov     %rax, %r11
+        has_tag TAG_PAIR, %rdx, store=false
+        je      1f
+        mov     $NIL, %rdx
+1:      call_fn cons, %r11, %rdx
+        call_fn apply, %r12, %rax
+        return
+
         ## 6.11. Exceptions
 
 raise:                          # error
@@ -1371,7 +1390,6 @@ main:                # argc, argv
         intern_symbol void_symbol, "void"
         intern_symbol eof_symbol, "eof"
         intern_symbol error_symbol, "error"
-        intern_symbol values_symbol, "values"
         intern_symbol exception_handler_stack_symbol, "exception-handler-stack"
         intern_symbol dynamic_extent_stack_symbol, "dynamic-extent-stack"
 
@@ -1732,6 +1750,7 @@ main:                # argc, argv
         define "procedure?", $is_procedure
         define "apply", $apply
         define "call-with-current-continuation", $call_with_current_continuation
+        define "call-with-values", $call_with_values
 
         define "raise", $raise
 
@@ -4132,17 +4151,11 @@ jit_call_with_current_continuation_execute_dynamic_extent: # dynamic-extent
 2:      return
 
 jit_call_with_current_continuation_escape: # return ..., continuation in %r10
-        cmp     $1, %al
-        je      1f
-
-        mov     values_symbol, %r11
-        unbox_pointer_internal %r11, %r11
-        mov     symbol_table_values(,%r11,POINTER_SIZE), %r11
-        unbox_pointer_internal %r11, %r11
-        movq    %r10, %xmm15
-        call_fn *%r11
-        mov     %rax, %rdi
-        movq    %xmm15, %r10
+        movq    %r10, %rbx
+        xor     %r10d, %r10d
+        call_fn jit_lambda_collect_varargs
+        movq    %rbx, %r10
+        mov     %rdi, %rbx
 
 1:      unbox_pointer_internal %r10
         lea     header_size(%rax), %rsi
@@ -4153,7 +4166,10 @@ jit_call_with_current_continuation_escape: # return ..., continuation in %r10
         sub     %rdx, %rsp
         mov     %rsp, %r11
 
-        push    %rdi
+        car     %rbx
+        push    %rax
+        cdr     %rbx
+        push    %rax
 
         mov     $CONTINUATION_SAVED_VALUES, %ecx
 2:      test    %ecx, %ecx
@@ -4172,6 +4188,7 @@ jit_call_with_current_continuation_escape: # return ..., continuation in %r10
         pop     %rdi
         call_fn jit_call_with_current_continuation_execute_dynamic_extent, %rdi
 
+        pop     %rdx
         pop     %rax
         ret
 

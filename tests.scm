@@ -2,6 +2,20 @@
   (write x)
   (newline))
 
+(define-syntax assert-values
+  (syntax-rules ()
+    ((assert-values expression)
+     (let ((result (call-with-values
+                       (lambda ()
+                         expression)
+                     vector)))
+       (do ((idx 0 (+ 1 idx)))
+           ((= idx (vector-length result)))
+         (display (vector-ref result idx))
+         (when (< idx (- (vector-length result) 1))
+           (display " "))))
+     (newline))))
+
 (define (spec x)
   (display x)
   (newline))
@@ -548,15 +562,15 @@
 (assert (remainder -13 -4))
 (assert (remainder -13 -4.0))
 
-(assert (floor/ 5 2))
-(assert (floor/ -5 2))
-(assert (floor/ 5 -2))
-(assert (floor/ -5 -2))
-(assert (truncate/ 5 2))
-(assert (truncate/ -5 2))
-(assert (truncate/ 5 -2))
-(assert (truncate/ -5 -2))
-(assert (truncate/ -5.0 -2))
+(assert-values (floor/ 5 2))
+(assert-values (floor/ -5 2))
+(assert-values (floor/ 5 -2))
+(assert-values (floor/ -5 -2))
+(assert-values (truncate/ 5 2))
+(assert-values (truncate/ -5 2))
+(assert-values (truncate/ 5 -2))
+(assert-values (truncate/ -5 -2))
+(assert-values (truncate/ -5.0 -2))
 
 (assert (gcd 32 -36))
 (assert (gcd))
@@ -587,8 +601,8 @@
 (assert (square 42))
 (assert (square 2.0))
 
-(assert (exact-integer-sqrt 4))
-(assert (exact-integer-sqrt 5))
+(assert-values (exact-integer-sqrt 4))
+(assert-values (exact-integer-sqrt 5))
 
 (spec ";;; 6.2.7. Numerical input and output")
 

@@ -411,8 +411,8 @@
   (let* ((nq (floor (/ n1 n2)))
          (nr (- n1 (* nq n2))))
     (if (and (exact? n1) (exact? n2))
-        (cons (exact nq) (exact nr))
-        (cons (inexact nq) (inexact nr)))))
+        (values (exact nq) (exact nr))
+        (values (inexact nq) (inexact nr)))))
 
 (define (floor-quotient n1 n2)
   (floor (quotient n1 n2)))
@@ -423,8 +423,8 @@
   (let* ((nq (truncate (/ n1 n2)))
          (nr (- n1 (* nq n2))))
     (if (and (exact? n1) (exact? n2))
-        (cons (exact nq) (exact nr))
-        (cons (inexact nq) (inexact nr)))))
+        (values (exact nq) (exact nr))
+        (values (inexact nq) (inexact nr)))))
 
 (define truncate-quotient quotient)
 
@@ -460,7 +460,7 @@
 (define (exact-integer-sqrt k)
   (let* ((s (exact (sqrt k)))
          (r (exact (- k (* s s)))))
-    (cons s r)))
+    (values s r)))
 
 ;;; 6.3. Booleans
 
@@ -999,13 +999,8 @@
   (value promise-value set-promise-value!))
 
 (define (values . things)
-  (lambda (cont) (apply cont things)))
-
-(define (call-with-values producer consumer)
-  (let ((producer (producer)))
-    ((if (procedure? producer)
-         producer
-         (values producer)) consumer)))
+  (call-with-current-continuation
+   (lambda (cont) (apply cont things))))
 
 (define dynamic-extent-stack (make-parameter '()))
 
