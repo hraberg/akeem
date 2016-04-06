@@ -2990,12 +2990,6 @@ jit_index_of_local:             # environment, symbol
 2:      mov     $-1, %rcx
 3:      return  %rcx
 
-jit_symbol_not_defined:         # symbol
-        minimal_prologue
-        mov     $2, %eax
-        call_fn internal_error, symbol_not_defined_string, %rdi
-        return
-
 jit_symbol:                     # symbol, c-stream, environment, register, tail
         prologue env, symbol_address, symbol, local, register
         mov     %rdi, symbol(%rsp)
@@ -3389,7 +3383,7 @@ jit_procedure:                  # form, c-stream, environment, arguments
 
         mov     varargs_idx(%rsp), %eax
         call_fn jit_literal, %rax, %r12, $NIL, $R10, $C_FALSE
-        call_fn jit_literal, $jit_lambda_collect_varargs, %r12, $NIL, $R11, $C_FALSE
+        call_fn jit_literal, $jit_rt_lambda_collect_varargs, %r12, $NIL, $R11, $C_FALSE
         call_fn fwrite, $jit_call_r11, $1, jit_call_r11_size, %r12
         jmp     1b
 
@@ -3434,54 +3428,6 @@ jit_lambda_factory_code:        # lambda, c-stream, closure-bitmask
         jmp     1b
 
 2:      call_fn fwrite, $jit_jump_r10, $1, jit_jump_r10_size, %r12
-        return
-
-jit_lambda_factory:             # lambda, closure-bitmask
-        prologue code, size, closure_bitmask
-        mov     %rdi, %rbx
-        mov     %rsi, closure_bitmask(%rsp)
-        lea     code(%rsp), %rdi
-        lea     size(%rsp), %rsi
-        call_fn open_memstream, %rdi, %rsi
-        perror
-        mov     %rax, %r12
-
-        call_fn jit_lambda_factory_code, %rbx, %r12, closure_bitmask(%rsp)
-        call_fn fclose, %r12
-        perror  je
-
-        mov     size(%rsp), %r11d
-        call_fn jit_allocate_code, code(%rsp), %r11
-        mov     %rax, %rbx
-        call_fn free, code(%rsp)
-        tag     TAG_PROCEDURE, %rbx
-        return
-
-jit_lambda_patch_factory:       # lambda-factory, closure-bitmask
-        prologue closure_bitmask, lambda, patch_code, patch_size
-        unbox_pointer_internal %rdi, %rbx
-        mov     %rsi, closure_bitmask(%rsp)
-
-        mov     %rbx, %rax
-        add     jit_literal_to_rax_size, %rax
-        mov     (%rax), %rax
-        mov     %rax, lambda(%rsp)
-
-        lea     patch_code(%rsp), %rdi
-        lea     patch_size(%rsp), %rsi
-        call_fn open_memstream, %rdi, %rsi
-        perror
-        mov     %rax, %r12
-
-        call_fn jit_lambda_factory_code, lambda(%rsp), %r12, closure_bitmask(%rsp)
-        call_fn fclose, %r12
-        perror  je
-
-        mov     patch_size(%rsp), %r11d
-        call_fn memcpy, %rbx, patch_code(%rsp), %r11
-        perror
-        call_fn free, patch_code(%rsp)
-        tag     TAG_PROCEDURE, %rbx
         return
 
 jit_lambda_closure_environment: # environment, closure_bitmask
@@ -3615,158 +3561,6 @@ jit_lambda_varargs_index:       # arguments
 
 3:      return  %r12
 
-jit_lambda_arity_check_error:   # arity in al, expected-arity in r10b
-        minimal_prologue
-        mov     %rax, %rdi
-        mov     %r10d, %esi
-
-        box_int_internal %edi
-        mov     %rax, %rdi
-        box_int_internal %esi
-        mov     %rax, %rsi
-
-        mov     $3, %eax
-        call_fn internal_error, arity_check_error_string, %rdi, %rsi
-        return
-
-jit_lambda_collect_varargs:     # arity in rax, varargs-idx in r10
-        .irp reg, rbx, r12, r13, r14
-        push    %\reg
-        .endr
-
-        mov     %rax, %r13
-        mov     %r10, %r14
-
-        .irp reg, rdi, rsi, rdx, rcx, r8, r9
-        push    %\reg
-        .endr
-
-        mov     $NIL, %rbx
-        mov     %r13, %r12
-        sub     $MAX_REGISTER_ARGS, %r12
-        mov     $NIL, %rbx
-
-1:      cmp     $0, %r12d
-        jle     2f
-
-        mov     %r12, %rcx
-        inc     %rcx
-        mov     (%rbp,%rcx,POINTER_SIZE), %rax
-
-        call_fn cons, %rax, %rbx
-        mov     %rax, %rbx
-
-        dec     %r12d
-        jmp     1b
-
-2:      .irp reg, r9, r8, rcx, rdx, rsi, rdi
-        pop    %\reg
-        .endr
-
-        .irp reg, rdi, rsi, rdx, rcx, r8, r9
-        push    %\reg
-        .endr
-
-        mov     %r13, %r12
-        sub     %r14, %r12
-
-        mov     %r14, %r11
-        shl     $VARARGS_JUMP_ALIGNMENT_SHIFT, %r11
-        add     $varargs_load_0, %r11
-        jmp     *%r11
-
-        .align  16
-varargs_load_0:
-        test    %r12d, %r12d
-        jz      3f
-        push    %rdi
-        dec     %r12d
-        .align  VARARGS_JUMP_ALIGNMENT
-varargs_load_1:
-        test    %r12d, %r12d
-        jz      3f
-        push    %rsi
-        dec     %r12d
-        .align  VARARGS_JUMP_ALIGNMENT
-varargs_load_2:
-        test    %r12d, %r12d
-        jz      3f
-        push    %rdx
-        dec     %r12d
-        .align  VARARGS_JUMP_ALIGNMENT
-varargs_load_3:
-        test    %r12d, %r12d
-        jz      3f
-        push    %rcx
-        dec     %r12d
-        .align  VARARGS_JUMP_ALIGNMENT
-varargs_load_4:
-        test    %r12d, %r12d
-        jz      3f
-        push    %r8
-        dec     %r12d
-        .align  VARARGS_JUMP_ALIGNMENT
-varargs_load_5:
-        test    %r12d, %r12d
-        jz      3f
-        push    %r9
-        dec     %r12d
-        .align  VARARGS_JUMP_ALIGNMENT
-
-3:      mov     %r14, %r12
-
-4:      cmp     $MAX_REGISTER_ARGS, %r12
-        je      5f
-        cmp     %r13, %r12
-        je      5f
-
-        pop     %rax
-        call_fn cons, %rax, %rbx
-        mov     %rax, %rbx
-
-        inc     %r12d
-        jmp     4b
-
-5:      .irp reg, r9, r8, rcx, rdx, rsi, rdi
-        pop    %\reg
-        .endr
-
-        mov     %r14, %r11
-        shl     $VARARGS_JUMP_ALIGNMENT_SHIFT, %r11
-        add     $varargs_store_0, %r11
-        jmp     *%r11
-
-        .align  16
-varargs_store_0:
-        mov     %rbx, %rdi
-        jmp     6f
-        .align  VARARGS_JUMP_ALIGNMENT
-varargs_store_1:
-        mov     %rbx, %rsi
-        jmp     6f
-        .align  VARARGS_JUMP_ALIGNMENT
-varargs_store_2:
-        mov     %rbx, %rdx
-        jmp     6f
-        .align  VARARGS_JUMP_ALIGNMENT
-varargs_store_3:
-        mov     %rbx, %rcx
-        jmp     6f
-        .align  VARARGS_JUMP_ALIGNMENT
-varargs_store_4:
-        mov     %rbx, %r8
-        jmp     6f
-        .align  VARARGS_JUMP_ALIGNMENT
-varargs_store_5:
-        mov     %rbx, %r9
-        jmp     6f
-        .align  VARARGS_JUMP_ALIGNMENT
-
-6:      .irp reg, r14, r13, r12, rbx
-        pop    %\reg
-        .endr
-        ret
-
 jit_lambda:                     # form, c-stream, environment, register, tail
         prologue env, args, form, lambda, register, closure_env_bitmask
         mov     %rdi, %rbx
@@ -3797,7 +3591,7 @@ jit_lambda:                     # form, c-stream, environment, register, tail
         call_fn jit_literal, lambda(%rsp), %r12, $NIL, $RDI, $C_FALSE
         call_fn jit_literal, closure_env_bitmask(%rsp), %r12, $NIL, $RSI, $C_FALSE
 
-        call_fn jit_literal, $jit_lambda_factory, %r12, $NIL, $RAX, $C_FALSE
+        call_fn jit_literal, $jit_rt_lambda_factory, %r12, $NIL, $RAX, $C_FALSE
         call_fn fwrite, $jit_call_rax, $1, jit_call_rax_size, %r12
         mov     register(%rsp), %rbx
         mov     jit_rax_to_register_table(,%rbx,POINTER_SIZE), %rax
@@ -4055,9 +3849,7 @@ jit_letrec:                     # form, c-stream, environment, register, tail
         jz      2f
 
         call_fn jit_literal, %rax, %r12, $NIL, $RSI, $C_FALSE
-
-        mov     $jit_lambda_patch_factory, %rax
-        call_fn jit_literal, %rax, %r12, $NIL, $RAX, $C_FALSE
+        call_fn jit_literal, $jit_rt_lambda_patch_factory, %r12, $NIL, $RAX, $C_FALSE
         call_fn fwrite, $jit_call_rax, $1, jit_call_rax_size, %r12
 
 2:      cdr     %rbx, %rbx
@@ -4148,10 +3940,240 @@ jit_call_with_current_continuation_execute_dynamic_extent: # dynamic-extent
         jmp     1b
 2:      return
 
-jit_call_with_current_continuation_escape: # obj ..., continuation in r10
+jit_call_with_current_continuation_escape_factory: # continuation
+        prologue  code, size
+        mov     %rdi, %r12
+        lea     code(%rsp), %rdi
+        lea     size(%rsp), %rsi
+        call_fn open_memstream, %rdi, %rsi
+        perror
+        mov     %rax, %rbx
+
+        call_fn jit_literal, %r12, %rbx, $NIL, $R10, $C_FALSE
+        call_fn jit_literal, $jit_rt_call_with_current_continuation_escape, %rbx, $NIL, $R11, $C_FALSE
+        call_fn fwrite, $jit_jump_r11, $1, jit_jump_r11_size, %rbx
+
+        call_fn fclose, %rbx
+        perror  je
+
+        mov     size(%rsp), %r11d
+        call_fn jit_allocate_code, code(%rsp), %r11
+        mov     %rax, %rbx
+        call_fn free, code(%rsp)
+        return  %rbx
+
+        ## JIT Runtime Support
+
+jit_rt_symbol_not_defined:      # symbol
+        minimal_prologue
+        mov     $2, %eax
+        call_fn internal_error, symbol_not_defined_string, %rdi
+        return
+
+jit_rt_lambda_factory:          # lambda, closure-bitmask
+        prologue code, size, closure_bitmask
+        mov     %rdi, %rbx
+        mov     %rsi, closure_bitmask(%rsp)
+        lea     code(%rsp), %rdi
+        lea     size(%rsp), %rsi
+        call_fn open_memstream, %rdi, %rsi
+        perror
+        mov     %rax, %r12
+
+        call_fn jit_lambda_factory_code, %rbx, %r12, closure_bitmask(%rsp)
+        call_fn fclose, %r12
+        perror  je
+
+        mov     size(%rsp), %r11d
+        call_fn jit_allocate_code, code(%rsp), %r11
+        mov     %rax, %rbx
+        call_fn free, code(%rsp)
+        tag     TAG_PROCEDURE, %rbx
+        return
+
+jit_rt_lambda_patch_factory:    # lambda-factory, closure-bitmask
+        prologue closure_bitmask, lambda, patch_code, patch_size
+        unbox_pointer_internal %rdi, %rbx
+        mov     %rsi, closure_bitmask(%rsp)
+
+        mov     %rbx, %rax
+        add     jit_literal_to_rax_size, %rax
+        mov     (%rax), %rax
+        mov     %rax, lambda(%rsp)
+
+        lea     patch_code(%rsp), %rdi
+        lea     patch_size(%rsp), %rsi
+        call_fn open_memstream, %rdi, %rsi
+        perror
+        mov     %rax, %r12
+
+        call_fn jit_lambda_factory_code, lambda(%rsp), %r12, closure_bitmask(%rsp)
+        call_fn fclose, %r12
+        perror  je
+
+        mov     patch_size(%rsp), %r11d
+        call_fn memcpy, %rbx, patch_code(%rsp), %r11
+        perror
+        call_fn free, patch_code(%rsp)
+        tag     TAG_PROCEDURE, %rbx
+        return
+
+jit_rt_lambda_arity_check_error: # arity in al, expected-arity in r10b
+        minimal_prologue
+        mov     %rax, %rdi
+        mov     %r10d, %esi
+
+        box_int_internal %edi
+        mov     %rax, %rdi
+        box_int_internal %esi
+        mov     %rax, %rsi
+
+        mov     $3, %eax
+        call_fn internal_error, arity_check_error_string, %rdi, %rsi
+        return
+
+jit_rt_lambda_collect_varargs:  # arity in rax, varargs-idx in r10
+        .irp reg, rbx, r12, r13, r14
+        push    %\reg
+        .endr
+
+        mov     %rax, %r13
+        mov     %r10, %r14
+
+        .irp reg, rdi, rsi, rdx, rcx, r8, r9
+        push    %\reg
+        .endr
+
+        mov     $NIL, %rbx
+        mov     %r13, %r12
+        sub     $MAX_REGISTER_ARGS, %r12
+        mov     $NIL, %rbx
+
+1:      cmp     $0, %r12d
+        jle     2f
+
+        mov     %r12, %rcx
+        inc     %rcx
+        mov     (%rbp,%rcx,POINTER_SIZE), %rax
+
+        call_fn cons, %rax, %rbx
+        mov     %rax, %rbx
+
+        dec     %r12d
+        jmp     1b
+
+2:      .irp reg, r9, r8, rcx, rdx, rsi, rdi
+        pop    %\reg
+        .endr
+
+        .irp reg, rdi, rsi, rdx, rcx, r8, r9
+        push    %\reg
+        .endr
+
+        mov     %r13, %r12
+        sub     %r14, %r12
+
+        mov     %r14, %r11
+        shl     $VARARGS_JUMP_ALIGNMENT_SHIFT, %r11
+        add     $varargs_load_0, %r11
+        jmp     *%r11
+
+        .align  16
+varargs_load_0:
+        test    %r12d, %r12d
+        jz      3f
+        push    %rdi
+        dec     %r12d
+        .align  VARARGS_JUMP_ALIGNMENT
+varargs_load_1:
+        test    %r12d, %r12d
+        jz      3f
+        push    %rsi
+        dec     %r12d
+        .align  VARARGS_JUMP_ALIGNMENT
+varargs_load_2:
+        test    %r12d, %r12d
+        jz      3f
+        push    %rdx
+        dec     %r12d
+        .align  VARARGS_JUMP_ALIGNMENT
+varargs_load_3:
+        test    %r12d, %r12d
+        jz      3f
+        push    %rcx
+        dec     %r12d
+        .align  VARARGS_JUMP_ALIGNMENT
+varargs_load_4:
+        test    %r12d, %r12d
+        jz      3f
+        push    %r8
+        dec     %r12d
+        .align  VARARGS_JUMP_ALIGNMENT
+varargs_load_5:
+        test    %r12d, %r12d
+        jz      3f
+        push    %r9
+        dec     %r12d
+        .align  VARARGS_JUMP_ALIGNMENT
+
+3:      mov     %r14, %r12
+
+4:      cmp     $MAX_REGISTER_ARGS, %r12
+        je      5f
+        cmp     %r13, %r12
+        je      5f
+
+        pop     %rax
+        call_fn cons, %rax, %rbx
+        mov     %rax, %rbx
+
+        inc     %r12d
+        jmp     4b
+
+5:      .irp reg, r9, r8, rcx, rdx, rsi, rdi
+        pop    %\reg
+        .endr
+
+        mov     %r14, %r11
+        shl     $VARARGS_JUMP_ALIGNMENT_SHIFT, %r11
+        add     $varargs_store_0, %r11
+        jmp     *%r11
+
+        .align  16
+varargs_store_0:
+        mov     %rbx, %rdi
+        jmp     6f
+        .align  VARARGS_JUMP_ALIGNMENT
+varargs_store_1:
+        mov     %rbx, %rsi
+        jmp     6f
+        .align  VARARGS_JUMP_ALIGNMENT
+varargs_store_2:
+        mov     %rbx, %rdx
+        jmp     6f
+        .align  VARARGS_JUMP_ALIGNMENT
+varargs_store_3:
+        mov     %rbx, %rcx
+        jmp     6f
+        .align  VARARGS_JUMP_ALIGNMENT
+varargs_store_4:
+        mov     %rbx, %r8
+        jmp     6f
+        .align  VARARGS_JUMP_ALIGNMENT
+varargs_store_5:
+        mov     %rbx, %r9
+        jmp     6f
+        .align  VARARGS_JUMP_ALIGNMENT
+
+6:      .irp reg, r14, r13, r12, rbx
+        pop    %\reg
+        .endr
+        ret
+
+jit_rt_call_with_current_continuation_escape: # obj ..., continuation in r10
         mov     %r10, %rbx
         xor     %r10d, %r10d
-        call_fn jit_lambda_collect_varargs
+        call_fn jit_rt_lambda_collect_varargs
         mov     %rbx, %r10
         mov     %rdi, %rbx
 
@@ -4189,28 +4211,6 @@ jit_call_with_current_continuation_escape: # obj ..., continuation in r10
         pop     %rdx
         pop     %rax
         ret
-
-jit_call_with_current_continuation_escape_factory: # continuation
-        prologue  code, size
-        mov     %rdi, %r12
-        lea     code(%rsp), %rdi
-        lea     size(%rsp), %rsi
-        call_fn open_memstream, %rdi, %rsi
-        perror
-        mov     %rax, %rbx
-
-        call_fn jit_literal, %r12, %rbx, $NIL, $R10, $C_FALSE
-        call_fn jit_literal, $jit_call_with_current_continuation_escape, %rbx, $NIL, $R11, $C_FALSE
-        call_fn fwrite, $jit_jump_r11, $1, jit_jump_r11_size, %rbx
-
-        call_fn fclose, %rbx
-        perror  je
-
-        mov     size(%rsp), %r11d
-        call_fn jit_allocate_code, code(%rsp), %r11
-        mov     %rax, %rbx
-        call_fn free, code(%rsp)
-        return  %rbx
 
         .data
         .align  16
@@ -4427,7 +4427,7 @@ jit_epilogue_size:
 jit_arity_check_r10b_with_al:
         cmp     %r10b, %al
         je      1f
-        mov     $jit_lambda_arity_check_error, %r11
+        mov     $jit_rt_lambda_arity_check_error, %r11
         call   *%r11
 1:
 jit_arity_check_r10b_with_al_size:
@@ -4437,7 +4437,7 @@ jit_arity_check_r10b_with_al_size:
 jit_varargs_arity_check_r10b_with_al:
         cmp     %r10b, %al
         jge     1f
-        mov     $jit_lambda_arity_check_error, %r11
+        mov     $jit_rt_lambda_arity_check_error, %r11
         call   *%r11
 1:
 jit_varargs_arity_check_r10b_with_al_size:
@@ -4541,7 +4541,7 @@ jit_global_symbol_in_rax_to_rax:
         mov     symbol_table_values(,%eax,POINTER_SIZE), %r10
         is_void_internal %r10, store=false
         jne     1f
-        mov     $jit_symbol_not_defined, %r11
+        mov     $jit_rt_symbol_not_defined, %r11
         call_fn *%r11, %rax
 1:      mov     %r10, %rax
 jit_global_symbol_in_rax_to_rax_size:
