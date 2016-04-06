@@ -90,8 +90,8 @@ is_inexact:                     # z
         ret
 
 is_infinite:                    # z
-        arity_check $1
         minimal_prologue
+        arity_check $1
         is_double_internal %rdi
         jne     1f
         movq    %rdi, %xmm0
@@ -102,8 +102,8 @@ is_infinite:                    # z
 1:      return  $FALSE
 
 is_nan:                         # z
-        arity_check $1
         minimal_prologue
+        arity_check $1
         is_double_internal %rdi
         jne     1f
         movq    %rdi, %xmm0
