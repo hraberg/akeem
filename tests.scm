@@ -868,12 +868,12 @@ containing just one line")
 
 (assert (map (lambda (n) (expt n n))
              '(1 2 3 4 5)))
-;; (assert (map + '(1 2 3) '(4 5 6)))
-;; (assert (let ((count 0))
-;;           (map (lambda (ignored)
-;;                  (set! count (+ count 1))
-;;                  count)
-;;                '(a b))))
+(assert (map + '(1 2 3) '(4 5 6)))
+(assert (let ((count (list 0))) ;; should be 0
+          (map (lambda (ignored)
+                 (set-car! count (+ (car count) 1))
+                 (car count))
+               '(a b))))
 
 (assert (string-map
          (lambda (c) (integer->char (+ 1 (char->integer c))))
@@ -883,6 +883,15 @@ containing just one line")
 
 (assert (vector-map (lambda (n) (expt n n))
                     '#(1 2 3 4 5)))
+
+(assert (vector-map + '#(1 2 3) '#(4 5 6 7)))
+
+(assert (let ((count (list 0)))
+          (vector-map
+           (lambda (ignored)
+             (set-car! count (+ (car count) 1))
+             (car count))
+           '#(a b))))
 
 (assert (let ((v (make-vector 5)))
           (for-each (lambda (i)
