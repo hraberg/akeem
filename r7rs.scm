@@ -986,7 +986,10 @@
   (lambda (cont) (apply cont things)))
 
 (define (call-with-values producer consumer)
-  ((producer) consumer))
+  (let ((producer (producer)))
+    ((if (procedure? producer)
+         producer
+         (values producer)) consumer)))
 
 (define dynamic-extent-stack (make-parameter '()))
 
