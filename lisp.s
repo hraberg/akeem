@@ -259,6 +259,7 @@ exact:                          # z
 number_to_string:               # z, radix
         minimal_prologue
         arity_check $2, jle
+        arity_check $1, jge
         default_arg TAG_INT, $10, %rsi
         tagged_jump to_string_jump_table
         return
@@ -266,6 +267,7 @@ number_to_string:               # z, radix
 string_to_number:               # string, radix
         prologue tail
         arity_check $2, jle
+        arity_check $1, jge
         assert_tag TAG_STRING, %rdi, not_a_string_string
         default_arg TAG_INT, $10, %rsi
         mov     %esi, %esi
@@ -573,6 +575,7 @@ is_string:                      # obj
 make_string:                    # k, fill
         prologue
         arity_check $2, jle
+        arity_check $1, jge
         assert_tag TAG_INT, %rdi, not_an_integer_string
         default_arg TAG_CHAR, $'\ , %rsi
         mov     %edi, %edi
@@ -674,7 +677,11 @@ is_vector:                      # obj
 make_vector:                    # k, fill
         prologue
         arity_check $2, jle
-        assert_tag TAG_INT, %rdi, not_an_integer_string
+        cmp     $2, %al
+        je      1f
+        arity_check $1, je
+        mov     $VOID, %rsi
+1:      assert_tag TAG_INT, %rdi, not_an_integer_string
         mov     %rsi, %r12
         shl     $POINTER_SIZE_SHIFT, %edi
         mov     %edi, %ebx
@@ -683,13 +690,13 @@ make_vector:                    # k, fill
         movw    $TAG_VECTOR, header_object_type(%rax)
         mov     %ebx, header_object_size(%rax)
 
-1:      test    %ebx, %ebx
-        jz      2f
+2:      test    %ebx, %ebx
+        jz      3f
         sub     $POINTER_SIZE, %ebx
         mov     %r12, header_size(%rax,%rbx)
-        jmp     1b
+        jmp     2b
 
-2:      tag     TAG_VECTOR, %rax
+3:      tag     TAG_VECTOR, %rax
         register_for_gc
         return
 
@@ -764,6 +771,7 @@ is_bytevector:                  # obj
 make_bytevector:                # k, byte
         prologue
         arity_check $2, jle
+        arity_check $1, jge
         assert_tag TAG_INT, %rdi, not_an_integer_string
         default_arg TAG_INT, $ZERO_INT , %rsi
 
@@ -1193,6 +1201,7 @@ peek_u8:                        # port
 write:                          # obj, port
         prologue
         arity_check $2, jle
+        arity_check $1, jge
         lea     to_string_jump_table, %rbx
         store_pointer $TAG_CHAR, $char_to_machine_readable_string
         store_pointer $TAG_STRING, $string_to_machine_readable_string
@@ -1208,6 +1217,7 @@ display:                        # obj, port
         prologue obj
         mov     %rdi, obj(%rsp)
         arity_check $2, jle
+        arity_check $1, jge
         parameter_default_arg TAG_PORT, current_output_port_symbol, %rsi
         unbox_pointer_internal %rsi, %rbx
         call_fn to_string, obj(%rsp)
@@ -1227,6 +1237,7 @@ newline:                        # port
 write_char:                     # char, port
         prologue char, port
         arity_check $2, jle
+        arity_check $1, jge
         assert_tag TAG_CHAR, %rdi, not_a_character_string
         mov     %edi, char(%rsp)
         parameter_default_arg TAG_PORT, current_output_port_symbol, %rsi
@@ -1239,6 +1250,7 @@ write_u8:                       # byte, port
         prologue byte
         mov     %edi, byte(%rsp)
         arity_check $2, jle
+        arity_check $1, jge
         parameter_default_arg TAG_PORT, current_output_port_symbol, %rdi
         unbox_pointer_internal %rsi
         mov     byte(%rsp), %edi
