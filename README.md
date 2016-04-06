@@ -263,21 +263,22 @@ As there are limited tags available in the NaN-boxed value, the
 highest tag is for objects. It's currently used by records and
 bytevectors. These objects have their real tag stored in the header on
 the heap. The tag's id is the symbol id of its type. Doubles have no
-tag, so the symbol `double` has symbol id 0.
+tag, so the symbol `double` has id 0.
 
 Ports are C streams. They and procedures use tagged pointers to their
-actual values. They have no extra header on the heap and don't
+actual values. They have no extra header on the heap and they don't
 participate in the garbage collection.
 
 #### Closures
 
 Closures are represented using two functions, where the body is
 compiled once, and the other one acts as a bridge function created
-each time a lambda is referenced and sets up the local variable on the
-stack based on the current environment before jumping to the body.
+each time a lambda is referenced and sets up the local variables on
+the stack based on the current environment before jumping to the body.
 
 Closures don't support mutable local variables using this compilation
-model. Boxing via lists or vectors is necessary.
+model, as the closed over variables are compiled into the code. Boxing
+via lists or vectors is necessary.
 
 #### TCO
 
