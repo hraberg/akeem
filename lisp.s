@@ -437,8 +437,12 @@ string_to_symbol:               # string
         ## 6.6. Characters
 
 is_char:                        # obj
+        is_eof_object_internal %rdi, store=false
+        je      1f
         has_tag TAG_CHAR, %rdi
         box_boolean_internal
+        ret
+1:      mov     $FALSE, %rax
         ret
 
 char_to_integer:                # char
