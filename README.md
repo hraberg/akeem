@@ -57,6 +57,7 @@ trying again.
 * Basic support for R7RS Exceptions and `dynamic-wind`.
 * NaN-boxed 32-bit integers and 64-bit doubles
 * Function application up to 6 named arguments with varargs support.
+* Multiple return values using `values` and `call-with-values`.
 * TCO for calls in tail position across functions.
 * The bootstrap Scheme code is embedded in the executable.
 * Mark and Sweep GC.
