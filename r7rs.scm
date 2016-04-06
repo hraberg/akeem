@@ -744,7 +744,7 @@
    ((to at from)
     (string-copy! to at from 0))
    ((to at from start)
-    (string-copy! to at start (string-length string)))
+    (string-copy! to at from start (string-length string)))
    ((to at from start end)
     (do ((idx start (+ idx 1)))
         ((= idx end) to)
@@ -758,7 +758,7 @@
     (string-fill! string fill start (string-length string)))
    ((string fill start end)
     (do ((idx start (+ idx 1)))
-        ((= idx end) string)
+        ((= idx end))
       (string-set! string idx fill)))))
 
 ;;; 6.8. Vectors
@@ -800,7 +800,7 @@
    ((to at from)
     (vector-copy! to at from 0))
    ((to at from start)
-    (vector-copy! to at start (vector-length vector)))
+    (vector-copy! to at from start (vector-length vector)))
    ((to at from start end)
     (do ((idx start (+ idx 1)))
         ((= idx end) to)
@@ -854,7 +854,7 @@
     (vector-fill! vector fill start (vector-length vector)))
    ((vector fill start end)
     (do ((idx start (+ idx 1)))
-        ((= idx end) vector)
+        ((= idx end))
       (vector-set! vector idx fill)))))
 
 ;;; 6.9. Bytevectors
@@ -876,7 +876,7 @@
    ((to at from)
     (bytevector-copy! to at from 0))
    ((to at from start)
-    (bytevector-copy! to at start (bytevector-length bytevector)))
+    (bytevector-copy! to at from start (bytevector-length bytevector)))
    ((to at from start end)
     (do ((idx start (+ idx 1)))
         ((= idx end) to)

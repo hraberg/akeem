@@ -287,7 +287,7 @@
   (make-parameter
    10
    (lambda (x)
-     (if (and (exact-integer? x) (<= 2 x 16))
+     (if (and (exact-integer? x) (<= 2 x) (<= x 16)) ;; should be single <=
          x
          (error "invalid radix")))))
 
@@ -776,7 +776,6 @@
 (assert "Here's text \
 containing just one line")
 (assert "\x061; is named GREEK SMALL LETTER ALPHA.") ;; should be \x03B1;
-
 
 (define (f) (make-string 3 #\*))
 ;; (define (g) "***")

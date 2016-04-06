@@ -227,6 +227,7 @@
         .endm
 
         .macro binary_op name, double_op, integer_op
+        arity_check $2
         binary_op_jump \name
 \name\()_int_int:
         mov     %edi, %eax
@@ -241,6 +242,7 @@
         .endm
 
         .macro binary_comparsion name, double_setter, integer_setter
+        arity_check $2
         binary_op_jump \name
 \name\()_int_int:
         xor     %eax, %eax
@@ -286,6 +288,7 @@
 
         .macro math_library_unary_call name, round=false, return_int=false
         minimal_prologue
+        arity_check $1
         movq    %rdi, %xmm0
         has_tag TAG_INT, %rdi, store=false
         jne     \name\()_double
@@ -308,6 +311,7 @@
 
         .macro math_library_binary_call name, round=false
         minimal_prologue
+        arity_check $2
         binary_op_jump \name
 \name\()_int_int:
         cvtsi2sd %edi, %xmm0
@@ -324,6 +328,7 @@
 
         .macro open_input_buffer_template size_adjust, tag, error
         prologue empty_stream, empty_stream_size
+        arity_check $1
         assert_tag \tag, %rdi, \error
         unbox_pointer_internal %rdi
         mov     header_object_size(%rax), %esi
@@ -380,6 +385,15 @@
         default_arg \tag, %rax, \value, \tmp
         .endm
 
+        .macro arity_check arity=%r10b, success=je
+        cmp     \arity, %al
+        \success .L_\@_1
+        mov     \arity, %r10d
+        mov     $jit_rt_lambda_arity_check_error, %r11
+        call   *%r11
+.L_\@_1:
+        .endm
+
         .macro lookup_global_symbol_internal symbol_id
         mov     symbol_table_values(,\symbol_id,POINTER_SIZE), %rax
         .endm
@@ -405,7 +419,9 @@
         .endif
         call_fn read_token, %rbx
         register_for_gc
-        call_fn string_to_number, %rax, \radix
+        mov     %rax, %rdi
+        mov     $2, %eax
+        call_fn string_to_number, %rdi, \radix
         return
         .endm
 
@@ -462,7 +478,9 @@
         mov     $\id, %r11
         mov     %rax, symbol_table_names(,%r11,POINTER_SIZE)
         .endif
-        call_fn string_to_symbol, %rax
+        mov     %rax, %rdi
+        mov     $1, %eax
+        call_fn string_to_symbol, %rdi
         mov     %rax, \var
         .endm
 
@@ -473,7 +491,9 @@ tmp_string_\@:
         .string "\name"
         .text
         call_fn box_string, $tmp_string_\@
-        call_fn string_to_symbol, %rax
+        mov     %rax, %rdi
+        mov     $1, %eax
+        call_fn string_to_symbol, %rdi
         .ifnb \tag
         tag    \tag, \value, target=%rcx
         .endif
@@ -489,6 +509,7 @@ tmp_string_\@:
 
         .macro string_comparator comparator, setter, string1=%rdi, string2=%rsi
         prologue
+        arity_check $2
         assert_tag TAG_STRING, %rdi, not_a_string_string
         assert_tag TAG_STRING, %rsi, not_a_string_string
         unbox_pointer_internal \string1
