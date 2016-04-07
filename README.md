@@ -51,8 +51,9 @@ trying again.
 * Subset of R7RS "small" procedures.
 * JIT for `if`, `lambda`, `set!`, `let`, `letrec` and `begin`
 * Syntax for `and`, `or`, `cond`, `case`, `when`, `unless`,
-  `cond-expand`, `let*`, "named `let`", `do`, `delay`, `define`,
-  `parameterize`, `guard`, `case-lambda` and `define-record-type`.
+  `cond-expand`, `let*`, "named `let`", , `let-values` or
+  `let*-values`, `do`, `delay`, `define`, `parameterize`, `guard`,
+  `case-lambda` and `define-record-type`.
 * Basic support for `define-syntax` / `syntax-rules` and `quasiquote`.
 * Basic support for R7RS Exceptions and `dynamic-wind`.
 * NaN-boxed 32-bit integers and 64-bit doubles
@@ -69,8 +70,7 @@ trying again.
 * No GC for functions or their constant literals.
 * Max arity is currently 6, higher requires the use of the stack.
 * No register allocation.
-* No `let-syntax`, `letrec-syntax`, `letrec*`, `let-values` or
-  `let*-values`.
+* No `let-syntax`, `letrec-syntax`, `letrec*`.
 * No `define-library`.
 * The JIT is static, once a function is generated its done.
 * Not full support for Scheme numbers in the reader.

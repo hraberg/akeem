@@ -151,6 +151,47 @@
        (let* ((name2 val2) ...)
          body1 body2 ...)))))
 
+(define-syntax let-values
+  (lambda (form env)
+    (let* ((mv-binding-spec (cadr form))
+           (body (cddr form))
+           (destructure
+            (let loop ((mv-binding-spec mv-binding-spec)
+                       (acc '())
+                       (idx (- (length mv-binding-spec) 1)))
+              (if (negative? idx)
+                  acc
+                  (let ((tmp (string->symbol (string-append "tmp_" (number->string idx))))
+                        (formals (reverse (caar mv-binding-spec)))
+                        (init (cdar mv-binding-spec)))
+                    (loop (cdr mv-binding-spec)
+                          (cons `((,tmp (call-with-values
+                                            (lambda ()
+                                              ,@init)
+                                          vector))
+                                  ,@(let loop ((formals formals)
+                                               (acc '())
+                                               (idx (- (length formals) 1)))
+                                      (if (negative? idx)
+                                          acc
+                                          (loop (cdr formals)
+                                                (cons `(,(car formals) (vector-ref ,tmp ,idx)) acc)
+                                                (- idx 1)))))
+                                acc)
+                          (- idx 1)))))))
+      `(let* ,@destructure
+         ,@body))))
+
+(define-syntax let*-values
+  (syntax-rules ()
+    ((let*-values () body0 body1 ...)
+     (let () body0 body1 ...))
+    ((let*-values (binding0 binding1 ...)
+       body0 body1 ...)
+     (let-values (binding0)
+       (let*-values (binding1 ...)
+         body0 body1 ...)))))
+
 ;;; 4.2.4. Iteration
 
 (define-syntax do

@@ -192,13 +192,13 @@
 ;;                   (y x))
 ;;                  y))
 
-;; (assert (let-values (((root rem) (exact-integer-sqrt 32)))
-;;           (* root rem)))
+(assert (let-values (((root rem) (exact-integer-sqrt 32)))
+          (* root rem)))
 
-;; (assert (let ((a ’a) (b ’b) (x ’x) (y ’y))
-;;           (let*-values (((a b) (values x y))
-;;                         ((x y) (values a b)))
-;;             (list a b x y))))
+(assert (let ((a 'a) (b 'b) (x 'x) (y 'y))
+          (let*-values (((a b) (values x y))
+                        ((x y) (values a b)))
+            (list a b x y))))
 
 (spec ";;; 4.2.3. Sequencing")
 

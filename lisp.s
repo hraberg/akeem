@@ -248,6 +248,7 @@ exact:                          # z
         has_tag TAG_INT, %rdi, store=false
         je      1f
         movq    %rdi, %xmm0
+        roundsd $ROUNDING_MODE_TRUNCATE, %xmm0, %xmm0
         cvtsd2si %xmm0, %rax
         box_int_internal
         ret
