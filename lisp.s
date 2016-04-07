@@ -2112,7 +2112,7 @@ dlopen_:                        # filename
         tag     TAG_OBJECT, %rax
         return
 
-dlsym_:                         # symbol, handle
+dlsym_:                         # symbol-string, handle
         prologue
         mov     %rdi, %rbx
         cmp     $1, %al
@@ -2140,7 +2140,7 @@ dlsym_:                         # symbol, handle
         tag     TAG_OBJECT, %rax
         return
 
-ffi_call:                  # c-procedure, return-type-symbol, args ...
+ffi_call:                       # c-procedure or symbol-string, return-type-symbol, args ...
         arity_check 2, jge
         mov     $2, %r10d
         call_fn jit_rt_lambda_collect_varargs
