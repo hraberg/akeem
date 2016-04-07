@@ -166,8 +166,14 @@
                   (template (cdr (car syntax-rules))))
               (let ((match (match-syntax-rule literals pattern form '() '() env)))
                 (if match
-                    (cons 'begin (transcribe-syntax-rule (reverse match) template '()))
+                    (transcribe-syntax-rule (reverse match) template '())
                     (transform-syntax-rules literals (cdr syntax-rules) form env)))))))
+
+(set! syntax-error?
+      (lambda (transformed)
+        (and (pair? transformed)
+             (and (pair? (car transformed))
+                  (eq? 'syntax-error (car (car transformed)))))))
 
 (set! transform-syntax
       (lambda (transformer-spec form env)
@@ -176,7 +182,9 @@
           (let ((transformed (transform-syntax-rules literals syntax-rules (cdr form) env)))
             (if (eq? 'transform-failure transformed)
                 (error "Bad syntax:" form)
-                transformed)))))
+                (if (syntax-error? transformed)
+                    (apply error (cdr (car transformed)))
+                    (cons 'begin transformed)))))))
 
 (define-syntax syntax-rules
   (lambda (transformer-spec env)
