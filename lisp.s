@@ -2151,7 +2151,7 @@ dlcall:                         # c-procedure, return-type-symbol, args ...
         xor     %eax, %eax
         mov     %rdx, %r12
         call_scm record_ref, %rdi, $ZERO_INT
-        call_scm dlapply, %rax, %r12
+        call_fn dlapply, %rax, %r12
         xor     %edx, %edx
         cmp     double_symbol, %rbx
         je      1f
@@ -2163,7 +2163,6 @@ dlapply:                       # proc, args
         prologue
         push    %r13
         push    %r14
-        arity_check 2
         unbox_pointer_internal %rdi
         mov     $0, %r13d
         mov     $0, %r14d
@@ -2191,9 +2190,9 @@ dlapply:                       # proc, args
 3:      mov     $MAX_REGISTER_ARGS, %eax
         sub     %ebx, %eax
         js      dlapply_pop
-        mov     dlapply_pop, %r11
-        imul    $DLAPPLY_JUMP_ALIGNMENT, %eax
-        lea     dlapply_pop(%eax), %rax
+
+        shl     $DLAPPLY_JUMP_ALIGNMENT_SHIFT, %rax
+        add     $dlapply_pop, %rax
         jmp     *%rax
 
         .align  16
