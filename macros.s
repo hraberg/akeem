@@ -374,6 +374,14 @@
         call_fn fseek, \stream, \target, $SEEK_SET
         .endm
 
+        .macro optional_arg arity, default, target
+        cmp     $\arity, %al
+        je      .L_\@_1
+        arity_check $(\arity - 1)
+        mov     \default, \target
+.L_\@_1:
+        .endm
+
         .macro default_arg tag, default, value, tmp=%r11
         mov     \default, \tmp
         has_tag \tag, \value, store=false

@@ -79,7 +79,9 @@
         .equ NEWLINE_CHAR, (NAN_MASK | (TAG_CHAR << TAG_SHIFT) | 10)
         .equ SPACE_CHAR, (NAN_MASK | (TAG_CHAR << TAG_SHIFT) | 32)
 
+        .equ MINUS_ONE_INT, (NAN_MASK | (TAG_INT << TAG_SHIFT) | 0xffffffff)
         .equ ZERO_INT, (NAN_MASK | (TAG_INT << TAG_SHIFT) | 0)
+        .equ TEN_INT, (NAN_MASK | (TAG_INT << TAG_SHIFT) | 10)
 
         .equ BINARY_RADIX_INT, (NAN_MASK | (TAG_INT << TAG_SHIFT) | 2)
         .equ OCTAL_RADIX_INT, (NAN_MASK | (TAG_INT << TAG_SHIFT) | 8)

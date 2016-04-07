@@ -258,18 +258,19 @@ exact:                          # z
 
 number_to_string:               # z, radix
         minimal_prologue
-        arity_check $2, jle
-        arity_check $1, jge
-        default_arg TAG_INT, $10, %rsi
+        optional_arg 2, $TEN_INT, %rsi
+        is_double_internal %rdi
+        je      1f
+        assert_tag TAG_INT, %rdi, not_a_number_string
+1:      assert_tag TAG_INT, %rsi, not_an_integer_string
         tagged_jump to_string_jump_table
         return
 
 string_to_number:               # string, radix
         prologue tail
-        arity_check $2, jle
-        arity_check $1, jge
+        optional_arg 2, $TEN_INT, %rsi
         assert_tag TAG_STRING, %rdi, not_a_string_string
-        default_arg TAG_INT, $10, %rsi
+        assert_tag TAG_INT, %rsi, not_an_integer_string
         mov     %esi, %esi
 
         unbox_pointer_internal %rdi, %rbx
@@ -574,10 +575,9 @@ is_string:                      # obj
 
 make_string:                    # k, fill
         prologue
-        arity_check $2, jle
-        arity_check $1, jge
+        optional_arg 2, $SPACE_CHAR, %rsi
         assert_tag TAG_INT, %rdi, not_an_integer_string
-        default_arg TAG_CHAR, $'\ , %rsi
+        assert_tag TAG_CHAR, %rsi, not_a_character_string
         mov     %edi, %edi
         mov     %edi, %ebx
         add     $header_size, %edi
@@ -676,12 +676,8 @@ is_vector:                      # obj
 
 make_vector:                    # k, fill
         prologue
-        arity_check $2, jle
-        cmp     $2, %al
-        je      1f
-        arity_check $1, je
-        mov     $VOID, %rsi
-1:      assert_tag TAG_INT, %rdi, not_an_integer_string
+        optional_arg 2, $VOID, %rsi
+        assert_tag TAG_INT, %rdi, not_an_integer_string
         mov     %rsi, %r12
         shl     $POINTER_SIZE_SHIFT, %edi
         mov     %edi, %ebx
@@ -770,10 +766,9 @@ is_bytevector:                  # obj
 
 make_bytevector:                # k, byte
         prologue
-        arity_check $2, jle
-        arity_check $1, jge
+        optional_arg 2, $ZERO_INT, %rsi
         assert_tag TAG_INT, %rdi, not_an_integer_string
-        default_arg TAG_INT, $ZERO_INT , %rsi
+        assert_tag TAG_INT, %rsi, not_an_integer_string
 
         mov     %rsi, %r12
         mov     %edi, %ebx
@@ -833,7 +828,7 @@ list_to_bytevector:             # list
         arity_check $1
         mov     %rdi, %r12
         call_scm length, %rdi
-        call_scm make_bytevector, %rax, $0
+        call_scm make_bytevector, %rax, $ZERO_INT
         mov     %rax, vec(%rsp)
 
         xor     %ebx, %ebx
@@ -992,7 +987,6 @@ raise:                          # error
 eval:                           # expression, environment-specifier
         prologue max_global_symbol
         arity_check $2
-        default_arg TAG_INT, $-1, %rsi
 
         mov     %esi, max_global_symbol(%rsp)
 
@@ -1314,7 +1308,7 @@ exit_:                          # obj
         mov     $1, %rdi
         jmp     3f
 
-2:      default_arg TAG_INT, $0, %rdi
+2:      assert_tag TAG_INT, %rdi, not_an_integer_string
         mov     %edi, %edi
 
 3:      call_fn exit, %rdi
@@ -1323,7 +1317,7 @@ exit_:                          # obj
 emergency_exit:                 # obj
         minimal_prologue
         arity_check $1
-        default_arg TAG_INT, $1, %rdi
+        assert_tag TAG_INT, %rdi, not_an_integer_string
         mov     %edi, %edi
         call_fn exit, %rdi
         return
@@ -1493,6 +1487,7 @@ main:                # argc, argv
         intern_string read_error_string, "Unexpected input:"
         intern_string code_space_error_string, "Code space exceeded:"
         intern_string not_a_character_string, "Not a character:"
+        intern_string not_a_number_string, "Not a number:"
         intern_string not_an_integer_string, "Not an integer:"
         intern_string not_a_pair_string, "Not a pair:"
         intern_string not_a_string_string, "Not a string:"
