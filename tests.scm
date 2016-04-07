@@ -396,6 +396,15 @@
 ;;           (define bar (lambda (a b) (+ (* a b) a)))
 ;;           (foo (+ x 3))))
 
+(spec ";;; 5.3.3. Multiple-value definitions")
+
+(define-values (x y) (exact-integer-sqrt 17))
+(assert (list x y))
+
+(assert (let ()
+          (define-values (x y) (values 1 2)) ;; should create local definitions
+          (+ x y)))
+
 (spec ";;; 5.5. Record-type definitions")
 
 (define-record-type <pare>

@@ -321,6 +321,16 @@
           args)
          (case-lambda len . rest)))))
 
+;;; 5.3. Variable definitions
+
+;;; 5.3.3. Multiple-value definitions
+
+(define-syntax define-values
+  (syntax-rules ()
+    ((define-values (formals ...) expression)
+     (let-values (((formals ...) expression))
+       (eval `(define formals ,formals) (environment '(scheme base))) ...))))
+
 ;;; 5.5. Record-type definitions
 
 (define-syntax define-record-type
