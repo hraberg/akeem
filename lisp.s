@@ -1122,6 +1122,7 @@ open_input_bytevector:          # bytevector
 read:                           # port
         prologue
         optional_parameter_arg 1, current_input_port_symbol, %rdi
+        assert_tag TAG_PORT, %rdi, not_a_port_string
         unbox_pointer_internal %rdi
         call_fn read_datum, %rax
         return
@@ -1129,6 +1130,7 @@ read:                           # port
 read_char:                      # port
         prologue
         optional_parameter_arg 1, current_input_port_symbol, %rdi
+        assert_tag TAG_PORT, %rdi, not_a_port_string
         unbox_pointer_internal %rdi
         call_fn fgetc, %rax
         cmp     $EOF, %al
@@ -1140,6 +1142,7 @@ read_char:                      # port
 peek_char:                      # port
         prologue
         optional_parameter_arg 1, current_input_port_symbol, %rdi
+        assert_tag TAG_PORT, %rdi, not_a_port_string
         unbox_pointer_internal %rdi, %rbx
         call_fn fgetc, %rbx
         call_fn ungetc, %rax, %rbx
@@ -1163,6 +1166,7 @@ eof_object:
 read_u8:                        # port
         prologue
         optional_parameter_arg 1, current_input_port_symbol, %rdi
+        assert_tag TAG_PORT, %rdi, not_a_port_string
         unbox_pointer_internal %rdi
         call_fn fgetc, %rax
         cmp     $EOF, %al
@@ -1190,6 +1194,7 @@ write:                          # obj, port
         mov     %rdi, obj(%rsp)
 
         optional_parameter_arg 2, current_output_port_symbol, %rsi
+        assert_tag TAG_PORT, %rsi, not_a_port_string
 
         lea     to_string_jump_table, %rbx
         store_pointer $TAG_CHAR, $char_to_machine_readable_string
@@ -1206,6 +1211,7 @@ display:                        # obj, port
         prologue obj
         mov     %rdi, obj(%rsp)
         optional_parameter_arg 2, current_output_port_symbol, %rsi
+        assert_tag TAG_PORT, %rsi, not_a_port_string
         unbox_pointer_internal %rsi, %rbx
         call_fn to_string, obj(%rsp)
         unbox_pointer_internal %rax, %rdi
@@ -1218,6 +1224,7 @@ display:                        # obj, port
 newline:                        # port
         minimal_prologue
         optional_parameter_arg 1, current_output_port_symbol, %rdi
+        assert_tag TAG_PORT, %rdi, not_a_port_string
         call_scm write_char, $NEWLINE_CHAR, %rdi
         return
 
@@ -1225,6 +1232,7 @@ write_char:                     # char, port
         prologue char, port
         optional_parameter_arg 2, current_output_port_symbol, %rsi
         assert_tag TAG_CHAR, %rdi, not_a_character_string
+        assert_tag TAG_PORT, %rsi, not_a_port_string
         mov     %edi, char(%rsp)
         unbox_pointer_internal %rsi
         mov     char(%rsp), %edi
@@ -1236,6 +1244,7 @@ write_u8:                       # byte, port
         mov     %edi, byte(%rsp)
         optional_parameter_arg 2, current_output_port_symbol, %rsi
         assert_tag TAG_INT, %rdi, not_an_integer_string
+        assert_tag TAG_PORT, %rsi, not_a_port_string
         unbox_pointer_internal %rsi
         mov     byte(%rsp), %edi
         call_fn fputc, %rdi, %rax
@@ -1244,6 +1253,7 @@ write_u8:                       # byte, port
 flush_output_port:              # port
         prologue
         optional_parameter_arg 1, current_output_port_symbol, %rdi
+        assert_tag TAG_PORT, %rdi, not_a_port_string
         unbox_pointer_internal %rdi
         call_fn fflush, %rax
         return  $VOID
