@@ -340,6 +340,8 @@
         pred
         (field-name accessor modifier ...) ...)
 
+     (define name 'name)
+
      (define (constructor fields ...)
        (make-record
         (let ((arguments (list (cons 'fields fields) ...)))
