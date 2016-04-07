@@ -26,6 +26,7 @@
         .equ SIGSEGV, 11
 
         ## dlfcn.h
+        .equ RTLD_DEFAULT, 0
         .equ RTLD_LAZY, 1
 
         .equ ROUNDING_MODE_TRUNCATE, 0b11
@@ -70,6 +71,7 @@
         .equ TAG_BYTEVECTOR, 64
         .equ TAG_CONTINUATION, 65
         .equ TAG_HANDLE, 66
+        .equ TAG_C_PROCEDURE, 67
 
         .equ C_TRUE, 1
         .equ C_FALSE, 0

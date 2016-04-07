@@ -20,7 +20,7 @@ make_record:                    # k, type
 
 record_ref:                     # record, k
         arity_check 2
-        assert_tag TAG_OBJECT, %rdi, not_a_vector_string
+        assert_tag TAG_OBJECT, %rdi, not_a_record_string
         assert_tag TAG_INT, %rsi, not_an_integer_string
         unbox_pointer_internal %rdi
         mov     %esi, %esi
@@ -29,7 +29,7 @@ record_ref:                     # record, k
 
 record_set:                     # record, k, obj
         arity_check 3
-        assert_tag TAG_OBJECT, %rdi, not_a_vector_string
+        assert_tag TAG_OBJECT, %rdi, not_a_record_string
         assert_tag TAG_INT, %rsi, not_an_integer_string
         unbox_pointer_internal %rdi
         mov     %esi, %esi
@@ -1431,6 +1431,7 @@ main:                # argc, argv
         intern_symbol bytevector_symbol, "bytevector", id=TAG_BYTEVECTOR
         intern_symbol continuation_symbol, "continuation", id=TAG_CONTINUATION
         intern_symbol handle_symbol, "handle", id=TAG_HANDLE
+        intern_symbol c_procedure_symbol, "c-procedure", id=TAG_C_PROCEDURE
 
         intern_symbol quote_symbol, "quote"
         intern_symbol lambda_symbol, "lambda"
@@ -1501,7 +1502,9 @@ main:                # argc, argv
         intern_string not_a_procedure_string, "Not a procedure:"
         intern_string not_a_port_string, "Not a port:"
         intern_string not_a_bytevector_string, "Not a bytevector:"
+        intern_string not_a_record_string, "Not a record:"
         intern_string not_a_handle_string, "Not a handle:"
+        intern_string not_a_c_procedure_string, "Not a C procedure:"
         intern_string symbol_not_defined_string, "Symbol not defined:"
         intern_string arity_check_error_string, "Unexpected number of arguments:"
 
@@ -2109,33 +2112,46 @@ dlopen_:                        # filename
         tag     TAG_OBJECT, %rax
         return
 
-dlsym_:                         # handle, symbol
+dlsym_:                         # symbol, handle
         prologue
-        arity_check 2
-        assert_object %rdi, TAG_HANDLE, not_a_handle_string
-        assert_tag TAG_STRING, %rsi, not_a_string_string
-        mov     %rsi, %rbx
+        mov     %rdi, %rbx
+        cmp     $1, %al
+        jne     1f
+        assert_tag TAG_STRING, %rdi, not_a_string_string
+        mov     $RTLD_DEFAULT, %r12
+        jmp     2f
+
+1:      arity_check 2
+        assert_tag TAG_STRING, %rdi, not_a_string_string
+        assert_object %rsi, TAG_HANDLE, not_a_handle_string
+        mov     %rsi, %rdi
         call_scm record_ref, %rdi, $ZERO_INT
         mov     %rax, %r12
-        call_fn dlerror
+
+2:      call_fn dlerror
         call_fn unbox_string, %rbx
         call_fn dlsym, %r12, %rax
         mov     %rax, %rbx
         call_fn dlerror
         perror  jz
-        tag     TAG_PROCEDURE, %rbx
+        call_scm make_vector, $ONE_INT, %rbx
+        unbox_pointer_internal
+        movw    $TAG_C_PROCEDURE, header_object_type(%rax)
+        tag     TAG_OBJECT, %rax
         return
 
-dlcall:                         # c-fun, return-type-symbol, args ...
+dlcall:                         # c-procedure, return-type-symbol, args ...
         arity_check 2, jge
         mov     $2, %r10d
         call_fn jit_rt_lambda_collect_varargs
         prologue
-        assert_tag TAG_PROCEDURE, %rdi, not_a_procedure_string
+        assert_object %rdi, TAG_C_PROCEDURE, not_a_c_procedure_string
         assert_tag TAG_SYMBOL, %rsi, not_a_symbol_string
         mov     %rsi, %rbx
         xor     %eax, %eax
-        call_scm dlapply, %rdi, %rdx
+        mov     %rdx, %r12
+        call_scm record_ref, %rdi, $ZERO_INT
+        call_scm dlapply, %rax, %r12
         xor     %edx, %edx
         cmp     double_symbol, %rbx
         je      1f
@@ -2148,7 +2164,6 @@ dlapply:                       # proc, args
         push    %r13
         push    %r14
         arity_check 2
-        assert_tag TAG_PROCEDURE, %rdi, not_a_procedure_string
         unbox_pointer_internal %rdi
         mov     $0, %r13d
         mov     $0, %r14d
