@@ -177,6 +177,60 @@ Only functions written in assembler will show up in the profile
 report.
 
 
+### Architecture
+
+#### Garbage Collector
+
+The garbage collector is a basic mark and sweep. It doesn't handle
+functions or any literal constants in the code. The garbage collector
+is stop-the-world and called when `malloc` fails.
+
+#### JIT Compiler
+
+As mentioned above, the compiler pieces together parts snippets of
+code which already has been assembled by GNU assembler. Some snippets
+have a dynamic part that will be patched by the compiler. The compiler
+uses `glibc` in-memory streams to generate the code.
+
+All code sits in one static block allocated using `mmap` at start-up.
+
+#### Tagged Data
+
+Akeem uses NaN-boxed 64-bit values to represent everything. Integers,
+chars and symbol ids are stored in the lower 32-bits. Symbols are
+represented as unique ids pointing into a symbol table where the
+global values (and its name) are stored. Cons-cells, strings, vectors,
+bytevectors and records are allocated on the heap with a small header.
+
+As there are limited tags available in the NaN-boxed value, the
+highest tag is for objects. It's currently used by records and
+bytevectors. These objects have their real tag stored in the header on
+the heap. The tag's id is the symbol id of its type. Doubles have no
+tag, so the symbol `double` has id 0.
+
+Ports are C streams. They and procedures use tagged pointers to their
+actual values. They have no extra header on the heap and they don't
+participate in the garbage collection.
+
+#### Closures
+
+Closures are represented using two functions, where the body is
+compiled once, and the other one acts as a bridge function created
+each time a lambda is referenced and sets up the local variables on
+the stack based on the current environment before jumping to the body.
+
+Closures don't support mutable local variables using this compilation
+model, as the closed over variables are compiled into the code. Boxing
+via lists or vectors is necessary.
+
+#### TCO
+
+Calls in tail position are simply converted to jumps when
+compiling. This works across functions. Calls using the stack to pass
+more than 6 arguments are always compiled as normal calls and not
+optimized.
+
+
 ### Implementation
 
 #### Calling Conventions
@@ -232,60 +286,6 @@ on the stack as per the ABI.
 For floating point operations, the `xmm0` to `xmm2` registers are used
 for calculations, but all values are passed using regular registers
 between functions.
-
-
-### Architecture
-
-#### Garbage Collector
-
-The garbage collector is a basic mark and sweep. It doesn't handle
-functions or any literal constants in the code. The garbage collector
-is stop-the-world and called when `malloc` fails.
-
-#### JIT Compiler
-
-As mentioned above, the compiler pieces together parts snippets of
-code which already has been assembled by GNU assembler. Some snippets
-have a dynamic part that will be patched by the compiler. The compiler
-uses `glibc` in-memory streams to generate the code.
-
-All code sits in one static block allocated using `mmap` at start-up.
-
-#### Tagged Data
-
-Akeem uses NaN-boxed 64-bit values to represent everything. Integers,
-chars and symbol ids are stored in the lower 32-bits. Symbols are
-represented as unique ids pointing into a symbol table where the
-global values (and its name) are stored. Cons-cells, strings, vectors,
-bytevectors and records are allocated on the heap with a small header.
-
-As there are limited tags available in the NaN-boxed value, the
-highest tag is for objects. It's currently used by records and
-bytevectors. These objects have their real tag stored in the header on
-the heap. The tag's id is the symbol id of its type. Doubles have no
-tag, so the symbol `double` has id 0.
-
-Ports are C streams. They and procedures use tagged pointers to their
-actual values. They have no extra header on the heap and they don't
-participate in the garbage collection.
-
-#### Closures
-
-Closures are represented using two functions, where the body is
-compiled once, and the other one acts as a bridge function created
-each time a lambda is referenced and sets up the local variables on
-the stack based on the current environment before jumping to the body.
-
-Closures don't support mutable local variables using this compilation
-model, as the closed over variables are compiled into the code. Boxing
-via lists or vectors is necessary.
-
-#### TCO
-
-Calls in tail position are simply converted to jumps when
-compiling. This works across functions. Calls using the stack to pass
-more than 6 arguments are always compiled as normal calls and not
-optimized.
 
 
 ## References
