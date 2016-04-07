@@ -1974,13 +1974,15 @@ segv_handler:                   # signal
         return
 
 internal_error:                 # message, irritants
-        prologue
+        minimal_prologue
         mov     error_symbol, %r11d
         mov     symbol_table_values(,%r11d,POINTER_SIZE), %r11
         unbox_pointer_internal %r11, %r11
         cmp     $NULL, %r11
         je      1f
         call   *%r11
+        return
+1:      call_fn exit, $1
         return
 
 box_string_array_as_list:       # c-string-array
