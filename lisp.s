@@ -2195,6 +2195,8 @@ dlapply:                       # proc, args
         add     $dlapply_pop, %rax
         jmp     *%rax
 
+        ##      TODO: This is overly simplistic, need to calculate next available register properly.
+        ##            Won't work when mixing doubles and ints.
         .align  16
 dlapply_pop:
         pop     %r9
