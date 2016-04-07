@@ -2153,11 +2153,14 @@ dlcall:                         # c-procedure, return-type-symbol, args ...
         call_scm record_ref, %rdi, $ZERO_INT
         call_fn dlapply, %rax, %r12
         xor     %edx, %edx
-        cmp     double_symbol, %rbx
+        cmp     void_symbol, %rbx
         je      1f
+        cmp     double_symbol, %rbx
+        je      2f
         call_fn box, %rax, %rbx
         return
-1:      return  %xmm0
+1:      return  $VOID
+2:      return  %xmm0
 
 dlapply:                       # proc, args
         prologue
