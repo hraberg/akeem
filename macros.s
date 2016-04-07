@@ -492,10 +492,6 @@
         .endif
         call_scm string_to_symbol, %rax
         mov     %rax, \var
-        .ifnb \id
-        mov     $\id, %r11
-        mov     %rax, symbol_table_values(,%r11,POINTER_SIZE)
-        .endif
         .endm
 
         .macro define name, value, tag=TAG_PROCEDURE
