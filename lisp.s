@@ -2242,8 +2242,11 @@ dlapply_pop:
         ## Boxing from C
 
 box_boolean:                    # c-boolean
-        and     $C_TRUE, %edi
-        box_boolean_internal %rdi
+        cmp     $0, %edi
+        je      1f
+        mov     $TRUE, %rax
+        ret
+1:      mov     $FALSE, %rax
         ret
 
 box_integer:                    # c-int
