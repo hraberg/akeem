@@ -2145,7 +2145,16 @@ ffi_call:                  # c-procedure, return-type-symbol, args ...
         mov     $2, %r10d
         call_fn jit_rt_lambda_collect_varargs
         prologue
-        assert_object %rdi, TAG_C_PROCEDURE, not_a_c_procedure_string
+        has_tag TAG_STRING, %rdi, store=false
+        jne     1f
+        push    %rsi
+        push    %rdx
+        call_scm dlsym_, %rdi
+        mov     %rax, %rdi
+        pop     %rdx
+        pop     %rsi
+
+1:      assert_object %rdi, TAG_C_PROCEDURE, not_a_c_procedure_string
         assert_tag TAG_SYMBOL, %rsi, not_a_symbol_string
         mov     %rsi, %rbx
         xor     %eax, %eax
@@ -2154,13 +2163,13 @@ ffi_call:                  # c-procedure, return-type-symbol, args ...
         call_fn ffi_apply, %rax, %r12
         xor     %edx, %edx
         cmp     void_symbol, %rbx
-        je      1f
-        cmp     double_symbol, %rbx
         je      2f
+        cmp     double_symbol, %rbx
+        je      3f
         call_fn box, %rax, %rbx
         return
-1:      return  $VOID
-2:      return  %xmm0
+2:      return  $VOID
+3:      return  %xmm0
 
 ffi_apply:                      # proc, args
         prologue
