@@ -238,7 +238,7 @@
         .endm
 
         .macro binary_op name, double_op, integer_op
-        arity_check $2
+        arity_check 2
         binary_op_jump \name
 \name\()_int_int:
         mov     %edi, %eax
@@ -253,7 +253,7 @@
         .endm
 
         .macro binary_comparsion name, double_setter, integer_setter
-        arity_check $2
+        arity_check 2
         binary_op_jump \name
 \name\()_int_int:
         xor     %eax, %eax
@@ -299,7 +299,7 @@
 
         .macro math_library_unary_call name, round=false, return_int=false
         minimal_prologue
-        arity_check $1
+        arity_check 1
         movq    %rdi, %xmm0
         has_tag TAG_INT, %rdi, store=false
         jne     \name\()_double
@@ -322,7 +322,7 @@
 
         .macro math_library_binary_call name, round=false
         minimal_prologue
-        arity_check $2
+        arity_check 2
         binary_op_jump \name
 \name\()_int_int:
         cvtsi2sd %edi, %xmm0
@@ -339,7 +339,7 @@
 
         .macro open_input_buffer_template size_adjust, tag, error
         prologue empty_stream, empty_stream_size
-        arity_check $1
+        arity_check 1
         assert_tag \tag, %rdi, \error
         unbox_pointer_internal %rdi
         mov     header_object_size(%rax), %esi
@@ -377,15 +377,18 @@
         .macro optional_arg arity, default, target
         cmp     $\arity, %al
         je      .L_\@_1
-        arity_check $(\arity - 1)
+        arity_check (\arity - 1)
         mov     \default, \target
 .L_\@_1:
         .endm
 
-        .macro default_arg tag, default, value, tmp=%r11
-        mov     \default, \tmp
-        has_tag \tag, \value, store=false
-        cmovne  \tmp, \value
+        .macro optional_parameter_arg arity, parameter, target
+        cmp     $\arity, %al
+        je      .L_\@_1
+        arity_check (\arity - 1)
+        parameter_value \parameter
+        mov     %rax, \target
+.L_\@_1:
         .endm
 
         .macro parameter_value parameter, tmp=%r11
@@ -396,17 +399,10 @@
         call_scm *\tmp
         .endm
 
-        .macro parameter_default_arg tag, parameter, value, tmp=%r11, backup=%rbx
-        mov     \value, \backup
-        parameter_value \parameter, \tmp
-        mov     \backup, \value
-        default_arg \tag, %rax, \value, \tmp
-        .endm
-
-        .macro arity_check arity=%r10b, success=je
-        cmp     \arity, %al
+        .macro arity_check arity, success=je
+        cmp     $\arity, %al
         \success .L_\@_1
-        mov     \arity, %r10d
+        mov     $\arity, %r10d
         mov     $jit_rt_lambda_arity_check_error, %r11
         call   *%r11
 .L_\@_1:
@@ -521,7 +517,7 @@ tmp_string_\@:
 
         .macro string_comparator comparator, setter, string1=%rdi, string2=%rsi
         prologue
-        arity_check $2
+        arity_check 2
         assert_tag TAG_STRING, %rdi, not_a_string_string
         assert_tag TAG_STRING, %rsi, not_a_string_string
         unbox_pointer_internal \string1

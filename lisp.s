@@ -8,7 +8,7 @@
 
 make_record:                    # k, type
         prologue
-        arity_check $2
+        arity_check 2
         assert_tag TAG_PAIR, %rdi, not_a_pair_string
         assert_tag TAG_SYMBOL, %rsi, not_a_symbol_string
         mov     %rsi, %rbx
@@ -19,7 +19,7 @@ make_record:                    # k, type
         return
 
 record_ref:                     # record, k
-        arity_check $2
+        arity_check 2
         assert_tag TAG_OBJECT, %rdi, not_a_vector_string
         assert_tag TAG_INT, %rsi, not_an_integer_string
         unbox_pointer_internal %rdi
@@ -28,7 +28,7 @@ record_ref:                     # record, k
         ret
 
 record_set:                     # record, k, obj
-        arity_check $3
+        arity_check 3
         assert_tag TAG_OBJECT, %rdi, not_a_vector_string
         assert_tag TAG_INT, %rsi, not_an_integer_string
         unbox_pointer_internal %rdi
@@ -42,7 +42,7 @@ record_set:                     # record, k, obj
 
 is_eq:                          # obj1, obj2
 is_eqv:                         # obj1, obj2
-        arity_check $2
+        arity_check 2
         eq_internal %rdi, %rsi
         box_boolean_internal
         ret
@@ -54,7 +54,7 @@ is_number:                      # obj
 is_complex:                     # obj
 is_real:                        # obj
 is_rational:                    # obj
-        arity_check $1
+        arity_check 1
         is_double_internal %rdi
         je      1f
         has_tag TAG_INT, %rdi
@@ -62,7 +62,7 @@ is_rational:                    # obj
         ret
 
 is_integer:                     # obj
-        arity_check $1
+        arity_check 1
         movq    %rdi, %xmm0
         has_tag TAG_INT, %rdi, store=false
         jne     1f
@@ -78,20 +78,20 @@ is_integer:                     # obj
         ret
 
 is_exact:                       # z
-        arity_check $1
+        arity_check 1
         has_tag TAG_INT, %rdi
         box_boolean_internal
         ret
 
 is_inexact:                     # z
-        arity_check $1
+        arity_check 1
         is_double_internal %rdi
         box_boolean_internal
         ret
 
 is_infinite:                    # z
         minimal_prologue
-        arity_check $1
+        arity_check 1
         is_double_internal %rdi
         jne     1f
         movq    %rdi, %xmm0
@@ -103,7 +103,7 @@ is_infinite:                    # z
 
 is_nan:                         # z
         minimal_prologue
-        arity_check $1
+        arity_check 1
         is_double_internal %rdi
         jne     1f
         movq    %rdi, %xmm0
@@ -154,7 +154,7 @@ multiply_size:
         .quad   . - multiply - RET_SIZE
 
 divide:                         # z1, z2
-        arity_check $2
+        arity_check 2
         binary_op_jump divide
 divide_int_int:
         cvtsi2sd %edi, %xmm0
@@ -171,14 +171,14 @@ divide_size:
         .quad   . - divide - RET_SIZE
 
 quotient:                       # n1, n2
-        arity_check $2
+        arity_check 2
         integer_division
         box_int_internal
         ret
 
 remainder:                      # n1, n2
         prologue
-        arity_check $2
+        arity_check 2
         extract_binary_op
         mov     %rax, %rbx
         integer_division
@@ -191,7 +191,7 @@ remainder:                      # n1, n2
 
 modulo:                         # n1, n2
         prologue
-        arity_check $2
+        arity_check 2
         extract_binary_op
         mov     %rax, %rbx
         integer_division
@@ -234,7 +234,7 @@ expt_:                          # z1, z2
         math_library_binary_call pow, round=true
 
 inexact:                        # z
-        arity_check $1
+        arity_check 1
         has_tag TAG_INT, %rdi, store=false
         jne     1f
         cvtsi2sd %edi, %xmm0
@@ -244,7 +244,7 @@ inexact:                        # z
         ret
 
 exact:                          # z
-        arity_check $1
+        arity_check 1
         has_tag TAG_INT, %rdi, store=false
         je      1f
         movq    %rdi, %xmm0
@@ -259,17 +259,19 @@ exact:                          # z
 
 number_to_string:               # z, radix
         minimal_prologue
-        optional_arg 2, $TEN_INT, %rsi
+        optional_arg 2, $DECIMAL_RADIX_INT, %rsi
+        assert_tag TAG_INT, %rsi, not_an_integer_string
         is_double_internal %rdi
         je      1f
         assert_tag TAG_INT, %rdi, not_a_number_string
-1:      assert_tag TAG_INT, %rsi, not_an_integer_string
-        tagged_jump to_string_jump_table
+        call_fn integer_to_string_internal %rdi, %rsi
+        return
+1:      call_fn double_to_string, %rdi, %rsi
         return
 
 string_to_number:               # string, radix
         prologue tail
-        optional_arg 2, $TEN_INT, %rsi
+        optional_arg 2, $DECIMAL_RADIX_INT, %rsi
         assert_tag TAG_STRING, %rdi, not_a_string_string
         assert_tag TAG_INT, %rsi, not_an_integer_string
         mov     %esi, %esi
@@ -298,7 +300,7 @@ string_to_number:               # string, radix
         ## 6.3. Booleans
 
 not:                            # obj
-        arity_check $1
+        arity_check 1
         mov     $FALSE, %rax
         eq_internal %rax, %rdi
         box_boolean_internal
@@ -307,7 +309,7 @@ not:                            # obj
         ## 6.4. Pairs and lists
 
 is_pair:                        # obj
-        arity_check $1
+        arity_check 1
         is_nil_internal %rdi
         jne     1f
         mov     $FALSE, %rax
@@ -318,7 +320,7 @@ is_pair:                        # obj
 
 cons:                           # obj1, obj2
         prologue
-        arity_check $2
+        arity_check 2
         mov     %rdi, %rbx
         mov     %rsi, %r12
         call_fn gc_allocate_memory, $pair_size
@@ -332,7 +334,7 @@ cons:                           # obj1, obj2
 
 car:                            # pair
         minimal_prologue
-        arity_check $1
+        arity_check 1
         assert_pair %rdi
         car     %rdi
         return
@@ -341,7 +343,7 @@ car_size:
 
 cdr:                            # pair
         minimal_prologue
-        arity_check $1
+        arity_check 1
         assert_pair %rdi
         cdr     %rdi
         return
@@ -350,7 +352,7 @@ cdr_size:
 
 set_car:                        # pair, obj
         minimal_prologue
-        arity_check $2
+        arity_check 2
         assert_pair %rdi
         unbox_pointer_internal %rdi
         mov     %rsi, pair_car(%rax)
@@ -359,7 +361,7 @@ set_car:                        # pair, obj
 
 set_cdr:                        # pair, obj
         minimal_prologue
-        arity_check $2
+        arity_check 2
         assert_pair %rdi
         unbox_pointer_internal %rdi
         mov     %rsi, pair_cdr(%rax)
@@ -367,14 +369,14 @@ set_cdr:                        # pair, obj
         return
 
 is_null:                        # obj
-        arity_check $1
+        arity_check 1
         is_nil_internal %rdi, store=true
         box_boolean_internal
         ret
 
 length:                         # list
         prologue
-        arity_check $1
+        arity_check 1
         mov     %rdi, %rax
         xor     %ebx, %ebx
 
@@ -390,7 +392,7 @@ length:                         # list
 
 append:                        # list1, list2
         prologue
-        arity_check $2
+        arity_check 2
         mov     %rsi, %r12
         call_scm reverse, %rdi
         mov     %rax, %rbx
@@ -408,7 +410,7 @@ append:                        # list1, list2
 
 reverse:                        # list
         prologue
-        arity_check $1
+        arity_check 1
         mov     %rdi, %rbx
         mov     $NIL, %r12
 1:      is_nil_internal %rbx
@@ -426,20 +428,20 @@ reverse:                        # list
         ## 6.5. Symbols
 
 is_symbol:                      # obj
-        arity_check $1
+        arity_check 1
         has_tag TAG_SYMBOL, %rdi
         box_boolean_internal
         ret
 
 symbol_to_string:               # symbol
-        arity_check $1
+        arity_check 1
         assert_tag TAG_SYMBOL, %rdi, not_a_symbol_string
         call_fn symbol_to_string_internal
         ret
 
 string_to_symbol:               # string
         prologue
-        arity_check $1
+        arity_check 1
         assert_tag TAG_STRING, %rdi, not_a_string_string
         unbox_pointer_internal %rdi, %r12
         mov     symbol_next_id, %rbx
@@ -474,7 +476,7 @@ string_to_symbol:               # string
         ## 6.6. Characters
 
 is_char:                        # obj
-        arity_check $1
+        arity_check 1
         is_eof_object_internal %rdi, store=false
         je      1f
         has_tag TAG_CHAR, %rdi
@@ -484,14 +486,14 @@ is_char:                        # obj
         ret
 
 char_to_integer:                # char
-        arity_check $1
+        arity_check 1
         assert_tag TAG_CHAR, %rdi, not_a_character_string
         mov    %edi, %eax
         box_int_internal
         ret
 
 integer_to_char:                # n
-        arity_check $1
+        arity_check 1
         assert_tag TAG_INT, %rdi, not_an_integer_string
         xor     %eax, %eax
         mov     %di, %ax
@@ -500,7 +502,7 @@ integer_to_char:                # n
 
 is_char_alphabetic:             # char
         minimal_prologue
-        arity_check $1
+        arity_check 1
         assert_tag TAG_CHAR, %rdi, not_a_character_string
         mov    %edi, %edi
         call_fn isalpha, %rdi
@@ -510,7 +512,7 @@ is_char_alphabetic:             # char
 
 is_char_numeric:                # char
         minimal_prologue
-        arity_check $1
+        arity_check 1
         assert_tag TAG_CHAR, %rdi, not_a_character_string
         mov    %edi, %edi
         call_fn isdigit, %rdi
@@ -520,7 +522,7 @@ is_char_numeric:                # char
 
 is_char_whitespace:             # char
         minimal_prologue
-        arity_check $1
+        arity_check 1
         assert_tag TAG_CHAR, %rdi, not_a_character_string
         mov    %edi, %edi
         call_fn isspace, %rdi
@@ -530,7 +532,7 @@ is_char_whitespace:             # char
 
 is_char_upper_case:             # char
         minimal_prologue
-        arity_check $1
+        arity_check 1
         assert_tag TAG_CHAR, %rdi, not_a_character_string
         mov    %edi, %edi
         call_fn isupper, %rdi
@@ -540,7 +542,7 @@ is_char_upper_case:             # char
 
 is_char_lower_case:             # char
         minimal_prologue
-        arity_check $1
+        arity_check 1
         assert_tag TAG_CHAR, %rdi, not_a_character_string
         mov    %edi, %edi
         call_fn islower, %rdi
@@ -550,7 +552,7 @@ is_char_lower_case:             # char
 
 char_upcase:                    # char
         minimal_prologue
-        arity_check $1
+        arity_check 1
         assert_tag TAG_CHAR, %rdi, not_a_character_string
         mov    %edi, %edi
         call_fn toupper, %rdi
@@ -559,7 +561,7 @@ char_upcase:                    # char
 
 char_downcase:                  # char
         minimal_prologue
-        arity_check $1
+        arity_check 1
         assert_tag TAG_CHAR, %rdi, not_a_character_string
         mov    %edi, %edi
         call_fn tolower, %rdi
@@ -569,7 +571,7 @@ char_downcase:                  # char
         ## 6.7. Strings
 
 is_string:                      # obj
-        arity_check $1
+        arity_check 1
         has_tag TAG_STRING, %rdi
         box_boolean_internal
         ret
@@ -602,7 +604,7 @@ make_string:                    # k, fill
         return
 
 string_length:                  # string
-        arity_check $1
+        arity_check 1
         assert_tag TAG_STRING, %rdi, not_a_string_string
         unbox_pointer_internal %rdi
         mov     header_object_size(%rax), %eax
@@ -613,7 +615,7 @@ string_length_size:
         .quad   . - string_length - RET_SIZE
 
 string_ref:                     # string, k
-        arity_check $2
+        arity_check 2
         assert_tag TAG_STRING, %rdi, not_a_string_string
         assert_tag TAG_INT, %rsi, not_an_integer_string
         mov     %esi, %esi
@@ -625,7 +627,7 @@ string_ref_size:
         .quad   . - string_ref - RET_SIZE
 
 string_set:                     # string, k, char
-        arity_check $3
+        arity_check 3
         assert_tag TAG_STRING, %rdi, not_a_string_string
         assert_tag TAG_INT, %rsi, not_an_integer_string
         assert_tag TAG_CHAR, %rdx, not_a_character_string
@@ -670,7 +672,7 @@ is_string_ci_greater_than_or_equal: # string1, string2
         ## 6.8. Vectors
 
 is_vector:                      # obj
-        arity_check $1
+        arity_check 1
         has_tag TAG_VECTOR, %rdi
         box_boolean_internal %rax
         ret
@@ -698,7 +700,7 @@ make_vector:                    # k, fill
         return
 
 vector_length:                  # vector
-        arity_check $1
+        arity_check 1
         assert_tag TAG_VECTOR, %rdi, not_a_vector_string
         unbox_pointer_internal %rdi
         mov     header_object_size(%rax), %eax
@@ -709,7 +711,7 @@ vector_length_size:
         .quad   . - vector_length - RET_SIZE
 
 vector_ref:                     # vector, k
-        arity_check $2
+        arity_check 2
         assert_tag TAG_VECTOR, %rdi, not_a_vector_string
         assert_tag TAG_INT, %rsi, not_an_integer_string
         unbox_pointer_internal %rdi
@@ -720,7 +722,7 @@ vector_ref_size:
         .quad   . - vector_ref - RET_SIZE
 
 vector_set:                     # vector, k, obj
-        arity_check $3
+        arity_check 3
         assert_tag TAG_VECTOR, %rdi, not_a_vector_string
         assert_tag TAG_INT, %rsi, not_an_integer_string
         unbox_pointer_internal %rdi
@@ -733,7 +735,7 @@ vector_set_size:
 
 list_to_vector:                 # list
         prologue vec
-        arity_check $1
+        arity_check 1
         mov     %rdi, %r12
         call_scm length, %rdi
         mov     %rax, %rdi
@@ -759,7 +761,7 @@ list_to_vector:                 # list
 
 is_bytevector:                  # obj
         minimal_prologue
-        arity_check $1
+        arity_check 1
         call_scm class_of, %rdi
         eq_internal $TAG_BYTEVECTOR, %eax
         box_boolean_internal %rax
@@ -789,7 +791,7 @@ make_bytevector:                # k, byte
         return
 
 bytevector_length:              # bytevector
-        arity_check $1
+        arity_check 1
         assert_object %rdi, TAG_BYTEVECTOR, not_a_bytevector_string
         unbox_pointer_internal %rdi
         mov     header_object_size(%rax), %eax
@@ -799,7 +801,7 @@ bytevector_length_size:
         .quad   . - bytevector_length - RET_SIZE
 
 bytevector_u8_ref:              # bytevector, k
-        arity_check $2
+        arity_check 2
         assert_object %rdi, TAG_BYTEVECTOR, not_a_bytevector_string
         assert_tag TAG_INT, %rsi, not_an_integer_string
         unbox_pointer_internal %rdi
@@ -812,7 +814,7 @@ bytevector_u8_ref_size:
         .quad   . - bytevector_u8_ref - RET_SIZE
 
 bytevector_u8_set:              # bytevector, k, byte
-        arity_check $3
+        arity_check 3
         assert_object %rdi, TAG_BYTEVECTOR, not_a_bytevector_string
         assert_tag TAG_INT, %rsi, not_an_integer_string
         assert_tag TAG_INT, %rdx, not_an_integer_string
@@ -826,7 +828,7 @@ bytevector_u8_set_size:
 
 list_to_bytevector:             # list
         prologue vec
-        arity_check $1
+        arity_check 1
         mov     %rdi, %r12
         call_scm length, %rdi
         call_scm make_bytevector, %rax, $ZERO_INT
@@ -849,14 +851,14 @@ list_to_bytevector:             # list
         ## 6.10. Control features
 
 is_procedure:                   # obj
-        arity_check $1
+        arity_check 1
         has_tag TAG_PROCEDURE, %rdi
         box_boolean_internal
         ret
 
 apply:                          # proc, args
         prologue
-        arity_check $2
+        arity_check 2
         assert_tag TAG_PROCEDURE, %rdi, not_a_procedure_string
         unbox_pointer_internal %rdi
         push    %rax
@@ -896,7 +898,7 @@ call_with_current_continuation: # proc
         mov     %rbx, rbx(%rsp)
         mov     %r12, r12(%rsp)
         mov     %rbp, rbp(%rsp)
-        arity_check $1
+        arity_check 1
         assert_tag TAG_PROCEDURE, %rdi, not_a_procedure_string
         unbox_pointer_internal %rdi, %rbx
 
@@ -939,7 +941,7 @@ call_with_current_continuation: # proc
         return
 
 values:                         # obj ...
-        arity_check $1, jge
+        arity_check 1, jge
         mov     $1, %r10d
         call_fn jit_rt_lambda_collect_varargs
         mov     %rdi, %rax
@@ -948,7 +950,7 @@ values:                         # obj ...
 
 call_with_values:               # producer, consumer
         prologue
-        arity_check $2
+        arity_check 2
         assert_tag TAG_PROCEDURE, %rdi, not_a_procedure_string
         assert_tag TAG_PROCEDURE, %rsi, not_a_procedure_string
 
@@ -969,7 +971,7 @@ call_with_values:               # producer, consumer
 
 raise:                          # error
         prologue
-        arity_check $1
+        arity_check 1
         mov     %rdi, %rbx
 
         parameter_value exception_handler_stack_symbol
@@ -987,7 +989,7 @@ raise:                          # error
 
 eval:                           # expression, environment-specifier
         prologue max_global_symbol
-        arity_check $2
+        arity_check 2
 
         mov     %esi, max_global_symbol(%rsp)
 
@@ -998,17 +1000,17 @@ eval:                           # expression, environment-specifier
         return
 
 scheme_report_environment:      # version
-        arity_check $0
+        arity_check 0
         box_int_internal max_scheme_report_environment_symbol
         ret
 
 null_environment:               # version
-        arity_check $0
+        arity_check 0
         box_int_internal max_null_environment_symbol
         ret
 
 interaction_environment:
-        arity_check $0
+        arity_check 0
         box_int_internal $MAX_NUMBER_OF_SYMBOLS
         ret
 
@@ -1017,7 +1019,7 @@ interaction_environment:
 
 call_with_port:                 # port, proc
         prologue
-        arity_check $2
+        arity_check 2
         assert_tag TAG_PORT, %rdi, not_a_port_string
         assert_tag TAG_PROCEDURE, %rsi, not_a_procedure_string
         unbox_pointer_internal %rsi, %rbx
@@ -1029,7 +1031,7 @@ call_with_port:                 # port, proc
 
 is_input_port:                  # obj
         minimal_prologue
-        arity_check $1
+        arity_check 1
         has_tag TAG_PORT, %rdi, store=false
         jne     1f
         unbox_pointer_internal %rdi
@@ -1042,7 +1044,7 @@ is_input_port:                  # obj
 
 is_output_port:                 # obj
         minimal_prologue
-        arity_check $1
+        arity_check 1
         has_tag TAG_PORT, %rdi, store=false
         jne     1f
         unbox_pointer_internal %rdi
@@ -1055,7 +1057,7 @@ is_output_port:                 # obj
 
 open_input_file:                # filename
         minimal_prologue
-        arity_check $1
+        arity_check 1
         assert_tag TAG_STRING, %rdi, not_a_string_string
         unbox_pointer_internal %rdi
         add     $header_size, %rax
@@ -1066,7 +1068,7 @@ open_input_file:                # filename
 
 open_output_file:               # filename
         minimal_prologue
-        arity_check $1
+        arity_check 1
         assert_tag TAG_STRING, %rdi, not_a_string_string
         unbox_pointer_internal %rdi
         add     $header_size, %rax
@@ -1076,23 +1078,23 @@ open_output_file:               # filename
         return
 
 current_output_port:
-        arity_check $0
+        arity_check 0
         tag     TAG_PORT, stdout
         ret
 
 current_input_port:
-        arity_check $0
+        arity_check 0
         tag     TAG_PORT, stdin
         ret
 
 current_error_port:
-        arity_check $0
+        arity_check 0
         tag     TAG_PORT, stderr
         ret
 
 close_port:                     # port
         minimal_prologue
-        arity_check $1
+        arity_check 1
         assert_tag TAG_PORT, %rdi, not_a_port_string
         unbox_pointer_internal %rdi
         call_fn fclose, %rax
@@ -1104,7 +1106,7 @@ close_port:                     # port
 close_input_port:               # port
 close_output_port:              # port
         minimal_prologue
-        arity_check $1
+        arity_check 1
         assert_tag TAG_PORT, %rdi, not_a_port_string
         call_scm close_port, %rdi
         return
@@ -1119,16 +1121,14 @@ open_input_bytevector:          # bytevector
 
 read:                           # port
         prologue
-        arity_check $1, jle
-        parameter_default_arg TAG_PORT, current_input_port_symbol, %rdi
+        optional_parameter_arg 1, current_input_port_symbol, %rdi
         unbox_pointer_internal %rdi
         call_fn read_datum, %rax
         return
 
 read_char:                      # port
         prologue
-        arity_check $1, jle
-        parameter_default_arg TAG_PORT, current_input_port_symbol, %rdi
+        optional_parameter_arg 1, current_input_port_symbol, %rdi
         unbox_pointer_internal %rdi
         call_fn fgetc, %rax
         cmp     $EOF, %al
@@ -1139,8 +1139,7 @@ read_char:                      # port
 
 peek_char:                      # port
         prologue
-        arity_check $1, jle
-        parameter_default_arg TAG_PORT, current_input_port_symbol, %rdi
+        optional_parameter_arg 1, current_input_port_symbol, %rdi
         unbox_pointer_internal %rdi, %rbx
         call_fn fgetc, %rbx
         call_fn ungetc, %rax, %rbx
@@ -1151,20 +1150,19 @@ peek_char:                      # port
 1:      return  $EOF_OBJECT
 
 is_eof_object:                  # obj
-        arity_check $1
+        arity_check 1
         is_eof_object_internal %rdi, store=true
         box_boolean_internal
         ret
 
 eof_object:
-        arity_check $0
+        arity_check 0
         mov     $EOF_OBJECT, %rax
         ret
 
 read_u8:                        # port
         prologue
-        arity_check $1, jle
-        parameter_default_arg TAG_PORT, current_input_port_symbol, %rsi
+        optional_parameter_arg 1, current_input_port_symbol, %rdi
         unbox_pointer_internal %rdi
         call_fn fgetc, %rax
         cmp     $EOF, %al
@@ -1175,8 +1173,7 @@ read_u8:                        # port
 
 peek_u8:                        # port
         prologue
-        arity_check $1, jle
-        parameter_default_arg TAG_PORT, current_input_port_symbol, %rsi
+        optional_parameter_arg 1, current_input_port_symbol, %rdi
         unbox_pointer_internal %rdi, %rbx
         call_fn fgetc, %rbx
         call_fn ungetc, %rax, %rbx
@@ -1189,14 +1186,16 @@ peek_u8:                        # port
         ## 6.13.3. Output
 
 write:                          # obj, port
-        prologue
-        arity_check $2, jle
-        arity_check $1, jge
+        prologue obj
+        mov     %rdi, obj(%rsp)
+
+        optional_parameter_arg 2, current_output_port_symbol, %rsi
+
         lea     to_string_jump_table, %rbx
         store_pointer $TAG_CHAR, $char_to_machine_readable_string
         store_pointer $TAG_STRING, $string_to_machine_readable_string
 
-        call_scm display, %rdi, %rsi
+        call_scm display, obj(%rsp), %rsi
 
         store_pointer $TAG_CHAR, $char_to_string
         store_pointer $TAG_STRING, $string_to_string
@@ -1206,9 +1205,7 @@ write:                          # obj, port
 display:                        # obj, port
         prologue obj
         mov     %rdi, obj(%rsp)
-        arity_check $2, jle
-        arity_check $1, jge
-        parameter_default_arg TAG_PORT, current_output_port_symbol, %rsi
+        optional_parameter_arg 2, current_output_port_symbol, %rsi
         unbox_pointer_internal %rsi, %rbx
         call_fn to_string, obj(%rsp)
         unbox_pointer_internal %rax, %rdi
@@ -1220,17 +1217,15 @@ display:                        # obj, port
 
 newline:                        # port
         minimal_prologue
-        arity_check $1, jle
+        optional_parameter_arg 1, current_output_port_symbol, %rdi
         call_scm write_char, $NEWLINE_CHAR, %rdi
         return
 
 write_char:                     # char, port
         prologue char, port
-        arity_check $2, jle
-        arity_check $1, jge
+        optional_parameter_arg 2, current_output_port_symbol, %rsi
         assert_tag TAG_CHAR, %rdi, not_a_character_string
         mov     %edi, char(%rsp)
-        parameter_default_arg TAG_PORT, current_output_port_symbol, %rsi
         unbox_pointer_internal %rsi
         mov     char(%rsp), %edi
         call_fn fputc, %rdi, %rax
@@ -1239,9 +1234,8 @@ write_char:                     # char, port
 write_u8:                       # byte, port
         prologue byte
         mov     %edi, byte(%rsp)
-        arity_check $2, jle
-        arity_check $1, jge
-        parameter_default_arg TAG_PORT, current_output_port_symbol, %rdi
+        optional_parameter_arg 2, current_output_port_symbol, %rsi
+        assert_tag TAG_INT, %rdi, not_an_integer_string
         unbox_pointer_internal %rsi
         mov     byte(%rsp), %edi
         call_fn fputc, %rdi, %rax
@@ -1249,8 +1243,7 @@ write_u8:                       # byte, port
 
 flush_output_port:              # port
         prologue
-        arity_check $1, jle
-        parameter_default_arg TAG_PORT, current_output_port_symbol, %rdi
+        optional_parameter_arg 1, current_output_port_symbol, %rdi
         unbox_pointer_internal %rdi
         call_fn fflush, %rax
         return  $VOID
@@ -1259,7 +1252,7 @@ flush_output_port:              # port
 
 load:                           # filename, environment-specifier
         prologue
-        arity_check $2, jle
+        arity_check 2, jle
         assert_tag TAG_STRING, %rdi, not_a_string_string
         call_scm open_input_file, %rdi
         mov     %rax, %rbx
@@ -1269,7 +1262,7 @@ load:                           # filename, environment-specifier
 
 is_file_exists:                 # filename
         minimal_prologue
-        arity_check $1
+        arity_check 1
         assert_tag TAG_STRING, %rdi, not_a_string_string
         call_fn unbox_string, %rdi
         call_fn access, %rax, $F_OK
@@ -1281,7 +1274,7 @@ is_file_exists:                 # filename
 
 delete_file:                    # filename
         minimal_prologue
-        arity_check $1
+        arity_check 1
         assert_tag TAG_STRING, %rdi, not_a_string_string
         call_fn unbox_string, %rdi
         call_fn unlink, %rax
@@ -1289,13 +1282,13 @@ delete_file:                    # filename
         return  $VOID
 
 command_line:
-        arity_check $0
+        arity_check 0
         mov     command_line_arguments, %rax
         ret
 
 exit_:                          # obj
         minimal_prologue
-        arity_check $1
+        arity_check 1
 
         mov     $TRUE, %r11
         cmp     %r11, %rdi
@@ -1317,20 +1310,20 @@ exit_:                          # obj
 
 emergency_exit:                 # obj
         minimal_prologue
-        arity_check $1
+        arity_check 1
         assert_tag TAG_INT, %rdi, not_an_integer_string
         mov     %edi, %edi
         call_fn exit, %rdi
         return
 
 get_environment_variables:
-        arity_check $0
+        arity_check 0
         mov     environment_alist, %rax
         ret
 
 current_second:
         prologue tv_sec, tv_usec
-        arity_check $0
+        arity_check 0
         lea     tv_sec(%rsp), %rax
         call_fn gettimeofday, %rax, $NULL
         cvtsi2sd tv_sec(%rsp), %xmm0
@@ -1343,13 +1336,13 @@ current_second:
 
 current_jiffy:
         minimal_prologue
-        arity_check $0
+        arity_check 0
         call_fn clock
         box_int_internal
         return
 
 jiffies_per_second:
-        arity_check $0
+        arity_check 0
         mov     $CLOCKS_PER_SEC, %rax
         box_int_internal
         ret
@@ -2043,7 +2036,7 @@ build_environment_alist:        # list
 
 read_all:                       # port
         prologue
-        arity_check $1
+        arity_check 1
         mov     %rdi, %rbx
 1:      call_scm read, %rbx
         is_eof_object_internal %rax
@@ -2054,7 +2047,7 @@ read_all:                       # port
 
 class_of:                       # obj
         prologue
-        arity_check $1
+        arity_check 1
         mov     %rdi, %rbx
         extract_tag
         cmp     $TAG_OBJECT, %rax
@@ -2071,7 +2064,7 @@ class_of:                       # obj
 2:      return  void_symbol
 
 object_space_size:
-        arity_check $0
+        arity_check 0
         mov     stack_top_offset + object_space, %rax
         shr     $POINTER_SIZE_SHIFT, %rax
         box_int_internal
@@ -2369,7 +2362,7 @@ gc_sweep:
 
 gc:
         prologue
-        arity_check $0
+        arity_check 0
         call_fn gc_mark
         call_fn gc_sweep
 
@@ -2517,12 +2510,14 @@ char_to_machine_readable_string: # char
         register_for_gc
         return
 
-integer_to_string:              # int, radix
-        prologue str, size, format
-        default_arg TAG_INT, $10, %rsi
-        mov     %esi, %esi
+integer_to_string:              # int
+        minimal_prologue
+        call_fn integer_to_string_internal %rdi, $DECIMAL_RADIX_INT
+        return
 
-        mov     integer_to_string_format_table(,%rsi,POINTER_SIZE), %rax
+integer_to_string_internal:     # int, radix
+        prologue str, size, format
+        mov     integer_to_string_format_table(,%esi,POINTER_SIZE), %rax
         mov     %rax, format(%rsp)
 
         movsx   %edi, %rbx
@@ -4206,7 +4201,7 @@ varargs_store:
         ret
 
 jit_rt_call_with_current_continuation_escape: # obj ..., continuation in r10
-        arity_check $1, jge
+        arity_check 1, jge
         mov     %r10, %rbx
         mov     $1, %r10d
         call_fn jit_rt_lambda_collect_varargs
