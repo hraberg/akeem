@@ -25,6 +25,9 @@
         ## signal.h
         .equ SIGSEGV, 11
 
+        ## dlfcn.h
+        .equ RTLD_LAZY, 1
+
         .equ ROUNDING_MODE_TRUNCATE, 0b11
 
         .equ CPUID_FEATURE_INFORMATION, 1
@@ -66,6 +69,7 @@
 
         .equ TAG_BYTEVECTOR, 64
         .equ TAG_CONTINUATION, 65
+        .equ TAG_HANDLE, 66
 
         .equ C_TRUE, 1
         .equ C_FALSE, 0
@@ -80,6 +84,7 @@
         .equ SPACE_CHAR, (NAN_MASK | (TAG_CHAR << TAG_SHIFT) | 32)
 
         .equ ZERO_INT, (NAN_MASK | (TAG_INT << TAG_SHIFT) | 0)
+        .equ ONE_INT, (NAN_MASK | (TAG_INT << TAG_SHIFT) | 1)
 
         .equ BINARY_RADIX_INT, (NAN_MASK | (TAG_INT << TAG_SHIFT) | 2)
         .equ OCTAL_RADIX_INT, (NAN_MASK | (TAG_INT << TAG_SHIFT) | 8)
@@ -99,6 +104,7 @@
         .equ BINARY_OP_INT_INT, (1 << 1 | 1)
 
         .equ APPLY_JUMP_ALIGNMENT, 2
+        .equ DLAPPLY_JUMP_ALIGNMENT, 16
         .equ VARARGS_JUMP_ALIGNMENT, 16
         .equ VARARGS_JUMP_ALIGNMENT_SHIFT, 4
 

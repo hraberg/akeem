@@ -1,5 +1,5 @@
 ASFLAGS += -g --64 -march=generic64+sse4.2
-LDLIBS = -lm
+LDLIBS = -lm -ldl
 
 AKEEM_HOME = $(PWD)
 AKEEM = $(AKEEM_HOME)/akeem

@@ -1430,6 +1430,7 @@ main:                # argc, argv
         intern_symbol object_symbol, "object", id=TAG_OBJECT
         intern_symbol bytevector_symbol, "bytevector", id=TAG_BYTEVECTOR
         intern_symbol continuation_symbol, "continuation", id=TAG_CONTINUATION
+        intern_symbol handle_symbol, "handle", id=TAG_HANDLE
 
         intern_symbol quote_symbol, "quote"
         intern_symbol lambda_symbol, "lambda"
@@ -1500,6 +1501,7 @@ main:                # argc, argv
         intern_string not_a_procedure_string, "Not a procedure:"
         intern_string not_a_port_string, "Not a port:"
         intern_string not_a_bytevector_string, "Not a bytevector:"
+        intern_string not_a_handle_string, "Not a handle:"
         intern_string symbol_not_defined_string, "Symbol not defined:"
         intern_string arity_check_error_string, "Unexpected number of arguments:"
 
@@ -1570,12 +1572,21 @@ main:                # argc, argv
         store_pointer $TAG_CHAR, $unbox_char
         store_pointer $TAG_INT, $unbox_integer
         store_pointer $TAG_SYMBOL, $unbox_symbol
-        store_pointer $TAG_PROCEDURE, $unbox_port
+        store_pointer $TAG_PROCEDURE, $unbox_procedure
         store_pointer $TAG_PORT, $unbox_port
         store_pointer $TAG_STRING, $unbox_string
         store_pointer $TAG_PAIR, $unbox_pair
         store_pointer $TAG_VECTOR, $unbox_vector
         store_pointer $TAG_OBJECT, $unbox_object
+
+        lea     box_jump_table, %rbx
+        store_pointer $TAG_DOUBLE, $box_double
+        store_pointer $TAG_BOOLEAN, $box_boolean
+        store_pointer $TAG_CHAR, $box_char
+        store_pointer $TAG_INT, $box_integer
+        store_pointer $TAG_PROCEDURE, $box_procedure
+        store_pointer $TAG_PORT, $box_port
+        store_pointer $TAG_STRING, $box_string
 
         lea     integer_to_string_format_table, %rbx
         store_pointer $8, $oct_format
@@ -1924,6 +1935,10 @@ main:                # argc, argv
         define "object-space-size", $object_space_size
         define "class-of", $class_of
 
+        define "dlopen", $dlopen_
+        define "dlsym", $dlsym_
+        define "dlcall", $dlcall
+
         call_fn box_string_array_as_list, argv(%rsp)
         mov     %rax, command_line_arguments
 
@@ -2047,6 +2062,7 @@ build_environment_alist:        # list
 read_all:                       # port
         prologue
         arity_check 1
+        assert_tag TAG_PORT, %rdi, not_a_port_string
         mov     %rdi, %rbx
 1:      call_scm read, %rbx
         is_eof_object_internal %rax
@@ -2080,6 +2096,133 @@ object_space_size:
         box_int_internal
         ret
 
+dlopen_:                        # filename
+        minimal_prologue
+        arity_check 1
+        assert_tag TAG_STRING, %rdi, not_a_string_string
+        call_fn unbox_string, %rdi
+        call_fn dlopen, %rax
+        perror  jz
+        call_scm make_vector, $ONE_INT, %rax
+        unbox_pointer_internal
+        movw    $TAG_HANDLE, header_object_type(%rax)
+        tag     TAG_OBJECT, %rax
+        return
+
+dlsym_:                         # handle, symbol
+        prologue
+        arity_check 2
+        assert_object %rdi, TAG_HANDLE, not_a_handle_string
+        assert_tag TAG_STRING, %rsi, not_a_string_string
+        mov     %rsi, %rbx
+        call_scm record_ref, %rdi, $ZERO_INT
+        mov     %rax, %r12
+        call_fn dlerror
+        call_fn unbox_string, %rbx
+        call_fn dlsym, %r12, %rax
+        mov     %rax, %rbx
+        call_fn dlerror
+        perror  jz
+        tag     TAG_PROCEDURE, %rbx
+        return
+
+dlcall:                         # c-fun, return-type-symbol, args ...
+        arity_check 2, jge
+        mov     $2, %r10d
+        call_fn jit_rt_lambda_collect_varargs
+        prologue
+        assert_tag TAG_PROCEDURE, %rdi, not_a_procedure_string
+        assert_tag TAG_SYMBOL, %rsi, not_a_symbol_string
+        mov     %rsi, %rbx
+        xor     %eax, %eax
+        call_scm dlapply, %rdi, %rdx
+        xor     %edx, %edx
+        cmp     double_symbol, %rbx
+        je      1f
+        call_fn box, %rax, %rbx
+        return
+1:      return  %xmm0
+
+dlapply:                       # proc, args
+        prologue
+        push    %r13
+        push    %r14
+        arity_check 2
+        assert_tag TAG_PROCEDURE, %rdi, not_a_procedure_string
+        unbox_pointer_internal %rdi
+        mov     $0, %r13d
+        mov     $0, %r14d
+
+        push    %rax
+
+        mov     %rsi, %r12
+        call_scm length, %r12
+        push    %rax
+        mov     %eax, %ebx
+
+1:      is_nil_internal %r12
+        je      3f
+        car     %r12, %rdi
+        is_double_internal %rdi
+        jne     2f
+        btsl    %r14d, %r13d
+
+2:      call_fn unbox, %rdi
+        push    %rax
+        cdr     %r12, %r12
+        inc     %r14d
+        jmp     1b
+
+3:      mov     $MAX_REGISTER_ARGS, %eax
+        sub     %ebx, %eax
+        js      dlapply_pop
+        mov     dlapply_pop, %r11
+        imul    $DLAPPLY_JUMP_ALIGNMENT, %eax
+        lea     dlapply_pop(%eax), %rax
+        jmp     *%rax
+
+        .align  16
+dlapply_pop:
+        pop     %r9
+        bt      $5, %r13d
+        jnc     1f
+        movq    %r9, %xmm5
+        .align  DLAPPLY_JUMP_ALIGNMENT
+1:      pop     %r8
+        bt      $4, %r13d
+        jnc     2f
+        movq    %r8, %xmm4
+        .align  DLAPPLY_JUMP_ALIGNMENT
+2:      pop     %rcx
+        bt      $3, %r13d
+        jnc     3f
+        movq    %rcx, %xmm3
+        .align  DLAPPLY_JUMP_ALIGNMENT
+3:      pop     %rdx
+        bt      $2, %r13d
+        jnc     4f
+        movq    %rdx, %xmm2
+        .align  DLAPPLY_JUMP_ALIGNMENT
+4:      pop     %rsi
+        bt      $1, %r13d
+        jnc     5f
+        movq    %rsi, %xmm1
+        .align  DLAPPLY_JUMP_ALIGNMENT
+5:      pop     %rdi
+        bt      $0, %r13d
+        jnc     6f
+        movq    %rdi, %xmm0
+        .align  DLAPPLY_JUMP_ALIGNMENT
+6:      pop      %rax
+
+        mov     %eax, %eax
+        pop     %r11
+        call    *%r11
+
+        pop     %r14
+        pop     %r13
+        return
+
         ## Boxing from C
 
 box_boolean:                    # c-boolean
@@ -2087,8 +2230,17 @@ box_boolean:                    # c-boolean
         box_boolean_internal %rdi
         ret
 
-box_int:                        # c-int
+box_integer:                    # c-int
         box_int_internal %edi
+        ret
+
+box_char:                       # c-char
+        mov     %edi, %edi
+        tag     TAG_CHAR, %rdi
+        ret
+
+box_double:                     # c-double
+        movq    %rdi, %rax
         ret
 
 box_string:                     # c-string
@@ -2106,6 +2258,20 @@ box_string:                     # c-string
         return
 
 3:      return empty_string
+
+box_procedure:                  # c-procedure
+        tag     TAG_PROCEDURE, %rdi
+        ret
+
+box_port:                       # c-port
+        tag     TAG_PORT, %rdi
+        ret
+
+box:                            # value, tag
+        minimal_prologue
+        mov     box_jump_table(,%esi,POINTER_SIZE), %rax
+        call_fn *%rax, %rdi
+        return
 
         ## Unboxing to C
 
@@ -4277,6 +4443,10 @@ to_string_jump_table:
 
         .align  16
 unbox_jump_table:
+        .zero   TAG_MASK * POINTER_SIZE
+
+        .align  16
+box_jump_table:
         .zero   TAG_MASK * POINTER_SIZE
 
         .align  16
