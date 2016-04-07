@@ -1940,7 +1940,7 @@ main:                # argc, argv
 
         define "dlopen", $dlopen_
         define "dlsym", $dlsym_
-        define "dlcall", $dlcall
+        define "ffi-call", $ffi_call
 
         call_fn box_string_array_as_list, argv(%rsp)
         mov     %rax, command_line_arguments
@@ -2140,7 +2140,7 @@ dlsym_:                         # symbol, handle
         tag     TAG_OBJECT, %rax
         return
 
-dlcall:                         # c-procedure, return-type-symbol, args ...
+ffi_call:                  # c-procedure, return-type-symbol, args ...
         arity_check 2, jge
         mov     $2, %r10d
         call_fn jit_rt_lambda_collect_varargs
@@ -2151,7 +2151,7 @@ dlcall:                         # c-procedure, return-type-symbol, args ...
         xor     %eax, %eax
         mov     %rdx, %r12
         call_scm record_ref, %rdi, $ZERO_INT
-        call_fn dlapply, %rax, %r12
+        call_fn ffi_apply, %rax, %r12
         xor     %edx, %edx
         cmp     void_symbol, %rbx
         je      1f
@@ -2162,7 +2162,7 @@ dlcall:                         # c-procedure, return-type-symbol, args ...
 1:      return  $VOID
 2:      return  %xmm0
 
-dlapply:                       # proc, args
+ffi_apply:                      # proc, args
         prologue
         push    %r13
         push    %r14
@@ -2192,46 +2192,46 @@ dlapply:                       # proc, args
 
 3:      mov     $MAX_REGISTER_ARGS, %eax
         sub     %ebx, %eax
-        js      dlapply_pop
+        js      ffi_apply_pop
 
-        shl     $DLAPPLY_JUMP_ALIGNMENT_SHIFT, %rax
-        add     $dlapply_pop, %rax
+        shl     $FFI_APPLY_JUMP_ALIGNMENT_SHIFT, %rax
+        add     $ffi_apply_pop, %rax
         jmp     *%rax
 
         ##      TODO: This is overly simplistic, need to calculate next available register properly.
         ##            Won't work when mixing doubles and ints.
         .align  16
-dlapply_pop:
+ffi_apply_pop:
         pop     %r9
         bt      $5, %r13d
         jnc     1f
         movq    %r9, %xmm5
-        .align  DLAPPLY_JUMP_ALIGNMENT
+        .align  FFI_APPLY_JUMP_ALIGNMENT
 1:      pop     %r8
         bt      $4, %r13d
         jnc     2f
         movq    %r8, %xmm4
-        .align  DLAPPLY_JUMP_ALIGNMENT
+        .align  FFI_APPLY_JUMP_ALIGNMENT
 2:      pop     %rcx
         bt      $3, %r13d
         jnc     3f
         movq    %rcx, %xmm3
-        .align  DLAPPLY_JUMP_ALIGNMENT
+        .align  FFI_APPLY_JUMP_ALIGNMENT
 3:      pop     %rdx
         bt      $2, %r13d
         jnc     4f
         movq    %rdx, %xmm2
-        .align  DLAPPLY_JUMP_ALIGNMENT
+        .align  FFI_APPLY_JUMP_ALIGNMENT
 4:      pop     %rsi
         bt      $1, %r13d
         jnc     5f
         movq    %rsi, %xmm1
-        .align  DLAPPLY_JUMP_ALIGNMENT
+        .align  FFI_APPLY_JUMP_ALIGNMENT
 5:      pop     %rdi
         bt      $0, %r13d
         jnc     6f
         movq    %rdi, %xmm0
-        .align  DLAPPLY_JUMP_ALIGNMENT
+        .align  FFI_APPLY_JUMP_ALIGNMENT
 6:      pop      %rax
 
         mov     %eax, %eax
