@@ -198,8 +198,10 @@
 (define-syntax assert-predicate
   (syntax-rules ()
     ((assert-predicate pred value)
+     (assert-predicate pred 'value value))
+    ((assert-predicate pred name value)
      (if (not (pred value))
-         (error "Bad syntax:" 'value value "doesn't satisfy" 'pred)))))
+         (error "Bad syntax:" name value "doesn't satisfy" 'pred)))))
 
 ;;; 4.1.2. Literal expressions
 
@@ -250,6 +252,7 @@
     ((let tag ((name val) ...) body1 body2 ...)
      ((letrec ((tag (lambda (name ...)
                       body1 body2 ...)))
+        (assert-predicate symbol? (string->symbol "tag") 'tag)
         tag)
       val ...))))
 
