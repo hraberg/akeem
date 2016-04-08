@@ -3540,7 +3540,7 @@ jit_procedure_call:             # form, c-stream, environment, register, tail
 
 8:      cmpb    $2, arity(%rsp)
         jg      9f
-        call_fn jit_literal, $NULL, %r12, $NIL, $RDX, $C_FALSE
+        call_fn fwrite, $jit_clear_multiple_returns_in_rdx, $1, jit_clear_multiple_returns_in_rdx_size, %r12
 
 9:      has_tag TAG_SYMBOL, operand(%rsp), store=false
         je      15f
@@ -4733,6 +4733,12 @@ jit_varargs_arity_check_r10b_with_al:
 1:
 jit_varargs_arity_check_r10b_with_al_size:
         .quad   (. - jit_varargs_arity_check_r10b_with_al)
+
+        .align  16
+jit_clear_multiple_returns_in_rdx:
+        xor     %edx, %edx
+jit_clear_multiple_returns_in_rdx_size:
+        .quad   . - jit_clear_multiple_returns_in_rdx
 
         .align  16
 jit_return:
