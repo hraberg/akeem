@@ -3470,7 +3470,7 @@ jit_procedure_call:             # form, c-stream, environment, register, tail
         mov     %al, arity(%rsp)
 
         cmpb    $MAX_REGISTER_ARGS, arity(%rsp)
-        jg      15f
+        jg      16f
 
 0:      car     %rbx
         mov     %rax, operand(%rsp)
@@ -3538,57 +3538,61 @@ jit_procedure_call:             # form, c-stream, environment, register, tail
 7:      cdr     %rbx, %rbx
         jmp     5b
 
-8:      has_tag TAG_SYMBOL, operand(%rsp), store=false
-        je      14f
+8:      cmpb    $2, arity(%rsp)
+        jg      9f
+        call_fn jit_literal, $NULL, %r12, $NIL, $RDX, $C_FALSE
+
+9:      has_tag TAG_SYMBOL, operand(%rsp), store=false
+        je      15f
 
         has_tag TAG_PAIR, operand(%rsp), store=false
-        jne     9f
+        jne     10f
 
         call_fn fwrite, $jit_pop_r11, $1, jit_pop_r11_size, %r12
-        jmp     10f
+        jmp     11f
 
-9:      call_fn jit_datum, operand(%rsp), %r12, env(%rsp), $R11, $C_FALSE
+10:     call_fn jit_datum, operand(%rsp), %r12, env(%rsp), $R11, $C_FALSE
         update_max_locals max_locals(%rsp)
 
-10:     call_fn fwrite, $jit_unbox_r11, $1, jit_unbox_r11_size, %r12
+11:     call_fn fwrite, $jit_unbox_r11, $1, jit_unbox_r11_size, %r12
         call_fn fwrite, $jit_arity_to_al, $1, jit_arity_to_al_size, %r12
         lea     arity(%rsp), %rax
         call_fn fwrite, %rax, $1, $BYTE_SIZE, %r12
 
         cmpb    $MAX_REGISTER_ARGS, arity(%rsp)
-        jg      11f
+        jg      12f
 
         cmp     $C_TRUE, tail(%rsp)
-        je      12f
+        je      13f
 
-11:     call_fn fwrite, $jit_call_r11, $1, jit_call_r11_size, %r12
+12:     call_fn fwrite, $jit_call_r11, $1, jit_call_r11_size, %r12
         cmpl    $0, pushed_args_size(%rsp)
-        jg      19f
+        jg      20f
 
-        jmp     13f
+        jmp     14f
 
-12:     call_fn fwrite, $jit_epilogue, $1, jit_epilogue_size, %r12
+13:     call_fn fwrite, $jit_epilogue, $1, jit_epilogue_size, %r12
         call_fn fwrite, $jit_jump_r11, $1, jit_jump_r11_size, %r12
 
         return  max_locals(%rsp)
 
-13:     mov     register(%rsp), %rbx
+14:     mov     register(%rsp), %rbx
         mov     jit_rax_to_register_table(,%rbx,POINTER_SIZE), %rax
         mov     jit_rax_to_register_size_table(,%rbx,POINTER_SIZE), %r11
         call_fn fwrite, %rax, $1, %r11, %r12
         return  max_locals(%rsp)
 
-14:     unbox_pointer_internal operand(%rsp), %rbx
+15:     unbox_pointer_internal operand(%rsp), %rbx
         mov     jit_inline_table(,%rbx,POINTER_SIZE), %rax
         test    %rax, %rax
-        jz      9b
+        jz      10b
 
         mov     jit_inline_size_table(,%rbx,POINTER_SIZE), %r11
         call_fn fwrite, %rax, $1, %r11, %r12
 
-        jmp     13b
+        jmp     14b
 
-15:     xor     %eax, %eax
+16:     xor     %eax, %eax
         mov     arity(%rsp), %al
         sub     $MAX_REGISTER_ARGS, %al
         shl     $POINTER_SIZE_SHIFT, %eax
@@ -3601,30 +3605,30 @@ jit_procedure_call:             # form, c-stream, environment, register, tail
         call_scm reverse, %rdi
         mov     %rax, %rbx
 
-16:     is_nil_internal %rbx
-        je      18f
+17:     is_nil_internal %rbx
+        je      19f
 
         cmpl    $MAX_REGISTER_ARGS, argc(%rsp)
-        je      18f
+        je      19f
 
         car     %rbx
         call_fn jit_datum, %rax, %r12, env(%rsp), $RAX, $C_FALSE
         update_max_locals max_locals(%rsp)
         call_fn fwrite, $jit_push_rax, $1, jit_push_rax_size, %r12
 
-17:     cdr     %rbx, %rbx
+18:     cdr     %rbx, %rbx
         decl    argc(%rsp)
-        jmp     16b
+        jmp     17b
 
-18:     mov     form(%rsp), %rbx
+19:     mov     form(%rsp), %rbx
         movl    $0, argc(%rsp)
         jmp     0b
 
-19:     call_fn fwrite, $jit_caller_cleanup, $1, jit_caller_cleanup_size, %r12
+20:     call_fn fwrite, $jit_caller_cleanup, $1, jit_caller_cleanup_size, %r12
         lea     pushed_args_size(%rsp), %rax
         call_fn fwrite, %rax, $1, $INT_SIZE, %r12
 
-        jmp     13b
+        jmp     14b
 
         ## 4.1.4. Procedures
 

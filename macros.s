@@ -406,10 +406,6 @@
         mov     $jit_rt_lambda_arity_check_error, %r11
         call   *%r11
 .L_\@_1:
-        cmp     $2, %al
-        jg      .L_\@_2
-        xor     %edx, %edx
-.L_\@_2:
         .endm
 
         .macro lookup_global_symbol_internal symbol_id
