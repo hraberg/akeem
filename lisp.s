@@ -1539,6 +1539,7 @@ main:                # argc, argv
         intern_string not_a_c_procedure_string, "Not a C procedure:"
         intern_string symbol_not_defined_string, "Symbol not defined:"
         intern_string arity_check_error_string, "Unexpected number of arguments:"
+        intern_string too_high_arity_error_string, "Maximum arity is 6, was:"
 
         intern_string false_string, "#f"
         mov     %rax, boolean_string_table + POINTER_SIZE * C_FALSE
@@ -3650,6 +3651,8 @@ jit_procedure:                  # form, c-stream, environment, arguments
 
         call_scm length, flat_args(%rsp)
         mov     %eax, arity(%rsp)
+        cmp     $MAX_REGISTER_ARGS, %eax
+        jg      5f
 
         call_fn fwrite, $jit_prologue, $1, jit_prologue_size, %r12
         cmp     $-1, varargs_idx(%rsp)
@@ -3713,6 +3716,11 @@ jit_procedure:                  # form, c-stream, environment, arguments
         call_fn jit_literal, $jit_rt_lambda_collect_varargs, %r12, $NIL, $R11, $C_FALSE
         call_fn fwrite, $jit_call_r11, $1, jit_call_r11_size, %r12
         jmp     1b
+
+5:      mov     arity(%rsp), %eax
+        box_int_internal %eax
+        call_scm internal_error, too_high_arity_error_string, %rax
+        return
 
 jit_lambda_factory_code:        # lambda, c-stream, closure-bitmask
         prologue  rbp, local, local_idx, closure_bitmask, closure_idx, closure_env_size
