@@ -3282,7 +3282,8 @@ jit_code:                       # form, environment, arguments
         perror
         mov     %rax, %rbx
 
-        call_fn jit_procedure, %r12, %rbx, env(%rsp), args(%rsp)
+        lea     code(%rsp), %r8
+        call_fn jit_procedure, %r12, %rbx, env(%rsp), args(%rsp), %r8
         call_fn fclose, %rbx
         perror  je
 
@@ -3633,12 +3634,13 @@ jit_procedure_call:             # form, c-stream, environment, register, tail
 
         ## 4.1.4. Procedures
 
-jit_procedure:                  # form, c-stream, environment, arguments
-        prologue env, args, env_size, frame_size, local_idx, local, end_offset, flat_args, varargs_idx, arity
+jit_procedure:                  # form, c-stream, environment, arguments, code-pointer
+        prologue env, args, env_size, frame_size, local_idx, local, end_offset, flat_args, varargs_idx, arity, code_pointer
         mov     %rdi, %rbx
         mov     %rsi, %r12
         mov     %rdx, env(%rsp)
         mov     %rcx, args(%rsp)
+        mov     %r8, code_pointer(%rsp)
         movl    $0, local_idx(%rsp)
         call_fn jit_lambda_flatten_arguments, args(%rsp)
         mov     %rax, flat_args(%rsp)
@@ -3717,7 +3719,10 @@ jit_procedure:                  # form, c-stream, environment, arguments
         call_fn fwrite, $jit_call_r11, $1, jit_call_r11_size, %r12
         jmp     1b
 
-5:      mov     arity(%rsp), %eax
+5:      call_fn fclose, %r12
+        mov     code(%rsp), %rax
+        call_fn free, (%rax)
+        mov     arity(%rsp), %eax
         box_int_internal %eax
         call_scm internal_error, too_high_arity_error_string, %rax
         return
