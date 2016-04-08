@@ -3720,7 +3720,7 @@ jit_procedure:                  # form, c-stream, environment, arguments, code-p
         jmp     1b
 
 5:      call_fn fclose, %r12
-        mov     code(%rsp), %rax
+        mov     code_pointer(%rsp), %rax
         call_fn free, (%rax)
         mov     arity(%rsp), %eax
         box_int_internal %eax
