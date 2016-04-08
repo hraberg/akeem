@@ -221,12 +221,19 @@
           (if (not (or (symbol? formals) (null? formals)))
               (begin
                 (assert-predicate pair? formals)
-                (letrec-internal ((loop (lambda (formals)
-                                          (if (pair? formals)
-                                              (let ((formal (car formals)))
-                                                (assert-predicate symbol? formal)
-                                                (loop (cdr formals)))))))
-                  (loop formals))))
+                (let ((arity (letrec ((loop (lambda (formals arity)
+                                              (if (null? formals)
+                                                  arity
+                                                  (if (pair? formals)
+                                                      (let ((formal (car formals)))
+                                                        (assert-predicate symbol? formal)
+                                                        (loop (cdr formals) (+ 1 arity)))
+                                                      (begin
+                                                        (assert-predicate symbol? formals)
+                                                        (+ 1 arity)))))))
+                               (loop formals 0))))
+                  (if (> arity 6)
+                      (error "Maximum arity is 6:" formals)))))
           `(lambda-internal ,formals ,@body)))))
 
 ;;; 4.1.5. Conditionals
