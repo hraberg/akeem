@@ -2247,7 +2247,6 @@ ffi_apply_pop_ints:
         pop     %\reg
         .align  FFI_APPLY_INTS_JUMP_ALIGNMENT
         .endr
-        xor     %eax, %eax
         mov     %r14b, %al
         call    *%r13
         pop     %r13
