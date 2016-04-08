@@ -261,14 +261,6 @@
                 (assert-predicate symbol? var)
                 (assert-bindings (cdr bindings)))))))
 
-(define-syntax named-let-internal
-  (syntax-rules ()
-    ((named-let-internal tag ((name val) ...) body1 body2 ...)
-     ((letrec-internal ((tag (lambda (name ...)
-                               body1 body2 ...)))
-        tag)
-      val ...))))
-
 (define-syntax let
   (lambda (form env)
     (if (not (<= 3 (length form)))
@@ -279,15 +271,17 @@
               (begin
                 (assert-bindings bindings)
                 `(let-internal ,bindings ,@body))
-              (let ((tag bindings))
-                (assert-predicate symbol? tag)
-                `(named-let-internal ,tag ,@body)))))))
+              ((syntax-rules ()
+                 ((let tag ((name val) ...) body1 body2 ...)
+                  ((letrec ((tag (lambda (name ...)
+                                   body1 body2 ...)))
+                     tag)
+                   val ...))) form env))))))
 
 (define-syntax letrec
   (lambda (form env)
     (if (not (<= 3 (length form)))
         (error "Bad syntax:" form)
-
         (let ((bindings (car (cdr form)))
               (body (cdr (cdr form))))
           (begin
