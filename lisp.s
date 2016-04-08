@@ -1477,6 +1477,14 @@ main:                # argc, argv
         intern_symbol unquote_splicing_symbol, "unquote-splicing"
         intern_symbol define_syntax_symbol, "define-syntax"
 
+        intern_symbol quote_internal_symbol, "quote-internal"
+        intern_symbol lambda_internal_symbol, "lambda-internal"
+        intern_symbol if_internal_symbol, "if-internal"
+        intern_symbol set_internal_symbol, "set!-internal"
+        intern_symbol let_internal_symbol, "let-internal"
+        intern_symbol letrec_internal_symbol, "letrec-internal"
+        intern_symbol define_syntax_internal_symbol, "define-syntax-internal"
+
         intern_symbol car_symbol, "car"
         intern_symbol cdr_symbol, "cdr"
 
@@ -1505,8 +1513,6 @@ main:                # argc, argv
 
         mov     symbol_next_id, %rax
         mov     %rax, max_null_environment_symbol
-
-        intern_symbol r7rs_let_symbol, "r7rs-let"
 
         intern_symbol dot_symbol, "."
         intern_symbol void_symbol, "void"
@@ -1788,6 +1794,11 @@ main:                # argc, argv
         lea     jit_syntax_jump_table, %rbx
         .irp symbol, quote, if, set, lambda, begin, let, letrec, define_syntax
         store_pointer \symbol\()_symbol, $jit_\symbol
+        .endr
+
+        lea     jit_syntax_jump_table, %rbx
+        .irp symbol, quote, if, set, lambda, let, letrec, define_syntax
+        store_pointer \symbol\()_internal_symbol, $jit_\symbol
         .endr
 
         .irp name, eq, eqv, number, complex, real, rational, integer, exact, inexact, infinite, nan
@@ -4108,15 +4119,6 @@ jit_let:                        # form, c-stream, environment, register, tail
         movq    $0, max_locals(%rsp)
 
         car     %rbx
-        has_tag TAG_SYMBOL, %rax, store=false
-        jne     1f
-
-        call_scm cons, r7rs_let_symbol, %rbx
-        call_fn jit_datum, %rax, %r12, env(%rsp), register(%rsp), tail(%rsp)
-        update_max_locals max_locals(%rsp)
-        return
-
-1:      car     %rbx
         call_fn jit_let_bindings %rax, %r12, env(%rsp), env(%rsp), $C_FALSE
         update_max_locals max_locals(%rsp)
 
@@ -4134,13 +4136,16 @@ jit_let:                        # form, c-stream, environment, register, tail
 jit_is_lambda:                  # form
         minimal_prologue
         is_nil_internal %rdi
-        je      1f
+        je      2f
         has_tag TAG_PAIR, %rdi, store=false
-        jne     1f
+        jne     2f
         car     %rdi
-        eq_internal lambda_symbol, %rax
+        cmp     lambda_symbol, %rax
+        jne     1f
+        return  $C_TRUE
+1:      eq_internal lambda_internal_symbol, %rax
         return
-1:      return  $C_FALSE
+2:      return  $C_FALSE
 
 jit_letrec:                     # form, c-stream, environment, register, tail
         prologue form, env, full_env, max_locals, register, tail, closure_env, lambda

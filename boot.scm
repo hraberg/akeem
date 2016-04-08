@@ -194,6 +194,58 @@
                                           (cons 'form (cons 'env '()))))
                               '())))))
 
+;;; 4.1.2. Literal expressions
+
+(define-syntax quote
+  (syntax-rules ()
+    ((quote datum)
+     (quote-internal datum))))
+
+;;; 4.1.4. Procedures
+
+(define-syntax lambda
+  (syntax-rules ()
+    ((lambda formal body ...)
+     (lambda-internal formal body ...))
+    ((lambda (formals ...) body ...)
+     (lambda-internal (formals ...) body ...))))
+
+;;; 4.1.5. Conditionals
+
+(define-syntax if
+  (syntax-rules ()
+    ((if test consequent alternate)
+     (if-internal test consequent alternate))
+    ((if test consequent)
+     (if-internal test consequent))))
+
+;;; 4.1.6. Assignments
+
+(define-syntax set!
+  (syntax-rules ()
+    ((set! variable expression)
+     (set!-internal variable expression))))
+
+;;; 4.2.2. Binding constructs
+
+(define-syntax let
+  (syntax-rules ()
+    ((let ((name val) ...) body1 body2 ...)
+     (let-internal ((name val) ...)
+       body1 body2 ...))
+    ((let tag ((name val) ...) body1 body2 ...)
+     ((letrec ((tag (lambda (name ...)
+                      body1 body2 ...)))
+        tag)
+      val ...))))
+
+(define-syntax letrec
+  (syntax-rules ()
+    ((letrec ((var init) ...)
+       body ...)
+     (letrec-internal ((var init) ...)
+       body ...))))
+
 ;;; 5. Program structure
 
 ;;; 5.3. Variable definitions
@@ -206,3 +258,10 @@
      (define variable (lambda (formals ...) body ...)))
     ((define variable expression)
      (set! variable expression))))
+
+;;; 5.4. Syntax definitions
+
+(define-syntax define-syntax
+  (syntax-rules ()
+    ((define-syntax keyword transformer-spec)
+     (define-syntax-internal keyword transformer-spec))))
