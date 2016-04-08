@@ -1371,6 +1371,7 @@ main:                # argc, argv
         cpuid
         test    $(SSE4_1 | SSE4_2), %ecx
         jnz     1f
+        xor     %al, %al
         call_fn printf, $cpuid_error
         return  $1
 
@@ -2190,6 +2191,7 @@ ffi_call:                       # c-procedure or symbol-string, return-type-symb
 ffi_apply:                      # proc, args
         prologue
         push    %r13
+        push    %r14
         unbox_pointer_internal %rdi, %r13
         mov     %rsi, %r12
 
@@ -2206,6 +2208,7 @@ ffi_apply:                      # proc, args
         jmp     1b
 
 3:      mov     %r10, %r12
+        mov     %ebx, %r14d
         mov     $MAX_REGISTER_DOUBLE_ARGS, %eax
         sub     %ebx, %eax
         js      ffi_apply_pop_doubles
@@ -2244,8 +2247,11 @@ ffi_apply_pop_ints:
         pop     %\reg
         .align  FFI_APPLY_INTS_JUMP_ALIGNMENT
         .endr
+        xor     %eax, %eax
+        mov     %r14b, %al
         call    *%r13
         pop     %r13
+        pop     %r14
         return
 
         ## Boxing from C
@@ -2624,8 +2630,9 @@ bytevector_to_string:           # bytevector
 
         call_fn fputc, $' , stream(%rsp)
 
-2:      mov     header_size(%rbx,%r12), %al
-        call_fn fprintf, stream(%rsp), $int_format, %rax
+2:      mov     header_size(%rbx,%r12), %dl
+        xor     %al, %al
+        call_fn fprintf, stream(%rsp), $int_format, %rdx
 
         inc     %r12
         jmp     1b
@@ -2734,12 +2741,12 @@ integer_to_string_internal:     # int, radix
 
 double_to_string:               # double
         prologue str, size
-        movq   %rdi, %xmm0
+        movq    %rdi, %xmm0
         open_string_buffer str(%rsp), size(%rsp), %r12
-        mov    %r12, %rdi
-        mov    $double_format, %rsi
-        mov    $1, %al         # number of vector var arguments http://www.x86-64.org/documentation/abi.pdf p21
-        call   fprintf
+        mov     %r12, %rdi
+        mov     $double_format, %rsi
+        mov     $1, %al         # number of vector var arguments http://www.x86-64.org/documentation/abi.pdf p21
+        call    fprintf
         string_buffer_to_string str(%rsp), size(%rsp), %r12
         register_for_gc
         return
@@ -2803,6 +2810,7 @@ object_to_string:               # obj
         call_fn unbox_string, %rax
         mov     %rax, %rbx
         open_string_buffer str(%rsp), size(%rsp), %r12
+        xor     %al, %al
         call_fn fprintf, %r12, $object_format, %rbx
         string_buffer_to_string str(%rsp), size(%rsp), %r12
         register_for_gc
