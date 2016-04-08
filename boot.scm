@@ -242,9 +242,9 @@
 (define-syntax letrec
   (syntax-rules ()
     ((letrec ((var init) ...)
-       body ...)
+       body1 body2 ...)
      (letrec-internal ((var init) ...)
-       body ...))))
+       body1 body2 ...))))
 
 ;;; 5. Program structure
 
