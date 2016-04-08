@@ -219,7 +219,14 @@
         (let ((formals (car (cdr form)))
               (body (cdr (cdr form))))
           (if (not (or (symbol? formals) (null? formals)))
-              (assert-predicate pair? formals))
+              (begin
+                (assert-predicate pair? formals)
+                (letrec-internal ((loop (lambda (formals)
+                                          (if (pair? formals)
+                                              (let ((formal (car formals)))
+                                                (assert-predicate symbol? formal)
+                                                (loop (cdr formals)))))))
+                  (loop formals))))
           `(lambda-internal ,formals ,@body)))))
 
 ;;; 4.1.5. Conditionals
@@ -244,24 +251,48 @@
 
 ;;; 4.2.2. Binding constructs
 
-(define-syntax let
+(set! assert-bindings
+      (lambda (bindings)
+        (if (pair? bindings)
+            (let ((binding (car bindings)))
+              (if (not (= 2 (length binding)))
+                  (error "Bad syntax: binding" binding))
+              (let ((var (car binding)))
+                (assert-predicate symbol? var)
+                (assert-bindings (cdr bindings)))))))
+
+(define-syntax named-let-internal
   (syntax-rules ()
-    ((let ((name val) ...) body1 body2 ...)
-     (let-internal ((name val) ...)
-       body1 body2 ...))
-    ((let tag ((name val) ...) body1 body2 ...)
-     ((letrec ((tag (lambda (name ...)
-                      body1 body2 ...)))
-        (assert-predicate symbol? (string->symbol "tag") 'tag)
+    ((named-let-internal tag ((name val) ...) body1 body2 ...)
+     ((letrec-internal ((tag (lambda (name ...)
+                               body1 body2 ...)))
         tag)
       val ...))))
 
+(define-syntax let
+  (lambda (form env)
+    (if (not (<= 3 (length form)))
+        (error "Bad syntax:" form)
+        (let ((bindings (car (cdr form)))
+              (body (cdr (cdr form))))
+          (if (or (pair? bindings) (null? bindings))
+              (begin
+                (assert-bindings bindings)
+                `(let-internal ,bindings ,@body))
+              (let ((tag bindings))
+                (assert-predicate symbol? tag)
+                `(named-let-internal ,tag ,@body)))))))
+
 (define-syntax letrec
-  (syntax-rules ()
-    ((letrec ((var init) ...)
-       body1 body2 ...)
-     (letrec-internal ((var init) ...)
-       body1 body2 ...))))
+  (lambda (form env)
+    (if (not (<= 3 (length form)))
+        (error "Bad syntax:" form)
+
+        (let ((bindings (car (cdr form)))
+              (body (cdr (cdr form))))
+          (begin
+            (assert-bindings bindings)
+            `(letrec-internal ,bindings ,@body))))))
 
 ;;; 5. Program structure
 
