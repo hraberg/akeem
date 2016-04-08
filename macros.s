@@ -238,6 +238,7 @@
         .endm
 
         .macro binary_op name, double_op, integer_op
+        xor     %edx, %edx
         arity_check 2
         binary_op_jump \name
 \name\()_int_int:
@@ -253,6 +254,7 @@
         .endm
 
         .macro binary_comparsion name, double_setter, integer_setter
+        xor     %edx, %edx
         arity_check 2
         binary_op_jump \name
 \name\()_int_int:
@@ -299,6 +301,7 @@
 
         .macro math_library_unary_call name, round=false, return_int=false
         minimal_prologue
+        xor     %edx, %edx
         arity_check 1
         movq    %rdi, %xmm0
         has_tag TAG_INT, %rdi, store=false
@@ -322,6 +325,7 @@
 
         .macro math_library_binary_call name, round=false
         minimal_prologue
+        xor     %edx, %edx
         arity_check 2
         binary_op_jump \name
 \name\()_int_int:

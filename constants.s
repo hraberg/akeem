@@ -105,7 +105,6 @@
         .equ BINARY_OP_MASK, 4 - 1
         .equ BINARY_OP_INT_INT, (1 << 1 | 1)
 
-        .equ APPLY_JUMP_ALIGNMENT, 2
         .equ FFI_APPLY_DOUBLES_JUMP_ALIGNMENT, 8
         .equ FFI_APPLY_INTS_JUMP_ALIGNMENT, 2
         .equ VARARGS_JUMP_ALIGNMENT, 16

@@ -860,8 +860,10 @@ apply:                          # proc, args
         prologue
         arity_check 2
         assert_tag TAG_PROCEDURE, %rdi, not_a_procedure_string
+        assert_tag TAG_PAIR, %rsi, not_a_pair_string
         unbox_pointer_internal %rdi, %rbx
-        mov     %rsi, %r12
+        call_scm reverse, %rsi
+        mov     %rax, %r12
         call_scm length, %r12
         mov     %eax, %r10d
 
@@ -872,22 +874,36 @@ apply:                          # proc, args
         cdr     %r12, %r12
         jmp     1b
 
-2:      mov     $MAX_REGISTER_ARGS, %eax
-        sub     %r10d, %eax
-        js      apply_pop
-        lea     apply_pop(,%eax,APPLY_JUMP_ALIGNMENT), %rax
-        jmp     *%rax
+2:      cmp     $1, %r10d
+        jl      3f
+        pop     %rdi
+        cmp     $2, %r10d
+        jl      3f
+        pop     %rsi
+        cmp     $3, %r10d
+        jl      3f
+        pop     %rdx
+        cmp     $4, %r10d
+        jl      3f
+        pop     %rcx
+        cmp     $5, %r10d
+        jl      3f
+        pop     %r8
+        cmp     $6, %r10d
+        jl      3f
+        pop     %r9
 
-        .align  16
-apply_pop:
-        .irp reg, r9, r8, rcx, rdx, rsi, rdi
-        pop      %\reg
-        .align  APPLY_JUMP_ALIGNMENT
-        .endr
-
-        mov     %r10d, %eax
+3:      mov     %r10d, %eax
+        mov     %r10d, %r12d
         call    *%rbx
-        return
+
+        sub     $MAX_REGISTER_ARGS, %r12d
+        js      4f
+
+        shl     $POINTER_SIZE_SHIFT, %r12d
+        add     %r12, %rsp
+
+4:      return
 
 call_with_current_continuation: # proc
         prologue stack_depth, continuation, dynamic_extent, rbx, r12, rbp
@@ -939,7 +955,10 @@ call_with_current_continuation: # proc
 values:                         # obj ...
         arity_check 1, jge
         mov     $1, %r10d
+        push    %rbp
+        mov     %rsp, %rbp
         call_fn jit_rt_lambda_collect_varargs
+        pop     %rbp
         mov     %rdi, %rax
         mov     %rsi, %rdx
         ret
@@ -955,11 +974,12 @@ call_with_values:               # producer, consumer
 
         xor     %edx, %edx
         call_scm *%rbx
-        mov     %rax, %r11
+        mov     %rax, %rbx
+
         has_tag TAG_PAIR, %rdx, store=false
         je      1f
         mov     $NIL, %rdx
-1:      call_scm cons, %r11, %rdx
+1:      call_scm cons, %rbx, %rdx
         call_scm apply, %r12, %rax
         return
 
@@ -992,6 +1012,7 @@ eval:                           # expression, environment-specifier
         call_fn jit_code, %rdi, $NIL, $NIL
         mov     %rax, %r11
         xor     %eax, %eax
+        xor     %edx, %edx
         call    *%r11
         return
 
@@ -2160,7 +2181,10 @@ dlsym_:                         # symbol-string, handle
 ffi_call:                       # c-procedure or symbol-string, return-type-symbol, args ...
         arity_check 2, jge
         mov     $2, %r10d
+        push    %rbp
+        mov     %rsp, %rbp
         call_fn jit_rt_lambda_collect_varargs
+        pop     %rbp
         prologue
         has_tag TAG_STRING, %rdi, store=false
         jne     1f
@@ -3537,8 +3561,7 @@ jit_procedure_call:             # form, c-stream, environment, register, tail
 
         return  max_locals(%rsp)
 
-13:     call_fn fwrite, $jit_clear_multiple_returns_in_rdx, $1, jit_clear_multiple_returns_in_rdx_size, %r12
-        mov     register(%rsp), %rbx
+13:     mov     register(%rsp), %rbx
         mov     jit_rax_to_register_table(,%rbx,POINTER_SIZE), %rax
         mov     jit_rax_to_register_size_table(,%rbx,POINTER_SIZE), %r11
         call_fn fwrite, %rax, $1, %r11, %r12
@@ -4415,7 +4438,10 @@ jit_rt_call_with_current_continuation_escape: # obj ..., continuation in r10
         arity_check 1, jge
         mov     %r10, %rbx
         mov     $1, %r10d
+        push    %rbp
+        mov     %rsp, %rbp
         call_fn jit_rt_lambda_collect_varargs
+        pop     %rbp
         mov     %rbx, %r10
         mov     %rdi, %rbx
         mov     %rsi, %r12
@@ -4692,12 +4718,6 @@ jit_varargs_arity_check_r10b_with_al:
 1:
 jit_varargs_arity_check_r10b_with_al_size:
         .quad   (. - jit_varargs_arity_check_r10b_with_al)
-
-        .align  16
-jit_clear_multiple_returns_in_rdx:
-        xor     %edx, %edx
-jit_clear_multiple_returns_in_rdx_size:
-        .quad   . - jit_clear_multiple_returns_in_rdx
 
         .align  16
 jit_return:
