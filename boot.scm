@@ -194,6 +194,13 @@
                                           (cons 'form (cons 'env '()))))
                               '())))))
 
+
+(define-syntax assert-predicate
+  (syntax-rules ()
+    ((assert-predicate pred value)
+     (if (not (pred value))
+         (error "Bad syntax:" 'value value "doesn't satisfy" 'pred)))))
+
 ;;; 4.1.2. Literal expressions
 
 (define-syntax quote
@@ -204,11 +211,14 @@
 ;;; 4.1.4. Procedures
 
 (define-syntax lambda
-  (syntax-rules ()
-    ((lambda formal body ...)
-     (lambda-internal formal body ...))
-    ((lambda (formals ...) body ...)
-     (lambda-internal (formals ...) body ...))))
+  (lambda (form env)
+    (if (not (>= (length form) 2))
+        (error "Bad syntax:" form)
+        (let ((formals (car (cdr form)))
+              (body (cdr (cdr form))))
+          (if (not (or (symbol? formals) (null? formals)))
+              (assert-predicate pair? formals))
+          `(lambda-internal ,formals ,@body)))))
 
 ;;; 4.1.5. Conditionals
 
@@ -222,9 +232,13 @@
 ;;; 4.1.6. Assignments
 
 (define-syntax set!
-  (syntax-rules ()
-    ((set! variable expression)
-     (set!-internal variable expression))))
+  (lambda (form env)
+    (if (not (= 3 (length form)))
+        (error "Bad syntax:" form)
+        (let ((variable (car (cdr form)))
+              (expression (car (cdr (cdr form)))))
+          (assert-predicate symbol? variable)
+          `(set!-internal ,variable ,expression)))))
 
 ;;; 4.2.2. Binding constructs
 
@@ -262,6 +276,11 @@
 ;;; 5.4. Syntax definitions
 
 (define-syntax define-syntax
-  (syntax-rules ()
-    ((define-syntax keyword transformer-spec)
-     (define-syntax-internal keyword transformer-spec))))
+  (lambda (form env)
+    (if (not (= 3 (length form)))
+        (error "Bad syntax:" form)
+        (let ((keyword (car (cdr form)))
+              (transformer-spec (car (cdr (cdr form)))))
+          (assert-predicate symbol? keyword)
+          (assert-predicate pair? transformer-spec)
+          `(define-syntax-internal ,keyword ,transformer-spec)))))
