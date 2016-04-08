@@ -2194,9 +2194,9 @@ ffi_apply:                      # proc, args
         push    %r13
         unbox_pointer_internal %rdi, %r13
         mov     %rsi, %r12
+        mov     %rsi, %r14
 
         xor     %ebx, %ebx
-        mov     %r12, %r10
 1:      is_nil_internal %r12
         je      3f
         car     %r12, %rdi
@@ -2207,7 +2207,7 @@ ffi_apply:                      # proc, args
 2:      cdr     %r12, %r12
         jmp     1b
 
-3:      mov     %r10, %r12
+3:      mov     %r14, %r12
         mov     %ebx, %r14d
         mov     $MAX_REGISTER_DOUBLE_ARGS, %eax
         sub     %ebx, %eax
