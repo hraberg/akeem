@@ -2190,8 +2190,8 @@ ffi_call:                       # c-procedure or symbol-string, return-type-symb
 
 ffi_apply:                      # proc, args
         prologue
-        push    %r13
         push    %r14
+        push    %r13
         unbox_pointer_internal %rdi, %r13
         mov     %rsi, %r12
 
