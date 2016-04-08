@@ -62,6 +62,7 @@ trying again.
 * TCO for calls in tail position across functions.
 * The bootstrap Scheme code is embedded in the executable.
 * Mark and Sweep GC.
+* Simple FFI.
 
 
 ## What Doesn't Work?
@@ -78,6 +79,7 @@ trying again.
 * No mutation of closed over variables (needs array boxing).
 * Closures needlessly capture variables shadowed by inner `let`
   expressions.
+* No support for passing structs or functions in FFI calls.
 * Limited numeric tower, see above.
 
 Most of the above is intended to be solved at some point, in roughly
@@ -229,6 +231,12 @@ Calls in tail position are simply converted to jumps when
 compiling. This works across functions. Calls using the stack to pass
 more than 6 arguments are always compiled as normal calls and not
 optimized.
+
+#### FFI
+
+Basic FFI built on `dlopen` and `dlsym` is provided via `ffi-call`. No
+support for passing structs or functions to native code. Passing
+bytevectors and strings as pointers work.
 
 
 ### Implementation
