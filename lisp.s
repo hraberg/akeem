@@ -959,12 +959,18 @@ values:                         # obj ...
         mov     %rsp, %rbp
         call_fn jit_rt_lambda_collect_varargs
         pop     %rbp
-        mov     %rdi, %rax
-        mov     %rsi, %rdx
+        push    %rdi
+
+        call_scm make_vector, $ONE_INT, %rsi
+        unbox_pointer_internal
+        movw    $TAG_VALUES, header_object_type(%rax)
+        tag     TAG_OBJECT, %rax
+        mov     %rax, %rdx
+        pop     %rax
         ret
 
 call_with_values:               # producer, consumer
-        prologue
+        prologue vals
         arity_check 2
         assert_tag TAG_PROCEDURE, %rdi, not_a_procedure_string
         assert_tag TAG_PROCEDURE, %rsi, not_a_procedure_string
@@ -975,11 +981,15 @@ call_with_values:               # producer, consumer
         xor     %edx, %edx
         call_scm *%rbx
         mov     %rax, %rbx
+        mov     %rdx, vals(%rsp)
 
-        has_tag TAG_PAIR, %rdx, store=false
+        call_scm class_of, %rdx
+        cmp     $TAG_VALUES, %eax
         je      1f
-        mov     $NIL, %rdx
-1:      call_scm cons, %rbx, %rdx
+        mov     $NIL, %rax
+        jmp     2f
+1:      call_scm record_ref, vals(%rsp), $ZERO_INT
+2:      call_scm cons, %rbx, %rax
         call_scm apply, %r12, %rax
         return
 
@@ -1451,6 +1461,7 @@ main:                # argc, argv
         intern_symbol object_symbol, "object", id=TAG_OBJECT
         intern_symbol bytevector_symbol, "bytevector", id=TAG_BYTEVECTOR
         intern_symbol continuation_symbol, "continuation", id=TAG_CONTINUATION
+        intern_symbol values_symbol, "values", id=TAG_VALUES
         intern_symbol handle_symbol, "handle", id=TAG_HANDLE
         intern_symbol c_procedure_symbol, "c-procedure", id=TAG_C_PROCEDURE
 

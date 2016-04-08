@@ -70,8 +70,9 @@
 
         .equ TAG_BYTEVECTOR, 64
         .equ TAG_CONTINUATION, 65
-        .equ TAG_HANDLE, 66
-        .equ TAG_C_PROCEDURE, 67
+        .equ TAG_VALUES, 66
+        .equ TAG_HANDLE, 67
+        .equ TAG_C_PROCEDURE, 68
 
         .equ C_TRUE, 1
         .equ C_FALSE, 0
