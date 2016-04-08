@@ -1994,7 +1994,7 @@ main:                # argc, argv
         mov     %rax, environment_alist
 
         call_scm gc
-        ## call_fn signal, $SIGSEGV, $segv_handler
+        call_fn signal, $SIGSEGV, $segv_handler
 
         call_scm length, command_line_arguments
         cmp     $1, %eax
