@@ -860,13 +860,10 @@ apply:                          # proc, args
         prologue
         arity_check 2
         assert_tag TAG_PROCEDURE, %rdi, not_a_procedure_string
-        unbox_pointer_internal %rdi
-        push    %rax
-
+        unbox_pointer_internal %rdi, %rbx
         mov     %rsi, %r12
         call_scm length, %r12
-        push    %rax
-        mov     %eax, %ebx
+        mov     %eax, %r10d
 
 1:      is_nil_internal %r12
         je      2f
@@ -876,21 +873,20 @@ apply:                          # proc, args
         jmp     1b
 
 2:      mov     $MAX_REGISTER_ARGS, %eax
-        sub     %ebx, %eax
+        sub     %r10d, %eax
         js      apply_pop
         lea     apply_pop(,%eax,APPLY_JUMP_ALIGNMENT), %rax
         jmp     *%rax
 
         .align  16
 apply_pop:
-        .irp reg, r9, r8, rcx, rdx, rsi, rdi, rax
+        .irp reg, r9, r8, rcx, rdx, rsi, rdi
         pop      %\reg
         .align  APPLY_JUMP_ALIGNMENT
         .endr
 
-        mov     %eax, %eax
-        pop     %r11
-        call    *%r11
+        mov     %r10d, %eax
+        call    *%rbx
         return
 
 call_with_current_continuation: # proc
@@ -1953,7 +1949,7 @@ main:                # argc, argv
         mov     %rax, environment_alist
 
         call_scm gc
-        call_fn signal, $SIGSEGV, $segv_handler
+        ## call_fn signal, $SIGSEGV, $segv_handler
 
         call_scm length, command_line_arguments
         cmp     $1, %eax
@@ -2176,8 +2172,8 @@ ffi_call:                       # c-procedure or symbol-string, return-type-symb
 
 1:      assert_object %rdi, TAG_C_PROCEDURE, not_a_c_procedure_string
         assert_tag TAG_SYMBOL, %rsi, not_a_symbol_string
+        assert_tag TAG_PAIR, %rdx, not_a_pair_string
         mov     %rsi, %rbx
-        xor     %eax, %eax
         mov     %rdx, %r12
         call_scm record_ref, %rdi, $ZERO_INT
         call_fn ffi_apply, %rax, %r12
@@ -2194,80 +2190,61 @@ ffi_call:                       # c-procedure or symbol-string, return-type-symb
 ffi_apply:                      # proc, args
         prologue
         push    %r13
-        push    %r14
-        unbox_pointer_internal %rdi
-        mov     $0, %r13d
-        mov     $0, %r14d
-
-        push    %rax
-
+        unbox_pointer_internal %rdi, %r13
         mov     %rsi, %r12
-        call_scm length, %r12
-        push    %rax
-        mov     %eax, %ebx
 
+        xor     %ebx, %ebx
+        mov     %r12, %r10
 1:      is_nil_internal %r12
         je      3f
         car     %r12, %rdi
         is_double_internal %rdi
         jne     2f
-        btsl    %r14d, %r13d
-
-2:      call_fn unbox, %rdi
-        push    %rax
-        cdr     %r12, %r12
-        inc     %r14d
+        push    %rdi
+        inc     %ebx
+2:      cdr     %r12, %r12
         jmp     1b
 
-3:      mov     $MAX_REGISTER_ARGS, %eax
+3:      mov     %r10, %r12
+        mov     $MAX_REGISTER_DOUBLE_ARGS, %eax
         sub     %ebx, %eax
-        js      ffi_apply_pop
-
-        shl     $FFI_APPLY_JUMP_ALIGNMENT_SHIFT, %rax
-        add     $ffi_apply_pop, %rax
+        js      ffi_apply_pop_doubles
+        lea     ffi_apply_pop_doubles(,%eax,FFI_APPLY_DOUBLES_JUMP_ALIGNMENT), %rax
         jmp     *%rax
 
-        ##      TODO: This is overly simplistic, need to calculate next available register properly.
-        ##            Won't work when mixing doubles and ints.
         .align  16
-ffi_apply_pop:
-        pop     %r9
-        bt      $5, %r13d
-        jnc     1f
-        movq    %r9, %xmm5
-        .align  FFI_APPLY_JUMP_ALIGNMENT
-1:      pop     %r8
-        bt      $4, %r13d
-        jnc     2f
-        movq    %r8, %xmm4
-        .align  FFI_APPLY_JUMP_ALIGNMENT
-2:      pop     %rcx
-        bt      $3, %r13d
-        jnc     3f
-        movq    %rcx, %xmm3
-        .align  FFI_APPLY_JUMP_ALIGNMENT
-3:      pop     %rdx
-        bt      $2, %r13d
-        jnc     4f
-        movq    %rdx, %xmm2
-        .align  FFI_APPLY_JUMP_ALIGNMENT
-4:      pop     %rsi
-        bt      $1, %r13d
-        jnc     5f
-        movq    %rsi, %xmm1
-        .align  FFI_APPLY_JUMP_ALIGNMENT
-5:      pop     %rdi
-        bt      $0, %r13d
-        jnc     6f
-        movq    %rdi, %xmm0
-        .align  FFI_APPLY_JUMP_ALIGNMENT
-6:      pop      %rax
+ffi_apply_pop_doubles:
+        .irp reg, xmm7, xmm6, xmm5, xmm4, xmm3, xmm2, xmm1, xmm0
+        pop     %rax
+        movq    %rax, %\reg
+        .align  FFI_APPLY_DOUBLES_JUMP_ALIGNMENT
+        .endr
 
-        mov     %eax, %eax
-        pop     %r11
-        call    *%r11
+        xor     %ebx, %ebx
+4:      is_nil_internal %r12
+        je      6f
+        car     %r12, %rdi
+        is_double_internal %rdi
+        je      5f
+        call_fn unbox, %rdi
+        push    %rax
+        inc     %ebx
+5:      cdr     %r12, %r12
+        jmp     4b
 
-        pop     %r14
+6:      mov     $MAX_REGISTER_ARGS, %eax
+        sub     %ebx, %eax
+        js      ffi_apply_pop_ints
+        lea     ffi_apply_pop_ints(,%eax,FFI_APPLY_INTS_JUMP_ALIGNMENT), %rax
+        jmp     *%rax
+
+        .align  16
+ffi_apply_pop_ints:
+        .irp reg, r9, r8, rcx, rdx, rsi, rdi
+        pop     %\reg
+        .align  FFI_APPLY_INTS_JUMP_ALIGNMENT
+        .endr
+        call    *%r13
         pop     %r13
         return
 
