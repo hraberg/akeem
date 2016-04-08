@@ -1047,7 +1047,7 @@
   (let ((old-dynamic-extent-stack (dynamic-extent-stack))
         (new-dynamic-extent-stack (dynamic-extent-stack '<param-set!>
                                                         ((dynamic-extent-stack '<param-convert>)
-                                                         (cons before (dynamic-extent-stack)))))
+                                                         (cons (cons before after) (dynamic-extent-stack)))))
         (return (thunk)))
     (dynamic-extent-stack '<param-set!> old-dynamic-extent-stack)
     (after)

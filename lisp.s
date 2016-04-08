@@ -1297,7 +1297,7 @@ command_line:
         ret
 
 exit_:                          # obj
-        minimal_prologue
+        prologue
         arity_check 1
 
         mov     $TRUE, %r11
@@ -1315,7 +1315,10 @@ exit_:                          # obj
 2:      assert_tag TAG_INT, %rdi, not_an_integer_string
         mov     %edi, %edi
 
-3:      call_fn exit, %rdi
+3:      mov     %rdi, %rbx
+        call_fn exit_dynamic_extent
+
+        call_fn exit, %rbx
         return
 
 emergency_exit:                 # obj
@@ -1972,6 +1975,23 @@ main:                # argc, argv
         call_scm read_all, %rax
 
         return  $0
+
+exit_dynamic_extent:
+        prologue
+        parameter_value dynamic_extent_stack_symbol
+        mov     %rax, %rbx
+
+1:      is_nil_internal %rbx
+        je      2f
+        car     %rbx
+        cdr     %rax
+        unbox_pointer_internal %rax, %r11
+        call_scm *%r11
+        cdr     %rbx, %rbx
+        jmp     1b
+
+2:      return
+
 
 segv_handler:                   # signal
         prologue stacktrace
@@ -4212,19 +4232,6 @@ jit_define_syntax:              # form, c-stream, environment, register, tail
 
         ## 6.10. Control features
 
-jit_call_with_current_continuation_execute_dynamic_extent: # dynamic-extent
-        prologue
-        mov     %rdi, %rbx
-1:      is_nil_internal %rbx
-        je      2f
-        car     %rbx
-        unbox_pointer_internal %rax, %r11
-        xor     %eax, %eax
-        call    *%r11
-        cdr     %rbx, %rbx
-        jmp     1b
-2:      return
-
 jit_call_with_current_continuation_escape_factory: # continuation
         prologue  code, size
         mov     %rdi, %r12
@@ -4407,6 +4414,19 @@ varargs_store:
         .endr
         ret
 
+jit_rt_call_with_current_continuation_execute_dynamic_extent: # dynamic-extent
+        prologue
+        mov     %rdi, %rbx
+1:      is_nil_internal %rbx
+        je      2f
+        car     %rbx
+        car     %rax
+        unbox_pointer_internal %rax, %r11
+        call_scm *%r11
+        cdr     %rbx, %rbx
+        jmp     1b
+2:      return
+
 jit_rt_call_with_current_continuation_escape: # obj ..., continuation in r10
         arity_check 1, jge
         mov     %r10, %rbx
@@ -4415,6 +4435,11 @@ jit_rt_call_with_current_continuation_escape: # obj ..., continuation in r10
         mov     %rbx, %r10
         mov     %rdi, %rbx
         mov     %rsi, %r12
+
+        push    %r10
+        ## TODO: this should probably just exit as far as necessary.
+        call_fn exit_dynamic_extent
+        pop     %r10
 
 1:      unbox_pointer_internal %r10, %r11
         lea     header_size(%r11), %rsi
@@ -4443,7 +4468,7 @@ jit_rt_call_with_current_continuation_escape: # obj ..., continuation in r10
         pop     %rbx
 
         pop     %rdi
-        call_fn jit_call_with_current_continuation_execute_dynamic_extent, %rdi
+        call_fn jit_rt_call_with_current_continuation_execute_dynamic_extent, %rdi
 
         pop     %rdx
         pop     %rax
