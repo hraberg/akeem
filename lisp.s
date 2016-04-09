@@ -2193,12 +2193,15 @@ dlsym_:                         # symbol-string, handle
         call_fn dlsym, %r12, %rax
         mov     %rax, %rbx
         call_fn dlerror
-        perror  jz
+        cmp     $NULL, %rax
+        jne     3f
         call_scm make_vector, $ONE_INT, %rbx
         unbox_pointer_internal
         movw    $TAG_C_PROCEDURE, header_object_type(%rax)
         tag     TAG_OBJECT, %rax
         return
+
+3:      return $FALSE
 
 ffi_call:                       # c-procedure or symbol-string, return-type-symbol, args ...
         arity_check 2, jge
@@ -2253,8 +2256,10 @@ ffi_apply:                      # proc, args
 2:      cdr     %r12, %r12
         jmp     1b
 
-3:      mov     %r14, %r12
+3:      call_scm reverse, %r14
+        mov     %rax, %r12
         mov     %ebx, %r14d
+
         mov     $MAX_REGISTER_DOUBLE_ARGS, %eax
         sub     %ebx, %eax
         js      ffi_apply_pop_doubles
@@ -2281,23 +2286,39 @@ ffi_apply_pop_doubles:
 5:      cdr     %r12, %r12
         jmp     4b
 
-6:      mov     $MAX_REGISTER_ARGS, %eax
-        sub     %ebx, %eax
-        js      ffi_apply_pop_ints
-        lea     ffi_apply_pop_ints(,%eax,FFI_APPLY_INTS_JUMP_ALIGNMENT), %rax
-        jmp     *%rax
+6:      cmp     $1, %ebx
+        jl      7f
+        pop     %rdi
+        cmp     $2, %ebx
+        jl      7f
+        pop     %rsi
+        cmp     $3, %ebx
+        jl      7f
+        pop     %rdx
+        cmp     $4, %ebx
+        jl      7f
+        pop     %rcx
+        cmp     $5, %ebx
+        jl      7f
+        pop     %r8
+        cmp     $6, %ebx
+        jl      7f
+        pop     %r9
 
-        .align  16
-ffi_apply_pop_ints:
-        .irp reg, r9, r8, rcx, rdx, rsi, rdi
-        pop     %\reg
-        .align  FFI_APPLY_INTS_JUMP_ALIGNMENT
-        .endr
-        mov     %r14b, %al
+7:      mov     %r14d, %eax
         call    *%r13
-        pop     %r13
+
+        sub     $MAX_REGISTER_ARGS, %ebx
+        js      8f
+
+        shl     $POINTER_SIZE_SHIFT, %ebx
+        add     %rbx, %rsp
+
+8:      pop     %r13
         pop     %r14
         return
+
+
 
         ## Boxing from C
 
