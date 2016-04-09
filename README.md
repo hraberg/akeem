@@ -314,6 +314,7 @@ between functions.
 * http://piumarta.com/doc/dcg-1992.pdf
 * http://nickdesaulniers.github.io/blog/2014/04/18/lets-write-some-x86-64/
 * http://eli.thegreenplace.net/2011/09/06/stack-frame-layout-on-x86-64/
+* http://cs.lmu.edu/~ray/notes/gasexamples/
 
 ### Lisp
 
