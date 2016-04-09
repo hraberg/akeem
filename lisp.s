@@ -1243,8 +1243,10 @@ display:                        # obj, port
         call_fn to_string, obj(%rsp)
         unbox_pointer_internal %rax, %rdi
         xor     %al, %al
+        mov     header_object_size(%rdi), %edx
+        dec     %edx
         add     $header_size, %rdi
-        call_fn fprintf, %rbx, %rdi
+        call_fn fwrite, %rdi, $1, %rdx, %rbx
         call_fn fflush, %rbx
         return  $VOID
 
