@@ -2308,7 +2308,14 @@ ffi_apply_pop_doubles:
         pop     %r9
 
 7:      mov     %r14d, %eax
+
+        ## TODO: calling functions using xmm registers here requires 16-byte
+        ##       stack alignment on entry. This simple approach won't work if
+        ##       there are arguments on the stack.
+        mov     %rsp, %r14
+        and     $-(2 * POINTER_SIZE), %rsp
         call    *%r13
+        mov     %r14, %rsp
 
         sub     $MAX_REGISTER_ARGS, %ebx
         js      8f
