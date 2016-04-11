@@ -993,24 +993,6 @@ call_with_values:               # producer, consumer
         call_scm apply, %r12, %rax
         return
 
-        ## 6.11. Exceptions
-
-raise:                          # error
-        prologue
-        arity_check 1
-        mov     %rdi, %rbx
-
-        parameter_value exception_handler_stack_symbol
-        is_nil_internal %rax
-        je      1f
-
-        car     %rax
-        unbox_pointer_internal %rax, %r11
-        call_scm *%r11, %rbx
-
-1:      call_fn exit, $1
-        return
-
         ## 6.12. Environments and evaluation
 
 eval:                           # expression, environment-specifier
@@ -1130,14 +1112,6 @@ close_port:                     # port
         box_boolean_internal
         return
 
-close_input_port:               # port
-close_output_port:              # port
-        minimal_prologue
-        arity_check 1
-        assert_tag TAG_PORT, %rdi, not_a_port_string
-        call_scm close_port, %rdi
-        return
-
 open_input_string:              # string
         open_input_buffer_template $-1, TAG_STRING, not_a_string_string
 
@@ -1178,12 +1152,6 @@ peek_char:                      # port
         tag     TAG_CHAR, %rax
         return
 1:      return  $EOF_OBJECT
-
-is_eof_object:                  # obj
-        arity_check 1
-        is_eof_object_internal %rdi, store=true
-        box_boolean_internal
-        ret
 
 eof_object:
         arity_check 0
@@ -1296,7 +1264,7 @@ load:                           # filename, environment-specifier
         call_scm open_input_file, %rdi
         mov     %rax, %rbx
         call_scm read_all, %rbx
-        call_scm close_input_port, %rbx
+        call_scm close_port, %rbx
         return  $VOID
 
 is_file_exists:                 # filename
@@ -1901,8 +1869,6 @@ main:                # argc, argv
         define "values", $values
         define "call-with-values", $call_with_values
 
-        define "raise", $raise
-
         define "eval", $eval
         define "scheme-report-environment", $scheme_report_environment
         define "null-environment", $null_environment
@@ -1917,15 +1883,12 @@ main:                # argc, argv
         define "open-input-file", $open_input_file
         define "open-output-file", $open_output_file
         define "close-port", $close_port
-        define "close-input-port", $close_input_port
-        define "close-output-port", $close_output_port
         define "open-input-string", $open_input_string
         define "open-input-bytevector", $open_input_bytevector
 
         define "read", $read
         define "read-char", $read_char
         define "peek-char", $peek_char
-        define "eof-object?", $is_eof_object
         define "eof-object", $eof_object
         define "read-u8", $read_u8
         define "peek-u8", $peek_u8
@@ -2063,7 +2026,9 @@ internal_error:                 # message, irritants
         je      1f
         call   *%r11
         return
-1:      call_fn exit, $1
+1:      call_scm current_error_port
+        call_scm display, %rdi, %rax
+        call_fn exit, $1
         return
 
 box_string_array_as_list:       # c-string-array

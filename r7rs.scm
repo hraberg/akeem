@@ -1075,6 +1075,11 @@
                         (exception-handler-stack))))
     (thunk)))
 
+(define (raise obj)
+  (if (null? (exception-handler-stack))
+      (exit 1)
+      ((car (exception-handler-stack)) obj)))
+
 (define (raise-continuable obj)
   (call/cc (lambda (continue)
              (parameterize ((exception-handler-continuation continue))
@@ -1138,7 +1143,13 @@
 (define open-binary-input-file open-input-file)
 (define open-binary-output-file open-output-file)
 
+(define close-input-port close-port)
+(define close-output-port close-port)
+
 ;;; 6.13.2. Input
+
+(define (eof-object? obj)
+  (eqv? (eof-object) obj))
 
 (define read-line
   (case-lambda
