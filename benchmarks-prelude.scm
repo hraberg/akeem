@@ -1,5 +1,7 @@
 ;;; Racket Benchmarks Prelude
 
+(define inexact->exact exact)
+
 (define (milliseconds z)
   (inexact->exact (* 1000 z)))
 
