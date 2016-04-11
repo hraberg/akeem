@@ -401,6 +401,20 @@
          (bytevector=? obj1 obj2))
         (else (eqv? obj1 obj2))))
 
+;;; 4.2.9. Case-lambda
+
+(define-syntax case-lambda
+  (lambda (form env)
+    `(lambda args
+       (apply (vector-ref ,(do ((form (cdr form) (cdr form))
+                                (acc (make-vector 6)))
+                               ((null? form) acc)
+                             (vector-set! acc (length (car (car form)))
+                                          (eval (cons 'lambda (car form))
+                                                (interaction-environment))))
+                          (length args))
+              args))))
+
 ;;; 6.2. Numbers
 
 ;;; 6.2.6. Numerical operations
