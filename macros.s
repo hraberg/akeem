@@ -132,14 +132,17 @@
         .endm
 
         .macro assert_tag tag, value, error
+        .if ASSERTIONS == C_TRUE
         has_tag \tag, \value, store=false
         je      .L_\@_1
         mov     $internal_error, %r11
         call_scm *%r11, \error, \value
 .L_\@_1:
+        .endif
         .endm
 
         .macro assert_pair value, error=not_a_pair_string
+        .if ASSERTIONS == C_TRUE
         is_nil_internal \value
         je      .L_\@_1
         has_tag TAG_PAIR, \value, store=false
@@ -148,9 +151,11 @@
         mov     $internal_error, %r11
         call_scm *%r11, \error, \value
 .L_\@_2:
+        .endif
         .endm
 
         .macro assert_object value, class, error
+        .if ASSERTIONS == C_TRUE
         has_tag TAG_OBJECT, \value, store=false
         jne     .L_\@_1
         unbox_pointer_internal \value, %r11
@@ -163,9 +168,11 @@
         mov     $internal_error, %r11
         call_scm *%r11, \error, \value
 .L_\@_2:
+        .endif
         .endm
 
         .macro assert_bounds unboxed_value, idx, shift=0, size_adjust=0, tmp=%r11d
+        .if ASSERTIONS == C_TRUE
         cmp     $0, \idx
         jl      .L_\@_1
         mov     header_object_size(\unboxed_value), \tmp
@@ -185,6 +192,34 @@
         mov     $internal_error, %r11
         call_scm *%r11, negative_index_string, %rax
 .L_\@_2:
+        .endif
+        .endm
+
+        .macro assert_arity arity, success=je
+        .if ASSERTIONS == C_TRUE
+        cmp     $\arity, %al
+        \success .L_\@_1
+        mov     $\arity, %r10d
+        mov     $jit_rt_lambda_arity_check_error, %r11
+        call   *%r11
+.L_\@_1:
+        .endif
+        .endm
+
+        .macro lookup_global_symbol_internal symbol_id
+        mov     symbol_table_values(,\symbol_id,POINTER_SIZE), %rax
+        .endm
+
+        .macro register_for_gc ptr=%rax
+        call_fn push_pointer_on_stack, $object_space, \ptr
+        .endm
+
+        .macro perror success=jg
+        cmp    $NULL, %rax
+        \success .L_\@_1
+        call_fn perror, $NULL
+        call_fn exit, $1
+.L_\@_1:
         .endm
 
         .macro is_nil_internal value, tmp=%r11, store=false
@@ -260,7 +295,7 @@
         .endm
 
         .macro binary_op name, double_op, integer_op
-        arity_check 2
+        assert_arity 2
         binary_op_jump \name
 \name\()_int_int:
         mov     %edi, %eax
@@ -275,7 +310,7 @@
         .endm
 
         .macro binary_comparsion name, double_setter, integer_setter
-        arity_check 2
+        assert_arity 2
         binary_op_jump \name
 \name\()_int_int:
         xor     %eax, %eax
@@ -321,7 +356,7 @@
 
         .macro math_library_unary_call name, round=false, return_int=false
         minimal_prologue
-        arity_check 1
+        assert_arity 1
         movq    %rdi, %xmm0
         has_tag TAG_INT, %rdi, store=false
         jne     \name\()_double
@@ -344,7 +379,7 @@
 
         .macro math_library_binary_call name, round=false
         minimal_prologue
-        arity_check 2
+        assert_arity 2
         binary_op_jump \name
 \name\()_int_int:
         cvtsi2sd %edi, %xmm0
@@ -361,7 +396,7 @@
 
         .macro open_input_buffer_template tag, error, size_adjust=0
         prologue empty_stream, empty_stream_size
-        arity_check 1
+        assert_arity 1
         assert_tag \tag, %rdi, \error
         unbox_pointer_internal %rdi
         mov     header_object_size(%rax), %esi
@@ -401,7 +436,7 @@
         .macro optional_arg arity, default, target
         cmp     $\arity, %al
         je      .L_\@_1
-        arity_check (\arity - 1)
+        assert_arity (\arity - 1)
         mov     \default, \target
 .L_\@_1:
         .endm
@@ -409,7 +444,7 @@
         .macro optional_parameter_arg arity, parameter, target
         cmp     $\arity, %al
         je      .L_\@_1
-        arity_check (\arity - 1)
+        assert_arity (\arity - 1)
         parameter_value \parameter
         mov     %rax, \target
 .L_\@_1:
@@ -421,31 +456,6 @@
         mov     symbol_table_values(,\tmp,POINTER_SIZE), \tmp
         unbox_pointer_internal \tmp, \tmp
         call_scm *\tmp
-        .endm
-
-        .macro arity_check arity, success=je
-        cmp     $\arity, %al
-        \success .L_\@_1
-        mov     $\arity, %r10d
-        mov     $jit_rt_lambda_arity_check_error, %r11
-        call   *%r11
-.L_\@_1:
-        .endm
-
-        .macro lookup_global_symbol_internal symbol_id
-        mov     symbol_table_values(,\symbol_id,POINTER_SIZE), %rax
-        .endm
-
-        .macro register_for_gc ptr=%rax
-        call_fn push_pointer_on_stack, $object_space, \ptr
-        .endm
-
-        .macro perror success=jg
-        cmp    $NULL, %rax
-        \success .L_\@_1
-        call_fn perror, $NULL
-        call_fn exit, $1
-.L_\@_1:
         .endm
 
         .macro read_number_template radix unget=false
@@ -541,7 +551,7 @@ tmp_string_\@:
 
         .macro string_comparator comparator, setter, string1=%rdi, string2=%rsi
         prologue
-        arity_check 2
+        assert_arity 2
         assert_tag TAG_STRING, %rdi, not_a_string_string
         assert_tag TAG_STRING, %rsi, not_a_string_string
         unbox_pointer_internal \string1
