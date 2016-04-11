@@ -1076,9 +1076,9 @@
     (thunk)))
 
 (define (raise obj)
-  (if (null? (exception-handler-stack))
-      (exit 1)
-      ((car (exception-handler-stack)) obj)))
+  (unless (null? (exception-handler-stack))
+    ((car (exception-handler-stack)) obj))
+  (exit 1))
 
 (define (raise-continuable obj)
   (call/cc (lambda (continue)
