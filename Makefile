@@ -16,7 +16,7 @@ default: akeem
 	$(AS) $< $(ASFLAGS) -o $@
 
 akeem: lisp.o
-	$(CC) $^ $(LDLIBS) -o $@
+	$(CC) $^ $(CFLAGS) $(LDLIBS) -o $@
 
 # based on http://unix.stackexchange.com/a/79137
 run-tests: akeem
