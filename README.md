@@ -167,7 +167,7 @@ make RACKET_HOME=/path/to/racket benchmarks
 ```
 
 The `racket` executable itself is assumed to be on the path. Akeem can
-currently run about 10% of the benchmarks, and is about 4 times slower
+currently run about 10% of the benchmarks, and is quote a bit slower
 than Racket.
 
 ### Profiling
