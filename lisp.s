@@ -620,6 +620,7 @@ string_ref:                     # string, k
         assert_tag TAG_INT, %rsi, not_an_integer_string
         mov     %esi, %esi
         unbox_pointer_internal %rdi
+        assert_bounds %rax %esi, size_adjust=-1
         movzxb  header_size(%rax,%rsi), %eax
         tag     TAG_CHAR, %rax
         ret
@@ -633,6 +634,7 @@ string_set:                     # string, k, char
         assert_tag TAG_CHAR, %rdx, not_a_character_string
         mov     %esi, %esi
         unbox_pointer_internal %rdi
+        assert_bounds %rax %esi, size_adjust=-1
         mov     %dl, header_size(%rax,%rsi)
         mov     $VOID, %rax
         ret
@@ -715,6 +717,7 @@ vector_ref:                     # vector, k
         assert_tag TAG_VECTOR, %rdi, not_a_vector_string
         assert_tag TAG_INT, %rsi, not_an_integer_string
         unbox_pointer_internal %rdi
+        assert_bounds %rax, %esi, POINTER_SIZE_SHIFT
         mov     %esi, %esi
         mov     header_size(%rax,%rsi,POINTER_SIZE), %rax
         ret
@@ -726,6 +729,7 @@ vector_set:                     # vector, k, obj
         assert_tag TAG_VECTOR, %rdi, not_a_vector_string
         assert_tag TAG_INT, %rsi, not_an_integer_string
         unbox_pointer_internal %rdi
+        assert_bounds %rax, %esi, POINTER_SIZE_SHIFT
         mov     %esi, %esi
         mov     %rdx, header_size(%rax,%rsi,POINTER_SIZE)
         mov     $VOID, %rax
@@ -805,6 +809,7 @@ bytevector_u8_ref:              # bytevector, k
         assert_object %rdi, TAG_BYTEVECTOR, not_a_bytevector_string
         assert_tag TAG_INT, %rsi, not_an_integer_string
         unbox_pointer_internal %rdi
+        assert_bounds %rax, %esi
         mov     %esi, %esi
         xor     %r11d, %r11d
         mov     header_size(%rax,%rsi), %r11b
@@ -819,6 +824,7 @@ bytevector_u8_set:              # bytevector, k, byte
         assert_tag TAG_INT, %rsi, not_an_integer_string
         assert_tag TAG_INT, %rdx, not_an_integer_string
         unbox_pointer_internal %rdi
+        assert_bounds %rax, %esi
         mov     %esi, %esi
         mov     %dl, header_size(%rax,%rsi)
         mov     $VOID, %rax
@@ -1113,10 +1119,10 @@ close_port:                     # port
         return
 
 open_input_string:              # string
-        open_input_buffer_template $-1, TAG_STRING, not_a_string_string
+        open_input_buffer_template TAG_STRING, not_a_string_string, -1
 
 open_input_bytevector:          # bytevector
-        open_input_buffer_template $0, TAG_OBJECT, not_a_bytevector_string
+        open_input_buffer_template TAG_OBJECT, not_a_bytevector_string
 
         ## 6.13.2. Input
 
@@ -1517,6 +1523,8 @@ main:                # argc, argv
         intern_string arity_check_error_string, "Unexpected number of arguments:"
         intern_string too_many_integer_arguments_string, "Too many integer arguments for FFI, maximum is 6:"
         intern_string too_many_double_arguments_string,  "Too many double arguments for FFI, maximum is 8:"
+        intern_string negative_index_string, "Negative index:"
+        intern_string index_out_of_bounds_string, "Index out of bounds:"
 
         intern_string false_string, "#f"
         mov     %rax, boolean_string_table + POINTER_SIZE * C_FALSE

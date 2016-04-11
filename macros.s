@@ -165,6 +165,28 @@
 .L_\@_2:
         .endm
 
+        .macro assert_bounds unboxed_value, idx, shift=0, size_adjust=0, tmp=%r11d
+        cmp     $0, \idx
+        jl      .L_\@_1
+        mov     header_object_size(\unboxed_value), \tmp
+        .ifnc   \shift, 0
+        shr     $\shift, \tmp
+        .endif
+        .ifnc   \size_adjust, 0
+        add     $\size_adjust, \tmp
+        .endif
+        cmp     \tmp, \idx
+        jl      .L_\@_2
+        box_int_internal \idx
+        mov     $internal_error, %r11
+        call_scm *%r11, index_out_of_bounds_string, %rax
+.L_\@_1:
+        box_int_internal \idx
+        mov     $internal_error, %r11
+        call_scm *%r11, negative_index_string, %rax
+.L_\@_2:
+        .endm
+
         .macro is_nil_internal value, tmp=%r11, store=false
         mov     $NIL, \tmp
         eq_internal \value, \tmp, store=\store
@@ -337,13 +359,15 @@
         return
         .endm
 
-        .macro open_input_buffer_template size_adjust, tag, error
+        .macro open_input_buffer_template tag, error, size_adjust=0
         prologue empty_stream, empty_stream_size
         arity_check 1
         assert_tag \tag, %rdi, \error
         unbox_pointer_internal %rdi
         mov     header_object_size(%rax), %esi
-        add     \size_adjust, %esi
+        .ifnc   \size_adjust, 0
+        add     $\size_adjust, %esi
+        .endif
         test    %esi, %esi
         jz      .L_\@_1
         add     $header_size, %rax
