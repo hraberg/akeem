@@ -70,6 +70,8 @@ trying again.
 * No hygienic macro expansion.
 * No GC for functions or their constant literals.
 * Max arity is currently 6, higher requires the use of the stack.
+* Stack-alignment of 16-bytes at function call isn't always maintained
+  in compiled code.
 * No register allocation.
 * No `let-syntax`, `letrec-syntax`, `letrec*`.
 * No `define-library`.
@@ -79,7 +81,9 @@ trying again.
 * No mutation of closed over variables (needs array boxing).
 * Closures needlessly capture variables shadowed by inner `let`
   expressions.
-* No support for passing structs or functions in FFI calls.
+* No support for passing structs or functions in FFI calls. Calls are
+  limited to 6 integer and 8 double arguments and won't pass arguments
+  on the stack.
 * Limited numeric tower, see above.
 
 Most of the above is intended to be solved at some point, in roughly
