@@ -1547,6 +1547,8 @@ main:                # argc, argv
         intern_string not_a_c_procedure_string, "Not a C procedure:"
         intern_string symbol_not_defined_string, "Symbol not defined:"
         intern_string arity_check_error_string, "Unexpected number of arguments:"
+        intern_string too_many_integer_arguments_string, "Too many integer arguments for FFI, maximum is 6:"
+        intern_string too_many_double_arguments_string,  "Too many double arguments for FFI, maximum is 8:"
 
         intern_string false_string, "#f"
         mov     %rax, boolean_string_table + POINTER_SIZE * C_FALSE
@@ -2262,9 +2264,11 @@ ffi_apply:                      # proc, args
         mov     %rax, %r12
         mov     %ebx, %r14d
 
+        cmp     $MAX_REGISTER_DOUBLE_ARGS, %ebx
+        jg      9f
+
         mov     $MAX_REGISTER_DOUBLE_ARGS, %eax
         sub     %ebx, %eax
-        js      ffi_apply_pop_doubles
         lea     ffi_apply_pop_doubles(,%eax,FFI_APPLY_DOUBLES_JUMP_ALIGNMENT), %rax
         jmp     *%rax
 
@@ -2309,25 +2313,28 @@ ffi_apply_pop_doubles:
 
 7:      mov     %r14d, %eax
 
+        cmp     $MAX_REGISTER_ARGS, %ebx
+        jg      10f
+
         ## TODO: calling functions using xmm registers here requires 16-byte
         ##       stack alignment on entry. This simple approach won't work if
-        ##       there are arguments on the stack.
+        ##       allowing arguments on the stack.
         mov     %rsp, %r14
         and     $-(2 * POINTER_SIZE), %rsp
         call    *%r13
         mov     %r14, %rsp
 
-        sub     $MAX_REGISTER_ARGS, %ebx
-        js      8f
-
-        shl     $POINTER_SIZE_SHIFT, %ebx
-        add     %rbx, %rsp
-
 8:      pop     %r13
         pop     %r14
         return
 
+9:      box_int_internal %ebx
+        call_scm internal_error, too_many_double_arguments_string, %rax
+        return
 
+10:     box_int_internal %ebx
+        call_scm internal_error, too_many_integer_arguments_string, %rax
+        return
 
         ## Boxing from C
 
