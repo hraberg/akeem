@@ -2009,15 +2009,15 @@ exit_dynamic_extent:
 
 
 segv_handler:                   # signal
-        prologue stacktrace
+        prologue
         mov     %rdi, %rbx
 
         call_fn malloc, $(POINTER_SIZE * STACKTRACE_SIZE)
         perror
-        mov     %rax, stacktrace(%rsp)
-        call_fn backtrace, stacktrace(%rsp), $STACKTRACE_SIZE
-        call_fn backtrace_symbols_fd, stacktrace(%rsp), $STACKTRACE_SIZE, $STDERR_FILENO
-        call_fn free, stacktrace(%rsp)
+        mov     %rax, %r12
+        call_fn backtrace, %r12, $STACKTRACE_SIZE
+        call_fn backtrace_symbols_fd, %r12, $STACKTRACE_SIZE, $STDERR_FILENO
+        call_fn free, %r12
 
         cmp     $NULL, segv_jmp_buffer
         je      1f
