@@ -310,6 +310,12 @@
           args)
          (case-lambda len . rest)))))
 
+;;; 5.2. Import Declarations
+
+(define-syntax import
+  (syntax-rules ()
+    ((import import-set ...))))
+
 ;;; 5.3. Variable definitions
 
 ;;; 5.3.3. Multiple-value definitions

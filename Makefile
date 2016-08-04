@@ -10,6 +10,10 @@ RACKET_BENCHMARKS_HOME = $(RACKET_HOME)/pkgs/racket-benchmarks/tests/racket/benc
 RACKET_BENCHMARKS = ctak nboyer nfa nothing nqueens puzzle scheme-c2 scheme-c takr2 tak takr
 RUN_RACKET_BENCHMARKS = true
 
+LARCENY_HOME = ../larceny
+LARCENY_BENCHMARKS_HOME = $(LARCENY_HOME)/test/Benchmarking/R7RS
+LARCENY_BENCHMARKS = ack array1 string sum1 cat tail wc
+
 default: akeem
 
 %.o: %.s constants.s macros.s boot.scm r7rs.scm init.scm Makefile
@@ -57,6 +61,13 @@ benchmark: clean akeem
 		echo $$test.sch ; $(AKEEM) $(AKEEM_HOME)/benchmarks-prelude.scm $$test.sch ; \
 	done
 
+larceny-benchmark: clean akeem
+	cd $(LARCENY_BENCHMARKS_HOME) ; \
+	mkdir outputs ; \
+	for test in $(LARCENY_BENCHMARKS) ; do \
+		echo $$test.scm ; $(AKEEM) src/$$test.scm src/common.scm < inputs/$$test.input ; \
+	done
+
 profile: RACKET_BENCHMARKS = nqueens
 profile: RUN_RACKET_BENCHMARKS =
 profile: CFLAGS += -pg
@@ -90,4 +101,4 @@ run-docker-shell: docker
 	docker run --rm -i -t akeem bash
 
 .PHONY: run-tests run-tests-catchsegv run-repl retest benchmark profile jit-clean jit-dissassmble clean check release docker run-docker run-docker-shell
-.SILENT: run-tests retest benchmark profile valgrind
+.SILENT: run-tests retest benchmark larceny-benchmark profile valgrind
