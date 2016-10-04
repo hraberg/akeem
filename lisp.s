@@ -377,13 +377,14 @@ is_null:                        # obj
 length:                         # list
         prologue
         assert_arity 1
+        assert_tag TAG_PAIR, %rdi, not_a_pair_string
         mov     %rdi, %rax
         xor     %ebx, %ebx
 
 1:      is_nil_internal %rax
         je      2f
 
-        cdr     %rax
+        call_scm cdr, %rax
         inc     %rbx
         jmp     1b
 
@@ -393,6 +394,7 @@ length:                         # list
 append:                        # list1, list2
         prologue
         assert_arity 2
+        assert_tag TAG_PAIR, %rdi, not_a_pair_string
         mov     %rsi, %r12
         call_scm reverse, %rdi
         mov     %rax, %rbx
@@ -411,6 +413,7 @@ append:                        # list1, list2
 reverse:                        # list
         prologue
         assert_arity 1
+        assert_tag TAG_PAIR, %rdi, not_a_pair_string
         mov     %rdi, %rbx
         mov     $NIL, %r12
 1:      is_nil_internal %rbx
