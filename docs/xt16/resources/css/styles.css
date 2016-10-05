@@ -1,14 +1,14 @@
 @font-face {
     font-family: 'Gruppo';
-    src: url('resources/fonts/Gruppo/Gruppo-Regular.ttf') format('truetype');
+    src: url('../fonts/Gruppo/Gruppo-Regular.ttf') format('truetype');
 }
 @font-face {
     font-family: 'Raleway Dots';
-    src: url('resources/fonts/Raleway_Dots/RalewayDots-Regular.ttf') format('truetype');
+    src: url('../fonts/Raleway_Dots/RalewayDots-Regular.ttf') format('truetype');
 }
 @font-face {
     font-family: 'Ubuntu Mono';
-    src: url('resources/fonts/Ubuntu_Mono/UbuntuMono-Regular.ttf') format('truetype');
+    src: url('../fonts/Ubuntu_Mono/UbuntuMono-Regular.ttf') format('truetype');
 }
 body {
     font-family: 'Gruppo';
