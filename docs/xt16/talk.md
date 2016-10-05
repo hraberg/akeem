@@ -6,7 +6,7 @@ Håkan Råberg
 
 ---
 
-# Background
+### Background
 --
 
 1. Worked on a RDF / Semantic web project
@@ -22,7 +22,7 @@ Håkan Råberg
 
 ---
 
-# History
+### History
 --
 
 1. Wrote 68k assembler on the Amiga in the early 90s
@@ -77,7 +77,7 @@ class: center
 
 ---
 
-# Akeem Scheme
+### Akeem Scheme
 --
 
 1. [Scheme R7RS small](http://trac.sacrideo.us/wg/raw-attachment/wiki/WikiStart/r7rs.pdf)
@@ -108,7 +108,7 @@ class: center
 
 ---
 
-# x86-64 Asm
+### x86-64 Asm
 --
 
 1. 16 registers + 16 XMM registers
@@ -193,7 +193,7 @@ jit_epilogue_size:
 ---
 class: list-listing
 
-# Code Gen
+### Code Gen
 --
 
 1. (lambda (x)
@@ -445,7 +445,7 @@ class: small-listing, listing
 
 ---
 
-# Reflection
+### Reflection
 --
 
 1. Closeness to hardware mainly an illusion
