@@ -279,10 +279,10 @@ for a better explanation. Akeem uses two different styles.
 The handwritten parts of Akeem itself refers to local variables
 allocated above of `rsp` and doesn't use `rbp` to establish a
 frame. Only in some cases it will push and pop the actual stack, and
-in then there will be no local variables in use, as there's no stable
+then there will be no local variables in use, as there's no stable
 reference point to them. The code uses `rbx` and `r12` as callee saved
 registers. Some simpler functions are written without or with a
-minimal prologue or epilogue that doesn't use or save `rbx` and `r12`.
+minimal prologue and epilogue that doesn't use or save `rbx` and `r12`.
 
 The generated code does establish a frame base pointer in `rbp` and
 refers to local variables relative below of `rbp`. `rsp` initially
