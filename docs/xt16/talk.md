@@ -591,18 +591,3 @@ class: listing
      (let ((x test1))
        (if x x (or test2 ...))))))
 ```
-
-
-<!--
-
-Bare knuckle presentation: figure out the real take away and potentially start up.
-Explain the code working via compiling a simple Scheme fn.
-Understanding your abstractions is really hard when the abstraction layer is both low-level and large like x64 asm.
-Remove more examples. Condense the points around engineering practices.
-
-Morpho-genesis, the impossibility of abstraction. Population of individuals. Deleuze.
-Over-concrete, Knausgaard.
-
-Move other code to extra slides.
-
--->
