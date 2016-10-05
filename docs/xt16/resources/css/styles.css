@@ -1,0 +1,129 @@
+@font-face {
+    font-family: 'Gruppo';
+    src: url('/resources/fonts/Gruppo/Gruppo-Regular.ttf') format('truetype');
+}
+@font-face {
+    font-family: 'Raleway Dots';
+    src: url('/resources/fonts/Raleway_Dots/RalewayDots-Regular.ttf') format('truetype');
+}
+@font-face {
+    font-family: 'Ubuntu Mono';
+    src: url('/resources/fonts/Ubuntu_Mono/UbuntuMono-Regular.ttf') format('truetype');
+}
+body {
+    font-family: 'Gruppo';
+}
+h1, h2, h3, h4, h5 {
+    color: #77cc88;
+    font-family: 'Raleway Dots';
+    font-weight: normal;
+    text-transform: uppercase;
+    margin-bottom: 0;
+    text-shadow: 2px 2px 8px darkgreen, -2px -2px 8px green, 12px 0px 8px darkgreen;
+}
+h4, h5 {
+    color: lightblue;
+    font-weight: bold;
+    margin-bottom: 0.5em;
+    text-shadow: 2px 2px 8px darkgreen, -2px -2px 8px darkgreen;
+    position: relative;
+}
+ol {
+    list-style-type: none;
+    padding-left: 0;
+}
+li:not(:last-child) {
+    opacity: 0.5;
+}
+li:nth-last-child(2) {
+    animation: fade-out 0.5s;
+}
+li:last-child {
+    font-size: 2em;
+    animation: fade-in 1s;
+}
+li:last-child:before {
+    content: ">";
+    position: absolute;
+    margin-top: -0.1em;
+    margin-left: -0.75em;
+}
+li:last-child:after {
+    animation: blink 1s step-start 0s infinite;
+    content: "_";
+    position: absolute;
+    margin-top: 0.1em;
+    margin-left: 0.2em;
+}
+.list-listing li {
+    display: inline;
+    white-space: pre;
+}
+@keyframes blink {
+    50% {
+        opacity: 0.0;
+    }
+}
+@keyframes fade-in {
+    from { opacity: 0.4; }
+    to   { opacity: 1; }
+}
+@keyframes fade-out {
+    from { opacity: 0.7; }
+    to   { opacity: 0.5; }
+}
+pre {
+    margin-top: 0em;
+    text-shadow: none;
+}
+.remark-slide-content {
+    zoom: 2;
+    color: #5fa;
+    background-color: #080808;
+    text-shadow: 1px 0px 1px green, 3px 1px 8px green, 12px 0px 12px darkgreen;
+ }
+.raster:before, .listing .remark-code:before  {
+    content: "";
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background:url(
+        data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAEklEQVQIW2NkgAJGBgaG/yA2AAUoAQL8e2DiAAAAAElFTkSuQmCC
+    ) repeat;
+    opacity: 0.4;
+}
+.small-listing .remark-code {
+    zoom: 0.45;
+}
+.remark-code {
+    zoom: 0.85;
+}
+.raster .remark-code {
+    zoom: 1.3;
+}
+.remark-code, .remark-inline-code {
+    font-family: 'Ubuntu Mono';
+    color: lightblue;
+    text-shadow: 1px 0px 1px green, 2px 1px 8px green, 12px 0px 12px darkgreen;
+    z-index: 1;
+}
+a {
+    color: inherit;
+    text-decoration: none;
+}
+.full, .top {
+    background-color: black;
+}
+.full img {
+    position: absolute;
+    top: 2.5%;
+    width: auto;
+    height: 95%;
+    max-width: 95%;
+    left: 50%;
+    transform: translateX(-50%);
+ }
+.top img {
+    transform: translateY(0), translateX(0);
+    height: auto;
+}
