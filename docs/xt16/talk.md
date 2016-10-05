@@ -477,7 +477,7 @@ class: small-listing, listing
 ---
 class: center, middle
 
-#### [github.com/hraberg/akeem]([https://github.com/hraberg/akeem)
+#### [github.com/hraberg/akeem](https://github.com/hraberg/akeem)
 
 ---
 class: center, middle
