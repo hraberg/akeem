@@ -3,7 +3,7 @@
 *When you think of garbage, think of Akeem.* —
 [Prince Akeem of Zamunda](http://www.imdb.com/title/tt0094898/)
 
-Talk at [JUXT XT16](https://juxt.pro/XT16.html) Milton Keynes, 2016-10-06 | [Slides](https://hraberg.github.io/akeem/xt16)
+[Talk](https://www.youtube.com/watch?v=lAWVcN5FMmg) at [JUXT XT16](https://juxt.pro/XT16.html) Milton Keynes, 2016-10-06 | [Slides](https://hraberg.github.io/akeem/xt16)
 
 Akeem is a small JIT-ed subset of
 [R7RS Scheme](http://trac.sacrideo.us/wg/raw-attachment/wiki/WikiStart/r7rs.pdf)
